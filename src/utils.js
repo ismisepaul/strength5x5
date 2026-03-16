@@ -73,3 +73,27 @@ export function calculateDeload(weights) {
   }
   return newW;
 }
+
+export function deloadWeight(weight) {
+  return Math.max(20, Math.round((weight * 0.9) / 2.5) * 2.5);
+}
+
+export function getConsecutiveFailures(history, exerciseId, weight) {
+  let count = 0;
+  for (const session of history) {
+    const ex = session.exercises?.find(e => e.id === exerciseId);
+    if (!ex || ex.weight !== weight) break;
+    const passed = ex.setsCompleted.every(r => r === 5);
+    if (passed) break;
+    count++;
+  }
+  return count;
+}
+
+export function formatDuration(ms) {
+  const totalMinutes = Math.round(ms / 60000);
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  return `${hours}h ${mins}m`;
+}

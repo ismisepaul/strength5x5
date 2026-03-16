@@ -1,16 +1,35 @@
 import { useMemo, useEffect, useCallback } from 'react';
-import { STORAGE_KEY, SCHEMA_VERSION } from '../constants';
+import { STORAGE_KEY, SCHEMA_VERSION, ACTIVE_SESSION_KEY } from '../constants';
 import { migrate } from '../utils';
+
+const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export function useLoadSaved() {
   return useMemo(() => {
+    let saved = {};
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return {};
-      const parsed = JSON.parse(raw);
-      const version = parsed.version ?? 1;
-      return version < SCHEMA_VERSION ? migrate(parsed, version) : parsed;
-    } catch { return {}; }
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const version = parsed.version ?? 1;
+        saved = version < SCHEMA_VERSION ? migrate(parsed, version) : parsed;
+      }
+    } catch { /* ignore */ }
+
+    try {
+      const activeRaw = localStorage.getItem(ACTIVE_SESSION_KEY);
+      if (activeRaw) {
+        const active = JSON.parse(activeRaw);
+        const sessionDate = new Date(active.session?.date);
+        if (Date.now() - sessionDate.getTime() > SESSION_MAX_AGE_MS) {
+          localStorage.removeItem(ACTIVE_SESSION_KEY);
+        } else {
+          saved.activeSession = active;
+        }
+      }
+    } catch { /* ignore */ }
+
+    return saved;
   }, []);
 }
 

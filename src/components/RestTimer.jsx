@@ -13,10 +13,10 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
       <div className="py-4 px-6 flex justify-between items-center">
         {isExerciseComplete ? (
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest leading-none mb-1">Movement Finished</span>
+            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest leading-none mb-1">{isExerciseComplete === 'session' ? 'Session Complete' : 'Movement Finished'}</span>
             <div className="flex items-center gap-3">
               <CheckCircle2 size={20} className="text-emerald-500" />
-              <span className={`text-[11px] font-bold leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Setup next exercise.<br />No rest required.</span>
+              <span className={`text-[11px] font-bold leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isExerciseComplete === 'session' ? <>All sets done. Tap Finish<br />to save your session.</> : <>Setup next exercise.<br />No rest required.</>}</span>
             </div>
           </div>
         ) : isExpired ? (

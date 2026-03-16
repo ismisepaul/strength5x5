@@ -175,8 +175,8 @@ describe('Live Session bar', () => {
 
 describe('System dark mode preference', () => {
   it('defaults to system preference when no saved isDark', () => {
-    render(<App />);
-    expect(screen.getByLabelText('Switch to light mode')).toBeInTheDocument();
+    const { container } = render(<App />);
+    expect(container.firstChild).toHaveClass('bg-slate-950');
   });
 
   it('respects saved light mode preference over system default', () => {
@@ -184,8 +184,8 @@ describe('System dark mode preference', () => {
       ...workoutData,
       isDark: false,
     }));
-    render(<App />);
-    expect(screen.getByLabelText('Switch to dark mode')).toBeInTheDocument();
+    const { container } = render(<App />);
+    expect(container.firstChild).toHaveClass('bg-slate-50');
   });
 });
 

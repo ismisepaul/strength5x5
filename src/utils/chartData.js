@@ -143,13 +143,13 @@ export function getSessionStats(history, nowOverride) {
   return { streak, total, thisWeek, status };
 }
 
-export function groupHistory(history, mode) {
-  const older = history.slice(3);
-  const groups = [];
+export function groupHistory(history, mode, skip = 0) {
+  const items = history.slice(skip);
   const groupMap = {};
+  const groupDates = {};
 
-  for (let i = 0; i < older.length; i++) {
-    const s = older[i];
+  for (let i = 0; i < items.length; i++) {
+    const s = items[i];
     const d = new Date(s.date);
     let key;
     if (mode === 'week') {
@@ -163,10 +163,12 @@ export function groupHistory(history, mode) {
     }
     if (!(key in groupMap)) {
       groupMap[key] = [];
-      groups.push(key);
+      groupDates[key] = d.getTime();
     }
-    groupMap[key].push({ session: s, originalIndex: i + 3 });
+    groupMap[key].push({ session: s, originalIndex: i + skip });
   }
 
-  return groups.map(key => ({ key, entries: groupMap[key] }));
+  return Object.keys(groupMap)
+    .sort((a, b) => groupDates[b] - groupDates[a])
+    .map(key => ({ key, entries: groupMap[key] }));
 }

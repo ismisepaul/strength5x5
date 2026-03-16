@@ -68,7 +68,8 @@ describe('Settings', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    const toggle = screen.getByLabelText('Switch to light mode');
+    await user.click(screen.getByLabelText('Options'));
+    const toggle = screen.getByLabelText('Dark mode');
     await user.click(toggle);
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));

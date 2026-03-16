@@ -3,6 +3,7 @@ import {
   calculatePlates,
   calculate1RM,
   calculateBest1RM,
+  formatDuration,
   calculateDeload,
   calculateWarmup,
   validateImportData,
@@ -248,5 +249,35 @@ describe('migrate', () => {
   it('stamps current SCHEMA_VERSION', () => {
     const result = migrate({ version: 0 }, 0);
     expect(result.version).toBe(SCHEMA_VERSION);
+  });
+});
+
+describe('formatDuration', () => {
+  it('returns "0 min" for zero milliseconds', () => {
+    expect(formatDuration(0)).toBe('0 min');
+  });
+
+  it('returns minutes for durations under an hour', () => {
+    expect(formatDuration(42 * 60000)).toBe('42 min');
+  });
+
+  it('rounds to nearest minute', () => {
+    expect(formatDuration(42.6 * 60000)).toBe('43 min');
+  });
+
+  it('returns "59 min" for just under an hour', () => {
+    expect(formatDuration(59 * 60000)).toBe('59 min');
+  });
+
+  it('returns hours and minutes for 60+ minutes', () => {
+    expect(formatDuration(72 * 60000)).toBe('1h 12m');
+  });
+
+  it('handles exactly 1 hour', () => {
+    expect(formatDuration(60 * 60000)).toBe('1h 0m');
+  });
+
+  it('handles multi-hour durations', () => {
+    expect(formatDuration(150 * 60000)).toBe('2h 30m');
   });
 });

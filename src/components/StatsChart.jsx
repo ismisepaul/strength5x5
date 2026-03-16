@@ -103,7 +103,12 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
             <p className="text-slate-500 text-sm font-bold">No data for this range</p>
           </div>
         ) : (
-          <div className="h-56">
+          <div className="h-56 relative">
+            {filteredData.length === 1 && (
+              <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                <p className={`text-xs font-bold px-4 py-2 rounded-xl ${isDark ? 'bg-slate-800/90 text-slate-400' : 'bg-white/90 text-slate-500'}`}>Complete at least 2 sessions to see trends</p>
+              </div>
+            )}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />

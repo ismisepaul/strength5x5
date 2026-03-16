@@ -264,14 +264,14 @@ describe('groupHistory', () => {
     return { date: new Date(date).toISOString(), type, exercises: [] };
   }
 
-  it('skips first 3 entries and groups the rest by month', () => {
+  it('groups all entries by month when skip=0', () => {
     const h = [
       makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-03-11'),
       makeSession('2026-03-08'), makeSession('2026-02-20'), makeSession('2026-02-18'),
     ];
-    const groups = groupHistory(h, 'month');
+    const groups = groupHistory(h, 'month', 0);
     expect(groups).toHaveLength(2);
-    expect(groups[0].entries).toHaveLength(1);
+    expect(groups[0].entries).toHaveLength(4);
     expect(groups[1].entries).toHaveLength(2);
   });
 
@@ -280,14 +280,14 @@ describe('groupHistory', () => {
       makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-03-11'),
       makeSession('2026-03-08'), makeSession('2026-02-20'),
     ];
-    const groups = groupHistory(h, 'month');
-    expect(groups[0].entries[0].originalIndex).toBe(3);
+    const groups = groupHistory(h, 'month', 0);
+    expect(groups[0].entries[0].originalIndex).toBe(0);
+    expect(groups[0].entries[3].originalIndex).toBe(3);
     expect(groups[1].entries[0].originalIndex).toBe(4);
   });
 
-  it('returns empty when history has 3 or fewer entries', () => {
-    const h = [makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-03-11')];
-    expect(groupHistory(h, 'month')).toHaveLength(0);
+  it('returns empty for empty history', () => {
+    expect(groupHistory([], 'month', 0)).toHaveLength(0);
   });
 
   it('groups by year correctly', () => {
@@ -295,9 +295,21 @@ describe('groupHistory', () => {
       makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-03-11'),
       makeSession('2026-01-10'), makeSession('2025-12-20'), makeSession('2025-11-15'),
     ];
-    const groups = groupHistory(h, 'year');
+    const groups = groupHistory(h, 'year', 0);
     expect(groups).toHaveLength(2);
     expect(groups[0].key).toBe('2026');
+    expect(groups[0].entries).toHaveLength(4);
     expect(groups[1].key).toBe('2025');
+    expect(groups[1].entries).toHaveLength(2);
+  });
+
+  it('respects skip parameter', () => {
+    const h = [
+      makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-02-20'),
+    ];
+    const groups = groupHistory(h, 'month', 2);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].entries).toHaveLength(1);
+    expect(groups[0].entries[0].originalIndex).toBe(2);
   });
 });
