@@ -4,13 +4,13 @@ import {
   Plus, Minus, RefreshCw, Sun, Moon, X, Download, Upload,
   ShieldCheck, ToggleRight, ToggleLeft, AlertCircle, Zap, TrendingDown,
   Clock, BellRing, Smartphone, Trash2, Bell, ChevronRight, Menu, Timer,
-  FileSpreadsheet, MoveRight, Flame
+  FileSpreadsheet, MoveRight, Flame, ChevronDown
 } from 'lucide-react';
 
 import { WORKOUTS, EXERCISE_NAMES, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE } from './constants';
 import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
-import { getExerciseTrend, getBig3Trend, getSessionStats } from './utils/chartData';
+import { getExerciseTrend, getBig3Trend, getSessionStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useTimer } from './hooks/useTimer';
 import RestTimer from './components/RestTimer';
@@ -44,6 +44,8 @@ const App = () => {
   const [statsView, setStatsView] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [logGrouping, setLogGrouping] = useState('month');
+  const [expandedGroups, setExpandedGroups] = useState({});
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -404,8 +406,6 @@ const App = () => {
             </div>
             {(() => {
               const stats = getSessionStats(history);
-              const statusLabel = { complete: 'Complete', onTrack: 'On Track', keepGoing: 'Keep Going', behind: 'Behind' }[stats.status];
-              const statusColor = { complete: 'text-emerald-500', onTrack: 'text-emerald-500', keepGoing: 'text-amber-500', behind: 'text-rose-500' }[stats.status];
               const flameColor = stats.streak > 0 ? 'text-amber-500' : 'text-slate-400';
               return (
                 <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -414,7 +414,7 @@ const App = () => {
                       <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < stats.thisWeek ? 'bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.4)]' : (isDark ? 'bg-slate-700' : 'bg-slate-300')}`} />
                     ))}
                   </div>
-                  <span className={`text-xs font-black uppercase ${statusColor}`}>{statusLabel}</span>
+                  <span className={`text-xs font-black uppercase ${stats.status.color === 'emerald' ? 'text-emerald-500' : stats.status.color === 'amber' ? 'text-amber-500' : 'text-rose-500'}`}>{stats.status.label}</span>
                   <span className="text-slate-500">·</span>
                   <span className="flex items-center gap-1">
                     <Flame size={12} className={flameColor} />
@@ -425,15 +425,59 @@ const App = () => {
                 </div>
               );
             })()}
+
+            {history.length > 3 && (
+              <div className="grid grid-cols-4 gap-1.5 mb-2">
+                {[{ label: 'Week', val: 'week' }, { label: 'Month', val: 'month' }, { label: 'Year', val: 'year' }, { label: 'All', val: 'all' }].map(opt => (
+                  <button key={opt.val} onClick={() => { setLogGrouping(opt.val); setExpandedGroups({}); }} className={`py-2 rounded-xl font-black text-[10px] uppercase tracking-wide transition-all ${logGrouping === opt.val ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-900 text-slate-500 border border-slate-800' : 'bg-white text-slate-400 border border-slate-200')}`}>{opt.label}</button>
+                ))}
+              </div>
+            )}
+
             {history.length === 0 ? (
               <p className="py-20 text-center text-slate-500 font-bold">No history found. Start training!</p>
             ) : (
-              history.map((s, i) => (
-                <button key={i} onClick={() => setEditingEntry({ index: i, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                  <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Workout {s.type}</span><span className="text-xs font-bold text-slate-500">{new Date(s.date).toLocaleDateString()}</span></div>
-                  <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{ex.name}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === 5 ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
-                </button>
-              ))
+              <>
+                {history.slice(0, 3).map((s, i) => (
+                  <button key={i} onClick={() => setEditingEntry({ index: i, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                    <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Workout {s.type}</span><span className="text-xs font-bold text-slate-500">{new Date(s.date).toLocaleDateString()}</span></div>
+                    <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{ex.name}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === 5 ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
+                  </button>
+                ))}
+
+                {history.length > 3 && logGrouping === 'all' && history.slice(3).map((s, i) => (
+                  <button key={i + 3} onClick={() => setEditingEntry({ index: i + 3, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                    <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Workout {s.type}</span><span className="text-xs font-bold text-slate-500">{new Date(s.date).toLocaleDateString()}</span></div>
+                    <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{ex.name}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === 5 ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
+                  </button>
+                ))}
+
+                {history.length > 3 && logGrouping !== 'all' && groupHistory(history, logGrouping).map(group => (
+                  <div key={group.key}>
+                    <button
+                      onClick={() => setExpandedGroups(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
+                      aria-label={`Toggle ${group.key}`}
+                      className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all active:scale-[0.99] ${isDark ? 'bg-slate-900/60 border-slate-800 hover:bg-slate-900' : 'bg-white/60 border-slate-100 hover:bg-white'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <ChevronDown size={16} className={`transition-transform duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${expandedGroups[group.key] ? 'rotate-0' : '-rotate-90'}`} />
+                        <span className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{group.key}</span>
+                      </div>
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{group.entries.length}</span>
+                    </button>
+                    {expandedGroups[group.key] && (
+                      <div className="space-y-3 mt-3 ml-2">
+                        {group.entries.map(({ session: s, originalIndex }) => (
+                          <button key={originalIndex} onClick={() => setEditingEntry({ index: originalIndex, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                            <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Workout {s.type}</span><span className="text-xs font-bold text-slate-500">{new Date(s.date).toLocaleDateString()}</span></div>
+                            <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{ex.name}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === 5 ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </>
             )}
           </div>
         )}

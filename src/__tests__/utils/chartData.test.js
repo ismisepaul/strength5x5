@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getSessionStats } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getSessionStats, groupHistory } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -169,7 +169,7 @@ describe('getSessionStats', () => {
     expect(stats.streak).toBe(0);
     expect(stats.total).toBe(0);
     expect(stats.thisWeek).toBe(0);
-    expect(stats.status).toBe('onTrack');
+    expect(stats.status).toEqual({ label: '3 left', color: 'rose' });
   });
 
   it('counts thisWeek sessions correctly', () => {
@@ -227,30 +227,77 @@ describe('getSessionStats', () => {
     expect(stats.streak).toBe(0);
   });
 
-  it('status is complete when thisWeek >= 3', () => {
+  it('status shows 3 done when thisWeek >= 3', () => {
     const wed = new Date(2026, 2, 11, 12);
     const mon = getMonday(wed);
     const h = makeSessions([mon, new Date(mon.getTime() + 86400000), new Date(mon.getTime() + 86400000 * 2)]);
     const stats = getSessionStats(h, wed);
-    expect(stats.status).toBe('complete');
+    expect(stats.status).toEqual({ label: '3 done', color: 'emerald' });
   });
 
-  it('status is onTrack early in the week with 0 sessions', () => {
+  it('status shows 1 left when 2 sessions done', () => {
+    const wed = new Date(2026, 2, 11, 12);
+    const mon = getMonday(wed);
+    const h = makeSessions([mon, new Date(mon.getTime() + 86400000)]);
+    const stats = getSessionStats(h, wed);
+    expect(stats.status).toEqual({ label: '1 left', color: 'emerald' });
+  });
+
+  it('status shows 2 left when 1 session done', () => {
+    const wed = new Date(2026, 2, 11, 12);
+    const mon = getMonday(wed);
+    const h = makeSessions([mon]);
+    const stats = getSessionStats(h, wed);
+    expect(stats.status).toEqual({ label: '2 left', color: 'amber' });
+  });
+
+  it('status shows 3 left when 0 sessions done', () => {
     const mon = new Date(2026, 2, 9, 12);
     const stats = getSessionStats([], mon);
-    expect(stats.status).toBe('onTrack');
+    expect(stats.status).toEqual({ label: '3 left', color: 'rose' });
   });
 
-  it('status is keepGoing when 1 session behind pace', () => {
-    const thu = new Date(2026, 2, 12, 12);
-    const stats = getSessionStats([], thu);
-    expect(stats.status).toBe('keepGoing');
+});
+
+describe('groupHistory', () => {
+  function makeSession(date, type = 'A') {
+    return { date: new Date(date).toISOString(), type, exercises: [] };
+  }
+
+  it('skips first 3 entries and groups the rest by month', () => {
+    const h = [
+      makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-03-11'),
+      makeSession('2026-03-08'), makeSession('2026-02-20'), makeSession('2026-02-18'),
+    ];
+    const groups = groupHistory(h, 'month');
+    expect(groups).toHaveLength(2);
+    expect(groups[0].entries).toHaveLength(1);
+    expect(groups[1].entries).toHaveLength(2);
   });
 
-  it('status is behind when 2+ sessions behind pace', () => {
-    const sat = new Date(2026, 2, 14, 12);
-    const stats = getSessionStats([], sat);
-    expect(stats.status).toBe('behind');
+  it('preserves original history index for each entry', () => {
+    const h = [
+      makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-03-11'),
+      makeSession('2026-03-08'), makeSession('2026-02-20'),
+    ];
+    const groups = groupHistory(h, 'month');
+    expect(groups[0].entries[0].originalIndex).toBe(3);
+    expect(groups[1].entries[0].originalIndex).toBe(4);
   });
 
+  it('returns empty when history has 3 or fewer entries', () => {
+    const h = [makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-03-11')];
+    expect(groupHistory(h, 'month')).toHaveLength(0);
+  });
+
+  it('groups by year correctly', () => {
+    const h = [
+      makeSession('2026-03-15'), makeSession('2026-03-13'), makeSession('2026-03-11'),
+      makeSession('2026-01-10'), makeSession('2025-12-20'), makeSession('2025-11-15'),
+    ];
+    const groups = groupHistory(h, 'year');
+    expect(groups).toHaveLength(2);
+    expect(groups[0].key).toBe('2026');
+    expect(groups[1].key).toBe('2025');
+  });
 });

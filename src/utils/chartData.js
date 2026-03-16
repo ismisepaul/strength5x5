@@ -108,19 +108,12 @@ function countSessionsInWeek(history, weekKey) {
   return count;
 }
 
-function computeStatus(thisWeek, now) {
-  if (thisWeek >= 3) return 'complete';
-  const day = now.getDay();
-  let expected;
-  if (day === 1 || day === 2) expected = 0;
-  else if (day === 3 || day === 4) expected = 1;
-  else if (day === 5 || day === 6) expected = 2;
-  else expected = 3;
-
-  const deficit = expected - thisWeek;
-  if (deficit <= 0) return 'onTrack';
-  if (deficit === 1) return 'keepGoing';
-  return 'behind';
+function computeStatus(thisWeek) {
+  const remaining = 3 - thisWeek;
+  if (remaining <= 0) return { label: '3 done', color: 'emerald' };
+  if (remaining === 1) return { label: '1 left', color: 'emerald' };
+  if (remaining === 2) return { label: '2 left', color: 'amber' };
+  return { label: '3 left', color: 'rose' };
 }
 
 export function getSessionStats(history, nowOverride) {
@@ -130,7 +123,7 @@ export function getSessionStats(history, nowOverride) {
   const currentWeekKey = getWeekKey(now);
   const thisWeek = countSessionsInWeek(history, currentWeekKey);
 
-  if (total === 0) return { streak: 0, total: 0, thisWeek: 0, status: computeStatus(0, now) };
+  if (total === 0) return { streak: 0, total: 0, thisWeek: 0, status: computeStatus(0) };
 
   let streak = 0;
   const d = new Date(getMonStart(now));
@@ -145,7 +138,35 @@ export function getSessionStats(history, nowOverride) {
     }
   }
 
-  const status = computeStatus(thisWeek, now);
+  const status = computeStatus(thisWeek);
 
   return { streak, total, thisWeek, status };
+}
+
+export function groupHistory(history, mode) {
+  const older = history.slice(3);
+  const groups = [];
+  const groupMap = {};
+
+  for (let i = 0; i < older.length; i++) {
+    const s = older[i];
+    const d = new Date(s.date);
+    let key;
+    if (mode === 'week') {
+      const mon = getMonStart(d);
+      const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+      key = `${mon.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${sun.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    } else if (mode === 'month') {
+      key = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    } else {
+      key = d.getFullYear().toString();
+    }
+    if (!(key in groupMap)) {
+      groupMap[key] = [];
+      groups.push(key);
+    }
+    groupMap[key].push({ session: s, originalIndex: i + 3 });
+  }
+
+  return groups.map(key => ({ key, entries: groupMap[key] }));
 }
