@@ -108,22 +108,6 @@ The Content Security Policy in `vercel.json` is relaxed to allow Google origins:
 
 The Google Drive section in Options only renders when `VITE_GOOGLE_CLIENT_ID` is set. If the environment variable is missing, the feature is completely hidden -- no UI, no script initialization.
 
-## Google Cloud Console Setup
+## Setup
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project (or select an existing one)
-3. Navigate to **APIs & Services > Library** and enable **Google Drive API**
-4. Navigate to **APIs & Services > OAuth consent screen**
-   - User type: External
-   - Fill in app name, support email
-   - Add scope: `https://www.googleapis.com/auth/drive.file`
-5. Navigate to **APIs & Services > Credentials**
-   - Create **OAuth 2.0 Client ID**
-   - Application type: **Web application**
-   - Authorized JavaScript origins:
-     - `http://localhost:5173` (development)
-     - `https://your-app.vercel.app` (production)
-6. Copy the Client ID and add to `.env`:
-   ```
-   VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-   ```
+For step-by-step instructions on creating the Google Cloud project, configuring OAuth, and setting the environment variable for local development and production, see [Deployment](deployment.md#2-google-drive-setup-optional).

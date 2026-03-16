@@ -202,22 +202,16 @@ npm run build
 
 ### Google Drive Setup (Optional)
 
-To enable the Google Drive backup feature:
-
-1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable the **Google Drive API**
-3. Configure the **OAuth consent screen** (External, add `drive.file` scope)
-4. Create an **OAuth 2.0 Client ID** (Web Application) with authorized origins for `http://localhost:5173` and your production URL
-5. Copy `.env.example` to `.env` and add your Client ID:
+To enable cloud backup via Google Drive, you need a Google Cloud project with an OAuth 2.0 Client ID. Copy `.env.example` to `.env` and add your Client ID:
 
 ```bash
 cp .env.example .env
 # Edit .env with your Client ID
 ```
 
-If `VITE_GOOGLE_CLIENT_ID` is not set, the Google Drive section is hidden from the UI entirely.
+If `VITE_GOOGLE_CLIENT_ID` is not set, the Google Drive UI is hidden entirely.
 
-See [docs/google-drive-sync.md](docs/google-drive-sync.md) for full details.
+See [docs/deployment.md](docs/deployment.md#2-google-drive-setup-optional) for the full step-by-step setup guide.
 
 ---
 
@@ -245,13 +239,9 @@ npm run test:watch
 
 ## Deployment
 
-The app is designed to be deployed on Vercel.
+The app is designed to be deployed on Vercel. Push to GitHub, import into Vercel, and deploy -- Vite is auto-detected.
 
-1. Push the repository to GitHub
-2. Import the repo into Vercel
-3. Deploy
-
-Security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) are configured via `vercel.json`.
+For the full guide including Google Drive setup, environment variables, and custom domains, see [docs/deployment.md](docs/deployment.md).
 
 ---
 
@@ -261,7 +251,8 @@ Detailed architecture and implementation docs are in the [`docs/`](docs/) folder
 
 - [**Architecture**](docs/architecture.md) -- project structure, state management, component hierarchy, data flow, i18n, and testing strategy
 - [**Data Model**](docs/data-model.md) -- storage schemas, import/export format, migration strategy, and validation rules
-- [**Google Drive Sync**](docs/google-drive-sync.md) -- authentication flow, file identification, upload/download mechanics, and setup instructions
+- [**Deployment**](docs/deployment.md) -- Vercel setup, Google Cloud OAuth configuration, environment variables, and custom domains
+- [**Google Drive Sync**](docs/google-drive-sync.md) -- authentication flow, file identification, upload/download mechanics, and CSP configuration
 
 ---
 

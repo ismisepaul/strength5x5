@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Dumbbell, History, Settings as SettingsIcon, Play, TrendingUp,
-  Plus, Minus, RefreshCw, Sun, Moon, X, Download, Upload,
-  ShieldCheck, ToggleRight, ToggleLeft, AlertCircle, HelpCircle, Zap, TrendingDown,
-  Clock, BellRing, Smartphone, Trash2, Bell, ChevronRight, Menu, Timer,
+  Plus, Minus, RefreshCw, Moon, X, Download, Upload,
+  ToggleRight, ToggleLeft, AlertCircle, HelpCircle, Zap, TrendingDown,
+  Clock, Vibrate, Trash2, Bell, ChevronRight, Menu, Timer,
   FileSpreadsheet, MoveRight, Flame, ChevronDown, CheckCircle2, MinusCircle, Trophy,
-  Globe, Cloud, CloudOff, HardDrive
+  Globe, Cloud, HardDrive, FolderSync
 } from 'lucide-react';
 
 import { useTranslation } from 'react-i18next';
@@ -673,7 +673,7 @@ const App = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Smartphone size={20} /></div>
+                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Vibrate size={20} /></div>
                   <div><p className="text-sm font-black uppercase">{t('options.vibration')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.vibrationDesc')}</p></div>
                 </div>
                 <button onClick={() => setVibrationEnabled(!vibrationEnabled)} role="switch" aria-checked={vibrationEnabled} aria-label="Vibration">{vibrationEnabled ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button>
@@ -693,7 +693,7 @@ const App = () => {
             {/* Backup & Sync */}
             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
               <div className="flex items-center gap-4 mb-5">
-                <div className={`p-3 rounded-2xl ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><ShieldCheck size={20} /></div>
+                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><FolderSync size={20} /></div>
                 <div><p className="text-sm font-black uppercase">{t('options.backupSync')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.backupSyncDesc')}</p></div>
               </div>
 
@@ -764,7 +764,7 @@ const App = () => {
               </div>
             </div>
             <button onClick={() => csvInputRef.current?.click()} className={`w-full p-5 rounded-[2rem] flex items-center gap-4 border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-              <div className={`p-3 rounded-2xl ${isDark ? 'bg-amber-950/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><FileSpreadsheet size={20} /></div>
+              <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><FileSpreadsheet size={20} /></div>
               <div className="text-left"><p className="text-sm font-black uppercase">{t('options.importStronglifts')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.importStrongliftsDesc')}</p></div>
             </button>
           </div>
