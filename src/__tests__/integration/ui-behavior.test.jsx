@@ -389,3 +389,58 @@ describe('Log entry editing', () => {
     expect(screen.queryByText('57.5kg')).not.toBeInTheDocument();
   });
 });
+
+describe('Manual log entry', () => {
+  const manualData = {
+    version: 1,
+    weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+    history: [
+      { date: '2024-01-15T12:00:00.000Z', type: 'A', exercises: [
+        { id: 'squat', name: 'Back Squat', weight: 60, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+        { id: 'bench', name: 'Bench Press', weight: 45, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+        { id: 'row', name: 'Barbell Row', weight: 50, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+      ]},
+    ],
+    nextType: 'B',
+    isDark: true,
+    autoSave: false,
+    preferredRest: 90,
+    soundEnabled: false,
+    vibrationEnabled: false,
+  };
+
+  it('tapping + opens the modal with Add Workout title', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(manualData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getByLabelText('Add workout'));
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText('Add Workout', { selector: 'h3' })).toBeInTheDocument();
+    const toggleButtons = dialog.querySelectorAll('button');
+    const toggleLabels = Array.from(toggleButtons).map(b => b.textContent);
+    expect(toggleLabels).toContain('Workout A');
+    expect(toggleLabels).toContain('Workout B');
+    expect(screen.queryByText('Delete Workout')).not.toBeInTheDocument();
+  });
+
+  it('saving a manual entry adds it to history', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(manualData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const cardsBefore = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-3xl"]'));
+    expect(cardsBefore).toHaveLength(1);
+
+    await user.click(screen.getByLabelText('Add workout'));
+    await user.click(screen.getByRole('button', { name: 'Add Workout' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    const cardsAfter = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-3xl"]'));
+    expect(cardsAfter).toHaveLength(2);
+  });
+});

@@ -382,7 +382,22 @@ const App = () => {
 
         {activeTab === 'history' && (
           <div className="space-y-4">
-            <h2 className="text-3xl font-black mb-2 uppercase tracking-tighter">Workout Log</h2>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-3xl font-black uppercase tracking-tighter">Workout Log</h2>
+              <button
+                onClick={() => {
+                  const type = currentWorkoutType;
+                  const session = {
+                    date: new Date().toISOString(),
+                    type,
+                    exercises: WORKOUTS[type].exercises.map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(5) })),
+                  };
+                  setEditingEntry({ index: -1, session });
+                }}
+                aria-label="Add workout"
+                className={`p-2.5 rounded-xl border active:scale-90 transition-transform ${isDark ? 'bg-slate-900 border-slate-800 text-indigo-400' : 'bg-white border-slate-200 text-indigo-600 shadow-sm'}`}
+              ><Plus size={20} /></button>
+            </div>
             {(() => {
               const stats = getSessionStats(history);
               const statusLabel = { complete: 'Complete', onTrack: 'On Track', keepGoing: 'Keep Going', behind: 'Behind' }[stats.status];
@@ -593,13 +608,37 @@ const App = () => {
         </div>
       )}
 
-      {editingEntry && (
-        <div role="dialog" aria-modal="true" aria-label="Edit workout" className={`fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
+      {editingEntry && (() => {
+        const isNewEntry = editingEntry.index === -1;
+        return (
+        <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className={`fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-md mx-auto my-6 rounded-[2.5rem] p-6 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className={`text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Edit Workout</h3>
+              <h3 className={`text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{isNewEntry ? 'Add Workout' : 'Edit Workout'}</h3>
               <button onClick={() => { setEditingEntry(null); setShowDeleteConfirm(false); }} aria-label="Close edit modal" className={`p-2 rounded-full ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400'}`}><X size={20} /></button>
             </div>
+
+            {isNewEntry && (
+              <div className="mb-6">
+                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Workout Type</label>
+                <div className="flex gap-2">
+                  {['A', 'B'].map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setEditingEntry(prev => ({
+                        ...prev,
+                        session: {
+                          ...prev.session,
+                          type: t,
+                          exercises: WORKOUTS[t].exercises.map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(5) })),
+                        },
+                      }))}
+                      className={`flex-1 py-3 rounded-xl font-black uppercase text-sm transition-all ${editingEntry.session.type === t ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-100 text-slate-500 border border-slate-200')}`}
+                    >Workout {t}</button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-6">
               <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Date</label>
@@ -675,42 +714,50 @@ const App = () => {
 
             <button
               onClick={() => {
-                const newHistory = [...history];
-                newHistory[editingEntry.index] = editingEntry.session;
-                setHistory(newHistory);
+                if (isNewEntry) {
+                  const newHistory = [...history, editingEntry.session].sort((a, b) => new Date(b.date) - new Date(a.date));
+                  setHistory(newHistory);
+                } else {
+                  const newHistory = [...history];
+                  newHistory[editingEntry.index] = editingEntry.session;
+                  setHistory(newHistory);
+                }
                 setEditingEntry(null);
               }}
               className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4"
-            >Save Changes</button>
+            >{isNewEntry ? 'Add Workout' : 'Save Changes'}</button>
 
-            {!showDeleteConfirm ? (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase text-rose-500 tracking-widest py-3 active:scale-90"
-              ><Trash2 size={12} /> Delete Workout</button>
-            ) : (
-              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-rose-950/20 border-rose-900/30' : 'bg-rose-50 border-rose-200'}`}>
-                <p className={`text-xs font-bold text-center mb-3 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Delete this workout? This cannot be undone.</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      const newHistory = history.filter((_, idx) => idx !== editingEntry.index);
-                      setHistory(newHistory);
-                      setEditingEntry(null);
-                      setShowDeleteConfirm(false);
-                    }}
-                    className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black uppercase text-xs active:scale-95"
-                  >Delete</button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className={`flex-1 py-3 rounded-xl font-black uppercase text-xs ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'} active:scale-95`}
-                  >Cancel</button>
+            {!isNewEntry && (
+              !showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase text-rose-500 tracking-widest py-3 active:scale-90"
+                ><Trash2 size={12} /> Delete Workout</button>
+              ) : (
+                <div className={`p-4 rounded-2xl border ${isDark ? 'bg-rose-950/20 border-rose-900/30' : 'bg-rose-50 border-rose-200'}`}>
+                  <p className={`text-xs font-bold text-center mb-3 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Delete this workout? This cannot be undone.</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        const newHistory = history.filter((_, idx) => idx !== editingEntry.index);
+                        setHistory(newHistory);
+                        setEditingEntry(null);
+                        setShowDeleteConfirm(false);
+                      }}
+                      className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black uppercase text-xs active:scale-95"
+                    >Delete</button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className={`flex-1 py-3 rounded-xl font-black uppercase text-xs ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'} active:scale-95`}
+                    >Cancel</button>
+                  </div>
                 </div>
-              </div>
+              )
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
       <input type="file" ref={csvInputRef} onChange={handleStrongliftsImport} accept=".csv" className="hidden" />
