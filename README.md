@@ -1,5 +1,7 @@
 # Strength 5x5
 
+[![CI](https://github.com/ismisepaul/strength5x5/actions/workflows/ci.yml/badge.svg)](https://github.com/ismisepaul/strength5x5/actions/workflows/ci.yml)
+
 A lightweight, mobile-friendly **Strength 5x5 workout tracker** designed for simplicity, reliability, and full data ownership.
 
 This app helps lifters follow a classic **5x5 progressive strength training program**, track workouts, and maintain their training history -- all without requiring accounts, subscriptions, or complex infrastructure.
