@@ -91,7 +91,7 @@ describe('Nav collapse during workout', () => {
     await user.click(screen.getByLabelText('Show navigation'));
 
     expect(screen.getByLabelText('Train')).toBeInTheDocument();
-    expect(screen.getByLabelText('Hub')).toBeInTheDocument();
+    expect(screen.getByLabelText('Log')).toBeInTheDocument();
     expect(screen.getByLabelText('Stats')).toBeInTheDocument();
     expect(screen.getByLabelText('Options')).toBeInTheDocument();
   });
@@ -103,15 +103,15 @@ describe('Nav collapse during workout', () => {
 
     await user.click(screen.getByText('Start Session'));
     await user.click(screen.getByLabelText('Show navigation'));
-    await user.click(screen.getByLabelText('Hub'));
+    await user.click(screen.getByLabelText('Log'));
 
-    expect(screen.getByText('Strength Hub')).toBeInTheDocument();
+    expect(screen.getByText('Workout Log')).toBeInTheDocument();
     expect(screen.getByLabelText('Train')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Train'));
 
     expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Hub')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Log')).not.toBeInTheDocument();
   });
 
   it('collapses nav when toggling a set during workout', async () => {
@@ -138,7 +138,7 @@ describe('Nav collapse during workout', () => {
     render(<App />);
 
     expect(screen.getByLabelText('Train')).toBeInTheDocument();
-    expect(screen.getByLabelText('Hub')).toBeInTheDocument();
+    expect(screen.getByLabelText('Log')).toBeInTheDocument();
     expect(screen.queryByLabelText('Show navigation')).not.toBeInTheDocument();
   });
 });
@@ -151,7 +151,7 @@ describe('Live Session bar', () => {
 
     await user.click(screen.getByText('Start Session'));
     await user.click(screen.getByLabelText('Show navigation'));
-    await user.click(screen.getByLabelText('Hub'));
+    await user.click(screen.getByLabelText('Log'));
 
     expect(screen.getByText('Live Session')).toBeInTheDocument();
     expect(screen.getByText('Return')).toBeInTheDocument();
@@ -164,12 +164,12 @@ describe('Live Session bar', () => {
 
     await user.click(screen.getByText('Start Session'));
     await user.click(screen.getByLabelText('Show navigation'));
-    await user.click(screen.getByLabelText('Hub'));
+    await user.click(screen.getByLabelText('Log'));
 
     await user.click(screen.getByText('Return'));
 
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
-    expect(screen.queryByText('Strength Hub')).not.toBeInTheDocument();
+    expect(screen.queryByText('Workout Log')).not.toBeInTheDocument();
   });
 });
 

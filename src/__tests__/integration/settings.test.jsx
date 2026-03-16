@@ -79,8 +79,8 @@ describe('Settings', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByLabelText('Hub'));
-    expect(screen.getByText('Strength Hub')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Log'));
+    expect(screen.getByText('Workout Log')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Stats'));
     expect(screen.getByText('No Stats Yet')).toBeInTheDocument();

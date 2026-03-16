@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getSessionStats } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -147,4 +147,110 @@ describe('getBig3Trend', () => {
     ];
     expect(getBig3Trend(partial)).toBeNull();
   });
+});
+
+describe('getSessionStats', () => {
+  function makeSessions(dates) {
+    return dates.map(d => ({ date: new Date(d).toISOString(), exercises: [] }));
+  }
+
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    d.setDate(d.getDate() - diff);
+    d.setHours(12, 0, 0, 0);
+    return d;
+  }
+
+  it('returns zeros and status for empty history', () => {
+    const now = new Date(2026, 2, 9, 12); // Monday
+    const stats = getSessionStats([], now);
+    expect(stats.streak).toBe(0);
+    expect(stats.total).toBe(0);
+    expect(stats.thisWeek).toBe(0);
+    expect(stats.status).toBe('onTrack');
+  });
+
+  it('counts thisWeek sessions correctly', () => {
+    const wed = new Date(2026, 2, 11, 12);
+    const mon = getMonday(wed);
+    const tue = new Date(mon); tue.setDate(tue.getDate() + 1);
+    const lastFri = new Date(mon); lastFri.setDate(lastFri.getDate() - 3);
+    const h = makeSessions([mon, tue, lastFri]);
+    const stats = getSessionStats(h, wed);
+    expect(stats.thisWeek).toBe(2);
+    expect(stats.total).toBe(3);
+  });
+
+  it('strict streak only counts weeks with 3+ sessions', () => {
+    const now = new Date(2026, 2, 11, 12);
+    const thisWeekMon = getMonday(now);
+    const lastWeekMon = new Date(thisWeekMon); lastWeekMon.setDate(lastWeekMon.getDate() - 7);
+    const twoWeeksMon = new Date(thisWeekMon); twoWeeksMon.setDate(twoWeeksMon.getDate() - 14);
+
+    const makeWeek = (mon) => {
+      const t = new Date(mon); t.setDate(t.getDate() + 1);
+      const w = new Date(mon); w.setDate(w.getDate() + 2);
+      return [mon, t, w];
+    };
+
+    const h = makeSessions([
+      ...makeWeek(thisWeekMon),
+      ...makeWeek(lastWeekMon),
+      twoWeeksMon,
+    ]);
+    const stats = getSessionStats(h, now);
+    expect(stats.streak).toBe(2);
+  });
+
+  it('streak breaks when a week has fewer than 3 sessions', () => {
+    const now = new Date(2026, 2, 11, 12);
+    const thisWeekMon = getMonday(now);
+    const lastWeekMon = new Date(thisWeekMon); lastWeekMon.setDate(lastWeekMon.getDate() - 7);
+
+    const h = makeSessions([
+      thisWeekMon,
+      new Date(thisWeekMon.getTime() + 86400000),
+      new Date(thisWeekMon.getTime() + 86400000 * 2),
+      lastWeekMon,
+      new Date(lastWeekMon.getTime() + 86400000),
+    ]);
+    const stats = getSessionStats(h, now);
+    expect(stats.streak).toBe(1);
+  });
+
+  it('returns zero streak when current week has fewer than 3 sessions', () => {
+    const now = new Date(2026, 2, 11, 12);
+    const h = makeSessions([new Date(2026, 2, 9)]);
+    const stats = getSessionStats(h, now);
+    expect(stats.streak).toBe(0);
+  });
+
+  it('status is complete when thisWeek >= 3', () => {
+    const wed = new Date(2026, 2, 11, 12);
+    const mon = getMonday(wed);
+    const h = makeSessions([mon, new Date(mon.getTime() + 86400000), new Date(mon.getTime() + 86400000 * 2)]);
+    const stats = getSessionStats(h, wed);
+    expect(stats.status).toBe('complete');
+  });
+
+  it('status is onTrack early in the week with 0 sessions', () => {
+    const mon = new Date(2026, 2, 9, 12);
+    const stats = getSessionStats([], mon);
+    expect(stats.status).toBe('onTrack');
+  });
+
+  it('status is keepGoing when 1 session behind pace', () => {
+    const thu = new Date(2026, 2, 12, 12);
+    const stats = getSessionStats([], thu);
+    expect(stats.status).toBe('keepGoing');
+  });
+
+  it('status is behind when 2+ sessions behind pace', () => {
+    const sat = new Date(2026, 2, 14, 12);
+    const stats = getSessionStats([], sat);
+    expect(stats.status).toBe('behind');
+  });
+
 });

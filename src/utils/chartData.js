@@ -85,3 +85,67 @@ export function getBig3Trend(history) {
   if (latest < prev) return 'down';
   return 'same';
 }
+
+function getMonStart(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  d.setDate(d.getDate() - diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getWeekKey(date) {
+  const mon = getMonStart(date);
+  return `${mon.getFullYear()}-${mon.getMonth()}-${mon.getDate()}`;
+}
+
+function countSessionsInWeek(history, weekKey) {
+  let count = 0;
+  for (const s of history) {
+    if (getWeekKey(s.date) === weekKey) count++;
+  }
+  return count;
+}
+
+function computeStatus(thisWeek, now) {
+  if (thisWeek >= 3) return 'complete';
+  const day = now.getDay();
+  let expected;
+  if (day === 1 || day === 2) expected = 0;
+  else if (day === 3 || day === 4) expected = 1;
+  else if (day === 5 || day === 6) expected = 2;
+  else expected = 3;
+
+  const deficit = expected - thisWeek;
+  if (deficit <= 0) return 'onTrack';
+  if (deficit === 1) return 'keepGoing';
+  return 'behind';
+}
+
+export function getSessionStats(history, nowOverride) {
+  const now = nowOverride || new Date();
+  const total = history.length;
+
+  const currentWeekKey = getWeekKey(now);
+  const thisWeek = countSessionsInWeek(history, currentWeekKey);
+
+  if (total === 0) return { streak: 0, total: 0, thisWeek: 0, status: computeStatus(0, now) };
+
+  let streak = 0;
+  const d = new Date(getMonStart(now));
+
+  while (true) {
+    const key = getWeekKey(d);
+    if (countSessionsInWeek(history, key) >= 3) {
+      streak++;
+      d.setDate(d.getDate() - 7);
+    } else {
+      break;
+    }
+  }
+
+  const status = computeStatus(thisWeek, now);
+
+  return { streak, total, thisWeek, status };
+}

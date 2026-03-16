@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Dumbbell, History, Settings as SettingsIcon, Play, TrendingUp,
-  Plus, Minus, RefreshCw, Sun, Moon, X, Calendar, Download, Upload,
+  Plus, Minus, RefreshCw, Sun, Moon, X, Download, Upload,
   ShieldCheck, ToggleRight, ToggleLeft, AlertCircle, Zap, TrendingDown,
   Clock, BellRing, Smartphone, Trash2, Bell, ChevronRight, Menu, Timer,
-  FileSpreadsheet, MoveRight
+  FileSpreadsheet, MoveRight, Flame
 } from 'lucide-react';
 
 import { WORKOUTS, EXERCISE_NAMES, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE } from './constants';
 import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
-import { getExerciseTrend, getBig3Trend } from './utils/chartData';
+import { getExerciseTrend, getBig3Trend, getSessionStats } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useTimer } from './hooks/useTimer';
 import RestTimer from './components/RestTimer';
@@ -122,7 +122,6 @@ const App = () => {
     return () => clearTimeout(id);
   }, [navExpanded, activeTab]);
 
-  const historyDaysSet = useMemo(() => new Set(history.map(h => new Date(h.date).toDateString())), [history]);
   const big3Total = useMemo(() => (weights?.squat || 0) + (weights?.bench || 0) + (weights?.deadlift || 0), [weights]);
   const plates = useMemo(() => calculatePlates(showPlateCalc?.weight), [showPlateCalc?.weight]);
 
@@ -381,15 +380,30 @@ const App = () => {
 
         {activeTab === 'history' && (
           <div className="space-y-4">
-            <h2 className="text-3xl font-black mb-6 uppercase tracking-tighter">Strength Hub</h2>
-            <div className={`p-5 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <p className="text-[10px] font-black uppercase text-slate-500 mb-4 tracking-widest flex items-center gap-2"><Calendar size={12} className={isDark ? 'text-indigo-500' : 'text-indigo-600'} /> Momentum</p>
-              <div className="flex gap-1.5 flex-wrap justify-center">{Array.from({ length: 84 }).map((_, i) => {
-                const d = new Date(); d.setDate(d.getDate() - (83 - i));
-                const hit = historyDaysSet.has(d.toDateString());
-                return <div key={i} className={`w-3 h-3 rounded-sm ${hit ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.4)]' : (isDark ? 'bg-slate-800' : 'bg-slate-200')}`} />;
-              })}</div>
-            </div>
+            <h2 className="text-3xl font-black mb-2 uppercase tracking-tighter">Workout Log</h2>
+            {(() => {
+              const stats = getSessionStats(history);
+              const statusLabel = { complete: 'Complete', onTrack: 'On Track', keepGoing: 'Keep Going', behind: 'Behind' }[stats.status];
+              const statusColor = { complete: 'text-emerald-500', onTrack: 'text-emerald-500', keepGoing: 'text-amber-500', behind: 'text-rose-500' }[stats.status];
+              const flameColor = stats.streak > 0 ? 'text-amber-500' : 'text-slate-400';
+              return (
+                <div className="flex items-center gap-2 flex-wrap mb-4">
+                  <div className="flex gap-1">
+                    {[0, 1, 2].map(i => (
+                      <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < stats.thisWeek ? 'bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.4)]' : (isDark ? 'bg-slate-700' : 'bg-slate-300')}`} />
+                    ))}
+                  </div>
+                  <span className={`text-xs font-black uppercase ${statusColor}`}>{statusLabel}</span>
+                  <span className="text-slate-500">·</span>
+                  <span className="flex items-center gap-1">
+                    <Flame size={12} className={flameColor} />
+                    <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{stats.streak} {stats.streak === 1 ? 'week' : 'weeks'}</span>
+                  </span>
+                  <span className="text-slate-500">·</span>
+                  <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{stats.total} total</span>
+                </div>
+              );
+            })()}
             {history.length === 0 ? (
               <p className="py-20 text-center text-slate-500 font-bold">No history found. Start training!</p>
             ) : (
@@ -501,7 +515,7 @@ const App = () => {
         </nav>
       ) : (
         <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-6 flex justify-between items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
-          {[{ id: 'workout', label: 'Train', icon: Dumbbell }, { id: 'history', label: 'Hub', icon: History }, { id: 'progress', label: 'Stats', icon: TrendingUp }, { id: 'settings', label: 'Options', icon: SettingsIcon }].map(tab => (
+          {[{ id: 'workout', label: 'Train', icon: Dumbbell }, { id: 'history', label: 'Log', icon: History }, { id: 'progress', label: 'Stats', icon: TrendingUp }, { id: 'settings', label: 'Options', icon: SettingsIcon }].map(tab => (
             <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex flex-col items-center gap-1.5 transition-all active:scale-125 ${activeTab === tab.id ? (isDark ? 'text-indigo-400' : 'text-indigo-600') : (isDark ? 'text-slate-700' : 'text-slate-300')}`}><tab.icon size={24} strokeWidth={activeTab === tab.id ? 3 : 2} /><span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span></button>
           ))}
         </nav>
