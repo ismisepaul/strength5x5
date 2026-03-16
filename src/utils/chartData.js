@@ -110,10 +110,10 @@ function countSessionsInWeek(history, weekKey) {
 
 function computeStatus(thisWeek) {
   const remaining = 3 - thisWeek;
-  if (remaining <= 0) return { label: '3 done', color: 'emerald' };
-  if (remaining === 1) return { label: '1 left', color: 'emerald' };
-  if (remaining === 2) return { label: '2 left', color: 'amber' };
-  return { label: '3 left', color: 'rose' };
+  if (remaining <= 0) return { key: 'done', count: 3, color: 'emerald' };
+  if (remaining === 1) return { key: 'left', count: 1, color: 'emerald' };
+  if (remaining === 2) return { key: 'left', count: 2, color: 'amber' };
+  return { key: 'left', count: 3, color: 'rose' };
 }
 
 export function getSessionStats(history, nowOverride) {

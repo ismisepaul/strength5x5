@@ -1,0 +1,179 @@
+{
+  "app": {
+    "title": "Strength 5x5"
+  },
+  "tabs": {
+    "train": "Séance",
+    "log": "Journal",
+    "stats": "Stats",
+    "options": "Options"
+  },
+  "exercises": {
+    "squat": "Back Squat",
+    "bench": "Bench Press",
+    "row": "Barbell Row",
+    "press": "Overhead Press",
+    "deadlift": "Deadlift"
+  },
+  "workout": {
+    "typeA": "Séance A",
+    "typeB": "Séance B",
+    "nextUp": "À suivre",
+    "startSession": "Commencer",
+    "finishSession": "Terminer",
+    "completeAllSets": "Complétez toutes les séries",
+    "alreadyTrained": "Déjà entraîné aujourd'hui",
+    "autoIncreaseHint": "Les poids augmentent de 2.5kg quand toutes les séries sont complétées.",
+    "discardWorkout": "Abandonner",
+    "oneByFiveTarget": "1x5 Cible"
+  },
+  "timer": {
+    "recoveryPhase": "Phase de repos",
+    "lifting": "En cours",
+    "sessionComplete": "Séance terminée",
+    "movementFinished": "Mouvement terminé",
+    "allSetsDone": "Toutes les séries faites. Appuyez sur Terminer pour sauvegarder.",
+    "setupNext": "Préparez l'exercice suivant. Pas de repos nécessaire.",
+    "skip": "Passer",
+    "gotIt": "Compris"
+  },
+  "log": {
+    "title": "Journal d'entraînement",
+    "noHistory": "Aucun historique. Commencez à vous entraîner !",
+    "all": "Tout",
+    "week": "Semaine",
+    "month": "Mois",
+    "year": "Année",
+    "weekUnit_one": "{{count}} semaine",
+    "weekUnit_other": "{{count}} semaines",
+    "total": "total"
+  },
+  "stats": {
+    "title": "Statistiques",
+    "noStats": "Pas encore de stats",
+    "noStatsBody": "Les séances complétées alimentent les analyses. Revenez plus tard.",
+    "big3Total": "Total Big 3",
+    "est1rm": "1RM est.",
+    "est1rmValue": "1RM est. : {{value}}kg",
+    "weight": "Poids",
+    "noDataForRange": "Aucune donnée pour cette période",
+    "minTwoSessions": "Complétez au moins 2 séances pour voir les tendances"
+  },
+  "options": {
+    "title": "Options",
+    "restInterval": "Temps de repos",
+    "restIntervalDesc": "Durée du compte à rebours",
+    "soundAlert": "Alerte sonore",
+    "soundAlertDesc": "Son à la fin du repos",
+    "vibration": "Vibration",
+    "vibrationDesc": "Vibrer à la fin du repos",
+    "darkMode": "Mode sombre",
+    "darkModeDesc": "Activer le thème sombre",
+    "autoBackup": "Sauvegarde auto",
+    "autoBackupDesc": "Export JSON après chaque séance",
+    "backup": "Sauvegarder",
+    "restore": "Restaurer",
+    "importStronglifts": "Importer StrongLifts",
+    "importStrongliftsDesc": "Téléchargez votre export CSV StrongLifts 5x5",
+    "language": "Langue",
+    "languageDesc": "Choisissez votre langue"
+  },
+  "modals": {
+    "discardTitle": "Abandonner la séance ?",
+    "discardBody": "Les données de cette séance seront définitivement supprimées.",
+    "keepLifting": "Continuer",
+    "yesDiscard": "Oui, tout supprimer",
+    "acceptDeload": "Accepter le deload ?",
+    "deloadMessage": "{{days}} jours depuis la dernière séance. Un deload de sécurité (10%) est recommandé.",
+    "acceptAndLift": "Accepter et s'entraîner",
+    "skipDeload": "Ignorer le deload",
+    "syncHistory": "Synchroniser ?",
+    "syncHistoryBody": "Journal vide. Restaurez une sauvegarde pour conserver votre progression.",
+    "restoreBackup": "Restaurer une sauvegarde",
+    "skipAndStart": "Passer et commencer",
+    "resumeSession": "Reprendre la séance ?",
+    "inProgress": "{{name}} en cours",
+    "setsCompleted": "{{completed}} sur {{total}} séries complétées",
+    "resume": "Reprendre",
+    "discard": "Abandonner",
+    "platesPerSide": "Disques par côté (barre 20kg)",
+    "close": "Fermer",
+    "importData": "Importer les données StrongLifts ?",
+    "foundSessions": "{{count}} séances trouvées",
+    "import": "Importer",
+    "cancel": "Annuler",
+    "addWorkout": "Ajouter une séance",
+    "editWorkout": "Modifier la séance",
+    "workoutType": "Type de séance",
+    "date": "Date",
+    "weightLabel": "Poids",
+    "setsLabel": "Séries",
+    "dateConflict": "Une séance existe déjà à cette date",
+    "futureDate": "La date ne peut pas être dans le futur",
+    "saveChanges": "Enregistrer",
+    "deleteWorkout": "Supprimer la séance",
+    "deleteConfirm": "Supprimer cette séance ? Cette action est irréversible.",
+    "delete": "Supprimer"
+  },
+  "completion": {
+    "complete": "{{name}} terminée",
+    "progressNext": "+{{increment}}kg prochaine",
+    "deloadTo": "Deload à {{weight}}kg",
+    "sameWeight": "Même poids prochain",
+    "done": "Terminé"
+  },
+  "help": {
+    "title": "Comment ça marche",
+    "gotIt": "Compris",
+    "programTitle": "Programme",
+    "programBody": "Alternez les séances A et B, trois fois par semaine. Chaque exercice comprend 5 séries de 5 répétitions. Le deadlift est en 1x5.",
+    "progressionTitle": "Progression",
+    "progressionBody": "Les poids augmentent de 2.5kg (5kg pour le deadlift) quand toutes les séries sont complétées.",
+    "stallTitle": "Plateau",
+    "stallBody": "Si vous manquez des répétitions, le poids reste le même à la prochaine séance.",
+    "deloadTitle": "Deload",
+    "deloadBody": "Après 3 échecs consécutifs au même poids, le poids baisse de 10%.",
+    "restTitle": "Repos",
+    "restBody": "Reposez-vous entre les séries. Les séries lourdes nécessitent 3 à 5 minutes.",
+    "longBreaksTitle": "Longues pauses",
+    "longBreaksBody": "Après plus de 14 jours d'arrêt, un deload de sécurité de 10% est recommandé."
+  },
+  "liveSession": {
+    "title": "Séance en cours",
+    "lifting": "En cours · {{time}}",
+    "resting": "Repos · {{time}}",
+    "activeSession": "Séance active",
+    "return": "Retour"
+  },
+  "toast": {
+    "fileTooLarge": "Le fichier dépasse 5 Mo",
+    "invalidBackup": "Fichier de sauvegarde invalide",
+    "backupRestored": "Sauvegarde restaurée",
+    "couldNotRead": "Impossible de lire le fichier",
+    "noValidSessions": "Aucune séance valide trouvée dans le CSV",
+    "couldNotReadCSV": "Impossible de lire le fichier StrongLifts",
+    "importedSessions": "{{count}} séances importées",
+    "workoutAdded": "Séance ajoutée",
+    "workoutUpdated": "Séance mise à jour",
+    "workoutDeleted": "Séance supprimée"
+  },
+  "status": {
+    "done": "{{count}} faites",
+    "left": "{{count}} restante(s)"
+  },
+  "duration": {
+    "minutes": "{{value}} min",
+    "hoursMinutes": "{{h}}h {{m}}m"
+  },
+  "warmup": {
+    "warmup": "Échauffement",
+    "plates": "Disques",
+    "emptyBar": "Barre vide",
+    "workingPrep": "Préparation"
+  },
+  "error": {
+    "title": "Une erreur est survenue",
+    "body": "L'application a rencontré une erreur. Vos données sont en sécurité.",
+    "tryAgain": "Réessayer"
+  }
+}

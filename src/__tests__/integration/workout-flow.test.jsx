@@ -153,4 +153,59 @@ describe('Workout Flow', () => {
     await user.click(screen.getByText('Yes, Discard Everything'));
     expect(screen.getByText('Start Session')).toBeInTheDocument();
   });
+
+  it('auto-deloads after 3 consecutive failures at the same weight', async () => {
+    const failedSession = (daysAgo) => ({
+      date: new Date(Date.now() - daysAgo * 86400000).toISOString(),
+      type: 'A',
+      exercises: [
+        { id: 'squat', name: 'Back Squat', weight: 60, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5, 5, 5, 3, 2] },
+        { id: 'bench', name: 'Bench Press', weight: 45, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5, 5, 5, 5, 5] },
+        { id: 'row', name: 'Barbell Row', weight: 50, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5, 5, 5, 5, 5] },
+      ],
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 1,
+      weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+      history: [failedSession(3), failedSession(5)],
+      nextType: 'A',
+      isDark: true,
+      autoSave: false,
+      preferredRest: 90,
+      soundEnabled: false,
+      vibrationEnabled: false,
+    }));
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Start Session'));
+
+    const setButtons = screen.getAllByRole('button').filter(btn => {
+      const label = btn.getAttribute('aria-label');
+      return label && label.startsWith('Set ');
+    });
+
+    // Squat: click set 1 twice (5 -> 4, a fail), then mark sets 2-5 as 5
+    await user.click(setButtons[0]);
+    await user.click(setButtons[0]);
+    for (let i = 1; i < 5; i++) {
+      await user.click(setButtons[i]);
+    }
+
+    // Bench & Row: complete all sets (single click each = 5 reps)
+    for (let i = 5; i < setButtons.length; i++) {
+      await user.click(setButtons[i]);
+    }
+
+    await user.click(screen.getByText('Finish Session'));
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.weights.squat).toBe(55);
+    expect(stored.weights.bench).toBe(47.5);
+    expect(stored.weights.row).toBe(52.5);
+
+    expect(screen.getByText(/Deload to 55kg/)).toBeInTheDocument();
+  });
 });

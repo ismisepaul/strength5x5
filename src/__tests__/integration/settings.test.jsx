@@ -171,3 +171,37 @@ describe('Deload', () => {
     expect(stored.weights.squat).toBe(90);
   });
 });
+
+describe('Help modal', () => {
+  it('opens when the header help button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('How it works'));
+    expect(screen.getByRole('dialog', { name: 'How it works' })).toBeInTheDocument();
+    expect(screen.getByText('How It Works')).toBeInTheDocument();
+  });
+
+  it('closes when "Got It" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('How it works'));
+    expect(screen.getByRole('dialog', { name: 'How it works' })).toBeInTheDocument();
+
+    await user.click(screen.getByText('Got It'));
+    expect(screen.queryByRole('dialog', { name: 'How it works' })).not.toBeInTheDocument();
+  });
+
+  it('closes when backdrop is clicked', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('How it works'));
+    const dialog = screen.getByRole('dialog', { name: 'How it works' });
+    expect(dialog).toBeInTheDocument();
+
+    await user.click(dialog);
+    expect(screen.queryByRole('dialog', { name: 'How it works' })).not.toBeInTheDocument();
+  });
+});

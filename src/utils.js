@@ -90,10 +90,10 @@ export function getConsecutiveFailures(history, exerciseId, weight) {
   return count;
 }
 
-export function formatDuration(ms) {
+export function formatDuration(ms, t) {
   const totalMinutes = Math.round(ms / 60000);
-  if (totalMinutes < 60) return `${totalMinutes} min`;
+  if (totalMinutes < 60) return t ? t('duration.minutes', { value: totalMinutes }) : `${totalMinutes} min`;
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
-  return `${hours}h ${mins}m`;
+  return t ? t('duration.hoursMinutes', { h: hours, m: mins }) : `${hours}h ${mins}m`;
 }

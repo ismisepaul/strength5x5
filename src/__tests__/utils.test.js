@@ -5,6 +5,8 @@ import {
   calculateBest1RM,
   formatDuration,
   calculateDeload,
+  deloadWeight,
+  getConsecutiveFailures,
   calculateWarmup,
   validateImportData,
   migrate,
@@ -279,5 +281,72 @@ describe('formatDuration', () => {
 
   it('handles multi-hour durations', () => {
     expect(formatDuration(150 * 60000)).toBe('2h 30m');
+  });
+});
+
+describe('deloadWeight', () => {
+  it('applies 10% reduction rounded to 2.5kg', () => {
+    expect(deloadWeight(100)).toBe(90);
+    expect(deloadWeight(60)).toBe(55);
+    expect(deloadWeight(50)).toBe(45);
+  });
+
+  it('floors at 20kg minimum', () => {
+    expect(deloadWeight(20)).toBe(20);
+    expect(deloadWeight(21)).toBe(20);
+  });
+
+  it('handles edge case near bar weight', () => {
+    expect(deloadWeight(22.5)).toBe(20);
+    expect(deloadWeight(25)).toBe(22.5);
+  });
+});
+
+describe('getConsecutiveFailures', () => {
+  const session = (exerciseId, weight, reps) => ({
+    date: '2026-01-01',
+    exercises: [{ id: exerciseId, weight, setsCompleted: reps }],
+  });
+
+  it('returns 0 for empty history', () => {
+    expect(getConsecutiveFailures([], 'squat', 60)).toBe(0);
+  });
+
+  it('returns 0 when most recent session passed', () => {
+    const h = [session('squat', 60, [5, 5, 5, 5, 5])];
+    expect(getConsecutiveFailures(h, 'squat', 60)).toBe(0);
+  });
+
+  it('counts consecutive failures at the same weight', () => {
+    const h = [
+      session('squat', 60, [5, 5, 3, 3, 2]),
+      session('squat', 60, [5, 5, 5, 4, 3]),
+    ];
+    expect(getConsecutiveFailures(h, 'squat', 60)).toBe(2);
+  });
+
+  it('stops counting at a passed session', () => {
+    const h = [
+      session('squat', 60, [5, 5, 3, 3, 2]),
+      session('squat', 60, [5, 5, 5, 5, 5]),
+      session('squat', 60, [5, 5, 4, 3, 2]),
+    ];
+    expect(getConsecutiveFailures(h, 'squat', 60)).toBe(1);
+  });
+
+  it('stops counting when weight differs', () => {
+    const h = [
+      session('squat', 60, [5, 5, 3, 3, 2]),
+      session('squat', 55, [5, 5, 4, 3, 2]),
+    ];
+    expect(getConsecutiveFailures(h, 'squat', 60)).toBe(1);
+  });
+
+  it('breaks streak when exercise is not in session', () => {
+    const h = [
+      session('squat', 60, [5, 5, 3, 3, 2]),
+      { date: '2026-01-01', exercises: [{ id: 'bench', weight: 40, setsCompleted: [5, 5, 5, 5, 5] }] },
+    ];
+    expect(getConsecutiveFailures(h, 'squat', 60)).toBe(1);
   });
 });

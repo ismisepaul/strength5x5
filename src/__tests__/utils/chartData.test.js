@@ -169,7 +169,7 @@ describe('getSessionStats', () => {
     expect(stats.streak).toBe(0);
     expect(stats.total).toBe(0);
     expect(stats.thisWeek).toBe(0);
-    expect(stats.status).toEqual({ label: '3 left', color: 'rose' });
+    expect(stats.status).toEqual({ key: 'left', count: 3, color: 'rose' });
   });
 
   it('counts thisWeek sessions correctly', () => {
@@ -232,7 +232,7 @@ describe('getSessionStats', () => {
     const mon = getMonday(wed);
     const h = makeSessions([mon, new Date(mon.getTime() + 86400000), new Date(mon.getTime() + 86400000 * 2)]);
     const stats = getSessionStats(h, wed);
-    expect(stats.status).toEqual({ label: '3 done', color: 'emerald' });
+    expect(stats.status).toEqual({ key: 'done', count: 3, color: 'emerald' });
   });
 
   it('status shows 1 left when 2 sessions done', () => {
@@ -240,7 +240,7 @@ describe('getSessionStats', () => {
     const mon = getMonday(wed);
     const h = makeSessions([mon, new Date(mon.getTime() + 86400000)]);
     const stats = getSessionStats(h, wed);
-    expect(stats.status).toEqual({ label: '1 left', color: 'emerald' });
+    expect(stats.status).toEqual({ key: 'left', count: 1, color: 'emerald' });
   });
 
   it('status shows 2 left when 1 session done', () => {
@@ -248,13 +248,13 @@ describe('getSessionStats', () => {
     const mon = getMonday(wed);
     const h = makeSessions([mon]);
     const stats = getSessionStats(h, wed);
-    expect(stats.status).toEqual({ label: '2 left', color: 'amber' });
+    expect(stats.status).toEqual({ key: 'left', count: 2, color: 'amber' });
   });
 
   it('status shows 3 left when 0 sessions done', () => {
     const mon = new Date(2026, 2, 9, 12);
     const stats = getSessionStats([], mon);
-    expect(stats.status).toEqual({ label: '3 left', color: 'rose' });
+    expect(stats.status).toEqual({ key: 'left', count: 3, color: 'rose' });
   });
 
 });
@@ -311,5 +311,27 @@ describe('groupHistory', () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].entries).toHaveLength(1);
     expect(groups[0].entries[0].originalIndex).toBe(2);
+  });
+
+  it('returns groups sorted most-recent-first regardless of insertion order', () => {
+    const h = [
+      makeSession('2026-02-10'),
+      makeSession('2026-03-14'),
+      makeSession('2026-01-05'),
+      makeSession('2026-03-12'),
+      makeSession('2026-02-15'),
+    ];
+    const weekGroups = groupHistory(h, 'week', 0);
+    for (let i = 1; i < weekGroups.length; i++) {
+      const prevDate = new Date(weekGroups[i - 1].entries[0].session.date).getTime();
+      const currDate = new Date(weekGroups[i].entries[0].session.date).getTime();
+      expect(prevDate).toBeGreaterThanOrEqual(currDate);
+    }
+
+    const monthGroups = groupHistory(h, 'month', 0);
+    expect(monthGroups).toHaveLength(3);
+    expect(monthGroups[0].entries[0].session.date).toContain('2026-03');
+    expect(monthGroups[1].entries[0].session.date).toContain('2026-02');
+    expect(monthGroups[2].entries[0].session.date).toContain('2026-01');
   });
 });

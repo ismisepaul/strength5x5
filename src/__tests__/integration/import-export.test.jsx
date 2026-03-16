@@ -146,7 +146,7 @@ describe('StrongLifts CSV Import', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Import StrongLifts Data?')).toBeTruthy();
-      expect(screen.getByText('1', { selector: 'span' })).toBeTruthy();
+      expect(screen.getByText(/Found 1 sessions/)).toBeTruthy();
     });
   });
 

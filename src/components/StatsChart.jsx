@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowLeft } from 'lucide-react';
-import { EXERCISE_NAMES, EXPECTED_WEIGHT_KEYS } from '../constants';
+import { EXPECTED_WEIGHT_KEYS } from '../constants';
 import { buildExerciseTimeline, buildBig3Timeline } from '../utils/chartData';
 
 const RANGES = [
@@ -18,6 +19,7 @@ const E1RM_COLOR = '#10b981';
 const RANGE_STORAGE_KEY = 'strength5x5_stats_range';
 
 const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) => {
+  const { t } = useTranslation();
   const [range, setRange] = useState(() => {
     try { return localStorage.getItem(RANGE_STORAGE_KEY) || '6M'; } catch { return '6M'; }
   });
@@ -25,7 +27,7 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
   const [showE1rm, setShowE1rm] = useState(false);
 
   const isBig3 = exerciseId === 'big3';
-  const title = isBig3 ? 'Big 3 Total' : EXERCISE_NAMES[exerciseId];
+  const title = isBig3 ? t('stats.big3Total') : t('exercises.' + exerciseId);
   const currentWeight = isBig3
     ? (weights.squat + weights.bench + weights.deadlift)
     : weights[exerciseId];
@@ -80,7 +82,7 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
           <p className="text-sm font-black">
             {showWeight && <span style={{ color: WEIGHT_COLOR }}>{currentWeight}kg</span>}
             {showWeight && showE1rm && <span className="text-slate-500"> / </span>}
-            {showE1rm && <span style={{ color: E1RM_COLOR }}>Est. 1RM {currentE1rm}kg</span>}
+            {showE1rm && <span style={{ color: E1RM_COLOR }}>{t('stats.est1rmValue', { value: currentE1rm })}</span>}
           </p>
         </div>
       </div>
@@ -100,13 +102,13 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
 
         {filteredData.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-slate-500 text-sm font-bold">No data for this range</p>
+            <p className="text-slate-500 text-sm font-bold">{t('stats.noDataForRange')}</p>
           </div>
         ) : (
           <div className="h-56 relative">
             {filteredData.length === 1 && (
               <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <p className={`text-xs font-bold px-4 py-2 rounded-xl ${isDark ? 'bg-slate-800/90 text-slate-400' : 'bg-white/90 text-slate-500'}`}>Complete at least 2 sessions to see trends</p>
+                <p className={`text-xs font-bold px-4 py-2 rounded-xl ${isDark ? 'bg-slate-800/90 text-slate-400' : 'bg-white/90 text-slate-500'}`}>{t('stats.minTwoSessions')}</p>
               </div>
             )}
             <ResponsiveContainer width="100%" height="100%">
@@ -137,7 +139,7 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
                     fontWeight: 700,
                   }}
                   labelFormatter={(val) => new Date(val).toLocaleDateString()}
-                  formatter={(val, name) => [`${val}kg`, name === 'weight' ? 'Weight' : 'Est. 1RM']}
+                  formatter={(val, name) => [`${val}kg`, name === 'weight' ? t('stats.weight') : t('stats.est1rm')]}
                 />
                 {showWeight && (
                   <Line
@@ -170,14 +172,14 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
             className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${showWeight ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-slate-100 text-slate-400 border border-slate-200')}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: WEIGHT_COLOR }} />
-            Weight
+            {t('stats.weight')}
           </button>
           <button
             onClick={toggleE1rm}
             className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${showE1rm ? 'bg-emerald-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-slate-100 text-slate-400 border border-slate-200')}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: E1RM_COLOR }} />
-            Est. 1RM
+            {t('stats.est1rm')}
           </button>
         </div>
       </div>

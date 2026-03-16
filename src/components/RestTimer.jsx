@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Timer, BellRing, Dumbbell } from 'lucide-react';
 
 const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComplete, isExpired, navExpanded, elapsed }) => {
+  const { t } = useTranslation();
   if (seconds <= 0 && !isExerciseComplete && !isExpired) return null;
   const progress = (isExerciseComplete || isExpired) ? 100 : (seconds / total) * 100;
   const bottomOffset = navExpanded ? 'bottom-[80px]' : 'bottom-[48px]';
@@ -13,15 +15,15 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
       <div className="py-4 px-6 flex justify-between items-center">
         {isExerciseComplete ? (
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest leading-none mb-1">{isExerciseComplete === 'session' ? 'Session Complete' : 'Movement Finished'}</span>
+            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest leading-none mb-1">{isExerciseComplete === 'session' ? t('timer.sessionComplete') : t('timer.movementFinished')}</span>
             <div className="flex items-center gap-3">
               <CheckCircle2 size={20} className="text-emerald-500" />
-              <span className={`text-[11px] font-bold leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isExerciseComplete === 'session' ? <>All sets done. Tap Finish<br />to save your session.</> : <>Setup next exercise.<br />No rest required.</>}</span>
+              <span className={`text-[11px] font-bold leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isExerciseComplete === 'session' ? t('timer.allSetsDone') : t('timer.setupNext')}</span>
             </div>
           </div>
         ) : isExpired ? (
           <div className="flex flex-col">
-            <span className={`text-[10px] font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'} tracking-widest leading-none mb-1`}>Lifting</span>
+            <span className={`text-[10px] font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'} tracking-widest leading-none mb-1`}>{t('timer.lifting')}</span>
             <div className="flex items-center gap-3">
               <Dumbbell size={24} className={isDark ? 'text-indigo-500' : 'text-indigo-600'} />
               <span className={`text-4xl font-black font-mono leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatTime(elapsed || 0)}</span>
@@ -29,7 +31,7 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
           </div>
         ) : (
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">Recovery Phase</span>
+            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">{t('timer.recoveryPhase')}</span>
             <div className="flex items-center gap-3">
               <Timer size={24} className={isDark ? 'text-indigo-500' : 'text-indigo-600'} />
               <span className={`text-4xl font-black font-mono leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatTime(seconds)}</span>
@@ -42,7 +44,7 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
             aria-label="Dismiss"
             className="px-6 py-2.5 rounded-2xl font-black text-xs uppercase transition-all active:scale-95 bg-emerald-500/10 text-emerald-500"
           >
-            Got it
+            {t('timer.gotIt')}
           </button>
         ) : !isExpired ? (
           <button
@@ -50,7 +52,7 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
             aria-label="Skip rest"
             className="px-6 py-2.5 rounded-2xl font-black text-xs uppercase transition-all active:scale-95 bg-rose-500/10 text-rose-500"
           >
-            Skip
+            {t('timer.skip')}
           </button>
         ) : null}
       </div>

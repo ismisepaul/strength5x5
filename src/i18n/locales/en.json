@@ -1,0 +1,179 @@
+{
+  "app": {
+    "title": "Strength 5x5"
+  },
+  "tabs": {
+    "train": "Train",
+    "log": "Log",
+    "stats": "Stats",
+    "options": "Options"
+  },
+  "exercises": {
+    "squat": "Back Squat",
+    "bench": "Bench Press",
+    "row": "Barbell Row",
+    "press": "Overhead Press",
+    "deadlift": "Deadlift"
+  },
+  "workout": {
+    "typeA": "Workout A",
+    "typeB": "Workout B",
+    "nextUp": "Next Up",
+    "startSession": "Start Session",
+    "finishSession": "Finish Session",
+    "completeAllSets": "Complete all sets to finish",
+    "alreadyTrained": "Already trained today",
+    "autoIncreaseHint": "Weights auto-increase by 2.5kg when you complete all sets.",
+    "discardWorkout": "Discard Workout",
+    "oneByFiveTarget": "1x5 Target"
+  },
+  "timer": {
+    "recoveryPhase": "Recovery Phase",
+    "lifting": "Lifting",
+    "sessionComplete": "Session Complete",
+    "movementFinished": "Movement Finished",
+    "allSetsDone": "All sets done. Tap Finish to save your session.",
+    "setupNext": "Setup next exercise. No rest required.",
+    "skip": "Skip",
+    "gotIt": "Got it"
+  },
+  "log": {
+    "title": "Workout Log",
+    "noHistory": "No history found. Start training!",
+    "all": "All",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "weekUnit_one": "{{count}} week",
+    "weekUnit_other": "{{count}} weeks",
+    "total": "total"
+  },
+  "stats": {
+    "title": "Peak Stats",
+    "noStats": "No Stats Yet",
+    "noStatsBody": "Completed sessions populate analytics. Check back later.",
+    "big3Total": "Big 3 Total",
+    "est1rm": "Est. 1RM",
+    "est1rmValue": "Est. 1RM: {{value}}kg",
+    "weight": "Weight",
+    "noDataForRange": "No data for this range",
+    "minTwoSessions": "Complete at least 2 sessions to see trends"
+  },
+  "options": {
+    "title": "Options",
+    "restInterval": "Rest Interval",
+    "restIntervalDesc": "Countdown target for standard sets",
+    "soundAlert": "Sound Alert",
+    "soundAlertDesc": "Ding when rest ends",
+    "vibration": "Vibration",
+    "vibrationDesc": "Vibrate when rest ends",
+    "darkMode": "Dark Mode",
+    "darkModeDesc": "Toggle dark theme",
+    "autoBackup": "Auto-Backup",
+    "autoBackupDesc": "JSON download after finish",
+    "backup": "Backup",
+    "restore": "Restore",
+    "importStronglifts": "Import StrongLifts",
+    "importStrongliftsDesc": "Upload your StrongLifts 5x5 CSV export",
+    "language": "Language",
+    "languageDesc": "Choose your language"
+  },
+  "modals": {
+    "discardTitle": "Discard session?",
+    "discardBody": "Temporary logs for this session will be permanently deleted.",
+    "keepLifting": "Keep Lifting",
+    "yesDiscard": "Yes, Discard Everything",
+    "acceptDeload": "Accept Deload?",
+    "deloadMessage": "{{days}} days since last session. Safety deload (10%) recommended to reset form.",
+    "acceptAndLift": "Accept & Lift",
+    "skipDeload": "Skip Deload",
+    "syncHistory": "Sync History?",
+    "syncHistoryBody": "Log empty. Restore a backup to maintain progress.",
+    "restoreBackup": "Restore Backup",
+    "skipAndStart": "Skip and start fresh",
+    "resumeSession": "Resume Session?",
+    "inProgress": "{{name}} in progress",
+    "setsCompleted": "{{completed}} of {{total}} sets completed",
+    "resume": "Resume",
+    "discard": "Discard",
+    "platesPerSide": "Plates Per Side (20kg Bar)",
+    "close": "Close",
+    "importData": "Import StrongLifts Data?",
+    "foundSessions": "Found {{count}} sessions",
+    "import": "Import",
+    "cancel": "Cancel",
+    "addWorkout": "Add Workout",
+    "editWorkout": "Edit Workout",
+    "workoutType": "Workout Type",
+    "date": "Date",
+    "weightLabel": "Weight",
+    "setsLabel": "Sets",
+    "dateConflict": "A workout already exists on this date",
+    "futureDate": "Date cannot be in the future",
+    "saveChanges": "Save Changes",
+    "deleteWorkout": "Delete Workout",
+    "deleteConfirm": "Delete this workout? This cannot be undone.",
+    "delete": "Delete"
+  },
+  "completion": {
+    "complete": "{{name}} Complete",
+    "progressNext": "+{{increment}}kg next",
+    "deloadTo": "Deload to {{weight}}kg",
+    "sameWeight": "Same weight next",
+    "done": "Done"
+  },
+  "help": {
+    "title": "How It Works",
+    "gotIt": "Got It",
+    "programTitle": "Program",
+    "programBody": "Alternate Workout A and B, three times per week. Each exercise is 5 sets of 5 reps. Deadlift is 1x5.",
+    "progressionTitle": "Progression",
+    "progressionBody": "Weight increases by 2.5kg (5kg for deadlift) when all sets are completed.",
+    "stallTitle": "Stall",
+    "stallBody": "If you miss reps, the weight stays the same next session.",
+    "deloadTitle": "Deload",
+    "deloadBody": "After 3 consecutive failures at the same weight, the weight drops by 10%.",
+    "restTitle": "Rest",
+    "restBody": "Rest between sets to recover. Heavy sets may need 3-5 minutes.",
+    "longBreaksTitle": "Long Breaks",
+    "longBreaksBody": "After 14+ days off, a 10% safety deload is recommended."
+  },
+  "liveSession": {
+    "title": "Live Session",
+    "lifting": "Lifting · {{time}}",
+    "resting": "Resting · {{time}}",
+    "activeSession": "Active Session",
+    "return": "Return"
+  },
+  "toast": {
+    "fileTooLarge": "File exceeds 5MB limit",
+    "invalidBackup": "Invalid backup file",
+    "backupRestored": "Backup restored",
+    "couldNotRead": "Could not read file",
+    "noValidSessions": "No valid sessions found in CSV",
+    "couldNotReadCSV": "Could not read StrongLifts file",
+    "importedSessions": "Imported {{count}} sessions",
+    "workoutAdded": "Workout added",
+    "workoutUpdated": "Workout updated",
+    "workoutDeleted": "Workout deleted"
+  },
+  "status": {
+    "done": "{{count}} done",
+    "left": "{{count}} left"
+  },
+  "duration": {
+    "minutes": "{{value}} min",
+    "hoursMinutes": "{{h}}h {{m}}m"
+  },
+  "warmup": {
+    "warmup": "Warmup",
+    "plates": "Plates",
+    "emptyBar": "Empty Bar",
+    "workingPrep": "Working Prep"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "body": "The app encountered an error. Your data is safely stored locally.",
+    "tryAgain": "Try Again"
+  }
+}
