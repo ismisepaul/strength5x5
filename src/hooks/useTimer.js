@@ -53,6 +53,15 @@ export function useTimer({ onExpire } = {}) {
     expiredAtRef.current = null;
   }, []);
 
+  const skip = useCallback(() => {
+    endTimeRef.current = null;
+    expiredAtRef.current = Date.now();
+    setIsActive(false);
+    setSeconds(0);
+    setElapsed(0);
+    setIsExpired(true);
+  }, []);
+
   const reset = useCallback(() => {
     setIsActive(false);
     setSeconds(0);
@@ -62,5 +71,5 @@ export function useTimer({ onExpire } = {}) {
     expiredAtRef.current = null;
   }, []);
 
-  return { seconds, isActive, isExpired, elapsed, start, stop, reset };
+  return { seconds, isActive, isExpired, elapsed, start, stop, skip, reset };
 }

@@ -246,8 +246,14 @@ const App = () => {
 
   const handleTimerSkip = useCallback(() => {
     if (audioCtxRef.current?.state === 'suspended') { audioCtxRef.current.resume(); }
-    timer.reset(); setIsExerciseComplete(false); setNavExpanded(false);
-  }, [timer]);
+    if (isExerciseComplete) {
+      timer.reset();
+      setIsExerciseComplete(false);
+    } else {
+      timer.skip();
+    }
+    setNavExpanded(false);
+  }, [timer, isExerciseComplete]);
 
   return (
     <div className={`min-h-screen flex flex-col font-sans max-w-md mx-auto relative transition-colors duration-300 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
