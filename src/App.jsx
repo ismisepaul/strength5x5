@@ -3,11 +3,13 @@ import {
   Dumbbell, History, Settings as SettingsIcon, Play, TrendingUp,
   Plus, Minus, RefreshCw, Sun, Moon, X, Calendar, Download, Upload,
   ShieldCheck, ToggleRight, ToggleLeft, AlertCircle, Zap, TrendingDown,
-  Clock, BellRing, Smartphone, Trash2, Bell, ChevronRight, Menu, Timer
+  Clock, BellRing, Smartphone, Trash2, Bell, ChevronRight, Menu, Timer,
+  FileSpreadsheet
 } from 'lucide-react';
 
 import { WORKOUTS, EXERCISE_NAMES, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE } from './constants';
 import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload } from './utils';
+import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useTimer } from './hooks/useTimer';
 import RestTimer from './components/RestTimer';
@@ -36,8 +38,10 @@ const App = () => {
   const [expandedWarmups, setExpandedWarmups] = useState({});
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [navExpanded, setNavExpanded] = useState(false);
+  const [pendingCSVImport, setPendingCSVImport] = useState(null);
 
   const fileInputRef = useRef(null);
+  const csvInputRef = useRef(null);
   const audioCtxRef = useRef(null);
   const reverbRef = useRef(null);
 
@@ -233,6 +237,40 @@ const App = () => {
     e.target.value = '';
   };
 
+  const handleStrongliftsImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > MAX_IMPORT_SIZE) {
+      console.warn('Import rejected: file exceeds 5MB limit');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const result = convertStrongliftsCSV(event.target.result);
+        if (!result.history.length) {
+          console.warn('StrongLifts import failed: no valid sessions found');
+          return;
+        }
+        setPendingCSVImport(result);
+      } catch (err) {
+        console.warn('StrongLifts import failed:', err);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const applyCSVImport = useCallback(() => {
+    if (!pendingCSVImport) return;
+    setWeights(pendingCSVImport.weights);
+    setHistory(pendingCSVImport.history);
+    setCurrentWorkoutType(pendingCSVImport.nextType);
+    setPendingCSVImport(null);
+    setShowRestorePrompt(false);
+    setActiveTab('workout');
+  }, [pendingCSVImport]);
+
   const getTopOffset = () => 0;
 
   const timerVisible = activeTab === 'workout' && (timer.isActive || timer.isExpired || isExerciseComplete);
@@ -419,6 +457,10 @@ const App = () => {
 
             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}><div className="flex items-center justify-between"><div className="flex items-center gap-4"><div className={`p-3 rounded-2xl ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><ShieldCheck size={20} /></div><div><p className="text-sm font-black uppercase">Auto-Backup</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">JSON download after finish</p></div></div><button onClick={() => setAutoSave(!autoSave)} role="switch" aria-checked={autoSave} aria-label="Auto-backup">{autoSave ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button></div></div>
             <div className="grid grid-cols-2 gap-4"><button onClick={() => exportData()} className="p-5 rounded-[2rem] flex flex-col items-center gap-3 bg-indigo-600 text-white font-black uppercase text-[10px] shadow-lg active:scale-95 transition-transform"><Download size={24} /> Backup</button><button onClick={() => fileInputRef.current?.click()} className={`p-5 rounded-[2rem] flex flex-col items-center gap-3 border ${isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'} font-black uppercase text-[10px] active:scale-95`}><Upload size={24} /> Restore</button></div>
+            <button onClick={() => csvInputRef.current?.click()} className={`w-full p-5 rounded-[2rem] flex items-center gap-4 border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+              <div className={`p-3 rounded-2xl ${isDark ? 'bg-amber-950/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><FileSpreadsheet size={20} /></div>
+              <div className="text-left"><p className="text-sm font-black uppercase">Import StrongLifts</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">Upload your StrongLifts 5x5 CSV export</p></div>
+            </button>
           </div>
         )}
       </main>
@@ -467,7 +509,11 @@ const App = () => {
             <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-indigo-500/10 text-indigo-500 animate-pulse"><AlertCircle size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Sync History?</h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10">Log empty. Restore a backup to maintain progress.</p>
-            <div className="space-y-12"><button onClick={() => fileInputRef.current?.click()} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95"><Upload size={20} className="inline mr-2" /> Restore Backup</button><button onClick={() => startWorkout(true)} className="text-[10px] font-black uppercase text-slate-700 tracking-[0.3em]">Skip and start fresh</button></div>
+            <div className="space-y-4">
+              <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95"><Upload size={20} className="inline mr-2" /> Restore Backup</button>
+              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}><FileSpreadsheet size={20} className="inline mr-2" /> Import StrongLifts</button>
+              <button onClick={() => startWorkout(true)} className="text-[10px] font-black uppercase text-slate-700 tracking-[0.3em] mt-8 block mx-auto">Skip and start fresh</button>
+            </div>
           </div>
         </div>
       )}
@@ -483,7 +529,28 @@ const App = () => {
         </div>
       )}
 
+      {pendingCSVImport && (
+        <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className={`fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
+          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><FileSpreadsheet size={48} /></div></div>
+            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Import StrongLifts Data?</h3>
+            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-6">Found <span className={isDark ? 'text-indigo-400' : 'text-indigo-600'}>{pendingCSVImport.history.length}</span> sessions</p>
+            <div className="grid grid-cols-2 gap-2 mb-8">
+              {EXPECTED_WEIGHT_KEYS.map(id => (
+                <div key={id} className={`p-3 rounded-xl text-left ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">{EXERCISE_NAMES[id]}</p>
+                  <p className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{pendingCSVImport.weights[id]}kg</p>
+                </div>
+              ))}
+            </div>
+            <button onClick={applyCSVImport} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4">Import</button>
+            <button onClick={() => setPendingCSVImport(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">Cancel</button>
+          </div>
+        </div>
+      )}
+
       <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
+      <input type="file" ref={csvInputRef} onChange={handleStrongliftsImport} accept=".csv" className="hidden" />
     </div>
   );
 };
