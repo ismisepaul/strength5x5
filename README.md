@@ -12,34 +12,62 @@ The application runs entirely in the browser and stores data locally. It works o
 
 ### Guided 5x5 Training
 - Alternating **Workout A / Workout B**
-- Automatic weight progression
-- Adjustable weights during sessions
+- Automatic weight progression (+2.5kg per exercise, +5kg for deadlift)
+- Adjustable weights before and during workouts
 - Set completion tracking optimized for mobile use
 
 ### Smart Rest Timer
-- Built-in rest timer between sets (wall-clock anchored for accuracy)
-- Visual countdown display
-- Optional **sound alert**
-- Optional **device vibration**
-- Clear "Rest Over" indicator
+- Wall-clock anchored countdown (no drift over long rests)
+- Configurable rest intervals (1:30 / 3:00 / 5:00)
+- Elapsed stopwatch after rest expires (tracks lifting time)
+- Optional **sound alert** and **device vibration**
+- Exercise/workout completion indicators
 
 ### Progress Tracking
-- Complete workout history
-- Momentum heatmap showing training consistency
-- Estimated **1RM calculations** (best across all history)
-- Big-3 total tracking (Squat + Bench + Deadlift)
+- Interactive **stats charts** with weight and estimated 1RM trend lines
+- Per-exercise and Big-3 total views
+- Range filtering (1M / 3M / 6M / 1Y / All)
+- Trend indicators (up / down / flat) on the stats overview
+
+### Workout Log
+- Complete workout history with duration tracking
+- **Grouping** by week, month, or year with collapsible sections
+- Weekly adherence stats (workouts this week, streak count)
+- **Manual log entry** -- add past workouts with date, type, weights, and sets
+- **Edit and delete** existing log entries
+- Date conflict and future-date validation
 
 ### Smart Training Logic
-- Automatic progression when sets are completed
-- Deload recommendations after long breaks (with option to skip)
+- Automatic progression when all 5x5 sets are completed
+- **Deload recommendations** after 14+ days off (with option to skip)
+- **Auto-deload** after 3 consecutive failures at the same weight (10% reduction, 20kg floor)
 - Plate calculator for easy bar loading
-- Warm-up guidance
+- Warm-up guidance (empty bar + working prep set)
+
+### Workout Recovery
+- Active workout state persisted to localStorage
+- Resume prompt on reload if a workout was in progress
+- Automatic expiry of stale workouts (24h)
 
 ### Data Ownership
 - Data stored locally as **JSON** with schema versioning
-- Instant persistence using browser storage
 - Manual backup and restore via JSON file
-- Users retain full control of their training history
+- **Local backup** option (JSON download after each workout)
+- **Google Drive backup** -- optional cloud save/restore to your own Google Drive
+- **StrongLifts 5x5 CSV import** with preview and confirmation
+- Import validation (5MB size limit, schema checks, key whitelisting)
+
+### Internationalization
+- English and French translations via react-i18next
+- Automatic browser language detection with localStorage persistence
+- Language selector in the Options tab
+
+### UI / UX
+- Dark mode and light mode with toggle
+- Completion summary modal after each workout
+- Toast notifications for import/export/edit actions
+- Error boundary with recovery button
+- Collapsible nav bar during active workouts
 
 ---
 
@@ -49,10 +77,22 @@ The application runs entirely in the browser and stores data locally. It works o
 - React 18
 - Tailwind CSS v3
 - Lucide Icons
-- Vite
+- Recharts (stats charts)
+- react-i18next / i18next (internationalization)
+- Vite (build tool)
+
+**Testing**
+- Vitest (test runner)
+- React Testing Library
+- @testing-library/user-event
+
+**Cloud (optional)**
+- Google Identity Services (OAuth 2.0 implicit flow)
+- Google Drive API v3 (backup/restore via `fetch()`)
 
 **Storage**
-- LocalStorage (with schema versioning and migration support)
+- localStorage (with schema versioning and migration support)
+- Google Drive (optional cloud backup)
 
 **Hosting**
 - Vercel (with security headers via `vercel.json`)
@@ -61,9 +101,50 @@ No traditional backend or database required.
 
 ---
 
+## Project Structure
+
+```
+src/
+  App.jsx                  # App shell -- state, routing, modals
+  main.jsx                 # Entry point (StrictMode + ErrorBoundary)
+  constants.js             # Workouts, initial weights, storage keys
+  utils.js                 # Pure functions (plates, 1RM, deload, validation)
+  index.css                # Tailwind base imports
+  components/
+    ExerciseCard.jsx       # Single exercise during a workout
+    RestTimer.jsx          # Rest countdown / lifting stopwatch
+    StatsChart.jsx         # Recharts-powered progress charts
+    ErrorBoundary.jsx      # React error boundary
+    Toast.jsx              # Toast notification display
+  hooks/
+    useLocalStorage.js     # Load, sync, and cross-tab storage hooks
+    useTimer.js            # Wall-clock anchored timer hook
+    useToast.js            # Toast state management
+    useGoogleDrive.js      # Google Drive backup/restore (optional)
+  utils/
+    chartData.js           # Timeline builders, trends, workout stats
+    convertStronglifts.js  # StrongLifts CSV parser
+  i18n/
+    index.js               # i18next configuration
+    locales/
+      en.json              # English translations
+      fr.json              # French translations
+  __tests__/               # Mirrors source structure
+    utils.test.js
+    components/
+    hooks/
+    integration/
+    utils/
+  test/
+    setup.js               # Vitest setup (i18n, localStorage mock)
+    fixtures/
+```
+
+---
+
 ## Data Model
 
-All user data is stored in a single JSON document:
+All user data is stored in a single JSON document under `strength5x5_data`:
 
 ```json
 {
@@ -81,11 +162,14 @@ All user data is stored in a single JSON document:
   "autoSave": true,
   "preferredRest": 90,
   "soundEnabled": false,
-  "vibrationEnabled": false
+  "vibrationEnabled": false,
+  "logGrouping": "all"
 }
 ```
 
-This makes backups portable and easy to inspect or restore.
+Active workouts are stored separately under `strength5x5_active_workout` for crash recovery.
+
+Backups are portable JSON files that can be inspected, edited, or restored at any time.
 
 ---
 
@@ -94,7 +178,7 @@ This makes backups portable and easy to inspect or restore.
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/strength5x5.git
+git clone https://github.com/ismisepaul/strength5x5.git
 cd strength5x5
 ```
 
@@ -104,16 +188,57 @@ Install dependencies:
 npm install
 ```
 
-Start development server:
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Run tests:
+Build for production:
+
+```bash
+npm run build
+```
+
+### Google Drive Setup (Optional)
+
+To enable the Google Drive backup feature:
+
+1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable the **Google Drive API**
+3. Configure the **OAuth consent screen** (External, add `drive.file` scope)
+4. Create an **OAuth 2.0 Client ID** (Web Application) with authorized origins for `http://localhost:5173` and your production URL
+5. Copy `.env.example` to `.env` and add your Client ID:
+
+```bash
+cp .env.example .env
+# Edit .env with your Client ID
+```
+
+If `VITE_GOOGLE_CLIENT_ID` is not set, the Google Drive section is hidden from the UI entirely.
+
+See [docs/google-drive-sync.md](docs/google-drive-sync.md) for full details.
+
+---
+
+## Testing
+
+The test suite uses **Vitest** with **React Testing Library** and covers:
+
+- **Unit tests** -- plate calculation, 1RM estimation, deload logic, warmup clamping, import validation, chart data builders
+- **Component tests** -- RestTimer rendering, ExerciseCard interactions
+- **Integration tests** -- full workout flow, import/export round-trip, settings persistence, UI behavior
+
+Run the full test suite:
 
 ```bash
 npm test
+```
+
+Run tests in watch mode during development:
+
+```bash
+npm run test:watch
 ```
 
 ---
@@ -126,7 +251,17 @@ The app is designed to be deployed on Vercel.
 2. Import the repo into Vercel
 3. Deploy
 
-Security headers are configured via `vercel.json`.
+Security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) are configured via `vercel.json`.
+
+---
+
+## Documentation
+
+Detailed architecture and implementation docs are in the [`docs/`](docs/) folder:
+
+- [**Architecture**](docs/architecture.md) -- project structure, state management, component hierarchy, data flow, i18n, and testing strategy
+- [**Data Model**](docs/data-model.md) -- storage schemas, import/export format, migration strategy, and validation rules
+- [**Google Drive Sync**](docs/google-drive-sync.md) -- authentication flow, file identification, upload/download mechanics, and setup instructions
 
 ---
 

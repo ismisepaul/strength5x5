@@ -15,10 +15,10 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
       <div className="py-4 px-6 flex justify-between items-center">
         {isExerciseComplete ? (
           <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest leading-none mb-1">{isExerciseComplete === 'session' ? t('timer.sessionComplete') : t('timer.movementFinished')}</span>
+            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest leading-none mb-1">{isExerciseComplete === 'workout' ? t('timer.workoutComplete') : t('timer.movementFinished')}</span>
             <div className="flex items-center gap-3">
               <CheckCircle2 size={20} className="text-emerald-500" />
-              <span className={`text-[11px] font-bold leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isExerciseComplete === 'session' ? t('timer.allSetsDone') : t('timer.setupNext')}</span>
+              <span className={`text-[11px] font-bold leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isExerciseComplete === 'workout' ? t('timer.allSetsDone') : t('timer.setupNext')}</span>
             </div>
           </div>
         ) : isExpired ? (

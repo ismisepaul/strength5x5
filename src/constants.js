@@ -24,4 +24,4 @@ export const STORAGE_KEY = 'strength5x5_data';
 export const SCHEMA_VERSION = 1;
 export const EXPECTED_WEIGHT_KEYS = ['squat', 'bench', 'row', 'press', 'deadlift'];
 export const MAX_IMPORT_SIZE = 5 * 1024 * 1024;
-export const ACTIVE_SESSION_KEY = 'strength5x5_active_session';
+export const ACTIVE_WORKOUT_KEY = 'strength5x5_active_workout';

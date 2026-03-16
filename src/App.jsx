@@ -5,15 +5,15 @@ import {
   ShieldCheck, ToggleRight, ToggleLeft, AlertCircle, HelpCircle, Zap, TrendingDown,
   Clock, BellRing, Smartphone, Trash2, Bell, ChevronRight, Menu, Timer,
   FileSpreadsheet, MoveRight, Flame, ChevronDown, CheckCircle2, MinusCircle, Trophy,
-  Globe
+  Globe, Cloud, CloudOff, HardDrive
 } from 'lucide-react';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_SESSION_KEY } from './constants';
+import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY } from './constants';
 import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeight, getConsecutiveFailures, formatDuration } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
-import { getExerciseTrend, getBig3Trend, getSessionStats, groupHistory } from './utils/chartData';
+import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useTimer } from './hooks/useTimer';
 import RestTimer from './components/RestTimer';
@@ -21,6 +21,7 @@ import ExerciseCard from './components/ExerciseCard';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
 import { useToast } from './hooks/useToast';
+import { useGoogleDrive } from './hooks/useGoogleDrive';
 
 const App = () => {
   const { t } = useTranslation();
@@ -31,14 +32,14 @@ const App = () => {
   const [history, setHistory] = useState(Array.isArray(saved.history) ? saved.history : []);
   const [currentWorkoutType, setCurrentWorkoutType] = useState(saved.nextType ?? 'A');
   const [isDark, setIsDark] = useState(saved.isDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const [autoSave, setAutoSave] = useState(saved.autoSave ?? true);
+  const [localBackup, setLocalBackup] = useState(saved.autoSave ?? false);
   const [preferredRest, setPreferredRest] = useState(saved.preferredRest ?? 90);
   const [soundEnabled, setSoundEnabled] = useState(saved.soundEnabled ?? false);
   const [vibrationEnabled, setVibrationEnabled] = useState(saved.vibrationEnabled ?? saved.hapticsEnabled ?? false);
 
   const [activeTab, setActiveTab] = useState('workout');
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
-  const [currentSession, setCurrentSession] = useState(null);
+  const [currentWorkout, setCurrentWorkout] = useState(null);
   const [showPlateCalc, setShowPlateCalc] = useState(null);
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -56,11 +57,15 @@ const App = () => {
   const [expandedGroups, setExpandedGroups] = useState({});
   const [completionSummary, setCompletionSummary] = useState(null);
   const [showResumePrompt, setShowResumePrompt] = useState(() => !!saved.activeSession);
+  const [pendingDriveRestore, setPendingDriveRestore] = useState(null);
+  const [showRestoreSourcePicker, setShowRestoreSourcePicker] = useState(false);
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
   const audioCtxRef = useRef(null);
   const reverbRef = useRef(null);
+
+  const gdrive = useGoogleDrive();
 
   const playChime = useCallback(() => {
     try {
@@ -121,7 +126,7 @@ const App = () => {
 
   useSyncStorage({
     weights, history, nextType: currentWorkoutType,
-    isDark, autoSave, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
+    isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
   });
 
   useStorageSync(STORAGE_KEY, (updated) => {
@@ -131,10 +136,10 @@ const App = () => {
   });
 
   useEffect(() => {
-    if (!currentSession || !isWorkoutActive) return;
-    const data = { session: currentSession, restTimerEndTime: timer.isActive ? (Date.now() + timer.seconds * 1000) : null };
-    localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(data));
-  }, [currentSession, isWorkoutActive, timer.isActive, timer.seconds]);
+    if (!currentWorkout || !isWorkoutActive) return;
+    const data = { session: currentWorkout, restTimerEndTime: timer.isActive ? (Date.now() + timer.seconds * 1000) : null };
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
+  }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
 
   useEffect(() => {
     if (!navExpanded || activeTab !== 'workout') return;
@@ -156,45 +161,57 @@ const App = () => {
   const historyDateSet = useMemo(() => new Set(history.map(s => s.date.slice(0, 10))), [history]);
   const trainedToday = historyDateSet.has(new Date().toISOString().slice(0, 10));
 
+  const getAppState = useCallback(() => ({
+    weights, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
+  }), [weights, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping]);
+
   const exportData = useCallback((targetHistory) => {
-    const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, weights, history: targetHistory || history, nextType: currentWorkoutType, isDark, autoSave, preferredRest, soundEnabled, vibrationEnabled, logGrouping };
+    const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState(), history: targetHistory || history };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url; link.download = `strength5x5_backup_${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
     setTimeout(() => URL.revokeObjectURL(url), 0);
-  }, [weights, history, currentWorkoutType, isDark, autoSave, preferredRest, soundEnabled, vibrationEnabled, logGrouping]);
+  }, [getAppState, history]);
+
+  const saveToDriveQuietly = useCallback(async (state) => {
+    if (!import.meta.env.VITE_GOOGLE_CLIENT_ID || !gdrive.isConnected) return;
+    const result = await gdrive.save(state);
+    if (!result.success && result.error !== 'cancelled') {
+      showToast(t('toast.driveSaveFailed'), 'error');
+    }
+  }, [gdrive, showToast, t]);
 
   const handleToggleWarmup = useCallback((id) => setExpandedWarmups(prev => ({ ...prev, [id]: !prev[id] })), []);
 
   const handleUpdateActiveWeight = useCallback((exIdx, diff) => {
-    setCurrentSession(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, e.weight + diff) })) }) : null);
+    setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, e.weight + diff) })) }) : null);
   }, []);
 
   const handleToggleSet = useCallback((exIdx, setIdx) => {
     if (timer.isExpired) timer.reset();
     setNavExpanded(false);
-    setCurrentSession(prev => {
+    setCurrentWorkout(prev => {
       if (!prev) return prev;
       const ex = prev.exercises[exIdx];
       const currVal = ex.setsCompleted[setIdx];
       let nextVal = currVal === null ? 5 : currVal > 0 ? currVal - 1 : null;
       const isLastSet = setIdx === ex.setsCompleted.length - 1;
-      const nextSession = { ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, setsCompleted: e.setsCompleted.map((r, j) => j === setIdx ? nextVal : r) })) };
+      const nextWorkout = { ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, setsCompleted: e.setsCompleted.map((r, j) => j === setIdx ? nextVal : r) })) };
 
       if (nextVal !== null) {
         if (isLastSet) {
           timer.stop();
-          const allDone = nextSession.exercises.every(e => e.setsCompleted.every(s => s !== null));
-          setIsExerciseComplete(allDone ? 'session' : true);
+          const allDone = nextWorkout.exercises.every(e => e.setsCompleted.every(s => s !== null));
+          setIsExerciseComplete(allDone ? 'workout' : true);
         } else {
           setIsExerciseComplete(false);
           const req = nextVal === 5 ? preferredRest : 300;
           timer.start(req);
         }
       } else { timer.stop(); setIsExerciseComplete(false); }
-      return nextSession;
+      return nextWorkout;
     });
   }, [timer, preferredRest]);
 
@@ -202,7 +219,7 @@ const App = () => {
     const nextWeights = { ...weights };
     const progressions = [];
     const deloads = {};
-    currentSession.exercises.forEach(ex => {
+    currentWorkout.exercises.forEach(ex => {
       const passed = ex.setsCompleted.every(r => r === 5);
       if (passed) {
         nextWeights[ex.id] = ex.weight + ex.increment;
@@ -216,26 +233,32 @@ const App = () => {
         }
       }
     });
-    const savedSession = { ...currentSession, duration: Date.now() - (currentSession.startedAt || Date.now()) };
-    delete savedSession.startedAt;
-    const newHistory = [savedSession, ...history];
+    const savedWorkout = { ...currentWorkout, duration: Date.now() - (currentWorkout.startedAt || Date.now()) };
+    delete savedWorkout.startedAt;
+    const newHistory = [savedWorkout, ...history];
     setWeights(nextWeights); setHistory(newHistory);
     setCurrentWorkoutType(prev => prev === 'A' ? 'B' : 'A');
-    setIsWorkoutActive(false); setCurrentSession(null);
+    setIsWorkoutActive(false); setCurrentWorkout(null);
     timer.reset(); setIsExerciseComplete(false);
-    setCompletionSummary({ session: savedSession, progressions, deloads });
-    localStorage.removeItem(ACTIVE_SESSION_KEY);
-    if (autoSave) exportData(newHistory);
-  }, [currentSession, history, weights, autoSave, exportData, timer]);
+    setCompletionSummary({ workout: savedWorkout, progressions, deloads });
+    localStorage.removeItem(ACTIVE_WORKOUT_KEY);
+    if (localBackup) exportData(newHistory);
+
+    const nextType = currentWorkoutType === 'A' ? 'B' : 'A';
+    saveToDriveQuietly({
+      weights: nextWeights, history: newHistory, nextType,
+      isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
+    });
+  }, [currentWorkout, history, weights, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly]);
 
   const cancelWorkout = useCallback(() => {
-    setIsWorkoutActive(false); setCurrentSession(null);
+    setIsWorkoutActive(false); setCurrentWorkout(null);
     timer.reset(); setIsExerciseComplete(false); setShowCancelModal(false);
-    localStorage.removeItem(ACTIVE_SESSION_KEY);
+    localStorage.removeItem(ACTIVE_WORKOUT_KEY);
   }, [timer]);
 
-  const initializeSession = useCallback((sessionWeights) => {
-    setCurrentSession({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: WORKOUTS[currentWorkoutType].exercises.map(ex => ({ ...ex, weight: sessionWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null) })) });
+  const initializeWorkout = useCallback((workoutWeights) => {
+    setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: WORKOUTS[currentWorkoutType].exercises.map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null) })) });
     setIsWorkoutActive(true); setActiveTab('workout'); setExpandedWarmups({}); setShowRestorePrompt(false); setIsExerciseComplete(false);
   }, [currentWorkoutType]);
 
@@ -251,8 +274,8 @@ const App = () => {
         return;
       }
     }
-    initializeSession(weights);
-  }, [history, weights, initializeSession]);
+    initializeWorkout(weights);
+  }, [history, weights, initializeWorkout]);
 
   const handleImport = (e) => {
     const file = e.target.files[0];
@@ -274,12 +297,13 @@ const App = () => {
         }
         setWeights(d.weights); setHistory(d.history);
         if (d.nextType) setCurrentWorkoutType(d.nextType);
-        setIsDark(d.isDark ?? true); setAutoSave(d.autoSave ?? true);
+        setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
         if (d.preferredRest) setPreferredRest(d.preferredRest);
         if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
         if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
         if (d.logGrouping) setLogGrouping(d.logGrouping);
-        setActiveTab('workout'); setShowRestorePrompt(false);
+        if (d.language) i18n.changeLanguage(d.language);
+        setActiveTab('workout'); setShowRestorePrompt(false); setShowRestoreSourcePicker(false);
         showToast(t('toast.backupRestored'), 'success');
       } catch (err) {
         console.warn('Import failed:', err);
@@ -303,8 +327,8 @@ const App = () => {
       try {
         const result = convertStrongliftsCSV(event.target.result);
         if (!result.history.length) {
-          console.warn('StrongLifts import failed: no valid sessions found');
-          showToast(t('toast.noValidSessions'), 'error');
+          console.warn('StrongLifts import failed: no valid workouts found');
+          showToast(t('toast.noValidWorkouts'), 'error');
           return;
         }
         setPendingCSVImport(result);
@@ -326,14 +350,65 @@ const App = () => {
     setPendingCSVImport(null);
     setShowRestorePrompt(false);
     setActiveTab('workout');
-    showToast(t('toast.importedSessions', { count }), 'success');
+    showToast(t('toast.importedWorkouts', { count }), 'success');
   }, [pendingCSVImport, showToast]);
+
+  const applyDriveRestore = useCallback((d) => {
+    setWeights(d.weights); setHistory(d.history);
+    if (d.nextType) setCurrentWorkoutType(d.nextType);
+    setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
+    if (d.preferredRest) setPreferredRest(d.preferredRest);
+    if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
+    if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
+    if (d.logGrouping) setLogGrouping(d.logGrouping);
+    if (d.language) i18n.changeLanguage(d.language);
+    setActiveTab('workout');
+    showToast(t('toast.restoredFromDrive'), 'success');
+  }, [showToast, t]);
+
+  const handleDriveSave = useCallback(async () => {
+    const result = await gdrive.save(getAppState());
+    if (result.success) {
+      showToast(t('toast.savedToDrive'), 'success');
+    } else if (result.error === 'fileTooLarge') {
+      showToast(t('toast.driveFileTooLarge'), 'error');
+    } else if (result.error !== 'cancelled') {
+      showToast(t('toast.' + result.error), 'error');
+    }
+  }, [gdrive, getAppState, showToast, t]);
+
+  const handleDriveRestore = useCallback(async () => {
+    const result = await gdrive.restore(history);
+    if (!result.success) {
+      if (result.error !== 'cancelled') showToast(t('toast.' + result.error), 'error');
+      return;
+    }
+    setShowRestoreSourcePicker(false);
+    if (result.stale) {
+      setPendingDriveRestore({ data: result.data, cloudDate: result.cloudDate, localDate: result.localDate });
+    } else {
+      applyDriveRestore(result.data);
+    }
+  }, [gdrive, history, applyDriveRestore, showToast, t]);
+
+  const handleManualLogSave = useCallback((newHistory) => {
+    const nextState = { ...getAppState(), history: newHistory };
+    saveToDriveQuietly(nextState);
+  }, [getAppState, saveToDriveQuietly]);
+
+  const formatLastSaved = useCallback((date) => {
+    if (!date) return null;
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return isToday ? `Today, ${time}` : `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, ${time}`;
+  }, []);
 
   const getTopOffset = () => 0;
 
   const timerVisible = activeTab === 'workout' && (timer.isActive || timer.isExpired || isExerciseComplete);
   const navCollapsed = isWorkoutActive && activeTab === 'workout' && !navExpanded;
-  const liveSessionVisible = isWorkoutActive && currentSession && activeTab !== 'workout';
+  const liveWorkoutVisible = isWorkoutActive && currentWorkout && activeTab !== 'workout';
 
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
@@ -351,6 +426,8 @@ const App = () => {
     setNavExpanded(false);
   }, [timer, isExerciseComplete]);
 
+  const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
   return (
     <div className={`min-h-screen flex flex-col font-sans max-w-md mx-auto relative transition-colors duration-300 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
 
@@ -362,13 +439,13 @@ const App = () => {
         />
       )}
 
-      {isWorkoutActive && currentSession && activeTab !== 'workout' && (() => {
+      {isWorkoutActive && currentWorkout && activeTab !== 'workout' && (() => {
         const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
         const liveDetail = timer.isExpired
-          ? t('liveSession.lifting', { time: formatTime(timer.elapsed) })
+          ? t('liveWorkout.lifting', { time: formatTime(timer.elapsed) })
           : timer.isActive
-            ? t('liveSession.resting', { time: formatTime(timer.seconds) })
-            : t(`workout.type${currentSession?.type}`) || t('liveSession.activeSession');
+            ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
+            : t(`workout.type${currentWorkout?.type}`) || t('liveWorkout.activeWorkout');
         const liveIcon = timer.isExpired
           ? <Dumbbell size={14} className="text-white" />
           : timer.isActive
@@ -380,11 +457,11 @@ const App = () => {
               <div className="flex items-center gap-3">
                 <div className="p-1.5 rounded-lg bg-white/20">{liveIcon}</div>
                 <div className="text-left">
-                  <p className="text-[10px] font-black uppercase text-white/60 leading-none mb-0.5">{t('liveSession.title')}</p>
+                  <p className="text-[10px] font-black uppercase text-white/60 leading-none mb-0.5">{t('liveWorkout.title')}</p>
                   <p className={`text-xs font-black uppercase text-white tracking-tight ${timer.isActive || timer.isExpired ? 'font-mono' : ''}`}>{liveDetail}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-[10px] font-black uppercase text-white/90 bg-black/10 px-3 py-1.5 rounded-lg">{t('liveSession.return')} <ChevronRight size={12} /></div>
+              <div className="flex items-center gap-1 text-[10px] font-black uppercase text-white/90 bg-black/10 px-3 py-1.5 rounded-lg">{t('liveWorkout.return')} <ChevronRight size={12} /></div>
             </button>
           </div>
         );
@@ -398,7 +475,7 @@ const App = () => {
         <button onClick={() => setShowHelp(true)} aria-label="How it works" className={`p-2.5 rounded-2xl border transition-all ${isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-100 text-slate-500'}`}><HelpCircle size={20} /></button>
       </header>
 
-      <main className={`flex-1 px-4 py-4 overflow-y-auto ${timerVisible ? 'pb-44' : liveSessionVisible ? 'pb-52' : navCollapsed ? 'pb-24' : 'pb-32'}`}>
+      <main className={`flex-1 px-4 py-4 overflow-y-auto ${timerVisible ? 'pb-44' : liveWorkoutVisible ? 'pb-52' : navCollapsed ? 'pb-24' : 'pb-32'}`}>
         {activeTab === 'workout' && (
           <div className="space-y-4">
             {!isWorkoutActive ? (
@@ -416,19 +493,19 @@ const App = () => {
                     </div>
                   </div>
                 ))}</div>
-                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full py-5 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-transform ${trainedToday ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-[0.98]'}`}><Play size={20} fill="currentColor" /> {t('workout.startSession')}</button>
+                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full py-5 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-transform ${trainedToday ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-[0.98]'}`}><Play size={20} fill="currentColor" /> {t('workout.startWorkout')}</button>
                 {trainedToday && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest">{t('workout.alreadyTrained')}</p>}
                 {!trainedToday && history.length === 0 && <p className="text-slate-500 text-[10px] font-bold text-center mt-3">{t('workout.autoIncreaseHint')}</p>}
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex justify-center mb-2"><h2 className="font-black uppercase tracking-widest text-slate-500">{currentSession ? t(`workout.type${currentSession.type}`) : ''}</h2></div>
-                {currentSession?.exercises.map((ex, exIdx) => (
+                <div className="flex justify-center mb-2"><h2 className="font-black uppercase tracking-widest text-slate-500">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
+                {currentWorkout?.exercises.map((ex, exIdx) => (
                   <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} />
                 ))}
                 <div className="pt-4 flex flex-col items-center">
-                  <button onClick={finishWorkout} disabled={!currentSession?.exercises.every(ex => ex.setsCompleted.every(s => s !== null))} className={`w-full py-5 rounded-[1.5rem] font-black text-lg shadow-xl ${currentSession?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) ? 'bg-emerald-600 text-white active:scale-95 shadow-emerald-900/20' : 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed'}`}>{t('workout.finishSession')}</button>
-                  {!currentSession?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest animate-pulse">{t('workout.completeAllSets')}</p>}
+                  <button onClick={finishWorkout} disabled={!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null))} className={`w-full py-5 rounded-[1.5rem] font-black text-lg shadow-xl ${currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) ? 'bg-emerald-600 text-white active:scale-95 shadow-emerald-900/20' : 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed'}`}>{t('workout.finishWorkout')}</button>
+                  {!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest animate-pulse">{t('workout.completeAllSets')}</p>}
                   <button onClick={() => setShowCancelModal(true)} className={`mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-600 border-slate-900' : 'text-slate-400 border-slate-100'} px-6 py-3 border rounded-xl active:text-rose-500 transition-colors`}><Trash2 size={12} /> {t('workout.discardWorkout')}</button>
                 </div>
               </div>
@@ -443,19 +520,19 @@ const App = () => {
               <button
                 onClick={() => {
                   const type = currentWorkoutType;
-                  const session = {
+                  const workout = {
                     date: new Date().toISOString(),
                     type,
                     exercises: WORKOUTS[type].exercises.map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(5) })),
                   };
-                  setEditingEntry({ index: -1, session });
+                  setEditingEntry({ index: -1, session: workout });
                 }}
                 aria-label="Add workout"
                 className={`p-2.5 rounded-xl border active:scale-90 transition-transform ${isDark ? 'bg-slate-900 border-slate-800 text-indigo-400' : 'bg-white border-slate-200 text-indigo-600 shadow-sm'}`}
               ><Plus size={20} /></button>
             </div>
             {(() => {
-              const stats = getSessionStats(history);
+              const stats = getWorkoutStats(history);
               const flameColor = stats.streak > 0 ? 'text-amber-500' : 'text-slate-400';
               return (
                 <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -613,8 +690,66 @@ const App = () => {
               </div>
             </div>
 
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}><div className="flex items-center justify-between"><div className="flex items-center gap-4"><div className={`p-3 rounded-2xl ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><ShieldCheck size={20} /></div><div><p className="text-sm font-black uppercase">{t('options.autoBackup')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.autoBackupDesc')}</p></div></div><button onClick={() => setAutoSave(!autoSave)} role="switch" aria-checked={autoSave} aria-label="Auto-backup">{autoSave ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button></div></div>
-            <div className="grid grid-cols-2 gap-4"><button onClick={() => exportData()} className="p-5 rounded-[2rem] flex flex-col items-center gap-3 bg-indigo-600 text-white font-black uppercase text-[10px] shadow-lg active:scale-95 transition-transform"><Download size={24} /> {t('options.backup')}</button><button onClick={() => fileInputRef.current?.click()} className={`p-5 rounded-[2rem] flex flex-col items-center gap-3 border ${isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-600'} font-black uppercase text-[10px] active:scale-95`}><Upload size={24} /> {t('options.restore')}</button></div>
+            {/* Backup & Sync */}
+            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+              <div className="flex items-center gap-4 mb-5">
+                <div className={`p-3 rounded-2xl ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><ShieldCheck size={20} /></div>
+                <div><p className="text-sm font-black uppercase">{t('options.backupSync')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.backupSyncDesc')}</p></div>
+              </div>
+
+              {/* Local Backup toggle */}
+              <div className={`flex items-center justify-between p-4 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-50 border border-slate-100'}`}>
+                <div className="flex items-center gap-3">
+                  <HardDrive size={16} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
+                  <div><p className="text-xs font-black uppercase">{t('options.localBackup')}</p><p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.localBackupDesc')}</p></div>
+                </div>
+                <button onClick={() => setLocalBackup(!localBackup)} role="switch" aria-checked={localBackup} aria-label="Local backup">{localBackup ? <ToggleRight size={36} className="text-indigo-500" /> : <ToggleLeft size={36} className={isDark ? 'text-slate-700' : 'text-slate-300'} />}</button>
+              </div>
+
+              {/* Google Drive section */}
+              {driveConfigured && (
+                <div className={`p-4 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-50 border border-slate-100'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <Cloud size={16} className={gdrive.isConnected ? 'text-emerald-500' : (isDark ? 'text-slate-400' : 'text-slate-500')} />
+                      <div><p className="text-xs font-black uppercase">{t('options.googleDrive')}</p><p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.googleDriveDesc')}</p></div>
+                    </div>
+                    {gdrive.isConnected ? (
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t('options.connectedToDrive')}</span>
+                    ) : (
+                      <button onClick={() => gdrive.connect()} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-blue-950/30 text-blue-400 border border-blue-900/40' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{t('options.connectDrive')}</button>
+                    )}
+                  </div>
+                  {gdrive.isConnected && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.savesAfterWorkout')}</p>
+                      {gdrive.saveFailed ? (
+                        <button onClick={handleDriveSave} className="text-[10px] font-bold text-rose-500 active:scale-95">{t('options.saveFailed')}</button>
+                      ) : gdrive.lastSavedAt ? (
+                        <p className="text-[10px] font-bold text-emerald-500">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Backup & Restore buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => exportData()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform bg-indigo-600 text-white shadow-lg`}>
+                  <Download size={20} /> {t('options.backupToDevice')}
+                </button>
+                <button onClick={() => {
+                  if (driveConfigured && gdrive.isConnected) {
+                    setShowRestoreSourcePicker(true);
+                  } else {
+                    fileInputRef.current?.click();
+                  }
+                }} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-white text-slate-600 border-slate-200'}`}>
+                  <Upload size={20} /> {t('options.restore')}
+                </button>
+              </div>
+            </div>
+
             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -651,7 +786,7 @@ const App = () => {
       )}
 
       {showCancelModal && (
-        <div role="dialog" aria-modal="true" aria-label="Discard session" className={`fixed inset-0 z-[500] flex items-center justify-center p-8 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
+        <div role="dialog" aria-modal="true" aria-label="Discard workout" className={`fixed inset-0 z-[500] flex items-center justify-center p-8 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-xs flex flex-col items-center p-8 rounded-[2.5rem] border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="p-5 rounded-full bg-rose-500/10 text-rose-500 mb-6"><Trash2 size={48} /></div>
             <h3 className={`text-2xl font-black uppercase mb-4 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.discardTitle')}</h3>
@@ -668,8 +803,8 @@ const App = () => {
             <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500 animate-bounce"><TrendingDown size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.acceptDeload')}</h3>
             <div className="space-y-3 mb-8">{deloadAlert.map((r, i) => <p key={i} className="text-slate-400 text-xs font-bold leading-relaxed">{r}</p>)}</div>
-            <button onClick={() => { setWeights(pendingDeloadWeights); initializeSession(pendingDeloadWeights); setPendingDeloadWeights(null); setDeloadAlert(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.acceptAndLift')}</button>
-            <button onClick={() => { initializeSession(weights); setPendingDeloadWeights(null); setDeloadAlert(null); }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
+            <button onClick={() => { setWeights(pendingDeloadWeights); initializeWorkout(pendingDeloadWeights); setPendingDeloadWeights(null); setDeloadAlert(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.acceptAndLift')}</button>
+            <button onClick={() => { initializeWorkout(weights); setPendingDeloadWeights(null); setDeloadAlert(null); }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
           </div>
         </div>
       )}
@@ -690,10 +825,10 @@ const App = () => {
       )}
 
       {showResumePrompt && saved.activeSession && (
-        <div role="dialog" aria-modal="true" aria-label="Resume session" className={`fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
+        <div role="dialog" aria-modal="true" aria-label="Resume workout" className={`fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Dumbbell size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.resumeSession')}</h3>
+            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.resumeWorkout')}</h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-2">{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
             <p className="text-slate-500 text-xs font-bold mb-8">
               {t('modals.setsCompleted', { completed: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.filter(s => s !== null).length, 0), total: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.length, 0) })}
@@ -701,7 +836,7 @@ const App = () => {
             <button
               onClick={() => {
                 const active = saved.activeSession;
-                setCurrentSession(active.session);
+                setCurrentWorkout(active.session);
                 setIsWorkoutActive(true);
                 setActiveTab('workout');
                 if (active.restTimerEndTime) {
@@ -718,7 +853,7 @@ const App = () => {
             >{t('modals.resume')}</button>
             <button
               onClick={() => {
-                localStorage.removeItem(ACTIVE_SESSION_KEY);
+                localStorage.removeItem(ACTIVE_WORKOUT_KEY);
                 setShowResumePrompt(false);
               }}
               className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90"
@@ -743,7 +878,7 @@ const App = () => {
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><FileSpreadsheet size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.importData')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-6">{t('modals.foundSessions', { count: pendingCSVImport.history.length })}</p>
+            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-6">{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
             <div className="grid grid-cols-2 gap-2 mb-8">
               {EXPECTED_WEIGHT_KEYS.map(id => (
                 <div key={id} className={`p-3 rounded-xl text-left ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
@@ -872,17 +1007,13 @@ const App = () => {
             <button
               disabled={dateConflict || isFutureDate}
               onClick={() => {
-                if (isNewEntry) {
-                  const newHistory = [...history, editingEntry.session].sort((a, b) => new Date(b.date) - new Date(a.date));
-                  setHistory(newHistory);
-                  showToast(t('toast.workoutAdded'), 'success');
-                } else {
-                  const newHistory = [...history];
-                  newHistory[editingEntry.index] = editingEntry.session;
-                  setHistory(newHistory);
-                  showToast(t('toast.workoutUpdated'), 'success');
-                }
+                const newHistory = isNewEntry
+                  ? [...history, editingEntry.session].sort((a, b) => new Date(b.date) - new Date(a.date))
+                  : history.map((s, i) => i === editingEntry.index ? editingEntry.session : s);
+                setHistory(newHistory);
+                showToast(t(isNewEntry ? 'toast.workoutAdded' : 'toast.workoutUpdated'), 'success');
                 setEditingEntry(null);
+                handleManualLogSave(newHistory);
               }}
               className={`w-full py-4 rounded-2xl font-black uppercase text-sm shadow-xl mb-4 ${dateConflict || isFutureDate ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 text-white active:scale-95'}`}
             >{isNewEntry ? t('modals.addWorkout') : t('modals.saveChanges')}</button>
@@ -924,10 +1055,10 @@ const App = () => {
         <div role="dialog" aria-modal="true" aria-label="Workout complete" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex justify-center mb-6"><div className="p-5 rounded-full bg-emerald-500/10 text-emerald-500"><Trophy size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('completion.complete', { name: t(`workout.type${completionSummary.session.type}`) })}</h3>
-            {completionSummary.session.duration > 0 && <p className="text-slate-500 text-xs font-bold mb-6">{formatDuration(completionSummary.session.duration, t)}</p>}
+            <h3 className={`text-2xl font-black uppercase tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('completion.complete', { name: t(`workout.type${completionSummary.workout.type}`) })}</h3>
+            {completionSummary.workout.duration > 0 && <p className="text-slate-500 text-xs font-bold mb-6">{formatDuration(completionSummary.workout.duration, t)}</p>}
             <div className="space-y-3 mb-8">
-              {completionSummary.session.exercises.map(ex => {
+              {completionSummary.workout.exercises.map(ex => {
                 const passed = ex.setsCompleted.every(r => r === 5);
                 const progressed = completionSummary.progressions.includes(ex.id);
                 const deloadTo = completionSummary.deloads?.[ex.id];
@@ -995,6 +1126,44 @@ const App = () => {
               </div>
             </div>
             <button autoFocus onClick={() => setShowHelp(false)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl active:scale-95">{t('help.gotIt')}</button>
+          </div>
+        </div>
+      )}
+
+      {pendingDriveRestore && (
+        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
+          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
+            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
+            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { cloudDate: pendingDriveRestore.cloudDate, localDate: pendingDriveRestore.localDate })}</p>
+            <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
+            <button onClick={() => setPendingDriveRestore(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+          </div>
+        </div>
+      )}
+
+      {showRestoreSourcePicker && (
+        <div role="dialog" aria-modal="true" aria-label="Restore source" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
+          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className={`text-2xl font-black uppercase tracking-tight mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.restoreTitle')}</h3>
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={() => { setShowRestoreSourcePicker(false); fileInputRef.current?.click(); }}
+                className={`w-full p-5 rounded-2xl flex items-center gap-4 border active:scale-[0.98] transition-transform text-left ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
+              >
+                <HardDrive size={24} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
+                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('modals.fromDevice')}</p><p className="text-[10px] font-bold text-slate-500">{t('modals.fromDeviceDesc')}</p></div>
+              </button>
+              <button
+                onClick={handleDriveRestore}
+                disabled={gdrive.isLoading}
+                className={`w-full p-5 rounded-2xl flex items-center gap-4 border active:scale-[0.98] transition-transform text-left ${gdrive.isLoading ? 'opacity-50 cursor-not-allowed' : ''} ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
+              >
+                <Cloud size={24} className={isDark ? 'text-blue-400' : 'text-blue-600'} />
+                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('modals.fromDrive')}</p><p className="text-[10px] font-bold text-slate-500">{t('modals.fromDriveDesc')}</p></div>
+              </button>
+            </div>
+            <button onClick={() => setShowRestoreSourcePicker(false)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
           </div>
         </div>
       )}

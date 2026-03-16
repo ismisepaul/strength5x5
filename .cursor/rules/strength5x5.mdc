@@ -1,0 +1,50 @@
+---
+description: Project conventions for the Strength 5x5 workout tracker
+alwaysApply: true
+---
+
+# Strength 5x5 Project Conventions
+
+## Stack
+
+React 18, Vite, Tailwind CSS v3, Vitest + React Testing Library, Lucide icons, Recharts, react-i18next.
+
+## Architecture
+
+Modular structure under `src/`:
+
+- `components/` — UI components (ExerciseCard, RestTimer, StatsChart, Toast, ErrorBoundary)
+- `hooks/` — custom hooks (useLocalStorage, useTimer, useToast)
+- `utils/` — pure functions (utils.js, chartData.js, convertStronglifts.js)
+- `i18n/` — i18next config and locale files (en.json, fr.json)
+- `__tests__/` — mirrors source structure (components/, hooks/, integration/, utils/)
+- `App.jsx` — app shell with all state, routing, and modals
+- `main.jsx` — entry point, wraps App in ErrorBoundary and StrictMode
+- `constants.js` — WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS
+
+## Internationalization
+
+All user-facing strings must use `t()` from `useTranslation()`. Never hardcode UI text. Locale files live in `src/i18n/locales/{en,fr}.json`. Exercise names are kept in English in both locales. Utility functions that produce user-facing text accept a `t` parameter.
+
+## State and Persistence
+
+localStorage persistence via `useLoadSaved()` (single memoized parse on mount) and `useSyncStorage()` (writes on state change). Active workouts are stored separately under `ACTIVE_WORKOUT_KEY` for crash recovery. Schema version is tracked in `SCHEMA_VERSION` with migration support in `utils.js`.
+
+## Component Patterns
+
+- Use `React.memo` for leaf components (ExerciseCard, RestTimer)
+- Wrap callbacks in `useCallback`, derived data in `useMemo`
+- Pass `isDark` prop for theme-aware styling
+- Modals use `role="dialog"` with `aria-modal="true"` and `aria-label`
+
+## Styling
+
+Tailwind utility classes only, no CSS modules. Dark/light mode via conditional class strings keyed on `isDark`. No explicit color styling in components — use Tailwind's color palette.
+
+## Testing
+
+Tests live under `src/__tests__/` mirroring source structure. Test setup (`src/test/setup.js`) imports i18n and mocks localStorage and matchMedia. Use `@testing-library/react` for rendering and `@testing-library/user-event` for interactions. Run with `npm test` (single run) or `npm run test:watch`.
+
+## Security
+
+`vercel.json` sets CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy headers. Import files are validated: size-limited via `MAX_IMPORT_SIZE` (5 MB), schema-validated via `validateImportData()`, and keys are whitelisted via `EXPECTED_WEIGHT_KEYS`.

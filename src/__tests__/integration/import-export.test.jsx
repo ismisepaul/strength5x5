@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
+import i18n from '../../i18n/index.js';
 import { STORAGE_KEY } from '../../constants';
 import legacyBackup from '../../test/fixtures/legacy-backup.json';
 import { validateImportData } from '../../utils';
@@ -54,7 +55,7 @@ describe('Import / Export', () => {
     render(<App />);
 
     await user.click(screen.getByText('Options'));
-    await user.click(screen.getByText('Backup'));
+    await user.click(screen.getByText('Backup to Device'));
 
     expect(URL.createObjectURL).toHaveBeenCalled();
     expect(URL.revokeObjectURL).toHaveBeenCalled();
@@ -79,6 +80,30 @@ describe('Import / Export', () => {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
       expect(stored.weights.squat).toBe(60);
     });
+  });
+
+  it('restores language preference from backup', async () => {
+    expect(i18n.language).toMatch(/^en/);
+    render(<App />);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByText('Options'));
+
+    const input = document.querySelector('input[type="file"]');
+    const backupWithLang = { ...legacyBackup, version: 1, language: 'fr' };
+    const file = new File(
+      [JSON.stringify(backupWithLang)],
+      'backup.json',
+      { type: 'application/json' }
+    );
+
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await vi.waitFor(() => {
+      expect(i18n.language).toBe('fr');
+    });
+
+    i18n.changeLanguage('en');
   });
 
   it('rejects invalid import data', async () => {
@@ -146,7 +171,7 @@ describe('StrongLifts CSV Import', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Import StrongLifts Data?')).toBeTruthy();
-      expect(screen.getByText(/Found 1 sessions/)).toBeTruthy();
+      expect(screen.getByText(/Found 1 workouts/)).toBeTruthy();
     });
   });
 
@@ -210,7 +235,7 @@ describe('StrongLifts CSV Import', () => {
   it('shows Import StrongLifts option in first-launch restore prompt', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
 
     await waitFor(() => {
       expect(screen.getByText('Sync History?')).toBeTruthy();

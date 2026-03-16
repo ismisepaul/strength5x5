@@ -19,8 +19,8 @@
     "typeA": "Séance A",
     "typeB": "Séance B",
     "nextUp": "À suivre",
-    "startSession": "Commencer",
-    "finishSession": "Terminer",
+    "startWorkout": "Commencer",
+    "finishWorkout": "Terminer",
     "completeAllSets": "Complétez toutes les séries",
     "alreadyTrained": "Déjà entraîné aujourd'hui",
     "autoIncreaseHint": "Les poids augmentent de 2.5kg quand toutes les séries sont complétées.",
@@ -30,7 +30,7 @@
   "timer": {
     "recoveryPhase": "Phase de repos",
     "lifting": "En cours",
-    "sessionComplete": "Séance terminée",
+    "workoutComplete": "Séance terminée",
     "movementFinished": "Mouvement terminé",
     "allSetsDone": "Toutes les séries faites. Appuyez sur Terminer pour sauvegarder.",
     "setupNext": "Préparez l'exercice suivant. Pas de repos nécessaire.",
@@ -57,7 +57,7 @@
     "est1rmValue": "1RM est. : {{value}}kg",
     "weight": "Poids",
     "noDataForRange": "Aucune donnée pour cette période",
-    "minTwoSessions": "Complétez au moins 2 séances pour voir les tendances"
+    "minTwoWorkouts": "Complétez au moins 2 séances pour voir les tendances"
   },
   "options": {
     "title": "Options",
@@ -69,18 +69,28 @@
     "vibrationDesc": "Vibrer à la fin du repos",
     "darkMode": "Mode sombre",
     "darkModeDesc": "Activer le thème sombre",
-    "autoBackup": "Sauvegarde auto",
-    "autoBackupDesc": "Export JSON après chaque séance",
-    "backup": "Sauvegarder",
+    "backupSync": "Sauvegarde et synchronisation",
+    "backupSyncDesc": "Sauvegarder et restaurer vos données",
+    "localBackup": "Sauvegarde locale",
+    "localBackupDesc": "Télécharger sur l'appareil après chaque séance",
+    "backupToDevice": "Sauvegarder sur l'appareil",
     "restore": "Restaurer",
     "importStronglifts": "Importer StrongLifts",
     "importStrongliftsDesc": "Téléchargez votre export CSV StrongLifts 5x5",
     "language": "Langue",
-    "languageDesc": "Choisissez votre langue"
+    "languageDesc": "Choisissez votre langue",
+    "googleDrive": "Google Drive",
+    "googleDriveDesc": "Sauvegarde cloud",
+    "connectDrive": "Connecter",
+    "savesAfterWorkout": "Sauvegarde sur Drive après chaque séance",
+    "lastSaved": "Dernière sauvegarde : {{time}}",
+    "saveFailed": "Échec de sauvegarde — appuyez pour réessayer",
+    "connectedToDrive": "Connecté",
+    "notConnected": "Non connecté"
   },
   "modals": {
     "discardTitle": "Abandonner la séance ?",
-    "discardBody": "Les données de cette séance seront définitivement supprimées.",
+    "discardBody": "Cette séance sera définitivement supprimée.",
     "keepLifting": "Continuer",
     "yesDiscard": "Oui, tout supprimer",
     "acceptDeload": "Accepter le deload ?",
@@ -91,7 +101,7 @@
     "syncHistoryBody": "Journal vide. Restaurez une sauvegarde pour conserver votre progression.",
     "restoreBackup": "Restaurer une sauvegarde",
     "skipAndStart": "Passer et commencer",
-    "resumeSession": "Reprendre la séance ?",
+    "resumeWorkout": "Reprendre la séance ?",
     "inProgress": "{{name}} en cours",
     "setsCompleted": "{{completed}} sur {{total}} séries complétées",
     "resume": "Reprendre",
@@ -99,7 +109,7 @@
     "platesPerSide": "Disques par côté (barre 20kg)",
     "close": "Fermer",
     "importData": "Importer les données StrongLifts ?",
-    "foundSessions": "{{count}} séances trouvées",
+    "foundWorkouts": "{{count}} séances trouvées",
     "import": "Importer",
     "cancel": "Annuler",
     "addWorkout": "Ajouter une séance",
@@ -113,7 +123,15 @@
     "saveChanges": "Enregistrer",
     "deleteWorkout": "Supprimer la séance",
     "deleteConfirm": "Supprimer cette séance ? Cette action est irréversible.",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "olderBackupTitle": "Sauvegarde ancienne",
+    "olderBackupBody": "La sauvegarde cloud date du {{cloudDate}}. Les données locales datent du {{localDate}}. Restaurer quand même ?",
+    "restoreAnyway": "Restaurer quand même",
+    "restoreTitle": "Restaurer",
+    "fromDevice": "Depuis l'appareil",
+    "fromDeviceDesc": "Restaurer depuis un fichier local",
+    "fromDrive": "Depuis Google Drive",
+    "fromDriveDesc": "Restaurer depuis votre Drive"
   },
   "completion": {
     "complete": "{{name}} terminée",
@@ -138,11 +156,11 @@
     "longBreaksTitle": "Longues pauses",
     "longBreaksBody": "Après plus de 14 jours d'arrêt, un deload de sécurité de 10% est recommandé."
   },
-  "liveSession": {
+  "liveWorkout": {
     "title": "Séance en cours",
     "lifting": "En cours · {{time}}",
     "resting": "Repos · {{time}}",
-    "activeSession": "Séance active",
+    "activeWorkout": "Séance active",
     "return": "Retour"
   },
   "toast": {
@@ -150,12 +168,18 @@
     "invalidBackup": "Fichier de sauvegarde invalide",
     "backupRestored": "Sauvegarde restaurée",
     "couldNotRead": "Impossible de lire le fichier",
-    "noValidSessions": "Aucune séance valide trouvée dans le CSV",
+    "noValidWorkouts": "Aucune séance valide trouvée dans le CSV",
     "couldNotReadCSV": "Impossible de lire le fichier StrongLifts",
-    "importedSessions": "{{count}} séances importées",
+    "importedWorkouts": "{{count}} séances importées",
     "workoutAdded": "Séance ajoutée",
     "workoutUpdated": "Séance mise à jour",
-    "workoutDeleted": "Séance supprimée"
+    "workoutDeleted": "Séance supprimée",
+    "savedToDrive": "Sauvegardé sur Google Drive",
+    "restoredFromDrive": "Restauré depuis Google Drive",
+    "driveError": "Erreur Google Drive. Réessayez.",
+    "driveNoBackup": "Aucune sauvegarde trouvée sur Google Drive",
+    "driveFileTooLarge": "Les données dépassent la limite de 5 Mo",
+    "driveSaveFailed": "Échec de sauvegarde Drive. Réessayez dans Options."
   },
   "status": {
     "done": "{{count}} faites",

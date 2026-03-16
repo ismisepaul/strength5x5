@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useCallback } from 'react';
-import { STORAGE_KEY, SCHEMA_VERSION, ACTIVE_SESSION_KEY } from '../constants';
+import { STORAGE_KEY, SCHEMA_VERSION, ACTIVE_WORKOUT_KEY } from '../constants';
 import { migrate } from '../utils';
 
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -17,12 +17,12 @@ export function useLoadSaved() {
     } catch { /* ignore */ }
 
     try {
-      const activeRaw = localStorage.getItem(ACTIVE_SESSION_KEY);
+      const activeRaw = localStorage.getItem(ACTIVE_WORKOUT_KEY);
       if (activeRaw) {
         const active = JSON.parse(activeRaw);
         const sessionDate = new Date(active.session?.date);
         if (Date.now() - sessionDate.getTime() > SESSION_MAX_AGE_MS) {
-          localStorage.removeItem(ACTIVE_SESSION_KEY);
+          localStorage.removeItem(ACTIVE_WORKOUT_KEY);
         } else {
           saved.activeSession = active;
         }

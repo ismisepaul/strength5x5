@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
-import { STORAGE_KEY, ACTIVE_SESSION_KEY } from '../../constants';
+import { STORAGE_KEY, ACTIVE_WORKOUT_KEY } from '../../constants';
 
 const yesterdayISO = new Date(Date.now() - 86400000).toISOString();
 
@@ -93,7 +93,7 @@ describe('Workout completion summary', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -103,7 +103,7 @@ describe('Workout completion summary', () => {
       await user.click(btn);
     }
 
-    await user.click(screen.getByText('Finish Session'));
+    await user.click(screen.getByText('Finish Workout'));
 
     await waitFor(() => {
       expect(screen.getByText(/Complete/i)).toBeInTheDocument();
@@ -121,7 +121,7 @@ describe('Workout completion summary', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
       return label && label.startsWith('Set ');
@@ -129,7 +129,7 @@ describe('Workout completion summary', () => {
     for (const btn of setButtons) {
       await user.click(btn);
     }
-    await user.click(screen.getByText('Finish Session'));
+    await user.click(screen.getByText('Finish Workout'));
 
     await waitFor(() => expect(screen.getByText('Done')).toBeInTheDocument());
     await user.click(screen.getByText('Done'));
@@ -140,8 +140,8 @@ describe('Workout completion summary', () => {
   });
 });
 
-describe('Session recovery', () => {
-  it('shows resume prompt when active session exists in localStorage', async () => {
+describe('Workout recovery', () => {
+  it('shows resume prompt when active workout exists in localStorage', async () => {
     const activeSession = {
       session: {
         date: new Date().toISOString(),
@@ -156,14 +156,14 @@ describe('Session recovery', () => {
       restTimerEndTime: null,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
-    localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(activeSession));
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(activeSession));
     render(<App />);
 
-    expect(screen.getByText('Resume Session?')).toBeInTheDocument();
+    expect(screen.getByText('Resume Workout?')).toBeInTheDocument();
     expect(screen.getByText(/2 of 15 sets completed/)).toBeInTheDocument();
   });
 
-  it('auto-discards sessions older than 24 hours', () => {
+  it('auto-discards workouts older than 24 hours', () => {
     const staleSession = {
       session: {
         date: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
@@ -173,14 +173,14 @@ describe('Session recovery', () => {
       restTimerEndTime: null,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
-    localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(staleSession));
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(staleSession));
     render(<App />);
 
-    expect(screen.queryByText('Resume Session?')).not.toBeInTheDocument();
-    expect(localStorage.getItem(ACTIVE_SESSION_KEY)).toBeNull();
+    expect(screen.queryByText('Resume Workout?')).not.toBeInTheDocument();
+    expect(localStorage.getItem(ACTIVE_WORKOUT_KEY)).toBeNull();
   });
 
-  it('resumes session when Resume is clicked', async () => {
+  it('resumes workout when Resume is clicked', async () => {
     const activeSession = {
       session: {
         date: new Date().toISOString(),
@@ -195,19 +195,19 @@ describe('Session recovery', () => {
       restTimerEndTime: null,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
-    localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(activeSession));
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(activeSession));
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Resume'));
 
     await waitFor(() => {
-      expect(screen.queryByText('Resume Session?')).not.toBeInTheDocument();
-      expect(screen.getByText('Finish Session')).toBeInTheDocument();
+      expect(screen.queryByText('Resume Workout?')).not.toBeInTheDocument();
+      expect(screen.getByText('Finish Workout')).toBeInTheDocument();
     });
   });
 
-  it('clears active session when Discard is clicked', async () => {
+  it('clears active workout when Discard is clicked', async () => {
     const activeSession = {
       session: {
         date: new Date().toISOString(),
@@ -219,16 +219,16 @@ describe('Session recovery', () => {
       restTimerEndTime: null,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
-    localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(activeSession));
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(activeSession));
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Discard'));
 
     await waitFor(() => {
-      expect(screen.queryByText('Resume Session?')).not.toBeInTheDocument();
+      expect(screen.queryByText('Resume Workout?')).not.toBeInTheDocument();
     });
-    expect(localStorage.getItem(ACTIVE_SESSION_KEY)).toBeNull();
+    expect(localStorage.getItem(ACTIVE_WORKOUT_KEY)).toBeNull();
   });
 });
 

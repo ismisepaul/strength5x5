@@ -28,7 +28,7 @@ describe('Skip button behavior', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -50,7 +50,7 @@ describe('Skip button behavior', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -76,7 +76,7 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
 
     expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
     expect(screen.queryByLabelText('Train')).not.toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByLabelText('Show navigation'));
 
     expect(screen.getByLabelText('Train')).toBeInTheDocument();
@@ -101,7 +101,7 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
@@ -119,7 +119,7 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByLabelText('Show navigation'));
 
     expect(screen.getByLabelText('Train')).toBeInTheDocument();
@@ -143,26 +143,26 @@ describe('Nav collapse during workout', () => {
   });
 });
 
-describe('Live Session bar', () => {
-  it('shows Live Session bar when navigating away during a workout', async () => {
+describe('Live Workout bar', () => {
+  it('shows Live Workout bar when navigating away during a workout', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
-    expect(screen.getByText('Live Session')).toBeInTheDocument();
+    expect(screen.getByText('Live Workout')).toBeInTheDocument();
     expect(screen.getByText('Return')).toBeInTheDocument();
   });
 
-  it('returns to workout tab when Live Session bar is clicked', async () => {
+  it('returns to workout tab when Live Workout bar is clicked', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
@@ -474,20 +474,20 @@ describe('Same-day workout prevention', () => {
     ],
   };
 
-  it('disables Start Session when a workout exists for today', () => {
+  it('disables Start Workout when a workout exists for today', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithToday));
     render(<App />);
 
-    const btn = screen.getByText('Start Session').closest('button');
+    const btn = screen.getByText('Start Workout').closest('button');
     expect(btn).toBeDisabled();
     expect(screen.getByText('Already trained today')).toBeInTheDocument();
   });
 
-  it('enables Start Session when no workout exists for today', () => {
+  it('enables Start Workout when no workout exists for today', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithYesterday));
     render(<App />);
 
-    const btn = screen.getByText('Start Session').closest('button');
+    const btn = screen.getByText('Start Workout').closest('button');
     expect(btn).not.toBeDisabled();
     expect(screen.queryByText('Already trained today')).not.toBeInTheDocument();
   });

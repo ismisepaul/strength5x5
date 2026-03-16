@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getSessionStats, groupHistory } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -149,8 +149,8 @@ describe('getBig3Trend', () => {
   });
 });
 
-describe('getSessionStats', () => {
-  function makeSessions(dates) {
+describe('getWorkoutStats', () => {
+  function makeWorkouts(dates) {
     return dates.map(d => ({ date: new Date(d).toISOString(), exercises: [] }));
   }
 
@@ -165,25 +165,25 @@ describe('getSessionStats', () => {
 
   it('returns zeros and status for empty history', () => {
     const now = new Date(2026, 2, 9, 12); // Monday
-    const stats = getSessionStats([], now);
+    const stats = getWorkoutStats([], now);
     expect(stats.streak).toBe(0);
     expect(stats.total).toBe(0);
     expect(stats.thisWeek).toBe(0);
     expect(stats.status).toEqual({ key: 'left', count: 3, color: 'rose' });
   });
 
-  it('counts thisWeek sessions correctly', () => {
+  it('counts thisWeek workouts correctly', () => {
     const wed = new Date(2026, 2, 11, 12);
     const mon = getMonday(wed);
     const tue = new Date(mon); tue.setDate(tue.getDate() + 1);
     const lastFri = new Date(mon); lastFri.setDate(lastFri.getDate() - 3);
-    const h = makeSessions([mon, tue, lastFri]);
-    const stats = getSessionStats(h, wed);
+    const h = makeWorkouts([mon, tue, lastFri]);
+    const stats = getWorkoutStats(h, wed);
     expect(stats.thisWeek).toBe(2);
     expect(stats.total).toBe(3);
   });
 
-  it('strict streak only counts weeks with 3+ sessions', () => {
+  it('strict streak only counts weeks with 3+ workouts', () => {
     const now = new Date(2026, 2, 11, 12);
     const thisWeekMon = getMonday(now);
     const lastWeekMon = new Date(thisWeekMon); lastWeekMon.setDate(lastWeekMon.getDate() - 7);
@@ -195,65 +195,65 @@ describe('getSessionStats', () => {
       return [mon, t, w];
     };
 
-    const h = makeSessions([
+    const h = makeWorkouts([
       ...makeWeek(thisWeekMon),
       ...makeWeek(lastWeekMon),
       twoWeeksMon,
     ]);
-    const stats = getSessionStats(h, now);
+    const stats = getWorkoutStats(h, now);
     expect(stats.streak).toBe(2);
   });
 
-  it('streak breaks when a week has fewer than 3 sessions', () => {
+  it('streak breaks when a week has fewer than 3 workouts', () => {
     const now = new Date(2026, 2, 11, 12);
     const thisWeekMon = getMonday(now);
     const lastWeekMon = new Date(thisWeekMon); lastWeekMon.setDate(lastWeekMon.getDate() - 7);
 
-    const h = makeSessions([
+    const h = makeWorkouts([
       thisWeekMon,
       new Date(thisWeekMon.getTime() + 86400000),
       new Date(thisWeekMon.getTime() + 86400000 * 2),
       lastWeekMon,
       new Date(lastWeekMon.getTime() + 86400000),
     ]);
-    const stats = getSessionStats(h, now);
+    const stats = getWorkoutStats(h, now);
     expect(stats.streak).toBe(1);
   });
 
-  it('returns zero streak when current week has fewer than 3 sessions', () => {
+  it('returns zero streak when current week has fewer than 3 workouts', () => {
     const now = new Date(2026, 2, 11, 12);
-    const h = makeSessions([new Date(2026, 2, 9)]);
-    const stats = getSessionStats(h, now);
+    const h = makeWorkouts([new Date(2026, 2, 9)]);
+    const stats = getWorkoutStats(h, now);
     expect(stats.streak).toBe(0);
   });
 
   it('status shows 3 done when thisWeek >= 3', () => {
     const wed = new Date(2026, 2, 11, 12);
     const mon = getMonday(wed);
-    const h = makeSessions([mon, new Date(mon.getTime() + 86400000), new Date(mon.getTime() + 86400000 * 2)]);
-    const stats = getSessionStats(h, wed);
+    const h = makeWorkouts([mon, new Date(mon.getTime() + 86400000), new Date(mon.getTime() + 86400000 * 2)]);
+    const stats = getWorkoutStats(h, wed);
     expect(stats.status).toEqual({ key: 'done', count: 3, color: 'emerald' });
   });
 
-  it('status shows 1 left when 2 sessions done', () => {
+  it('status shows 1 left when 2 workouts done', () => {
     const wed = new Date(2026, 2, 11, 12);
     const mon = getMonday(wed);
-    const h = makeSessions([mon, new Date(mon.getTime() + 86400000)]);
-    const stats = getSessionStats(h, wed);
+    const h = makeWorkouts([mon, new Date(mon.getTime() + 86400000)]);
+    const stats = getWorkoutStats(h, wed);
     expect(stats.status).toEqual({ key: 'left', count: 1, color: 'emerald' });
   });
 
-  it('status shows 2 left when 1 session done', () => {
+  it('status shows 2 left when 1 workout done', () => {
     const wed = new Date(2026, 2, 11, 12);
     const mon = getMonday(wed);
-    const h = makeSessions([mon]);
-    const stats = getSessionStats(h, wed);
+    const h = makeWorkouts([mon]);
+    const stats = getWorkoutStats(h, wed);
     expect(stats.status).toEqual({ key: 'left', count: 2, color: 'amber' });
   });
 
-  it('status shows 3 left when 0 sessions done', () => {
+  it('status shows 3 left when 0 workouts done', () => {
     const mon = new Date(2026, 2, 9, 12);
-    const stats = getSessionStats([], mon);
+    const stats = getWorkoutStats([], mon);
     expect(stats.status).toEqual({ key: 'left', count: 3, color: 'rose' });
   });
 

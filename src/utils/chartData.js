@@ -100,7 +100,7 @@ function getWeekKey(date) {
   return `${mon.getFullYear()}-${mon.getMonth()}-${mon.getDate()}`;
 }
 
-function countSessionsInWeek(history, weekKey) {
+function countWorkoutsInWeek(history, weekKey) {
   let count = 0;
   for (const s of history) {
     if (getWeekKey(s.date) === weekKey) count++;
@@ -116,12 +116,12 @@ function computeStatus(thisWeek) {
   return { key: 'left', count: 3, color: 'rose' };
 }
 
-export function getSessionStats(history, nowOverride) {
+export function getWorkoutStats(history, nowOverride) {
   const now = nowOverride || new Date();
   const total = history.length;
 
   const currentWeekKey = getWeekKey(now);
-  const thisWeek = countSessionsInWeek(history, currentWeekKey);
+  const thisWeek = countWorkoutsInWeek(history, currentWeekKey);
 
   if (total === 0) return { streak: 0, total: 0, thisWeek: 0, status: computeStatus(0) };
 
@@ -130,7 +130,7 @@ export function getSessionStats(history, nowOverride) {
 
   while (true) {
     const key = getWeekKey(d);
-    if (countSessionsInWeek(history, key) >= 3) {
+    if (countWorkoutsInWeek(history, key) >= 3) {
       streak++;
       d.setDate(d.getDate() - 7);
     } else {

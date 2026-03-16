@@ -61,9 +61,9 @@ describe('RestTimer', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('renders "Session Complete" when isExerciseComplete is session', () => {
-    render(<RestTimer {...defaultProps} seconds={0} isExerciseComplete={'session'} />);
-    expect(screen.getByText('Session Complete')).toBeInTheDocument();
+  it('renders "Workout Complete" when isExerciseComplete is workout', () => {
+    render(<RestTimer {...defaultProps} seconds={0} isExerciseComplete={'workout'} />);
+    expect(screen.getByText('Workout Complete')).toBeInTheDocument();
     expect(screen.queryByText('Movement Finished')).not.toBeInTheDocument();
     expect(screen.getByText('Got it')).toBeInTheDocument();
   });

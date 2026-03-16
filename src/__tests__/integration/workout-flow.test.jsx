@@ -11,7 +11,7 @@ beforeEach(() => {
 });
 
 describe('Workout Flow', () => {
-  it('starts a workout session when history exists', async () => {
+  it('starts a workout when history exists', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
@@ -27,7 +27,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
     expect(screen.getByText('Bench Press')).toBeInTheDocument();
     expect(screen.getByText('Barbell Row')).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -60,7 +60,7 @@ describe('Workout Flow', () => {
       await user.click(btn);
     }
 
-    const finishBtn = screen.getByText('Finish Session');
+    const finishBtn = screen.getByText('Finish Workout');
     expect(finishBtn).not.toBeDisabled();
     await user.click(finishBtn);
 
@@ -87,7 +87,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -104,7 +104,7 @@ describe('Workout Flow', () => {
       await user.click(setButtons[i]);
     }
 
-    await user.click(screen.getByText('Finish Session'));
+    await user.click(screen.getByText('Finish Workout'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     // Squat should NOT have incremented because set 1 was 4, not 5
@@ -118,7 +118,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     expect(screen.getByText('Sync History?')).toBeInTheDocument();
   });
 
@@ -126,7 +126,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByText('Skip and start fresh'));
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
   });
@@ -147,11 +147,11 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByText('Discard Workout'));
-    expect(screen.getByText('Discard session?')).toBeInTheDocument();
+    expect(screen.getByText('Discard workout?')).toBeInTheDocument();
     await user.click(screen.getByText('Yes, Discard Everything'));
-    expect(screen.getByText('Start Session')).toBeInTheDocument();
+    expect(screen.getByText('Start Workout')).toBeInTheDocument();
   });
 
   it('auto-deloads after 3 consecutive failures at the same weight', async () => {
@@ -180,7 +180,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -199,7 +199,7 @@ describe('Workout Flow', () => {
       await user.click(setButtons[i]);
     }
 
-    await user.click(screen.getByText('Finish Session'));
+    await user.click(screen.getByText('Finish Workout'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.weights.squat).toBe(55);

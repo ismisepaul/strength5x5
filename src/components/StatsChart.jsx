@@ -108,7 +108,7 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
           <div className="h-56 relative">
             {filteredData.length === 1 && (
               <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <p className={`text-xs font-bold px-4 py-2 rounded-xl ${isDark ? 'bg-slate-800/90 text-slate-400' : 'bg-white/90 text-slate-500'}`}>{t('stats.minTwoSessions')}</p>
+                <p className={`text-xs font-bold px-4 py-2 rounded-xl ${isDark ? 'bg-slate-800/90 text-slate-400' : 'bg-white/90 text-slate-500'}`}>{t('stats.minTwoWorkouts')}</p>
               </div>
             )}
             <ResponsiveContainer width="100%" height="100%">

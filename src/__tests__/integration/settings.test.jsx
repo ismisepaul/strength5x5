@@ -50,18 +50,18 @@ describe('Settings', () => {
     expect(stored.vibrationEnabled).toBe(true);
   });
 
-  it('toggles auto-backup setting', async () => {
+  it('toggles local backup setting', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Options'));
 
-    const autoSwitch = screen.getByRole('switch', { name: 'Auto-backup' });
-    expect(autoSwitch.getAttribute('aria-checked')).toBe('true');
-    await user.click(autoSwitch);
+    const localSwitch = screen.getByRole('switch', { name: 'Local backup' });
+    expect(localSwitch.getAttribute('aria-checked')).toBe('false');
+    await user.click(localSwitch);
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    expect(stored.autoSave).toBe(false);
+    expect(stored.autoSave).toBe(true);
   });
 
   it('toggles dark mode', async () => {
@@ -90,7 +90,7 @@ describe('Settings', () => {
     expect(screen.getByText('Rest Interval')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Train'));
-    expect(screen.getByText('Start Session')).toBeInTheDocument();
+    expect(screen.getByText('Start Workout')).toBeInTheDocument();
   });
 });
 
@@ -114,7 +114,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     expect(screen.getByText('Accept Deload?')).toBeInTheDocument();
     expect(screen.getByText('Accept & Lift')).toBeInTheDocument();
     expect(screen.getByText('Skip Deload')).toBeInTheDocument();
@@ -139,7 +139,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByText('Skip Deload'));
 
     expect(screen.getByText('60kg')).toBeInTheDocument();
@@ -164,7 +164,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Session'));
+    await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByText('Accept & Lift'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
