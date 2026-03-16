@@ -1,0 +1,36 @@
+{
+  "app": "Strength 5x5",
+  "weights": {
+    "squat": 60,
+    "bench": 45,
+    "row": 50,
+    "press": 32.5,
+    "deadlift": 80
+  },
+  "history": [
+    {
+      "date": "2025-12-01T10:00:00.000Z",
+      "type": "A",
+      "exercises": [
+        { "id": "squat", "name": "Back Squat", "sets": 5, "reps": 5, "increment": 2.5, "weight": 57.5, "setsCompleted": [5, 5, 5, 5, 5] },
+        { "id": "bench", "name": "Bench Press", "sets": 5, "reps": 5, "increment": 2.5, "weight": 42.5, "setsCompleted": [5, 5, 5, 5, 5] },
+        { "id": "row", "name": "Barbell Row", "sets": 5, "reps": 5, "increment": 2.5, "weight": 47.5, "setsCompleted": [5, 5, 5, 5, 5] }
+      ]
+    },
+    {
+      "date": "2025-11-28T10:00:00.000Z",
+      "type": "B",
+      "exercises": [
+        { "id": "squat", "name": "Back Squat", "sets": 5, "reps": 5, "increment": 2.5, "weight": 55, "setsCompleted": [5, 5, 5, 5, 5] },
+        { "id": "press", "name": "Overhead Press", "sets": 5, "reps": 5, "increment": 2.5, "weight": 30, "setsCompleted": [5, 5, 5, 3, 4] },
+        { "id": "deadlift", "name": "Deadlift", "sets": 1, "reps": 5, "increment": 5, "weight": 75, "setsCompleted": [5] }
+      ]
+    }
+  ],
+  "nextType": "B",
+  "isDark": true,
+  "autoSave": true,
+  "preferredRest": 90,
+  "soundEnabled": false,
+  "vibrationEnabled": false
+}

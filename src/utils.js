@@ -1,0 +1,75 @@
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS } from './constants';
+
+export function migrate(data, fromVersion) {
+  let current = { ...data };
+  // Future migrations go here, e.g.:
+  // if (fromVersion < 2) { current.someNewField = defaultValue; }
+  current.version = SCHEMA_VERSION;
+  return current;
+}
+
+export function validateImportData(d) {
+  if (!d || typeof d !== 'object') return null;
+
+  if (!d.weights || typeof d.weights !== 'object') return null;
+  for (const key of EXPECTED_WEIGHT_KEYS) {
+    if (typeof d.weights[key] !== 'number') return null;
+  }
+
+  if (!Array.isArray(d.history)) return null;
+
+  const normalizedWeights = {};
+  for (const key of EXPECTED_WEIGHT_KEYS) {
+    normalizedWeights[key] = Math.round(d.weights[key] / 2.5) * 2.5;
+  }
+
+  const validHistory = d.history.filter(entry =>
+    entry && typeof entry === 'object' &&
+    typeof entry.date === 'string' &&
+    typeof entry.type === 'string' &&
+    Array.isArray(entry.exercises)
+  );
+
+  return { ...d, weights: normalizedWeights, history: validHistory };
+}
+
+export function calculate1RM(weight, reps) {
+  return (!reps || reps <= 0) ? weight : Math.round(weight * (1 + reps / 30));
+}
+
+export function calculateBest1RM(history, exerciseId) {
+  let best = 0;
+  for (const session of history) {
+    for (const ex of session.exercises) {
+      if (ex.id !== exerciseId) continue;
+      for (const reps of ex.setsCompleted) {
+        if (reps === null || reps <= 0) continue;
+        const est = calculate1RM(ex.weight, reps);
+        if (est > best) best = est;
+      }
+    }
+  }
+  return best;
+}
+
+export function calculatePlates(totalWeight) {
+  if (!totalWeight || totalWeight <= 20) return [];
+  let side = (totalWeight - 20) / 2;
+  const res = [];
+  for (const p of [25, 20, 15, 10, 5, 2.5, 1.25]) {
+    while (side >= p) { res.push(p); side -= p; }
+  }
+  return res;
+}
+
+export function calculateWarmup(workingWeight) {
+  return Math.max(20, Math.round(workingWeight * 0.6 / 2.5) * 2.5);
+}
+
+export function calculateDeload(weights) {
+  const newW = {};
+  for (const id of Object.keys(weights)) {
+    newW[id] = Math.max(20, Math.round((weights[id] * 0.9) / 2.5) * 2.5);
+  }
+  return newW;
+}
