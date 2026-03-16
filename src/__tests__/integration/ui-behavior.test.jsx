@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
@@ -7,7 +7,7 @@ import { STORAGE_KEY } from '../../constants';
 const workoutData = {
   version: 1,
   weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
-  history: [{ date: new Date().toISOString(), type: 'A', exercises: [] }],
+  history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
   nextType: 'A',
   isDark: true,
   autoSave: false,
@@ -442,5 +442,111 @@ describe('Manual log entry', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     const cardsAfter = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-3xl"]'));
     expect(cardsAfter).toHaveLength(2);
+  });
+});
+
+describe('Same-day workout prevention', () => {
+  const todayISO = new Date().toISOString();
+  const yesterdayISO = new Date(Date.now() - 86400000).toISOString();
+
+  const dataWithToday = {
+    version: 1,
+    weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+    history: [
+      { date: todayISO, type: 'A', exercises: [
+        { id: 'squat', name: 'Back Squat', weight: 60, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+        { id: 'bench', name: 'Bench Press', weight: 45, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+        { id: 'row', name: 'Barbell Row', weight: 50, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+      ]},
+    ],
+    nextType: 'B',
+    isDark: true,
+    autoSave: false,
+    preferredRest: 90,
+    soundEnabled: false,
+    vibrationEnabled: false,
+  };
+
+  const dataWithYesterday = {
+    ...dataWithToday,
+    history: [
+      { ...dataWithToday.history[0], date: yesterdayISO },
+    ],
+  };
+
+  it('disables Start Session when a workout exists for today', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithToday));
+    render(<App />);
+
+    const btn = screen.getByText('Start Session').closest('button');
+    expect(btn).toBeDisabled();
+    expect(screen.getByText('Already trained today')).toBeInTheDocument();
+  });
+
+  it('enables Start Session when no workout exists for today', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithYesterday));
+    render(<App />);
+
+    const btn = screen.getByText('Start Session').closest('button');
+    expect(btn).not.toBeDisabled();
+    expect(screen.queryByText('Already trained today')).not.toBeInTheDocument();
+  });
+
+  it('shows date conflict warning when edit date collides with existing session', async () => {
+    const twoEntries = {
+      ...dataWithToday,
+      history: [
+        { ...dataWithToday.history[0], date: todayISO },
+        { ...dataWithToday.history[0], date: yesterdayISO, type: 'B' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(twoEntries));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    await user.click(cards[1]);
+
+    const dialog = screen.getByRole('dialog');
+    const dateInput = dialog.querySelector('input[type="date"]');
+    fireEvent.change(dateInput, { target: { value: todayISO.slice(0, 10) } });
+
+    expect(screen.getByText('A workout already exists on this date')).toBeInTheDocument();
+    const saveBtn = screen.getByText('Save Changes').closest('button');
+    expect(saveBtn).toBeDisabled();
+  });
+
+  it('shows future date warning and disables save when date is in the future', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithYesterday));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    await user.click(cards[0]);
+
+    const dialog = screen.getByRole('dialog');
+    const dateInput = dialog.querySelector('input[type="date"]');
+    const futureDate = new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10);
+    fireEvent.change(dateInput, { target: { value: futureDate } });
+
+    expect(screen.getByText('Date cannot be in the future')).toBeInTheDocument();
+    const saveBtn = screen.getByText('Save Changes').closest('button');
+    expect(saveBtn).toBeDisabled();
+  });
+
+  it('editing an entry and keeping its original date does not trigger conflict', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithToday));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    await user.click(cards[0]);
+
+    expect(screen.queryByText('A workout already exists on this date')).not.toBeInTheDocument();
+    const saveBtn = screen.getByText('Save Changes').closest('button');
+    expect(saveBtn).not.toBeDisabled();
   });
 });

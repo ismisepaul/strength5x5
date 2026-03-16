@@ -135,6 +135,9 @@ const App = () => {
     return result;
   }, [history]);
 
+  const historyDateSet = useMemo(() => new Set(history.map(s => s.date.slice(0, 10))), [history]);
+  const trainedToday = historyDateSet.has(new Date().toISOString().slice(0, 10));
+
   const exportData = useCallback((targetHistory) => {
     const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, weights, history: targetHistory || history, nextType: currentWorkoutType, isDark, autoSave, preferredRest, soundEnabled, vibrationEnabled };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -362,7 +365,8 @@ const App = () => {
                     </div>
                   </div>
                 ))}</div>
-                <button onClick={() => startWorkout()} className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl active:scale-[0.98] transition-transform"><Play size={20} fill="currentColor" /> Start Session</button>
+                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full py-5 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-transform ${trainedToday ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-[0.98]'}`}><Play size={20} fill="currentColor" /> Start Session</button>
+                {trainedToday && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest">Already trained today</p>}
               </div>
             ) : (
               <div className="space-y-6">
@@ -610,6 +614,10 @@ const App = () => {
 
       {editingEntry && (() => {
         const isNewEntry = editingEntry.index === -1;
+        const selectedDate = editingEntry.session.date.slice(0, 10);
+        const originalDate = !isNewEntry ? history[editingEntry.index]?.date.slice(0, 10) : null;
+        const dateConflict = selectedDate !== originalDate && historyDateSet.has(selectedDate);
+        const isFutureDate = selectedDate > new Date().toISOString().slice(0, 10);
         return (
         <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className={`fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-md mx-auto my-6 rounded-[2.5rem] p-6 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -645,13 +653,16 @@ const App = () => {
               <input
                 type="date"
                 value={editingEntry.session.date.slice(0, 10)}
+                max={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => {
                   const newDate = new Date(e.target.value);
                   newDate.setHours(12, 0, 0, 0);
                   setEditingEntry(prev => ({ ...prev, session: { ...prev.session, date: newDate.toISOString() } }));
                 }}
-                className={`w-full p-3 rounded-xl font-bold text-sm border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+                className={`w-full p-3 rounded-xl font-bold text-sm border ${dateConflict || isFutureDate ? 'border-rose-500' : (isDark ? 'border-slate-700' : 'border-slate-200')} ${isDark ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-900'}`}
               />
+              {dateConflict && <p className="text-rose-500 text-xs font-bold mt-2">A workout already exists on this date</p>}
+              {isFutureDate && <p className="text-rose-500 text-xs font-bold mt-2">Date cannot be in the future</p>}
             </div>
 
             <div className="space-y-4 mb-8">
@@ -713,6 +724,7 @@ const App = () => {
             </div>
 
             <button
+              disabled={dateConflict || isFutureDate}
               onClick={() => {
                 if (isNewEntry) {
                   const newHistory = [...history, editingEntry.session].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -724,7 +736,7 @@ const App = () => {
                 }
                 setEditingEntry(null);
               }}
-              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4"
+              className={`w-full py-4 rounded-2xl font-black uppercase text-sm shadow-xl mb-4 ${dateConflict || isFutureDate ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 text-white active:scale-95'}`}
             >{isNewEntry ? 'Add Workout' : 'Save Changes'}</button>
 
             {!isNewEntry && (

@@ -15,8 +15,12 @@ const RANGES = [
 const WEIGHT_COLOR = '#6366f1';
 const E1RM_COLOR = '#10b981';
 
+const RANGE_STORAGE_KEY = 'strength5x5_stats_range';
+
 const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) => {
-  const [range, setRange] = useState('All');
+  const [range, setRange] = useState(() => {
+    try { return localStorage.getItem(RANGE_STORAGE_KEY) || '6M'; } catch { return '6M'; }
+  });
   const [showWeight, setShowWeight] = useState(true);
   const [showE1rm, setShowE1rm] = useState(false);
 
@@ -86,7 +90,7 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
           {RANGES.map(r => (
             <button
               key={r.label}
-              onClick={() => setRange(r.label)}
+              onClick={() => { setRange(r.label); try { localStorage.setItem(RANGE_STORAGE_KEY, r.label); } catch {} }}
               className={`flex-1 py-2 rounded-xl font-black text-[10px] uppercase transition-all ${range === r.label ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')}`}
             >
               {r.label}

@@ -15,7 +15,7 @@ describe('Workout Flow', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
-      history: [{ date: new Date().toISOString(), type: 'A', exercises: [] }],
+      history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
       nextType: 'A',
       isDark: true,
       autoSave: false,
@@ -37,7 +37,7 @@ describe('Workout Flow', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
-      history: [{ date: new Date().toISOString(), type: 'A', exercises: [] }],
+      history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
       nextType: 'A',
       isDark: true,
       autoSave: false,
@@ -75,7 +75,7 @@ describe('Workout Flow', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
-      history: [{ date: new Date().toISOString(), type: 'A', exercises: [] }],
+      history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
       nextType: 'A',
       isDark: true,
       autoSave: false,
@@ -135,7 +135,7 @@ describe('Workout Flow', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
-      history: [{ date: new Date().toISOString(), type: 'A', exercises: [] }],
+      history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
       nextType: 'A',
       isDark: true,
       autoSave: false,
