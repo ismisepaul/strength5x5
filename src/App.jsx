@@ -4,16 +4,18 @@ import {
   Plus, Minus, RefreshCw, Sun, Moon, X, Calendar, Download, Upload,
   ShieldCheck, ToggleRight, ToggleLeft, AlertCircle, Zap, TrendingDown,
   Clock, BellRing, Smartphone, Trash2, Bell, ChevronRight, Menu, Timer,
-  FileSpreadsheet
+  FileSpreadsheet, MoveRight
 } from 'lucide-react';
 
 import { WORKOUTS, EXERCISE_NAMES, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE } from './constants';
 import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
+import { getExerciseTrend, getBig3Trend } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useTimer } from './hooks/useTimer';
 import RestTimer from './components/RestTimer';
 import ExerciseCard from './components/ExerciseCard';
+import StatsChart from './components/StatsChart';
 
 const App = () => {
   const saved = useLoadSaved();
@@ -39,6 +41,7 @@ const App = () => {
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [navExpanded, setNavExpanded] = useState(false);
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
+  const [statsView, setStatsView] = useState(null);
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -408,15 +411,40 @@ const App = () => {
                 <h2 className="text-2xl font-black uppercase tracking-tight mb-2">No Stats Yet</h2>
                 <p className="text-slate-500 text-sm font-bold leading-relaxed">Completed sessions populate analytics. Check back later.</p>
               </div>
+            ) : statsView ? (
+              <StatsChart exerciseId={statsView} history={history} isDark={isDark} onBack={() => setStatsView(null)} weights={weights} best1RMs={best1RMs} />
             ) : (
               <>
-                <div className="flex justify-between items-end mb-4"><h2 className="text-3xl font-black uppercase tracking-tighter">Peak Stats</h2><div className="text-right"><p className="text-[10px] font-bold text-slate-500 uppercase">Big 3 Total</p><p className={`text-2xl font-black ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{big3Total}kg</p></div></div>
-                <div className="grid gap-3">{EXPECTED_WEIGHT_KEYS.map(id => (
-                  <div key={id} className={`p-6 rounded-[2rem] border flex justify-between items-center ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                    <div className="flex items-center gap-4 flex-1 min-w-0"><div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Zap size={20} /></div><div className="min-w-0 pr-2"><p className={`text-sm font-black uppercase truncate ${isDark ? 'text-indigo-100' : 'text-slate-900'}`}>{EXERCISE_NAMES[id]}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-none">Est. 1RM: {best1RMs[id] || weights[id]}kg</p></div></div>
-                    <div className={`shrink-0 font-black text-xl ${isDark ? 'text-indigo-500' : 'text-indigo-600'}`}>{weights[id]}kg</div>
-                  </div>
-                ))}
+                {(() => {
+                  const big3Trend = getBig3Trend(history);
+                  const TrendIcon = big3Trend === 'up' ? TrendingUp : big3Trend === 'down' ? TrendingDown : MoveRight;
+                  const trendColor = big3Trend === 'up' ? 'text-emerald-500' : big3Trend === 'down' ? 'text-rose-500' : 'text-amber-500';
+                  return (
+                    <button onClick={() => setStatsView('big3')} className={`w-full p-6 rounded-[2rem] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                      <div className="text-left"><h2 className="text-3xl font-black uppercase tracking-tighter">Peak Stats</h2></div>
+                      <div className="flex items-center gap-2">
+                        {big3Trend && <TrendIcon size={16} className={trendColor} />}
+                        <div className="text-right"><p className="text-[10px] font-bold text-slate-500 uppercase">Big 3 Total</p><p className={`text-2xl font-black ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{big3Total}kg</p></div>
+                        <ChevronRight size={16} className="text-slate-500 ml-1" />
+                      </div>
+                    </button>
+                  );
+                })()}
+                <div className="grid gap-3">{EXPECTED_WEIGHT_KEYS.map(id => {
+                  const trend = getExerciseTrend(history, id);
+                  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : MoveRight;
+                  const trendColor = trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-rose-500' : 'text-amber-500';
+                  return (
+                    <button key={id} onClick={() => setStatsView(id)} className={`w-full p-6 rounded-[2rem] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                      <div className="flex items-center gap-4 flex-1 min-w-0"><div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Zap size={20} /></div><div className="min-w-0 pr-2"><p className={`text-sm font-black uppercase truncate ${isDark ? 'text-indigo-100' : 'text-slate-900'}`}>{EXERCISE_NAMES[id]}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-none">Est. 1RM: {best1RMs[id] || weights[id]}kg</p></div></div>
+                      <div className="flex items-center gap-2">
+                        {trend && <TrendIcon size={16} className={trendColor} />}
+                        <span className={`shrink-0 font-black text-xl ${isDark ? 'text-indigo-500' : 'text-indigo-600'}`}>{weights[id]}kg</span>
+                        <ChevronRight size={16} className="text-slate-500" />
+                      </div>
+                    </button>
+                  );
+                })}
                 </div>
               </>
             )}

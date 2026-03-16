@@ -188,3 +188,110 @@ describe('System dark mode preference', () => {
     expect(screen.getByLabelText('Switch to dark mode')).toBeInTheDocument();
   });
 });
+
+const statsData = {
+  version: 1,
+  weights: { squat: 55, bench: 42.5, row: 42.5, press: 30, deadlift: 65 },
+  history: [
+    { date: '2024-01-15T12:00:00.000Z', type: 'B', exercises: [
+      { id: 'squat', name: 'Back Squat', weight: 55, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+      { id: 'press', name: 'Overhead Press', weight: 30, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,3] },
+      { id: 'deadlift', name: 'Deadlift', weight: 65, sets: 1, reps: 5, increment: 5, setsCompleted: [5] },
+    ]},
+    { date: '2024-01-12T12:00:00.000Z', type: 'A', exercises: [
+      { id: 'squat', name: 'Back Squat', weight: 52.5, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+      { id: 'bench', name: 'Bench Press', weight: 42.5, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+      { id: 'row', name: 'Barbell Row', weight: 42.5, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+    ]},
+  ],
+  nextType: 'A',
+  isDark: true,
+  autoSave: false,
+  preferredRest: 90,
+  soundEnabled: false,
+  vibrationEnabled: false,
+};
+
+describe('Stats charts', () => {
+  it('tapping an exercise card in Stats shows chart view', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('Back Squat'));
+
+    expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
+    expect(screen.getByText('Weight')).toBeInTheDocument();
+    expect(screen.getByText('Est. 1RM')).toBeInTheDocument();
+  });
+
+  it('tapping back returns to list view', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByLabelText('Back to stats'));
+
+    expect(screen.getByText('Peak Stats')).toBeInTheDocument();
+  });
+
+  it('tapping Big 3 Total shows chart view', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('Peak Stats'));
+
+    expect(screen.getByText('Big 3 Total')).toBeInTheDocument();
+    expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
+  });
+
+  it('shows trend arrows on exercise cards', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+
+    const chevrons = container.querySelectorAll('.lucide-chevron-right');
+    expect(chevrons.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('Weight toggle is on by default and Est. 1RM can be toggled on independently', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('Back Squat'));
+
+    const weightBtn = screen.getByText('Weight').closest('button');
+    const e1rmBtn = screen.getByText('Est. 1RM').closest('button');
+
+    expect(weightBtn.className).toContain('bg-indigo-600');
+    expect(e1rmBtn.className).not.toContain('bg-emerald-600');
+
+    await user.click(e1rmBtn);
+    expect(e1rmBtn.className).toContain('bg-emerald-600');
+    expect(weightBtn.className).toContain('bg-indigo-600');
+  });
+
+  it('time range pills are present in chart view', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('Back Squat'));
+
+    expect(screen.getByText('1M')).toBeInTheDocument();
+    expect(screen.getByText('3M')).toBeInTheDocument();
+    expect(screen.getByText('6M')).toBeInTheDocument();
+    expect(screen.getByText('1Y')).toBeInTheDocument();
+    expect(screen.getByText('All')).toBeInTheDocument();
+  });
+});
