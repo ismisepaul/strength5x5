@@ -295,3 +295,97 @@ describe('Stats charts', () => {
     expect(screen.getByText('All')).toBeInTheDocument();
   });
 });
+
+describe('Log entry editing', () => {
+  const logData = {
+    version: 1,
+    weights: { squat: 55, bench: 42.5, row: 42.5, press: 30, deadlift: 65 },
+    history: [
+      { date: '2024-01-15T12:00:00.000Z', type: 'B', exercises: [
+        { id: 'squat', name: 'Back Squat', weight: 55, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+        { id: 'press', name: 'Overhead Press', weight: 30, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,3] },
+        { id: 'deadlift', name: 'Deadlift', weight: 65, sets: 1, reps: 5, increment: 5, setsCompleted: [5] },
+      ]},
+      { date: '2024-01-12T12:00:00.000Z', type: 'A', exercises: [
+        { id: 'squat', name: 'Back Squat', weight: 52.5, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+        { id: 'bench', name: 'Bench Press', weight: 42.5, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+        { id: 'row', name: 'Barbell Row', weight: 42.5, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5,5,5,5,5] },
+      ]},
+    ],
+    nextType: 'A',
+    isDark: true,
+    autoSave: false,
+    preferredRest: 90,
+    soundEnabled: false,
+    vibrationEnabled: false,
+  };
+
+  it('tapping a log entry opens the edit modal', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const cards = screen.getAllByText(/Workout [AB]/);
+    await user.click(cards[0].closest('button'));
+
+    expect(screen.getByLabelText('Edit workout')).toBeInTheDocument();
+    expect(screen.getByText('Edit Workout')).toBeInTheDocument();
+    expect(screen.getByText('Save Changes')).toBeInTheDocument();
+  });
+
+  it('changing weight and saving persists the change', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const cards = screen.getAllByText(/Workout [AB]/);
+    await user.click(cards[0].closest('button'));
+
+    const increaseButtons = screen.getAllByLabelText(/Increase .+ weight/);
+    await user.click(increaseButtons[0]);
+
+    await user.click(screen.getByText('Save Changes'));
+
+    expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
+    expect(screen.getByText('57.5kg')).toBeInTheDocument();
+  });
+
+  it('deleting an entry removes it from history', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const cardsBefore = screen.getAllByText(/Workout [AB]/);
+    expect(cardsBefore).toHaveLength(2);
+
+    await user.click(cardsBefore[0].closest('button'));
+    await user.click(screen.getByText('Delete Workout'));
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
+    const cardsAfter = screen.getAllByText(/Workout [AB]/);
+    expect(cardsAfter).toHaveLength(1);
+  });
+
+  it('cancelling edit discards changes', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const cards = screen.getAllByText(/Workout [AB]/);
+    await user.click(cards[0].closest('button'));
+
+    const increaseButtons = screen.getAllByLabelText(/Increase .+ weight/);
+    await user.click(increaseButtons[0]);
+
+    await user.click(screen.getByLabelText('Close edit modal'));
+
+    expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
+    expect(screen.getByText('55kg')).toBeInTheDocument();
+    expect(screen.queryByText('57.5kg')).not.toBeInTheDocument();
+  });
+});

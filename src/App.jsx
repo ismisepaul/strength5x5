@@ -42,6 +42,8 @@ const App = () => {
   const [navExpanded, setNavExpanded] = useState(false);
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -408,10 +410,10 @@ const App = () => {
               <p className="py-20 text-center text-slate-500 font-bold">No history found. Start training!</p>
             ) : (
               history.map((s, i) => (
-                <div key={i} className={`p-6 rounded-3xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                <button key={i} onClick={() => setEditingEntry({ index: i, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
                   <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>Workout {s.type}</span><span className="text-xs font-bold text-slate-500">{new Date(s.date).toLocaleDateString()}</span></div>
                   <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{ex.name}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === 5 ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
-                </div>
+                </button>
               ))
             )}
           </div>
@@ -587,6 +589,125 @@ const App = () => {
             </div>
             <button onClick={applyCSVImport} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4">Import</button>
             <button onClick={() => setPendingCSVImport(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {editingEntry && (
+        <div role="dialog" aria-modal="true" aria-label="Edit workout" className={`fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
+          <div className={`w-full max-w-md mx-auto my-6 rounded-[2.5rem] p-6 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className={`text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Edit Workout</h3>
+              <button onClick={() => { setEditingEntry(null); setShowDeleteConfirm(false); }} aria-label="Close edit modal" className={`p-2 rounded-full ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400'}`}><X size={20} /></button>
+            </div>
+
+            <div className="mb-6">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">Date</label>
+              <input
+                type="date"
+                value={editingEntry.session.date.slice(0, 10)}
+                onChange={(e) => {
+                  const newDate = new Date(e.target.value);
+                  newDate.setHours(12, 0, 0, 0);
+                  setEditingEntry(prev => ({ ...prev, session: { ...prev.session, date: newDate.toISOString() } }));
+                }}
+                className={`w-full p-3 rounded-xl font-bold text-sm border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+              />
+            </div>
+
+            <div className="space-y-4 mb-8">
+              {editingEntry.session.exercises.map((ex, exIdx) => (
+                <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                  <p className={`font-black text-xs uppercase mb-3 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{ex.name}</p>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">Weight</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEditingEntry(prev => {
+                          const s = JSON.parse(JSON.stringify(prev.session));
+                          s.exercises[exIdx].weight = Math.max(0, s.exercises[exIdx].weight - 2.5);
+                          return { ...prev, session: s };
+                        })}
+                        aria-label={`Decrease ${ex.name} weight`}
+                        className={`p-2 rounded-xl border ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'} active:scale-90`}
+                      ><Minus size={14} /></button>
+                      <span className="font-black w-14 text-center text-lg">{ex.weight}kg</span>
+                      <button
+                        onClick={() => setEditingEntry(prev => {
+                          const s = JSON.parse(JSON.stringify(prev.session));
+                          s.exercises[exIdx].weight += 2.5;
+                          return { ...prev, session: s };
+                        })}
+                        aria-label={`Increase ${ex.name} weight`}
+                        className={`p-2 rounded-xl border ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'} active:scale-90`}
+                      ><Plus size={14} /></button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">Sets</span>
+                    <div className="flex gap-2">
+                      {ex.setsCompleted.map((reps, setIdx) => {
+                        const bgColor = reps === null ? (isDark ? 'bg-slate-700' : 'bg-slate-300')
+                          : reps === 5 ? 'bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.4)]'
+                          : reps === 0 ? 'bg-rose-500'
+                          : 'bg-amber-500';
+                        return (
+                          <button
+                            key={setIdx}
+                            onClick={() => setEditingEntry(prev => {
+                              const s = JSON.parse(JSON.stringify(prev.session));
+                              const cur = s.exercises[exIdx].setsCompleted[setIdx];
+                              s.exercises[exIdx].setsCompleted[setIdx] = cur === null ? 5 : cur === 0 ? null : cur - 1;
+                              return { ...prev, session: s };
+                            })}
+                            aria-label={`Set ${setIdx + 1}: ${reps === null ? 'not done' : reps + ' reps'}`}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white active:scale-90 transition-transform ${bgColor}`}
+                          >
+                            {reps === null ? '–' : reps}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                const newHistory = [...history];
+                newHistory[editingEntry.index] = editingEntry.session;
+                setHistory(newHistory);
+                setEditingEntry(null);
+              }}
+              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4"
+            >Save Changes</button>
+
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase text-rose-500 tracking-widest py-3 active:scale-90"
+              ><Trash2 size={12} /> Delete Workout</button>
+            ) : (
+              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-rose-950/20 border-rose-900/30' : 'bg-rose-50 border-rose-200'}`}>
+                <p className={`text-xs font-bold text-center mb-3 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>Delete this workout? This cannot be undone.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      const newHistory = history.filter((_, idx) => idx !== editingEntry.index);
+                      setHistory(newHistory);
+                      setEditingEntry(null);
+                      setShowDeleteConfirm(false);
+                    }}
+                    className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black uppercase text-xs active:scale-95"
+                  >Delete</button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className={`flex-1 py-3 rounded-xl font-black uppercase text-xs ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'} active:scale-95`}
+                  >Cancel</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
