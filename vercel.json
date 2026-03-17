@@ -1,5 +1,5 @@
 {
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- src/ index.html public/ package.json package-lock.json vite.config.js tailwind.config.js postcss.config.js vercel.json",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- src/ index.html public/ package.json package-lock.json .npmrc vite.config.js vercel.json",
   "headers": [
     {
       "source": "/(.*)",
