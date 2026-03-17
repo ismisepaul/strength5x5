@@ -5,8 +5,9 @@ import {
   calculateBest1RM,
   formatDuration,
   calculateDeload,
-  deloadWeight,
+  deloadWeightByPercent,
   getConsecutiveFailures,
+  getRecommendedDeloadPercent,
   calculateWarmup,
   validateImportData,
   migrate,
@@ -124,20 +125,44 @@ describe('calculateBest1RM', () => {
 });
 
 describe('calculateDeload', () => {
-  it('applies 10% reduction rounded to 2.5', () => {
+  it('defaults to 10% reduction rounded to 2.5', () => {
     const w = { squat: 100, bench: 60, row: 50, press: 40, deadlift: 120 };
     const result = calculateDeload(w);
-    expect(result.squat).toBe(90);   // 100*0.9=90
-    expect(result.bench).toBe(55);   // 60*0.9=54 => round(54/2.5)*2.5 = 55
-    expect(result.row).toBe(45);     // 50*0.9=45
-    expect(result.press).toBe(35);   // 40*0.9=36 => 36/2.5=14.4 => round(14.4)=14 => 14*2.5=35
+    expect(result.squat).toBe(90);
+    expect(result.bench).toBe(55);
+    expect(result.row).toBe(45);
+    expect(result.press).toBe(35);
+    expect(result.deadlift).toBe(107.5);
   });
 
-  it('floors at 20kg minimum', () => {
-    const w = { squat: 20, bench: 20 };
+  it('accepts custom percentage', () => {
+    const w = { squat: 100, bench: 60, row: 50, press: 40, deadlift: 120 };
+    const result = calculateDeload(w, 25);
+    expect(result.squat).toBe(75);
+    expect(result.bench).toBe(45);
+    expect(result.deadlift).toBe(90);
+  });
+
+  it('accepts 50% deload', () => {
+    const w = { squat: 100, deadlift: 120 };
+    const result = calculateDeload(w, 50);
+    expect(result.squat).toBe(50);
+    expect(result.deadlift).toBe(60);
+  });
+
+  it('floors at INITIAL_WEIGHTS minimum (20kg general, 40kg deadlift)', () => {
+    const w = { squat: 20, bench: 20, deadlift: 40 };
     const result = calculateDeload(w);
-    expect(result.squat).toBe(20); // 20*0.9=18 => max(20, round(18/2.5)*2.5) = max(20, 17.5) = 20
+    expect(result.squat).toBe(20);
     expect(result.bench).toBe(20);
+    expect(result.deadlift).toBe(40);
+  });
+
+  it('deadlift floor is 40kg even at high percentages', () => {
+    const w = { squat: 50, deadlift: 60 };
+    const result = calculateDeload(w, 90);
+    expect(result.squat).toBe(20);
+    expect(result.deadlift).toBe(40);
   });
 });
 
@@ -284,21 +309,67 @@ describe('formatDuration', () => {
   });
 });
 
-describe('deloadWeight', () => {
+describe('deloadWeightByPercent', () => {
   it('applies 10% reduction rounded to 2.5kg', () => {
-    expect(deloadWeight(100)).toBe(90);
-    expect(deloadWeight(60)).toBe(55);
-    expect(deloadWeight(50)).toBe(45);
+    expect(deloadWeightByPercent(100, 10, 'squat')).toBe(90);
+    expect(deloadWeightByPercent(60, 10, 'bench')).toBe(55);
+    expect(deloadWeightByPercent(50, 10, 'row')).toBe(45);
   });
 
-  it('floors at 20kg minimum', () => {
-    expect(deloadWeight(20)).toBe(20);
-    expect(deloadWeight(21)).toBe(20);
+  it('applies 25% reduction', () => {
+    expect(deloadWeightByPercent(100, 25, 'squat')).toBe(75);
+    expect(deloadWeightByPercent(80, 25, 'press')).toBe(60);
   });
 
-  it('handles edge case near bar weight', () => {
-    expect(deloadWeight(22.5)).toBe(20);
-    expect(deloadWeight(25)).toBe(22.5);
+  it('applies 50% reduction', () => {
+    expect(deloadWeightByPercent(100, 50, 'squat')).toBe(50);
+    expect(deloadWeightByPercent(120, 50, 'deadlift')).toBe(60);
+  });
+
+  it('applies 90% reduction (clamped to floor)', () => {
+    expect(deloadWeightByPercent(100, 90, 'squat')).toBe(20);
+    expect(deloadWeightByPercent(200, 90, 'deadlift')).toBe(40);
+  });
+
+  it('floors at 20kg for standard exercises', () => {
+    expect(deloadWeightByPercent(20, 10, 'squat')).toBe(20);
+    expect(deloadWeightByPercent(22.5, 10, 'bench')).toBe(20);
+    expect(deloadWeightByPercent(25, 50, 'press')).toBe(20);
+  });
+
+  it('floors at 40kg for deadlift', () => {
+    expect(deloadWeightByPercent(40, 10, 'deadlift')).toBe(40);
+    expect(deloadWeightByPercent(50, 50, 'deadlift')).toBe(40);
+    expect(deloadWeightByPercent(60, 90, 'deadlift')).toBe(40);
+  });
+
+  it('rounds to 2.5kg increments', () => {
+    expect(deloadWeightByPercent(73, 15, 'squat')).toBe(62.5);
+  });
+});
+
+describe('getRecommendedDeloadPercent', () => {
+  it('returns 10 for null (failure scenario)', () => {
+    expect(getRecommendedDeloadPercent(null)).toBe(10);
+    expect(getRecommendedDeloadPercent(undefined)).toBe(10);
+  });
+
+  it('returns 10 for 14-20 days off', () => {
+    expect(getRecommendedDeloadPercent(14)).toBe(10);
+    expect(getRecommendedDeloadPercent(17)).toBe(10);
+    expect(getRecommendedDeloadPercent(20)).toBe(10);
+  });
+
+  it('returns 25 for 21-30 days off', () => {
+    expect(getRecommendedDeloadPercent(21)).toBe(25);
+    expect(getRecommendedDeloadPercent(25)).toBe(25);
+    expect(getRecommendedDeloadPercent(30)).toBe(25);
+  });
+
+  it('returns 50 for 31+ days off', () => {
+    expect(getRecommendedDeloadPercent(31)).toBe(50);
+    expect(getRecommendedDeloadPercent(60)).toBe(50);
+    expect(getRecommendedDeloadPercent(180)).toBe(50);
   });
 });
 

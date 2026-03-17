@@ -112,6 +112,8 @@ describe('Nav collapse during workout', () => {
 
     expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
     expect(screen.queryByLabelText('Log')).not.toBeInTheDocument();
+    expect(screen.queryByText('Start Workout')).not.toBeInTheDocument();
+    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
   });
 
   it('collapses nav when toggling a set during workout', async () => {

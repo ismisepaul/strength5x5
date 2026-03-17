@@ -118,6 +118,52 @@ Key characteristics:
 - Cross-tab sync via `storage` event listener in `useStorageSync()`
 - Schema versioning (`SCHEMA_VERSION`) with forward migration support
 
+## Deload Start Flow
+
+Deload prompting is decided from one start-time gate in `App.jsx` (`getStartDeloadPrompt(...)`).
+
+Decision precedence:
+1. Long-break deload due and not yet acknowledged for the latest workout date.
+2. Failure deload due (3+ consecutive failures at the current weight).
+3. No prompt, start workout directly.
+
+```mermaid
+flowchart TD
+    clickStart["User clicks Start Workout"] --> checkHistory{"History empty and not forced?"}
+    checkHistory -->|Yes| showRestore["Show restore prompt"]
+    checkHistory -->|No| decidePrompt["getStartDeloadPrompt(history, weights)"]
+
+    decidePrompt --> promptType{"Prompt type"}
+    promptType -->|longBreak| showLongBreak["Show long-break deload modal"]
+    promptType -->|failure| showFailure["Show failure deload modal"]
+    promptType -->|none| initDirect["initializeWorkout(weights)"]
+
+    showLongBreak --> longBreakChoice{"Apply or Skip"}
+    longBreakChoice -->|Apply| applyLongBreak["Apply % deload to all tracked lifts"]
+    longBreakChoice -->|Skip| keepLongBreak["Keep current weights"]
+    applyLongBreak --> persistLongBreak["Persist acknowledged long-break date"]
+    keepLongBreak --> initAfterLongBreak["initializeWorkout(weights)"]
+    persistLongBreak --> initAfterLongBreak
+
+    showFailure --> failureChoice{"Apply or Skip"}
+    failureChoice -->|Apply| applyFailure["Apply % deload to failed lifts"]
+    failureChoice -->|Skip| keepFailure["Keep current weights"]
+    applyFailure --> clearFailure["Clear pending failure deloads"]
+    keepFailure --> clearFailure
+    clearFailure --> initAfterFailure["initializeWorkout(updated or current weights)"]
+```
+
+Related behavior:
+- Completion summary only displays `Deload needed`; it does not open a deload modal.
+- Manual log save never opens the failure-deload modal immediately.
+- Both paths defer prompting until the next `Start Workout`.
+
+Regression coverage:
+- Deferred completion prompt and start-time failure modal: `src/__tests__/integration/workout-flow.test.jsx`
+- Failure modal apply/skip both initialize workout: `src/__tests__/integration/workout-flow.test.jsx`
+- Manual log creating failure streak defers prompt to next start: `src/__tests__/integration/settings.test.jsx`
+- Long-break prompt behavior and acceptance/skip paths: `src/__tests__/integration/settings.test.jsx`
+
 ## Internationalization
 
 - **Library**: react-i18next with i18next-browser-languagedetector

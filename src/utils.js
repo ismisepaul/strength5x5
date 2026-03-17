@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS } from './constants';
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS } from './constants';
 
 export function migrate(data, fromVersion) {
   let current = { ...data };
@@ -66,16 +66,24 @@ export function calculateWarmup(workingWeight) {
   return Math.max(20, Math.round(workingWeight * 0.6 / 2.5) * 2.5);
 }
 
-export function calculateDeload(weights) {
+export function deloadWeightByPercent(weight, percent, exerciseId) {
+  const floor = INITIAL_WEIGHTS[exerciseId] ?? 20;
+  return Math.max(floor, Math.round((weight * (1 - percent / 100)) / 2.5) * 2.5);
+}
+
+export function calculateDeload(weights, percent = 10) {
   const newW = {};
   for (const id of Object.keys(weights)) {
-    newW[id] = Math.max(20, Math.round((weights[id] * 0.9) / 2.5) * 2.5);
+    newW[id] = deloadWeightByPercent(weights[id], percent, id);
   }
   return newW;
 }
 
-export function deloadWeight(weight) {
-  return Math.max(20, Math.round((weight * 0.9) / 2.5) * 2.5);
+export function getRecommendedDeloadPercent(daysOff) {
+  if (daysOff == null) return 10;
+  if (daysOff <= 20) return 10;
+  if (daysOff <= 30) return 25;
+  return 50;
 }
 
 export function getConsecutiveFailures(history, exerciseId, weight) {

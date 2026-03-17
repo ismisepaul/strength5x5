@@ -11,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY } from './constants';
-import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeight, getConsecutiveFailures, formatDuration } from './utils';
+import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -22,6 +22,8 @@ import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
+
+const LONG_BREAK_DELOAD_KEY = 'strength5x5_long_break_deload_for_date';
 
 const App = () => {
   const { t } = useTranslation();
@@ -45,7 +47,8 @@ const App = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [deloadAlert, setDeloadAlert] = useState(null);
-  const [pendingDeloadWeights, setPendingDeloadWeights] = useState(null);
+  const [deloadPercent, setDeloadPercent] = useState(10);
+  const [pendingFailureDeloads, setPendingFailureDeloads] = useState(null);
   const [expandedWarmups, setExpandedWarmups] = useState({});
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [navExpanded, setNavExpanded] = useState(false);
@@ -60,6 +63,7 @@ const App = () => {
   const [pendingDriveRestore, setPendingDriveRestore] = useState(null);
   const [pendingLocalImport, setPendingLocalImport] = useState(null);
   const [connectSyncPrompt, setConnectSyncPrompt] = useState(null);
+  const [longBreakDeloadForDate, setLongBreakDeloadForDate] = useState(() => localStorage.getItem(LONG_BREAK_DELOAD_KEY));
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -216,24 +220,82 @@ const App = () => {
     });
   }, [timer, preferredRest]);
 
-  const finishWorkout = useCallback(() => {
-    const nextWeights = { ...weights };
+  const evaluateWorkoutOutcome = useCallback((workout, priorHistory, baseWeights) => {
+    const nextWeights = { ...baseWeights };
     const progressions = [];
-    const deloads = {};
-    currentWorkout.exercises.forEach(ex => {
+    const pendingDeloads = [];
+
+    workout.exercises.forEach(ex => {
       const passed = ex.setsCompleted.every(r => r === 5);
+      const defaultIncrement = ex.id === 'deadlift' ? 5 : 2.5;
+      const increment = ex.increment
+        ?? WORKOUTS[workout.type]?.exercises.find(e => e.id === ex.id)?.increment
+        ?? defaultIncrement;
+
       if (passed) {
-        nextWeights[ex.id] = ex.weight + ex.increment;
+        nextWeights[ex.id] = ex.weight + increment;
         progressions.push(ex.id);
       } else {
-        const priorFailures = getConsecutiveFailures(history, ex.id, ex.weight);
+        const priorFailures = getConsecutiveFailures(priorHistory, ex.id, ex.weight);
         if (priorFailures >= 2) {
-          const newWeight = deloadWeight(ex.weight);
-          nextWeights[ex.id] = newWeight;
-          deloads[ex.id] = newWeight;
+          pendingDeloads.push({ id: ex.id, currentWeight: ex.weight });
         }
       }
     });
+
+    return { nextWeights, progressions, pendingDeloads };
+  }, []);
+
+  const getPendingFailureDeloadsForStart = useCallback((historyToCheck, workoutWeights) => {
+    const exercises = Object.values(WORKOUTS)
+      .flatMap(workout => workout.exercises)
+      .filter((exercise, index, arr) => arr.findIndex(e => e.id === exercise.id) === index);
+    const getLatestFailureStreak = (exerciseId) => {
+      const latestSessionWithExercise = historyToCheck.find(session => session.exercises?.some(e => e.id === exerciseId));
+      const latestExercise = latestSessionWithExercise?.exercises?.find(e => e.id === exerciseId);
+      if (!latestExercise) return { streakWeight: null, consecutiveFailures: 0 };
+      const streakWeight = latestExercise.weight;
+      return {
+        streakWeight,
+        consecutiveFailures: getConsecutiveFailures(historyToCheck, exerciseId, streakWeight),
+      };
+    };
+    const diagnostics = exercises.map(ex => {
+      const streak = getLatestFailureStreak(ex.id);
+      return {
+        id: ex.id,
+        plannedWeight: workoutWeights[ex.id],
+        streakWeight: streak.streakWeight,
+        consecutiveFailures: streak.consecutiveFailures,
+      };
+    });
+    const pending = diagnostics
+      .filter(ex => ex.consecutiveFailures >= 3)
+      .map(ex => ({ id: ex.id, currentWeight: ex.plannedWeight }));
+    return pending;
+  }, []);
+
+  const getStartDeloadPrompt = useCallback((historyToCheck, workoutWeights) => {
+    if (historyToCheck.length === 0) return null;
+
+    const lastWorkoutDate = historyToCheck[0].date;
+    const last = new Date(lastWorkoutDate);
+    const daysOff = Math.floor((new Date() - last) / 86400000);
+    if (daysOff >= 14 && longBreakDeloadForDate !== lastWorkoutDate) {
+      const recommended = getRecommendedDeloadPercent(daysOff);
+      return { type: 'longBreak', daysOff, recommended };
+    }
+
+    const pendingDeloads = getPendingFailureDeloadsForStart(historyToCheck, workoutWeights);
+    if (pendingDeloads.length > 0) {
+      return { type: 'failure', pendingDeloads };
+    }
+
+    return null;
+  }, [getPendingFailureDeloadsForStart, longBreakDeloadForDate]);
+
+  const finishWorkout = useCallback(() => {
+    const { nextWeights, progressions, pendingDeloads } = evaluateWorkoutOutcome(currentWorkout, history, weights);
     const savedWorkout = { ...currentWorkout, duration: Date.now() - (currentWorkout.startedAt || Date.now()) };
     delete savedWorkout.startedAt;
     const newHistory = [savedWorkout, ...history];
@@ -241,7 +303,7 @@ const App = () => {
     setCurrentWorkoutType(prev => prev === 'A' ? 'B' : 'A');
     setIsWorkoutActive(false); setCurrentWorkout(null);
     timer.reset(); setIsExerciseComplete(false);
-    setCompletionSummary({ workout: savedWorkout, progressions, deloads });
+    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads });
     localStorage.removeItem(ACTIVE_WORKOUT_KEY);
     if (localBackup) exportData(newHistory);
 
@@ -250,7 +312,7 @@ const App = () => {
       weights: nextWeights, history: newHistory, nextType,
       isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
     });
-  }, [currentWorkout, history, weights, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly]);
+  }, [currentWorkout, history, weights, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -265,18 +327,19 @@ const App = () => {
 
   const startWorkout = useCallback((force = false) => {
     if (history.length === 0 && !force) { setShowRestorePrompt(true); return; }
-    if (history.length > 0) {
-      const last = new Date(history[0].date);
-      const daysOff = Math.floor((new Date() - last) / 86400000);
-      if (daysOff >= 14) {
-        const newW = calculateDeload(weights);
-        setPendingDeloadWeights(newW);
-        setDeloadAlert([t('modals.deloadMessage', { days: daysOff })]);
-        return;
-      }
+    const prompt = getStartDeloadPrompt(history, weights);
+    if (prompt?.type === 'longBreak') {
+      setDeloadPercent(prompt.recommended);
+      setDeloadAlert({ daysOff: prompt.daysOff, recommended: prompt.recommended, message: t('modals.deloadMessage', { days: prompt.daysOff }) });
+      return;
+    }
+    if (prompt?.type === 'failure') {
+      setDeloadPercent(10);
+      setPendingFailureDeloads(prompt.pendingDeloads);
+      return;
     }
     initializeWorkout(weights);
-  }, [history, weights, initializeWorkout]);
+  }, [history, weights, initializeWorkout, getStartDeloadPrompt, t]);
 
   const applyLocalImport = useCallback((d) => {
     setWeights(d.weights); setHistory(d.history);
@@ -481,8 +544,8 @@ const App = () => {
     }
   }, [gdrive, history, getAppState, applyDriveRestore, showToast, t]);
 
-  const handleManualLogSave = useCallback((newHistory) => {
-    const nextState = { ...getAppState(), history: newHistory };
+  const handleManualLogSave = useCallback((overrides) => {
+    const nextState = { ...getAppState(), ...overrides };
     saveToDriveQuietly(nextState);
   }, [getAppState, saveToDriveQuietly]);
 
@@ -575,11 +638,7 @@ const App = () => {
                   <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-transparent'}`}>
                     <div className="flex justify-between items-center">
                       <div className="flex-1 pr-4"><p className={`font-black text-sm uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t('exercises.' + ex.id)}</p><p className="text-[10px] font-bold text-slate-500">{ex.sets}x{ex.reps}</p></div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setWeights({ ...weights, [ex.id]: Math.max(0, weights[ex.id] - ex.increment) })} aria-label={`Decrease ${t('exercises.' + ex.id)} weight`} className={`p-2 rounded-xl border ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'} active:bg-slate-800 focus:outline-none`}><Minus size={14} /></button>
-                        <span className="font-black w-12 text-center text-xl">{weights[ex.id]}</span>
-                        <button onClick={() => setWeights({ ...weights, [ex.id]: weights[ex.id] + ex.increment })} aria-label={`Increase ${t('exercises.' + ex.id)} weight`} className={`p-2 rounded-xl border ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'} active:bg-slate-800 focus:outline-none`}><Plus size={14} /></button>
-                      </div>
+                      <span className="font-black text-xl tabular-nums">{weights[ex.id]}kg</span>
                     </div>
                   </div>
                 ))}</div>
@@ -884,17 +943,43 @@ const App = () => {
         </div>
       )}
 
-      {deloadAlert && (
+      {deloadAlert && (() => {
+        const previewWeights = calculateDeload(weights, deloadPercent);
+        return (
         <div role="dialog" aria-modal="true" aria-label="Deload recommendation" className={`fixed inset-0 z-[400] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500 animate-bounce"><TrendingDown size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendingDown size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.acceptDeload')}</h3>
-            <div className="space-y-3 mb-8">{deloadAlert.map((r, i) => <p key={i} className="text-slate-400 text-xs font-bold leading-relaxed">{r}</p>)}</div>
-            <button onClick={() => { setWeights(pendingDeloadWeights); initializeWorkout(pendingDeloadWeights); setPendingDeloadWeights(null); setDeloadAlert(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.acceptAndLift')}</button>
-            <button onClick={() => { initializeWorkout(weights); setPendingDeloadWeights(null); setDeloadAlert(null); }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
+            <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">{deloadAlert.message}</p>
+            <div className="mb-4">
+              <p className={`text-2xl font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+              <p className={`text-[10px] font-bold ${deloadPercent === deloadAlert.recommended ? 'text-emerald-500' : 'text-slate-500'}`}>{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
+            </div>
+            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-blue-500" />
+            <div className="space-y-2 mb-8">
+              {EXPECTED_WEIGHT_KEYS.filter(id => weights[id] > 0).map(id => (
+                <div key={id} className={`flex justify-between items-center px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
+                  <span className="text-[10px] font-black uppercase text-slate-500">{t('exercises.' + id)}</span>
+                  <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{weights[id]}kg <span className="text-slate-500 mx-1">&rarr;</span> {previewWeights[id]}kg</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => {
+              const newW = calculateDeload(weights, deloadPercent);
+              const lastWorkoutDate = history[0]?.date;
+              if (lastWorkoutDate) {
+                setLongBreakDeloadForDate(lastWorkoutDate);
+                localStorage.setItem(LONG_BREAK_DELOAD_KEY, lastWorkoutDate);
+              }
+              setWeights(newW);
+              initializeWorkout(newW);
+              setDeloadAlert(null);
+            }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.acceptAndLift')}</button>
+            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {showRestorePrompt && (
         <div role="dialog" aria-modal="true" aria-label="Restore backup" className={`fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
@@ -1097,13 +1182,30 @@ const App = () => {
             <button
               disabled={dateConflict || isFutureDate}
               onClick={() => {
-                const newHistory = isNewEntry
-                  ? [...history, editingEntry.session].sort((a, b) => new Date(b.date) - new Date(a.date))
+                const unsortedHistory = isNewEntry
+                  ? [...history, editingEntry.session]
                   : history.map((s, i) => i === editingEntry.index ? editingEntry.session : s);
+                const newHistory = [...unsortedHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+                const savedIndex = newHistory.findIndex(s => s === editingEntry.session);
+                const isLatestEntry = savedIndex === 0;
+
+                let nextWeights = weights;
+                let nextType = currentWorkoutType;
+
+                if (isLatestEntry) {
+                  const priorHistory = newHistory.slice(1);
+                  const { nextWeights: adjustedWeights } = evaluateWorkoutOutcome(editingEntry.session, priorHistory, weights);
+                  nextWeights = adjustedWeights;
+                  nextType = editingEntry.session.type === 'A' ? 'B' : 'A';
+
+                  setWeights(adjustedWeights);
+                  setCurrentWorkoutType(nextType);
+                }
+
                 setHistory(newHistory);
                 showToast(t(isNewEntry ? 'toast.workoutAdded' : 'toast.workoutUpdated'), 'success');
                 setEditingEntry(null);
-                handleManualLogSave(newHistory);
+                handleManualLogSave({ history: newHistory, weights: nextWeights, nextType });
               }}
               className={`w-full py-4 rounded-2xl font-black uppercase text-sm shadow-xl mb-4 ${dateConflict || isFutureDate ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 text-white active:scale-95'}`}
             >{isNewEntry ? t('modals.addWorkout') : t('modals.saveChanges')}</button>
@@ -1152,9 +1254,9 @@ const App = () => {
               {completionSummary.workout.exercises.map(ex => {
                 const passed = ex.setsCompleted.every(r => r === 5);
                 const progressed = completionSummary.progressions.includes(ex.id);
-                const deloadTo = completionSummary.deloads?.[ex.id];
-                const StatusIcon = passed ? CheckCircle2 : deloadTo ? TrendingDown : MinusCircle;
-                const statusColor = passed ? 'text-emerald-500' : deloadTo ? 'text-blue-500' : 'text-amber-500';
+                const needsDeload = completionSummary.pendingDeloads?.some(d => d.id === ex.id);
+                const StatusIcon = passed ? CheckCircle2 : needsDeload ? TrendingDown : MinusCircle;
+                const statusColor = passed ? 'text-emerald-500' : needsDeload ? 'text-blue-500' : 'text-amber-500';
                 const mutedColor = isDark ? 'text-slate-500' : 'text-slate-400';
                 return (
                   <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
@@ -1174,8 +1276,8 @@ const App = () => {
                         })}
                       </span>
                       {progressed && <span className="text-emerald-500 text-[10px] font-black">{t('completion.progressNext', { increment: ex.increment })}</span>}
-                      {deloadTo && <span className="text-blue-500 text-[10px] font-black">{t('completion.deloadTo', { weight: deloadTo })}</span>}
-                      {!passed && !progressed && !deloadTo && <span className="text-amber-500 text-[10px] font-black">{t('completion.sameWeight')}</span>}
+                      {needsDeload && <span className="text-blue-500 text-[10px] font-black">{t('completion.deloadTo')}</span>}
+                      {!passed && !progressed && !needsDeload && <span className="text-amber-500 text-[10px] font-black">{t('completion.sameWeight')}</span>}
                     </div>
                   </div>
                 );
@@ -1185,6 +1287,46 @@ const App = () => {
           </div>
         </div>
       )}
+
+      {pendingFailureDeloads && (() => {
+        const previewDeloads = pendingFailureDeloads.map(d => ({
+          ...d,
+          newWeight: deloadWeightByPercent(d.currentWeight, deloadPercent, d.id),
+        }));
+        return (
+        <div role="dialog" aria-modal="true" aria-label="Failure deload" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
+          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendingDown size={48} /></div></div>
+            <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.failureDeloadTitle')}</h3>
+            <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">{t('modals.failureDeloadMessage')}</p>
+            <div className="mb-4">
+              <p className={`text-2xl font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+              <p className={`text-[10px] font-bold ${deloadPercent === 10 ? 'text-emerald-500' : 'text-slate-500'}`}>{t('modals.deloadRecommended', { percent: 10 })}</p>
+            </div>
+            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-blue-500" />
+            <div className="space-y-2 mb-8">
+              {previewDeloads.map(d => (
+                <div key={d.id} className={`flex justify-between items-center px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
+                  <span className="text-[10px] font-black uppercase text-slate-500">{t('exercises.' + d.id)}</span>
+                  <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{d.currentWeight}kg <span className="text-slate-500 mx-1">&rarr;</span> {d.newWeight}kg</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => {
+              const updatedWeights = { ...weights };
+              previewDeloads.forEach(d => { updatedWeights[d.id] = d.newWeight; });
+              setWeights(updatedWeights);
+              setPendingFailureDeloads(null);
+              initializeWorkout(updatedWeights);
+            }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.confirmDeload')}</button>
+            <button onClick={() => {
+              setPendingFailureDeloads(null);
+              initializeWorkout(weights);
+            }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
+          </div>
+        </div>
+        );
+      })()}
 
       {showHelp && (
         <div role="dialog" aria-modal="true" aria-label="How it works" onClick={() => setShowHelp(false)} className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
@@ -1212,7 +1354,7 @@ const App = () => {
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.restTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.restBody')}</p></div>
               </div>
               <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-amber-950/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><AlertCircle size={18} /></div>
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><AlertCircle size={18} /></div>
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.longBreaksTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.longBreaksBody')}</p></div>
               </div>
               <div className="flex items-start gap-3">
