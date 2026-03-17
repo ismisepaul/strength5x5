@@ -151,6 +151,131 @@ describe('Import / Export', () => {
   });
 });
 
+describe('Import conflict resolution', () => {
+  const existingData = {
+    version: 1,
+    weights: { squat: 80, bench: 60, row: 65, press: 45, deadlift: 100 },
+    history: [
+      { date: '2026-03-10T10:00:00.000Z', type: 'A', exercises: [{ id: 'squat', weight: 80, setsCompleted: [5, 5, 5, 5, 5] }] },
+      { date: '2026-03-08T10:00:00.000Z', type: 'B', exercises: [{ id: 'squat', weight: 77.5, setsCompleted: [5, 5, 5, 5, 5] }] },
+      { date: '2026-03-06T10:00:00.000Z', type: 'A', exercises: [{ id: 'squat', weight: 75, setsCompleted: [5, 5, 5, 5, 5] }] },
+    ],
+    nextType: 'B',
+    isDark: true,
+    autoSave: false,
+    preferredRest: 90,
+    soundEnabled: false,
+    vibrationEnabled: false,
+  };
+
+  const smallerBackup = {
+    app: 'Strength 5x5',
+    version: 1,
+    weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+    history: [
+      { date: '2026-03-01T10:00:00.000Z', type: 'A', exercises: [{ id: 'squat', weight: 60, setsCompleted: [5, 5, 5, 5, 5] }] },
+    ],
+    nextType: 'B',
+    isDark: true,
+    autoSave: false,
+  };
+
+  it('shows warning when importing a file with fewer workouts than local', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(existingData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const input = document.querySelector('input[type="file"][accept=".json"]');
+    const file = new File([JSON.stringify(smallerBackup)], 'backup.json', { type: 'application/json' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Older Backup')).toBeTruthy();
+      expect(screen.getByText(/1 workouts/)).toBeTruthy();
+      expect(screen.getByText(/3 workouts/)).toBeTruthy();
+      expect(screen.getByText(/lose 2 workouts/)).toBeTruthy();
+    });
+  });
+
+  it('applies import when user confirms warning', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(existingData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const input = document.querySelector('input[type="file"][accept=".json"]');
+    const file = new File([JSON.stringify(smallerBackup)], 'backup.json', { type: 'application/json' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Older Backup')).toBeTruthy();
+    });
+
+    await user.click(screen.getByText('Restore Anyway'));
+
+    await waitFor(() => {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      expect(stored.weights.squat).toBe(60);
+      expect(stored.history).toHaveLength(1);
+    });
+  });
+
+  it('preserves local data when user cancels warning', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(existingData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const input = document.querySelector('input[type="file"][accept=".json"]');
+    const file = new File([JSON.stringify(smallerBackup)], 'backup.json', { type: 'application/json' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Older Backup')).toBeTruthy();
+    });
+
+    await user.click(screen.getByText('Cancel'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Older Backup')).toBeNull();
+    });
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.weights.squat).toBe(80);
+    expect(stored.history).toHaveLength(3);
+  });
+
+  it('applies import directly when file has equal or more workouts', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      ...existingData,
+      history: [existingData.history[0]],
+    }));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const largerBackup = { ...smallerBackup, history: [
+      { date: '2026-03-05T10:00:00.000Z', type: 'A', exercises: [{ id: 'squat', weight: 55, setsCompleted: [5, 5, 5, 5, 5] }] },
+      { date: '2026-03-03T10:00:00.000Z', type: 'B', exercises: [{ id: 'squat', weight: 52.5, setsCompleted: [5, 5, 5, 5, 5] }] },
+    ]};
+    const input = document.querySelector('input[type="file"][accept=".json"]');
+    const file = new File([JSON.stringify(largerBackup)], 'backup.json', { type: 'application/json' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      expect(stored.history).toHaveLength(2);
+    });
+
+    expect(screen.queryByText('Older Backup')).toBeNull();
+  });
+});
+
 describe('StrongLifts CSV Import', () => {
   it('shows Import StrongLifts button in Settings', async () => {
     const user = userEvent.setup();

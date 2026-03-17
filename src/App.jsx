@@ -58,6 +58,7 @@ const App = () => {
   const [completionSummary, setCompletionSummary] = useState(null);
   const [showResumePrompt, setShowResumePrompt] = useState(() => !!saved.activeSession);
   const [pendingDriveRestore, setPendingDriveRestore] = useState(null);
+  const [pendingLocalImport, setPendingLocalImport] = useState(null);
   const [showRestoreSourcePicker, setShowRestoreSourcePicker] = useState(false);
   const [connectSyncPrompt, setConnectSyncPrompt] = useState(null);
 
@@ -278,6 +279,29 @@ const App = () => {
     initializeWorkout(weights);
   }, [history, weights, initializeWorkout]);
 
+  const applyLocalImport = useCallback((d) => {
+    setWeights(d.weights); setHistory(d.history);
+    if (d.nextType) setCurrentWorkoutType(d.nextType);
+    setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
+    if (d.preferredRest) setPreferredRest(d.preferredRest);
+    if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
+    if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
+    if (d.logGrouping) setLogGrouping(d.logGrouping);
+    if (d.language) i18n.changeLanguage(d.language);
+    setActiveTab('workout'); setShowRestorePrompt(false); setShowRestoreSourcePicker(false);
+    setPendingLocalImport(null);
+    showToast(t('toast.backupRestored'), 'success');
+    saveToDriveQuietly({
+      weights: d.weights, history: d.history, nextType: d.nextType || currentWorkoutType,
+      isDark: d.isDark ?? true, autoSave: d.autoSave ?? false,
+      preferredRest: d.preferredRest || preferredRest,
+      soundEnabled: d.soundEnabled ?? soundEnabled,
+      vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
+      logGrouping: d.logGrouping || logGrouping,
+      language: d.language || i18n.language,
+    });
+  }, [currentWorkoutType, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, showToast, t]);
+
   const handleImport = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -296,25 +320,26 @@ const App = () => {
           showToast(t('toast.invalidBackup'), 'error');
           return;
         }
-        setWeights(d.weights); setHistory(d.history);
-        if (d.nextType) setCurrentWorkoutType(d.nextType);
-        setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
-        if (d.preferredRest) setPreferredRest(d.preferredRest);
-        if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
-        if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
-        if (d.logGrouping) setLogGrouping(d.logGrouping);
-        if (d.language) i18n.changeLanguage(d.language);
-        setActiveTab('workout'); setShowRestorePrompt(false); setShowRestoreSourcePicker(false);
-        showToast(t('toast.backupRestored'), 'success');
-        saveToDriveQuietly({
-          weights: d.weights, history: d.history, nextType: d.nextType || currentWorkoutType,
-          isDark: d.isDark ?? true, autoSave: d.autoSave ?? false,
-          preferredRest: d.preferredRest || preferredRest,
-          soundEnabled: d.soundEnabled ?? soundEnabled,
-          vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
-          logGrouping: d.logGrouping || logGrouping,
-          language: d.language || i18n.language,
-        });
+
+        const importCount = d.history?.length || 0;
+        const localCount = history.length;
+
+        if (localCount > 0 && importCount < localCount) {
+          const latestImport = d.history.reduce((latest, s) => {
+            const dt = new Date(s.date);
+            return dt > latest ? dt : latest;
+          }, new Date(d.history[0].date));
+          setPendingLocalImport({
+            data: d,
+            backupCount: importCount,
+            backupDate: latestImport.toLocaleDateString(),
+            localCount,
+            lossCount: Math.max(0, localCount - importCount),
+          });
+          return;
+        }
+
+        applyLocalImport(d);
       } catch (err) {
         console.warn('Import failed:', err);
         showToast(t('toast.couldNotRead'), 'error');
@@ -401,7 +426,15 @@ const App = () => {
     }
     setShowRestoreSourcePicker(false);
     if (result.stale) {
-      setPendingDriveRestore({ data: result.data, cloudDate: result.cloudDate, localDate: result.localDate });
+      const backupCount = result.data.history?.length || 0;
+      const localCount = history.length;
+      setPendingDriveRestore({
+        data: result.data,
+        backupDate: result.cloudDate,
+        localCount,
+        backupCount,
+        lossCount: Math.max(0, localCount - backupCount),
+      });
     } else {
       applyDriveRestore(result.data);
     }
@@ -436,17 +469,16 @@ const App = () => {
       return d > latest ? d : latest;
     }, new Date(history[0].date));
 
-    if (backup.modifiedTime > latestLocal) {
+    const result = await gdrive.restore(history);
+    const driveCount = result.success ? (result.data.history?.length || 0) : 0;
+
+    if (backup.modifiedTime > latestLocal || latestLocal > backup.modifiedTime) {
       setConnectSyncPrompt({
-        type: 'driveNewer',
+        driveData: result.success ? result.data : null,
         cloudDate: backup.modifiedTime.toLocaleDateString(),
         localDate: latestLocal.toLocaleDateString(),
-      });
-    } else if (latestLocal > backup.modifiedTime) {
-      setConnectSyncPrompt({
-        type: 'localNewer',
-        cloudDate: backup.modifiedTime.toLocaleDateString(),
-        localDate: latestLocal.toLocaleDateString(),
+        driveCount,
+        localCount: history.length,
       });
     }
   }, [gdrive, history, getAppState, applyDriveRestore, showToast, t]);
@@ -788,6 +820,7 @@ const App = () => {
                       ) : gdrive.lastSavedAt ? (
                         <p className="text-[10px] font-bold text-emerald-500">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
                       ) : null}
+                      <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-indigo-950/30 text-indigo-400 border border-indigo-900/40' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'} disabled:opacity-50`}>{t('options.syncNow')}</button>
                     </div>
                   )}
                 </div>
@@ -1098,6 +1131,7 @@ const App = () => {
                         setEditingEntry(null);
                         setShowDeleteConfirm(false);
                         showToast(t('toast.workoutDeleted'), 'success');
+                        saveToDriveQuietly({ ...getAppState(), history: newHistory });
                       }}
                       className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black uppercase text-xs active:scale-95"
                     >{t('modals.delete')}</button>
@@ -1198,44 +1232,65 @@ const App = () => {
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
             <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { cloudDate: pendingDriveRestore.cloudDate, localDate: pendingDriveRestore.localDate })}</p>
+            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
             <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
             <button onClick={() => setPendingDriveRestore(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
           </div>
         </div>
       )}
 
-      {connectSyncPrompt && (
-        <div role="dialog" aria-modal="true" aria-label="Sync prompt" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
+      {pendingLocalImport && (
+        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><Cloud size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
+            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
+            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
+            <button onClick={() => applyLocalImport(pendingLocalImport.data)} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
+            <button onClick={() => setPendingLocalImport(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+          </div>
+        </div>
+      )}
+
+      {connectSyncPrompt && (
+        <div role="dialog" aria-modal="true" aria-label="Data conflict" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
+          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
             <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {t(connectSyncPrompt.type === 'driveNewer' ? 'modals.driveNewerTitle' : 'modals.localNewerTitle')}
+              {t('modals.dataConflictTitle')}
             </h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">
-              {t(connectSyncPrompt.type === 'driveNewer' ? 'modals.driveNewerBody' : 'modals.localNewerBody', {
+              {t('modals.dataConflictBody', {
+                driveCount: connectSyncPrompt.driveCount,
                 cloudDate: connectSyncPrompt.cloudDate,
+                localCount: connectSyncPrompt.localCount,
                 localDate: connectSyncPrompt.localDate,
               })}
             </p>
-            <button
-              onClick={async () => {
-                if (connectSyncPrompt.type === 'driveNewer') {
-                  const result = await gdrive.restore(history);
-                  if (result.success) {
-                    applyDriveRestore(result.data);
+            <div className="space-y-3 mb-4">
+              <button
+                onClick={async () => {
+                  if (connectSyncPrompt.driveData) {
+                    applyDriveRestore(connectSyncPrompt.driveData);
                     showToast(t('toast.restoredFromDrive'), 'success');
                   }
-                } else {
+                  setConnectSyncPrompt(null);
+                }}
+                disabled={!connectSyncPrompt.driveData}
+                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 disabled:opacity-50"
+              >
+                {t('modals.useDriveData')}
+              </button>
+              <button
+                onClick={async () => {
                   const result = await gdrive.save(getAppState());
                   if (result.success) showToast(t('toast.savedToDrive'), 'success');
-                }
-                setConnectSyncPrompt(null);
-              }}
-              className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4"
-            >
-              {connectSyncPrompt.type === 'driveNewer' ? t('modals.restoreAnyway') : t('modals.overrideDrive')}
-            </button>
+                  setConnectSyncPrompt(null);
+                }}
+                className={`w-full py-5 rounded-2xl font-black uppercase text-sm tracking-widest active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-100 border-slate-200 text-slate-900'}`}
+              >
+                {t('modals.useLocalData')}
+              </button>
+            </div>
             <button onClick={() => setConnectSyncPrompt(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
           </div>
         </div>
