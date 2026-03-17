@@ -7,6 +7,8 @@ const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
 const BACKUP_FILENAME = 'strength5x5_backup_v1.json';
 const APP_PROPERTY_QUERY = "appProperties has { key='app' and value='strength5x5' }";
+const GDRIVE_CONFIGURED_KEY = 'strength5x5_gdrive_configured';
+const GDRIVE_FILE_ID_KEY = 'strength5x5_drive_file_id';
 
 function getLatestHistoryDate(history) {
   if (!Array.isArray(history) || history.length === 0) return null;
@@ -21,10 +23,15 @@ export function useGoogleDrive() {
   const [isLoading, setIsLoading] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [saveFailed, setSaveFailed] = useState(false);
-  const [hasEverConnected, setHasEverConnected] = useState(false);
+  const [hasEverConnected, setHasEverConnected] = useState(() => {
+    try { return localStorage.getItem(GDRIVE_CONFIGURED_KEY) === '1'; } catch { return false; }
+  });
   const tokenRef = useRef(null);
   const clientRef = useRef(null);
   const pendingAuthRef = useRef(null);
+  const fileIdRef = useRef((() => {
+    try { return localStorage.getItem(GDRIVE_FILE_ID_KEY); } catch { return null; }
+  })());
 
   const getToken = useCallback(() => {
     return new Promise((resolve, reject) => {
@@ -60,6 +67,7 @@ export function useGoogleDrive() {
             tokenRef.current = response.access_token;
             setIsConnected(true);
             setHasEverConnected(true);
+            try { localStorage.setItem(GDRIVE_CONFIGURED_KEY, '1'); } catch {}
             setTimeout(() => {
               tokenRef.current = null;
               setIsConnected(false);
@@ -104,7 +112,7 @@ export function useGoogleDrive() {
     return data.files?.[0] || null;
   }, []);
 
-  const save = useCallback(async (state) => {
+  const save = useCallback(async (state, _retry) => {
     setIsLoading(true);
     try {
       const json = JSON.stringify({
@@ -118,7 +126,17 @@ export function useGoogleDrive() {
       }
 
       const token = await getToken();
-      const existing = await findBackupFile(token);
+
+      let existing = null;
+      if (fileIdRef.current) {
+        existing = { id: fileIdRef.current };
+      } else {
+        existing = await findBackupFile(token);
+        if (existing?.id) {
+          fileIdRef.current = existing.id;
+          try { localStorage.setItem(GDRIVE_FILE_ID_KEY, existing.id); } catch {}
+        }
+      }
 
       const metadata = {
         name: BACKUP_FILENAME,
@@ -140,7 +158,21 @@ export function useGoogleDrive() {
         body: form,
       });
 
+      if (res.status === 404 && fileIdRef.current && !_retry) {
+        fileIdRef.current = null;
+        try { localStorage.removeItem(GDRIVE_FILE_ID_KEY); } catch {}
+        setIsLoading(false);
+        return save(state, true);
+      }
+
       if (!res.ok) throw new Error(`Drive upload failed: ${res.status}`);
+
+      const result = await res.json();
+      if (result.id && result.id !== fileIdRef.current) {
+        fileIdRef.current = result.id;
+        try { localStorage.setItem(GDRIVE_FILE_ID_KEY, result.id); } catch {}
+      }
+
       const now = new Date();
       setLastSavedAt(now);
       setSaveFailed(false);
@@ -162,6 +194,11 @@ export function useGoogleDrive() {
       const file = await findBackupFile(token);
 
       if (!file) return { success: false, error: 'driveNoBackup' };
+
+      if (file.id !== fileIdRef.current) {
+        fileIdRef.current = file.id;
+        try { localStorage.setItem(GDRIVE_FILE_ID_KEY, file.id); } catch {}
+      }
 
       const res = await fetch(`${DRIVE_API}/${file.id}?alt=media`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -200,6 +237,12 @@ export function useGoogleDrive() {
       const token = await getToken();
       const file = await findBackupFile(token);
       if (!file) return { exists: false };
+
+      if (file.id !== fileIdRef.current) {
+        fileIdRef.current = file.id;
+        try { localStorage.setItem(GDRIVE_FILE_ID_KEY, file.id); } catch {}
+      }
+
       return { exists: true, modifiedTime: new Date(file.modifiedTime) };
     } catch {
       return { exists: false };

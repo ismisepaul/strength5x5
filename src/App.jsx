@@ -771,16 +771,16 @@ const App = () => {
                 <div className={`p-4 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-50 border border-slate-100'}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                      <Cloud size={16} className={gdrive.isConnected ? 'text-emerald-500' : (isDark ? 'text-slate-400' : 'text-slate-500')} />
+                      <Cloud size={16} className={gdrive.isConnected ? 'text-emerald-500' : gdrive.hasEverConnected ? 'text-amber-500' : (isDark ? 'text-slate-400' : 'text-slate-500')} />
                       <div><p className="text-xs font-black uppercase">{t('options.googleDrive')}</p><p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.googleDriveDesc')}</p></div>
                     </div>
                     {gdrive.isConnected ? (
                       <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t('options.connectedToDrive')}</span>
                     ) : (
-                      <button onClick={handleConnect} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-blue-950/30 text-blue-400 border border-blue-900/40' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{t('options.connectDrive')}</button>
+                      <button onClick={handleConnect} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-blue-950/30 text-blue-400 border border-blue-900/40' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
                     )}
                   </div>
-                  {gdrive.isConnected && (
+                  {(gdrive.isConnected || gdrive.hasEverConnected) && (
                     <div className="mt-3 space-y-2">
                       <p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.savesAfterWorkout')}</p>
                       {gdrive.saveFailed ? (
@@ -877,6 +877,9 @@ const App = () => {
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10">{t('modals.syncHistoryBody')}</p>
             <div className="space-y-4">
               <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95"><Upload size={20} className="inline mr-2" /> {t('modals.restoreBackup')}</button>
+              {driveConfigured && (
+                <button onClick={handleConnect} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-700'}`}><Cloud size={20} className="inline mr-2" /> {t('modals.restoreFromDrive')}</button>
+              )}
               <button onClick={() => csvInputRef.current?.click()} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}><FileSpreadsheet size={20} className="inline mr-2" /> {t('options.importStronglifts')}</button>
               <button onClick={() => startWorkout(true)} className="text-[10px] font-black uppercase text-slate-700 tracking-[0.3em] mt-8 block mx-auto">{t('modals.skipAndStart')}</button>
             </div>

@@ -39,6 +39,8 @@ beforeEach(() => {
   vi.restoreAllMocks();
   delete window.google;
   global.fetch = vi.fn();
+  localStorage.removeItem('strength5x5_gdrive_configured');
+  localStorage.removeItem('strength5x5_drive_file_id');
 });
 
 describe('useGoogleDrive', () => {
@@ -385,6 +387,116 @@ describe('useGoogleDrive', () => {
     expect(saveResult.success).toBe(true);
     expect(requestAccessToken).toHaveBeenCalledTimes(2);
     vi.useRealTimers();
+  });
+
+  it('reads hasEverConnected from localStorage on mount', () => {
+    localStorage.setItem('strength5x5_gdrive_configured', '1');
+    setupGoogleMock();
+    const { result } = renderHook(() => useGoogleDrive());
+    expect(result.current.hasEverConnected).toBe(true);
+  });
+
+  it('persists hasEverConnected to localStorage on connect', async () => {
+    let authCallback;
+    window.google = {
+      accounts: {
+        oauth2: {
+          initTokenClient: vi.fn(({ callback }) => {
+            authCallback = callback;
+            return { requestAccessToken: vi.fn(() => authCallback({ access_token: 'test-token', expires_in: 3600 })) };
+          }),
+        },
+      },
+    };
+
+    const { result } = renderHook(() => useGoogleDrive());
+    await act(async () => { await result.current.connect(); });
+
+    expect(localStorage.getItem('strength5x5_gdrive_configured')).toBe('1');
+  });
+
+  it('skips findBackupFile when file ID is cached', async () => {
+    localStorage.setItem('strength5x5_drive_file_id', 'cached-id');
+    let authCallback;
+    window.google = {
+      accounts: {
+        oauth2: {
+          initTokenClient: vi.fn(({ callback }) => {
+            authCallback = callback;
+            return { requestAccessToken: vi.fn(() => authCallback({ access_token: 'test-token', expires_in: 3600 })) };
+          }),
+        },
+      },
+    };
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'cached-id' }) });
+
+    const { result } = renderHook(() => useGoogleDrive());
+
+    let saveResult;
+    await act(async () => {
+      saveResult = await result.current.save(mockState);
+    });
+
+    expect(saveResult.success).toBe(true);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const uploadUrl = global.fetch.mock.calls[0][0];
+    expect(uploadUrl).toContain('cached-id');
+    expect(global.fetch.mock.calls[0][1].method).toBe('PATCH');
+  });
+
+  it('retries save on 404 after clearing cached file ID', async () => {
+    localStorage.setItem('strength5x5_drive_file_id', 'deleted-id');
+    let authCallback;
+    window.google = {
+      accounts: {
+        oauth2: {
+          initTokenClient: vi.fn(({ callback }) => {
+            authCallback = callback;
+            return { requestAccessToken: vi.fn(() => authCallback({ access_token: 'test-token', expires_in: 3600 })) };
+          }),
+        },
+      },
+    };
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ files: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'new-file-id' }) });
+
+    const { result } = renderHook(() => useGoogleDrive());
+
+    let saveResult;
+    await act(async () => {
+      saveResult = await result.current.save(mockState);
+    });
+
+    expect(saveResult.success).toBe(true);
+    expect(localStorage.getItem('strength5x5_drive_file_id')).toBe('new-file-id');
+  });
+
+  it('caches file ID after first save', async () => {
+    let authCallback;
+    window.google = {
+      accounts: {
+        oauth2: {
+          initTokenClient: vi.fn(({ callback }) => {
+            authCallback = callback;
+            return { requestAccessToken: vi.fn(() => authCallback({ access_token: 'test-token', expires_in: 3600 })) };
+          }),
+        },
+      },
+    };
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ files: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'created-id' }) });
+
+    const { result } = renderHook(() => useGoogleDrive());
+    await act(async () => { await result.current.save(mockState); });
+
+    expect(localStorage.getItem('strength5x5_drive_file_id')).toBe('created-id');
   });
 
   describe('auth', () => {
