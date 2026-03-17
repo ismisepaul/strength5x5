@@ -59,6 +59,7 @@ const App = () => {
   const [showResumePrompt, setShowResumePrompt] = useState(() => !!saved.activeSession);
   const [pendingDriveRestore, setPendingDriveRestore] = useState(null);
   const [showRestoreSourcePicker, setShowRestoreSourcePicker] = useState(false);
+  const [connectSyncPrompt, setConnectSyncPrompt] = useState(null);
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -176,7 +177,7 @@ const App = () => {
   }, [getAppState, history]);
 
   const saveToDriveQuietly = useCallback(async (state) => {
-    if (!import.meta.env.VITE_GOOGLE_CLIENT_ID || !gdrive.isConnected) return;
+    if (!import.meta.env.VITE_GOOGLE_CLIENT_ID || !gdrive.hasEverConnected) return;
     const result = await gdrive.save(state);
     if (!result.success && result.error !== 'cancelled') {
       showToast(t('toast.driveSaveFailed'), 'error');
@@ -305,6 +306,15 @@ const App = () => {
         if (d.language) i18n.changeLanguage(d.language);
         setActiveTab('workout'); setShowRestorePrompt(false); setShowRestoreSourcePicker(false);
         showToast(t('toast.backupRestored'), 'success');
+        saveToDriveQuietly({
+          weights: d.weights, history: d.history, nextType: d.nextType || currentWorkoutType,
+          isDark: d.isDark ?? true, autoSave: d.autoSave ?? false,
+          preferredRest: d.preferredRest || preferredRest,
+          soundEnabled: d.soundEnabled ?? soundEnabled,
+          vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
+          logGrouping: d.logGrouping || logGrouping,
+          language: d.language || i18n.language,
+        });
       } catch (err) {
         console.warn('Import failed:', err);
         showToast(t('toast.couldNotRead'), 'error');
@@ -351,7 +361,13 @@ const App = () => {
     setShowRestorePrompt(false);
     setActiveTab('workout');
     showToast(t('toast.importedWorkouts', { count }), 'success');
-  }, [pendingCSVImport, showToast]);
+    saveToDriveQuietly({
+      ...getAppState(),
+      weights: pendingCSVImport.weights,
+      history: pendingCSVImport.history,
+      nextType: pendingCSVImport.nextType,
+    });
+  }, [pendingCSVImport, showToast, getAppState, saveToDriveQuietly]);
 
   const applyDriveRestore = useCallback((d) => {
     setWeights(d.weights); setHistory(d.history);
@@ -390,6 +406,50 @@ const App = () => {
       applyDriveRestore(result.data);
     }
   }, [gdrive, history, applyDriveRestore, showToast, t]);
+
+  const handleConnect = useCallback(async () => {
+    const connected = await gdrive.connect();
+    if (!connected) return;
+
+    const backup = await gdrive.checkBackup();
+    const hasLocal = history.length > 0;
+
+    if (!backup.exists && !hasLocal) return;
+
+    if (!backup.exists && hasLocal) {
+      const result = await gdrive.save(getAppState());
+      if (result.success) showToast(t('toast.driveAutoSaved'), 'success');
+      return;
+    }
+
+    if (backup.exists && !hasLocal) {
+      const result = await gdrive.restore(history);
+      if (result.success) {
+        applyDriveRestore(result.data);
+        showToast(t('toast.driveAutoRestored'), 'success');
+      }
+      return;
+    }
+
+    const latestLocal = history.reduce((latest, s) => {
+      const d = new Date(s.date);
+      return d > latest ? d : latest;
+    }, new Date(history[0].date));
+
+    if (backup.modifiedTime > latestLocal) {
+      setConnectSyncPrompt({
+        type: 'driveNewer',
+        cloudDate: backup.modifiedTime.toLocaleDateString(),
+        localDate: latestLocal.toLocaleDateString(),
+      });
+    } else if (latestLocal > backup.modifiedTime) {
+      setConnectSyncPrompt({
+        type: 'localNewer',
+        cloudDate: backup.modifiedTime.toLocaleDateString(),
+        localDate: latestLocal.toLocaleDateString(),
+      });
+    }
+  }, [gdrive, history, getAppState, applyDriveRestore, showToast, t]);
 
   const handleManualLogSave = useCallback((newHistory) => {
     const nextState = { ...getAppState(), history: newHistory };
@@ -717,7 +777,7 @@ const App = () => {
                     {gdrive.isConnected ? (
                       <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t('options.connectedToDrive')}</span>
                     ) : (
-                      <button onClick={() => gdrive.connect()} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-blue-950/30 text-blue-400 border border-blue-900/40' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{t('options.connectDrive')}</button>
+                      <button onClick={handleConnect} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-blue-950/30 text-blue-400 border border-blue-900/40' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{t('options.connectDrive')}</button>
                     )}
                   </div>
                   {gdrive.isConnected && (
@@ -1138,6 +1198,42 @@ const App = () => {
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { cloudDate: pendingDriveRestore.cloudDate, localDate: pendingDriveRestore.localDate })}</p>
             <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
             <button onClick={() => setPendingDriveRestore(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+          </div>
+        </div>
+      )}
+
+      {connectSyncPrompt && (
+        <div role="dialog" aria-modal="true" aria-label="Sync prompt" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
+          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><Cloud size={48} /></div></div>
+            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {t(connectSyncPrompt.type === 'driveNewer' ? 'modals.driveNewerTitle' : 'modals.localNewerTitle')}
+            </h3>
+            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">
+              {t(connectSyncPrompt.type === 'driveNewer' ? 'modals.driveNewerBody' : 'modals.localNewerBody', {
+                cloudDate: connectSyncPrompt.cloudDate,
+                localDate: connectSyncPrompt.localDate,
+              })}
+            </p>
+            <button
+              onClick={async () => {
+                if (connectSyncPrompt.type === 'driveNewer') {
+                  const result = await gdrive.restore(history);
+                  if (result.success) {
+                    applyDriveRestore(result.data);
+                    showToast(t('toast.restoredFromDrive'), 'success');
+                  }
+                } else {
+                  const result = await gdrive.save(getAppState());
+                  if (result.success) showToast(t('toast.savedToDrive'), 'success');
+                }
+                setConnectSyncPrompt(null);
+              }}
+              className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4"
+            >
+              {connectSyncPrompt.type === 'driveNewer' ? t('modals.restoreAnyway') : t('modals.overrideDrive')}
+            </button>
+            <button onClick={() => setConnectSyncPrompt(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
           </div>
         </div>
       )}

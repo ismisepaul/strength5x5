@@ -237,6 +237,156 @@ describe('useGoogleDrive', () => {
     });
   });
 
+  it('queries files ordered by modifiedTime desc', async () => {
+    let authCallback;
+    setupGoogleMock();
+    window.google.accounts.oauth2.initTokenClient = vi.fn(({ callback }) => {
+      authCallback = callback;
+      return { requestAccessToken: vi.fn(() => authCallback({ access_token: 'test-token', expires_in: 3600 })) };
+    });
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ files: [] }) });
+
+    const { result } = renderHook(() => useGoogleDrive());
+    await act(async () => { await result.current.checkBackup(); });
+
+    const searchUrl = global.fetch.mock.calls[0][0];
+    expect(searchUrl).toContain('orderBy=modifiedTime+desc');
+  });
+
+  it('sets hasEverConnected after first auth', async () => {
+    let authCallback;
+    window.google = {
+      accounts: {
+        oauth2: {
+          initTokenClient: vi.fn(({ callback }) => {
+            authCallback = callback;
+            return { requestAccessToken: vi.fn(() => authCallback({ access_token: 'test-token', expires_in: 3600 })) };
+          }),
+        },
+      },
+    };
+
+    const { result } = renderHook(() => useGoogleDrive());
+    expect(result.current.hasEverConnected).toBe(false);
+
+    await act(async () => { await result.current.connect(); });
+    expect(result.current.hasEverConnected).toBe(true);
+    expect(result.current.isConnected).toBe(true);
+  });
+
+  describe('checkBackup', () => {
+    it('returns exists: true with modifiedTime when backup found', async () => {
+      let authCallback;
+      window.google = {
+        accounts: {
+          oauth2: {
+            initTokenClient: vi.fn(({ callback }) => {
+              authCallback = callback;
+              return { requestAccessToken: vi.fn(() => authCallback({ access_token: 'test-token', expires_in: 3600 })) };
+            }),
+          },
+        },
+      };
+
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ files: [{ id: 'file-id', name: 'strength5x5_backup_v1.json', modifiedTime: '2026-03-15T12:00:00.000Z' }] }) });
+
+      const { result } = renderHook(() => useGoogleDrive());
+
+      let checkResult;
+      await act(async () => {
+        checkResult = await result.current.checkBackup();
+      });
+
+      expect(checkResult.exists).toBe(true);
+      expect(checkResult.modifiedTime).toEqual(new Date('2026-03-15T12:00:00.000Z'));
+    });
+
+    it('returns exists: false when no backup found', async () => {
+      let authCallback;
+      window.google = {
+        accounts: {
+          oauth2: {
+            initTokenClient: vi.fn(({ callback }) => {
+              authCallback = callback;
+              return { requestAccessToken: vi.fn(() => authCallback({ access_token: 'test-token', expires_in: 3600 })) };
+            }),
+          },
+        },
+      };
+
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ files: [] }) });
+
+      const { result } = renderHook(() => useGoogleDrive());
+
+      let checkResult;
+      await act(async () => {
+        checkResult = await result.current.checkBackup();
+      });
+
+      expect(checkResult.exists).toBe(false);
+    });
+
+    it('returns exists: false on auth failure', async () => {
+      const { result } = renderHook(() => useGoogleDrive());
+
+      let checkResult;
+      await act(async () => {
+        checkResult = await result.current.checkBackup();
+      });
+
+      expect(checkResult.exists).toBe(false);
+    });
+  });
+
+  it('re-authenticates and saves after token expiry', async () => {
+    vi.useFakeTimers();
+    let authCallback;
+    const requestAccessToken = vi.fn();
+    window.google = {
+      accounts: {
+        oauth2: {
+          initTokenClient: vi.fn(({ callback }) => {
+            authCallback = callback;
+            requestAccessToken.mockImplementation(() => {
+              authCallback({ access_token: 'new-token', expires_in: 3600 });
+            });
+            return { requestAccessToken };
+          }),
+        },
+      },
+    };
+
+    global.fetch = vi.fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ files: [], id: 'file-id' }) });
+
+    const { result } = renderHook(() => useGoogleDrive());
+
+    await act(async () => { await result.current.connect(); });
+    expect(result.current.isConnected).toBe(true);
+    expect(result.current.hasEverConnected).toBe(true);
+
+    await act(async () => { vi.advanceTimersByTime(3600 * 1000); });
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.hasEverConnected).toBe(true);
+
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ files: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'new-file-id' }) });
+
+    let saveResult;
+    await act(async () => {
+      saveResult = await result.current.save(mockState);
+    });
+
+    expect(saveResult.success).toBe(true);
+    expect(requestAccessToken).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+
   describe('auth', () => {
     it('returns error when GIS is not loaded', async () => {
       const { result } = renderHook(() => useGoogleDrive());

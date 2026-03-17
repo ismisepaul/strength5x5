@@ -124,6 +124,11 @@
     "deleteWorkout": "Delete Workout",
     "deleteConfirm": "Delete this workout? This cannot be undone.",
     "delete": "Delete",
+    "driveNewerTitle": "Drive Backup is Newer",
+    "driveNewerBody": "Drive backup is from {{cloudDate}}. Local data is from {{localDate}}. Restore from Drive?",
+    "localNewerTitle": "Local Data is Newer",
+    "localNewerBody": "Local data is from {{localDate}}. Drive backup is from {{cloudDate}}. Override Drive backup?",
+    "overrideDrive": "Override Drive",
     "olderBackupTitle": "Older Backup",
     "olderBackupBody": "Cloud backup is from {{cloudDate}}. Local data is from {{localDate}}. Restore anyway?",
     "restoreAnyway": "Restore Anyway",
@@ -179,7 +184,9 @@
     "driveError": "Google Drive error. Try again.",
     "driveNoBackup": "No backup found on Google Drive",
     "driveFileTooLarge": "Backup data exceeds 5MB limit",
-    "driveSaveFailed": "Drive save failed. Try again in Options."
+    "driveSaveFailed": "Drive save failed. Try again in Options.",
+    "driveAutoSaved": "Data backed up to Drive",
+    "driveAutoRestored": "Data restored from Drive"
   },
   "status": {
     "done": "{{count}} done",

@@ -21,8 +21,10 @@ export function useGoogleDrive() {
   const [isLoading, setIsLoading] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [hasEverConnected, setHasEverConnected] = useState(false);
   const tokenRef = useRef(null);
   const clientRef = useRef(null);
+  const pendingAuthRef = useRef(null);
 
   const getToken = useCallback(() => {
     return new Promise((resolve, reject) => {
@@ -47,26 +49,33 @@ export function useGoogleDrive() {
           client_id: clientId,
           scope: SCOPE,
           callback: (response) => {
+            const pending = pendingAuthRef.current;
+            pendingAuthRef.current = null;
+
             if (response.error) {
               setIsConnected(false);
-              reject(new Error(response.error));
+              pending?.reject(new Error(response.error));
               return;
             }
             tokenRef.current = response.access_token;
             setIsConnected(true);
+            setHasEverConnected(true);
             setTimeout(() => {
               tokenRef.current = null;
               setIsConnected(false);
             }, (response.expires_in - 60) * 1000);
-            resolve(response.access_token);
+            pending?.resolve(response.access_token);
           },
           error_callback: (err) => {
+            const pending = pendingAuthRef.current;
+            pendingAuthRef.current = null;
             setIsConnected(false);
-            reject(new Error(err.message || 'Auth cancelled'));
+            pending?.reject(new Error(err.message || 'Auth cancelled'));
           },
         });
       }
 
+      pendingAuthRef.current = { resolve, reject };
       clientRef.current.requestAccessToken();
     });
   }, []);
@@ -85,6 +94,7 @@ export function useGoogleDrive() {
       q: APP_PROPERTY_QUERY,
       fields: 'files(id,name,modifiedTime)',
       spaces: 'drive',
+      orderBy: 'modifiedTime desc',
     });
     const res = await fetch(`${DRIVE_API}?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -185,5 +195,16 @@ export function useGoogleDrive() {
     }
   }, [getToken, findBackupFile]);
 
-  return { save, restore, connect, isConnected, isLoading, lastSavedAt, saveFailed };
+  const checkBackup = useCallback(async () => {
+    try {
+      const token = await getToken();
+      const file = await findBackupFile(token);
+      if (!file) return { exists: false };
+      return { exists: true, modifiedTime: new Date(file.modifiedTime) };
+    } catch {
+      return { exists: false };
+    }
+  }, [getToken, findBackupFile]);
+
+  return { save, restore, connect, checkBackup, isConnected, isLoading, lastSavedAt, saveFailed, hasEverConnected };
 }

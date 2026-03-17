@@ -124,6 +124,11 @@
     "deleteWorkout": "Supprimer la séance",
     "deleteConfirm": "Supprimer cette séance ? Cette action est irréversible.",
     "delete": "Supprimer",
+    "driveNewerTitle": "Sauvegarde Drive plus récente",
+    "driveNewerBody": "La sauvegarde Drive date du {{cloudDate}}. Les données locales datent du {{localDate}}. Restaurer depuis Drive ?",
+    "localNewerTitle": "Données locales plus récentes",
+    "localNewerBody": "Les données locales datent du {{localDate}}. La sauvegarde Drive date du {{cloudDate}}. Remplacer la sauvegarde Drive ?",
+    "overrideDrive": "Remplacer Drive",
     "olderBackupTitle": "Sauvegarde ancienne",
     "olderBackupBody": "La sauvegarde cloud date du {{cloudDate}}. Les données locales datent du {{localDate}}. Restaurer quand même ?",
     "restoreAnyway": "Restaurer quand même",
@@ -179,7 +184,9 @@
     "driveError": "Erreur Google Drive. Réessayez.",
     "driveNoBackup": "Aucune sauvegarde trouvée sur Google Drive",
     "driveFileTooLarge": "Les données dépassent la limite de 5 Mo",
-    "driveSaveFailed": "Échec de sauvegarde Drive. Réessayez dans Options."
+    "driveSaveFailed": "Échec de sauvegarde Drive. Réessayez dans Options.",
+    "driveAutoSaved": "Données sauvegardées sur Drive",
+    "driveAutoRestored": "Données restaurées depuis Drive"
   },
   "status": {
     "done": "{{count}} faites",
