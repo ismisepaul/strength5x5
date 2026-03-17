@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
@@ -215,8 +215,9 @@ describe('Deload', () => {
     render(<App />);
 
     await user.click(screen.getByText('Start Workout'));
-    expect(screen.getByText(/100kg/)).toBeInTheDocument();
-    expect(screen.getByText(/90kg/)).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog', { name: 'Deload recommendation' });
+    expect(within(dialog).getByText(/100kg/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/90kg/)).toBeInTheDocument();
   });
 
   it('does not prompt long-break deload again after accepting then discarding workout', async () => {
