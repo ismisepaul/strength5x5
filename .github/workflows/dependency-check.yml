@@ -1,0 +1,83 @@
+name: Dependency freshness check
+
+on:
+  schedule:
+    - cron: '0 9 1 1,4,7,10 *' # 1st of Jan, Apr, Jul, Oct at 09:00 UTC
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - name: Check for major version gaps
+        id: outdated
+        run: |
+          outdated=$(npm outdated --json 2>/dev/null || true)
+          if [ -z "$outdated" ] || [ "$outdated" = "{}" ]; then
+            echo "all_current=true" >> "$GITHUB_OUTPUT"
+            echo "All dependencies are up to date."
+            exit 0
+          fi
+
+          report=$(echo "$outdated" | node -e "
+            const data = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const majors = Object.entries(data)
+              .filter(([, v]) => v.current && v.latest && v.current.split('.')[0] !== v.latest.split('.')[0])
+              .map(([name, v]) => '| ' + name + ' | ' + v.current + ' | ' + v.latest + ' |');
+            if (majors.length) {
+              console.log('| Package | Current | Latest |');
+              console.log('|---------|---------|--------|');
+              majors.forEach(l => console.log(l));
+            }
+          ")
+
+          if [ -z "$report" ]; then
+            echo "all_current=true" >> "$GITHUB_OUTPUT"
+            echo "No major version gaps found."
+          else
+            echo "all_current=false" >> "$GITHUB_OUTPUT"
+            {
+              echo 'report<<EOF'
+              echo "$report"
+              echo 'EOF'
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create issue for major version gaps
+        if: steps.outdated.outputs.all_current == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list --label "dependencies" --state open --json number --jq 'length')
+          if [ "$existing" -gt 0 ]; then
+            echo "Open dependency issue already exists, skipping."
+            exit 0
+          fi
+
+          gh issue create \
+            --title "Quarterly dependency review: major version updates available" \
+            --label "dependencies" \
+            --body "$(cat <<'BODY'
+          ## Major version updates available
+
+          The following packages are one or more major versions behind:
+
+          ${{ steps.outdated.outputs.report }}
+
+          ### Action items
+          - [ ] Review changelogs and migration guides
+          - [ ] Plan staged upgrades (see `staged_dependency_upgrades` plan for reference)
+          - [ ] Run full test suite and manual verification after each upgrade
+
+          *This issue was created automatically by the quarterly dependency check.*
+          BODY
+          )"

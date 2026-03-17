@@ -56,7 +56,7 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
           </button>
         ) : null}
       </div>
-      <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+      <div className={`h-1.5 w-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} overflow-hidden`}>
         <div
           className={`h-full transition-all duration-1000 linear ${isExerciseComplete ? 'bg-emerald-500' : 'bg-indigo-500'}`}
           style={{ width: `${progress}%` }}
