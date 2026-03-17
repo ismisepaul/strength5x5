@@ -74,7 +74,7 @@
     "localBackup": "Local Backup",
     "localBackupDesc": "Download to device after every workout",
     "backupToDevice": "Backup to Device",
-    "restore": "Restore",
+    "restore": "Restore from Device",
     "importStronglifts": "Import StrongLifts",
     "importStrongliftsDesc": "Upload your StrongLifts 5x5 CSV export",
     "language": "Language",
@@ -133,12 +133,7 @@
     "olderBackupTitle": "Older Backup",
     "olderBackupBody": "This backup has {{backupCount}} workouts (latest: {{backupDate}}). You have {{localCount}} workouts. You'll lose {{lossCount}} workouts.",
     "restoreFromDrive": "Restore from Google Drive",
-    "restoreAnyway": "Restore Anyway",
-    "restoreTitle": "Restore",
-    "fromDevice": "From Device",
-    "fromDeviceDesc": "Restore from local file",
-    "fromDrive": "From Google Drive",
-    "fromDriveDesc": "Restore from your Drive"
+    "restoreAnyway": "Restore Anyway"
   },
   "completion": {
     "complete": "{{name}} Complete",

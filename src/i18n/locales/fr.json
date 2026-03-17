@@ -74,7 +74,7 @@
     "localBackup": "Sauvegarde locale",
     "localBackupDesc": "Télécharger sur l'appareil après chaque séance",
     "backupToDevice": "Sauvegarder sur l'appareil",
-    "restore": "Restaurer",
+    "restore": "Restaurer depuis l'appareil",
     "importStronglifts": "Importer StrongLifts",
     "importStrongliftsDesc": "Téléchargez votre export CSV StrongLifts 5x5",
     "language": "Langue",
@@ -133,12 +133,7 @@
     "olderBackupTitle": "Sauvegarde ancienne",
     "olderBackupBody": "Cette sauvegarde contient {{backupCount}} séances (dernière : {{backupDate}}). Vous avez {{localCount}} séances. Vous perdrez {{lossCount}} séances.",
     "restoreFromDrive": "Restaurer depuis Google Drive",
-    "restoreAnyway": "Restaurer quand même",
-    "restoreTitle": "Restaurer",
-    "fromDevice": "Depuis l'appareil",
-    "fromDeviceDesc": "Restaurer depuis un fichier local",
-    "fromDrive": "Depuis Google Drive",
-    "fromDriveDesc": "Restaurer depuis votre Drive"
+    "restoreAnyway": "Restaurer quand même"
   },
   "completion": {
     "complete": "{{name}} terminée",

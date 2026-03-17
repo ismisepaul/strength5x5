@@ -59,7 +59,6 @@ const App = () => {
   const [showResumePrompt, setShowResumePrompt] = useState(() => !!saved.activeSession);
   const [pendingDriveRestore, setPendingDriveRestore] = useState(null);
   const [pendingLocalImport, setPendingLocalImport] = useState(null);
-  const [showRestoreSourcePicker, setShowRestoreSourcePicker] = useState(false);
   const [connectSyncPrompt, setConnectSyncPrompt] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -288,7 +287,7 @@ const App = () => {
     if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
     if (d.logGrouping) setLogGrouping(d.logGrouping);
     if (d.language) i18n.changeLanguage(d.language);
-    setActiveTab('workout'); setShowRestorePrompt(false); setShowRestoreSourcePicker(false);
+    setActiveTab('workout'); setShowRestorePrompt(false);
     setPendingLocalImport(null);
     showToast(t('toast.backupRestored'), 'success');
     saveToDriveQuietly({
@@ -424,7 +423,6 @@ const App = () => {
       if (result.error !== 'cancelled') showToast(t('toast.' + result.error), 'error');
       return;
     }
-    setShowRestoreSourcePicker(false);
     if (result.stale) {
       const backupCount = result.data.history?.length || 0;
       const localCount = history.length;
@@ -815,12 +813,14 @@ const App = () => {
                   {(gdrive.isConnected || gdrive.hasEverConnected) && (
                     <div className="mt-3 space-y-2">
                       <p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.savesAfterWorkout')}</p>
-                      {gdrive.saveFailed ? (
-                        <button onClick={handleDriveSave} className="text-[10px] font-bold text-rose-500 active:scale-95">{t('options.saveFailed')}</button>
-                      ) : gdrive.lastSavedAt ? (
-                        <p className="text-[10px] font-bold text-emerald-500">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
-                      ) : null}
-                      <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-indigo-950/30 text-indigo-400 border border-indigo-900/40' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'} disabled:opacity-50`}>{t('options.syncNow')}</button>
+                      <div className="flex items-center justify-between">
+                        {gdrive.saveFailed ? (
+                          <button onClick={handleDriveSave} className="text-[10px] font-bold text-rose-500 active:scale-95">{t('options.saveFailed')}</button>
+                        ) : gdrive.lastSavedAt ? (
+                          <p className="text-[10px] font-bold text-emerald-500">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
+                        ) : <span />}
+                        <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-indigo-950/30 text-indigo-400 border border-indigo-900/40' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'} disabled:opacity-50`}>{t('options.syncNow')}</button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -831,13 +831,7 @@ const App = () => {
                 <button onClick={() => exportData()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform bg-indigo-600 text-white shadow-lg`}>
                   <Download size={20} /> {t('options.backupToDevice')}
                 </button>
-                <button onClick={() => {
-                  if (driveConfigured && gdrive.isConnected) {
-                    setShowRestoreSourcePicker(true);
-                  } else {
-                    fileInputRef.current?.click();
-                  }
-                }} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-white text-slate-600 border-slate-200'}`}>
+                <button onClick={() => fileInputRef.current?.click()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-white text-slate-600 border-slate-200'}`}>
                   <Upload size={20} /> {t('options.restore')}
                 </button>
               </div>
@@ -1296,32 +1290,6 @@ const App = () => {
               </button>
             </div>
             <button onClick={() => setConnectSyncPrompt(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
-          </div>
-        </div>
-      )}
-
-      {showRestoreSourcePicker && (
-        <div role="dialog" aria-modal="true" aria-label="Restore source" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.restoreTitle')}</h3>
-            <div className="space-y-3 mb-6">
-              <button
-                onClick={() => { setShowRestoreSourcePicker(false); fileInputRef.current?.click(); }}
-                className={`w-full p-5 rounded-2xl flex items-center gap-4 border active:scale-[0.98] transition-transform text-left ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
-              >
-                <HardDrive size={24} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('modals.fromDevice')}</p><p className="text-[10px] font-bold text-slate-500">{t('modals.fromDeviceDesc')}</p></div>
-              </button>
-              <button
-                onClick={handleDriveRestore}
-                disabled={gdrive.isLoading}
-                className={`w-full p-5 rounded-2xl flex items-center gap-4 border active:scale-[0.98] transition-transform text-left ${gdrive.isLoading ? 'opacity-50 cursor-not-allowed' : ''} ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
-              >
-                <Cloud size={24} className={isDark ? 'text-blue-400' : 'text-blue-600'} />
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('modals.fromDrive')}</p><p className="text-[10px] font-bold text-slate-500">{t('modals.fromDriveDesc')}</p></div>
-              </button>
-            </div>
-            <button onClick={() => setShowRestoreSourcePicker(false)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
           </div>
         </div>
       )}
