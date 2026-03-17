@@ -161,7 +161,9 @@
     "restTitle": "Rest",
     "restBody": "Rest between sets to recover. Heavy sets may need 3-5 minutes.",
     "longBreaksTitle": "Long Breaks",
-    "longBreaksBody": "After 14+ days off, a 10% safety deload is recommended."
+    "longBreaksBody": "After 14+ days off, a 10% safety deload is recommended.",
+    "backupsTitle": "Backups",
+    "backupsBody": "Google Drive syncs automatically but the file is not visible in your Drive. Use \"Backup to Device\" for a downloadable copy you can keep."
   },
   "liveWorkout": {
     "title": "Live Workout",

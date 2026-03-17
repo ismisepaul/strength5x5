@@ -161,7 +161,9 @@
     "restTitle": "Repos",
     "restBody": "Reposez-vous entre les séries. Les séries lourdes nécessitent 3 à 5 minutes.",
     "longBreaksTitle": "Longues pauses",
-    "longBreaksBody": "Après plus de 14 jours d'arrêt, un deload de sécurité de 10% est recommandé."
+    "longBreaksBody": "Après plus de 14 jours d'arrêt, un deload de sécurité de 10% est recommandé.",
+    "backupsTitle": "Sauvegardes",
+    "backupsBody": "Google Drive se synchronise automatiquement mais le fichier n'est pas visible dans votre Drive. Utilisez « Sauvegarder sur l'appareil » pour une copie téléchargeable."
   },
   "liveWorkout": {
     "title": "Séance en cours",

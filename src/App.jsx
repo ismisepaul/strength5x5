@@ -1221,6 +1221,10 @@ const App = () => {
                 <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-amber-950/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><AlertCircle size={18} /></div>
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.longBreaksTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.longBreaksBody')}</p></div>
               </div>
+              <div className="flex items-start gap-3">
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><Cloud size={18} /></div>
+                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.backupsTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.backupsBody')}</p></div>
+              </div>
             </div>
             <button autoFocus onClick={() => setShowHelp(false)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl active:scale-95">{t('help.gotIt')}</button>
           </div>
