@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/ismisepaul/strength5x5/actions/workflows/ci.yml/badge.svg)](https://github.com/ismisepaul/strength5x5/actions/workflows/ci.yml)
 
-A lightweight, mobile-friendly **Strength 5x5 workout tracker** designed for simplicity, reliability, and full data ownership.
+A lightweight, open-source mobile web app for tracking 5x5 strength training. 
 
-This app helps lifters follow a classic **5x5 progressive strength training program**, track workouts, and maintain their training history -- all without requiring accounts, subscriptions, or complex infrastructure.
+Features automatic weight progression, smart deload logic, rest timers, progress charts, and full workout history — all running client-side with no backend. 
 
-The application runs entirely in the browser and stores data locally. It works offline as a Progressive Web App.
+Data lives in your browser and optionally backs up to your own Google Drive. Works offline as a PWA. Built with React, Vite, and Tailwind CSS.
 
 ---
 
