@@ -5,6 +5,7 @@
   "tabs": {
     "train": "Train",
     "close": "Close",
+    "program": "Program",
     "log": "Log",
     "stats": "Stats",
     "options": "Options"
@@ -25,8 +26,15 @@
     "completeAllSets": "Complete all sets to finish",
     "alreadyTrained": "Already trained today",
     "autoIncreaseHint": "Weights auto-increase by 2.5kg when you complete all sets.",
-    "discardWorkout": "Discard Workout",
-    "oneByFiveTarget": "1x5 Target"
+    "discardWorkout": "Discard Workout"
+  },
+  "program": {
+    "title": "Program",
+    "subtitle": "Customize sets and reps per exercise. Changes apply to your next workout.",
+    "setsLabel": "Sets",
+    "repsLabel": "Reps",
+    "resetDefaults": "Reset",
+    "activeWorkoutNote": "You have a workout in progress -- it keeps its original sets and reps. Changes here apply next time."
   },
   "timer": {
     "recoveryPhase": "Recovery Phase",
@@ -139,7 +147,8 @@
     "olderBackupTitle": "Older Backup",
     "olderBackupBody": "This backup has {{backupCount}} workouts (latest: {{backupDate}}). You have {{localCount}} workouts. You'll lose {{lossCount}} workouts.",
     "restoreFromDrive": "Restore from Google Drive",
-    "restoreAnyway": "Restore Anyway"
+    "restoreAnyway": "Restore Anyway",
+    "repPickerSet": "Set {{set}}"
   },
   "completion": {
     "complete": "{{name}} Complete",
@@ -154,7 +163,7 @@
     "title": "How It Works",
     "gotIt": "Got It",
     "programTitle": "Program",
-    "programBody": "Alternate Workout A and B, three times per week. Each exercise is 5 sets of 5 reps. Deadlift is 1x5.",
+    "programBody": "Alternate Workout A and B, three times per week. Each exercise defaults to 5 sets of 5 reps (deadlift is 1x5) -- customize sets and reps per exercise in the Program tab.",
     "progressionTitle": "Progression",
     "progressionBody": "Weight increases by 2.5kg (5kg for deadlift) when all sets are completed.",
     "stallTitle": "Stall",

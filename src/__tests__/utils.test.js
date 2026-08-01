@@ -13,8 +13,12 @@ import {
   migrate,
   formatClock,
   calculateSetDurations,
+  normalizeProgram,
+  getProgramExercises,
+  targetReps,
+  isExercisePassed,
 } from '../utils';
-import { SCHEMA_VERSION } from '../constants';
+import { SCHEMA_VERSION, DEFAULT_PROGRAM, EXPECTED_WEIGHT_KEYS } from '../constants';
 
 describe('calculatePlates', () => {
   it('returns correct plates for 60kg (one 20 per side)', () => {
@@ -259,6 +263,18 @@ describe('validateImportData', () => {
     expect(result.history[0].date).toBe('2025-12-01');
     expect(result.history[1].date).toBe('2025-12-03');
   });
+
+  it('fills in a default program for v1 backups with no program field', () => {
+    const result = validateImportData(validData);
+    expect(result.program).toEqual(DEFAULT_PROGRAM);
+  });
+
+  it('preserves and clamps a program field when present', () => {
+    const data = { ...validData, program: { ...DEFAULT_PROGRAM, bench: { sets: 30, reps: -2 } } };
+    const result = validateImportData(data);
+    expect(result.program.bench).toEqual({ sets: 5, reps: 1 });
+    expect(result.program.squat).toEqual(DEFAULT_PROGRAM.squat);
+  });
 });
 
 describe('migrate', () => {
@@ -278,6 +294,96 @@ describe('migrate', () => {
   it('stamps current SCHEMA_VERSION', () => {
     const result = migrate({ version: 0 }, 0);
     expect(result.version).toBe(SCHEMA_VERSION);
+  });
+
+  it('injects a default program when migrating from v1', () => {
+    const result = migrate({ weights: { squat: 60 }, history: [], version: 1 }, 1);
+    expect(result.program).toEqual(DEFAULT_PROGRAM);
+  });
+
+  it('does not touch an already-set program on a v2+ migration', () => {
+    const customProgram = { ...DEFAULT_PROGRAM, bench: { sets: 3, reps: 8 } };
+    const result = migrate({ program: customProgram, version: 2 }, 2);
+    expect(result.program).toEqual(customProgram);
+  });
+});
+
+describe('normalizeProgram', () => {
+  it('returns DEFAULT_PROGRAM for null/undefined input', () => {
+    expect(normalizeProgram(null)).toEqual(DEFAULT_PROGRAM);
+    expect(normalizeProgram(undefined)).toEqual(DEFAULT_PROGRAM);
+  });
+
+  it('clamps sets below the minimum up to 1', () => {
+    const result = normalizeProgram({ squat: { sets: 0, reps: 5 } });
+    expect(result.squat.sets).toBe(1);
+  });
+
+  it('clamps sets above the maximum down to 5', () => {
+    const result = normalizeProgram({ squat: { sets: 9, reps: 5 } });
+    expect(result.squat.sets).toBe(5);
+  });
+
+  it('clamps reps above the maximum down to 10', () => {
+    const result = normalizeProgram({ squat: { sets: 5, reps: 20 } });
+    expect(result.squat.reps).toBe(10);
+  });
+
+  it('clamps reps below the minimum up to 1', () => {
+    const result = normalizeProgram({ squat: { sets: 5, reps: 0 } });
+    expect(result.squat.reps).toBe(1);
+  });
+
+  it('falls back to defaults for garbage or missing entries', () => {
+    const result = normalizeProgram({ squat: 'not an object', bench: null });
+    expect(result.squat).toEqual(DEFAULT_PROGRAM.squat);
+    expect(result.bench).toEqual(DEFAULT_PROGRAM.bench);
+  });
+
+  it('fills every expected exercise id even if the input only has one', () => {
+    const result = normalizeProgram({ bench: { sets: 3, reps: 8 } });
+    for (const id of EXPECTED_WEIGHT_KEYS) {
+      expect(result[id]).toBeDefined();
+    }
+    expect(result.bench).toEqual({ sets: 3, reps: 8 });
+    expect(result.deadlift).toEqual(DEFAULT_PROGRAM.deadlift);
+  });
+});
+
+describe('getProgramExercises', () => {
+  it('overrides sets/reps from the program, keeping order and increment', () => {
+    const program = normalizeProgram({ bench: { sets: 3, reps: 8 } });
+    const exercises = getProgramExercises('A', program);
+    const bench = exercises.find(e => e.id === 'bench');
+    expect(bench.sets).toBe(3);
+    expect(bench.reps).toBe(8);
+    expect(bench.increment).toBe(2.5);
+    expect(exercises.map(e => e.id)).toEqual(['squat', 'bench', 'row']);
+  });
+});
+
+describe('targetReps', () => {
+  it('reads the reps target off the exercise entry', () => {
+    expect(targetReps({ reps: 8 })).toBe(8);
+  });
+
+  it('defaults to 5 when reps is missing', () => {
+    expect(targetReps({})).toBe(5);
+  });
+});
+
+describe('isExercisePassed', () => {
+  it('passes when every set hits the target', () => {
+    expect(isExercisePassed({ reps: 8, setsCompleted: [8, 8, 8] })).toBe(true);
+  });
+
+  it('fails when any set misses the target', () => {
+    expect(isExercisePassed({ reps: 8, setsCompleted: [8, 7, 8] })).toBe(false);
+  });
+
+  it('defaults the target to 5 when reps is unset', () => {
+    expect(isExercisePassed({ setsCompleted: [5, 5, 5] })).toBe(true);
+    expect(isExercisePassed({ setsCompleted: [5, 4, 5] })).toBe(false);
   });
 });
 
@@ -521,6 +627,14 @@ describe('getConsecutiveFailures', () => {
       session('squat', 55, [5, 5, 4, 3, 2]),
     ];
     expect(getConsecutiveFailures(h, 'squat', 60)).toBe(1);
+  });
+
+  it('evaluates pass/fail against a non-default rep target', () => {
+    const h = [
+      { date: '2026-01-01', exercises: [{ id: 'bench', weight: 60, reps: 8, setsCompleted: [8, 8, 6] }] },
+      { date: '2025-12-31', exercises: [{ id: 'bench', weight: 60, reps: 8, setsCompleted: [8, 8, 8] }] },
+    ];
+    expect(getConsecutiveFailures(h, 'bench', 60)).toBe(1);
   });
 
   it('breaks streak when exercise is not in session', () => {

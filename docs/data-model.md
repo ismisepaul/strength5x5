@@ -15,13 +15,20 @@ Stored under `strength5x5_data`:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "weights": {
     "squat": 60,
     "bench": 45,
     "row": 50,
     "press": 32.5,
     "deadlift": 80
+  },
+  "program": {
+    "squat": { "sets": 5, "reps": 5 },
+    "bench": { "sets": 3, "reps": 5 },
+    "row": { "sets": 5, "reps": 5 },
+    "press": { "sets": 5, "reps": 5 },
+    "deadlift": { "sets": 1, "reps": 5 }
   },
   "history": [
     {
@@ -58,6 +65,9 @@ Stored under `strength5x5_data`:
 | `version` | number | Schema version for migration support |
 | `weights` | object | Current working weight per exercise (kg) |
 | `weights.{id}` | number | Weight in kg, always a multiple of 2.5 |
+| `program` | object | User-customized sets/reps per exercise |
+| `program.{id}.sets` | number | Sets for this exercise, 1-5 (default 5, deadlift defaults to 1) |
+| `program.{id}.reps` | number | Rep target for this exercise, 1-10 (default 5) |
 | `history` | array | Completed workouts, newest first |
 | `history[].date` | string | ISO 8601 timestamp |
 | `history[].type` | string | `"A"` or `"B"` |
@@ -65,7 +75,11 @@ Stored under `strength5x5_data`:
 | `history[].exercises` | array | Exercises performed |
 | `history[].exercises[].id` | string | Exercise identifier (`squat`, `bench`, `row`, `press`, `deadlift`) |
 | `history[].exercises[].weight` | number | Weight used (kg) |
-| `history[].exercises[].setsCompleted` | array | Reps completed per set. `5` = full set, `0-4` = partial, `null` = not attempted |
+| `history[].exercises[].sets` | number | Sets targeted for this entry, as configured in `program` when the workout started |
+| `history[].exercises[].reps` | number | Rep target for this entry, as configured in `program` when the workout started |
+| `history[].exercises[].setsCompleted` | array | Reps completed per set, length equal to `sets`. A value equal to `reps` = full set, lower = partial, `null` = not attempted |
+
+Each history entry carries its own `sets`/`reps` snapshot (taken from `program` at workout start), so editing `program` later never rewrites past workouts -- they keep the target they were actually performed against.
 | `nextType` | string | Next workout type (`"A"` or `"B"`) |
 | `isDark` | boolean | Dark mode preference |
 | `autoSave` | boolean | Download JSON backup after each workout |
@@ -131,10 +145,11 @@ Import data is validated by `validateImportData()` in `src/utils.js`:
 
 The `version` field supports forward migration:
 
-- Current version: `1` (defined in `SCHEMA_VERSION`)
+- Current version: `2` (defined in `SCHEMA_VERSION`)
 - On load, if `version < SCHEMA_VERSION`, the data passes through `migrate()` in `src/utils.js`
 - The migration function applies incremental transforms (e.g., `if (fromVersion < 2) { ... }`)
 - After migration, the version is bumped to `SCHEMA_VERSION`
+- **v1 → v2**: adds `program`, defaulting every exercise to 5 sets / 5 reps (deadlift to 1 set / 5 reps) via `normalizeProgram()`. Imported backups without a `program` field are handled the same way in `validateImportData()`, so old exports keep working.
 
 ## Google Drive Backup
 

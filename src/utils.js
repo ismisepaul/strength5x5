@@ -1,11 +1,48 @@
-import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS } from './constants';
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS } from './constants';
 
 export function migrate(data, fromVersion) {
   let current = { ...data };
-  // Future migrations go here, e.g.:
-  // if (fromVersion < 2) { current.someNewField = defaultValue; }
+  if (fromVersion < 2) { current.program = normalizeProgram(current.program); }
   current.version = SCHEMA_VERSION;
   return current;
+}
+
+// Coerces/clamps a program object to valid per-exercise sets/reps, falling back to
+// DEFAULT_PROGRAM for any exercise that's missing or invalid. Single choke point used
+// on load, import, migration, and cross-tab sync so a corrupt value can never leak in.
+export function normalizeProgram(raw) {
+  const result = {};
+  for (const id of EXPECTED_WEIGHT_KEYS) {
+    const entry = raw && typeof raw === 'object' ? raw[id] : null;
+    const fallback = DEFAULT_PROGRAM[id];
+    const sets = Number.isFinite(entry?.sets) ? Math.round(entry.sets) : fallback.sets;
+    const reps = Number.isFinite(entry?.reps) ? Math.round(entry.reps) : fallback.reps;
+    result[id] = {
+      sets: Math.min(MAX_SETS, Math.max(MIN_SETS, sets)),
+      reps: Math.min(MAX_REPS, Math.max(MIN_REPS, reps)),
+    };
+  }
+  return result;
+}
+
+// WORKOUTS[type].exercises with sets/reps overridden by the user's program.
+export function getProgramExercises(type, program) {
+  return WORKOUTS[type].exercises.map(ex => ({
+    ...ex,
+    sets: program?.[ex.id]?.sets ?? ex.sets,
+    reps: program?.[ex.id]?.reps ?? ex.reps,
+  }));
+}
+
+// The rep target a given exercise entry was performed against. Read off the entry
+// itself (never the live program) so past history keeps the target it was set for.
+export function targetReps(ex) {
+  return ex?.reps ?? 5;
+}
+
+export function isExercisePassed(ex) {
+  const target = targetReps(ex);
+  return ex.setsCompleted.every(r => r === target);
 }
 
 export function validateImportData(d) {
@@ -30,7 +67,7 @@ export function validateImportData(d) {
     Array.isArray(entry.exercises)
   );
 
-  return { ...d, weights: normalizedWeights, history: validHistory };
+  return { ...d, weights: normalizedWeights, history: validHistory, program: normalizeProgram(d.program) };
 }
 
 export function calculate1RM(weight, reps) {
@@ -91,8 +128,7 @@ export function getConsecutiveFailures(history, exerciseId, weight) {
   for (const session of history) {
     const ex = session.exercises?.find(e => e.id === exerciseId);
     if (!ex || ex.weight !== weight) break;
-    const passed = ex.setsCompleted.every(r => r === 5);
-    if (passed) break;
+    if (isExercisePassed(ex)) break;
     count++;
   }
   return count;

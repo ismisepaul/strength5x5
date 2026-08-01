@@ -5,6 +5,7 @@
   "tabs": {
     "train": "Séance",
     "close": "Fermer",
+    "program": "Programme",
     "log": "Journal",
     "stats": "Stats",
     "options": "Options"
@@ -25,8 +26,15 @@
     "completeAllSets": "Complétez toutes les séries",
     "alreadyTrained": "Déjà entraîné aujourd'hui",
     "autoIncreaseHint": "Les poids augmentent de 2.5kg quand toutes les séries sont complétées.",
-    "discardWorkout": "Abandonner",
-    "oneByFiveTarget": "1x5 Cible"
+    "discardWorkout": "Abandonner"
+  },
+  "program": {
+    "title": "Programme",
+    "subtitle": "Personnalisez les séries et répétitions par exercice. Les changements s'appliquent à la prochaine séance.",
+    "setsLabel": "Séries",
+    "repsLabel": "Répétitions",
+    "resetDefaults": "Réinitialiser",
+    "activeWorkoutNote": "Une séance est en cours — elle garde ses séries et répétitions d'origine. Les changements s'appliqueront la prochaine fois."
   },
   "timer": {
     "recoveryPhase": "Phase de repos",
@@ -139,7 +147,8 @@
     "olderBackupTitle": "Sauvegarde ancienne",
     "olderBackupBody": "Cette sauvegarde contient {{backupCount}} séances (dernière : {{backupDate}}). Vous avez {{localCount}} séances. Vous perdrez {{lossCount}} séances.",
     "restoreFromDrive": "Restaurer depuis Google Drive",
-    "restoreAnyway": "Restaurer quand même"
+    "restoreAnyway": "Restaurer quand même",
+    "repPickerSet": "Série {{set}}"
   },
   "completion": {
     "complete": "{{name}} terminée",
@@ -154,7 +163,7 @@
     "title": "Comment ça marche",
     "gotIt": "Compris",
     "programTitle": "Programme",
-    "programBody": "Alternez les séances A et B, trois fois par semaine. Chaque exercice comprend 5 séries de 5 répétitions. Le deadlift est en 1x5.",
+    "programBody": "Alternez les séances A et B, trois fois par semaine. Chaque exercice comprend par défaut 5 séries de 5 répétitions (le deadlift est en 1x5) — personnalisez séries et répétitions dans l'onglet Programme.",
     "progressionTitle": "Progression",
     "progressionBody": "Les poids augmentent de 2.5kg (5kg pour le deadlift) quand toutes les séries sont complétées.",
     "stallTitle": "Plateau",

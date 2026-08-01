@@ -1,10 +1,37 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
-import { calculateWarmup } from '../utils';
+import { ChevronUp, ChevronDown, Plus, Minus, X } from 'lucide-react';
+import { calculateWarmup, targetReps } from '../utils';
+import { MAX_SETS } from '../constants';
 
-const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates, expanded, onToggleWarmup, onUpdateWeight }) => {
+const LONG_PRESS_MS = 450;
+
+const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates, expanded, onToggleWarmup, onUpdateWeight, onOpenRepPicker }) => {
   const { t } = useTranslation();
+  const target = targetReps(ex);
+  const pressTimerRef = useRef(null);
+  const longPressFiredRef = useRef(false);
+
+  const clearPressTimer = () => {
+    if (pressTimerRef.current) { clearTimeout(pressTimerRef.current); pressTimerRef.current = null; }
+  };
+
+  const handlePointerDown = (setIdx) => {
+    longPressFiredRef.current = false;
+    clearPressTimer();
+    pressTimerRef.current = setTimeout(() => {
+      longPressFiredRef.current = true;
+      onOpenRepPicker?.(exIdx, setIdx);
+    }, LONG_PRESS_MS);
+  };
+
+  const handlePointerUp = () => clearPressTimer();
+
+  const handleClick = (setIdx) => {
+    if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
+    onToggleSet(exIdx, setIdx);
+  };
+
   return (
     <div className={`p-6 rounded-[2.5rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
       <div className="flex justify-between items-start mb-6">
@@ -30,10 +57,29 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates,
         </div>
       )}
       <div className="flex justify-between gap-2 items-center">
-        {ex.setsCompleted.map((r, ri) => (
-          <button key={ri} onClick={() => onToggleSet(exIdx, ri)} aria-label={`Set ${ri + 1}${r !== null ? `, ${r} reps` : ''}`} className={`flex-1 aspect-square rounded-xl flex items-center justify-center border-4 transition-all touch-manipulation active:scale-90 ${r !== null ? (r === 5 ? 'bg-indigo-600 border-indigo-700 text-white shadow-lg' : 'bg-rose-500 border-rose-600 text-white') : (isDark ? 'bg-slate-950 border-slate-800 text-slate-800' : 'bg-white border-slate-100 text-slate-200')}`}><span className="text-xl font-black">{r !== null ? r : ri + 1}</span></button>
-        ))}
-        {ex.sets === 1 && <div className="flex-[3] text-center font-black uppercase text-slate-600 text-[10px] tracking-widest">{t('workout.oneByFiveTarget')}</div>}
+        {Array.from({ length: MAX_SETS }, (_, ri) => {
+          if (ri >= ex.sets) {
+            return (
+              <div key={ri} className={`flex-1 aspect-square rounded-xl flex items-center justify-center border-4 border-dashed ${isDark ? 'border-slate-900 text-slate-800' : 'border-slate-100 text-slate-200'}`}>
+                <X size={20} />
+              </div>
+            );
+          }
+          const r = ex.setsCompleted[ri];
+          return (
+            <button
+              key={ri}
+              onClick={() => handleClick(ri)}
+              onPointerDown={() => handlePointerDown(ri)}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onContextMenu={(e) => e.preventDefault()}
+              aria-label={`Set ${ri + 1}${r !== null ? `, ${r} reps` : ''}`}
+              className={`flex-1 aspect-square rounded-xl flex items-center justify-center border-4 transition-all touch-manipulation active:scale-90 ${r !== null ? (r === target ? 'bg-indigo-600 border-indigo-700 text-white shadow-lg' : 'bg-rose-500 border-rose-600 text-white') : (isDark ? 'bg-slate-950 border-slate-800 text-slate-800' : 'bg-white border-slate-100 text-slate-200')}`}
+            ><span className="text-xl font-black">{r !== null ? r : target}</span></button>
+          );
+        })}
       </div>
     </div>
   );
