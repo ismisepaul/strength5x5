@@ -154,9 +154,9 @@ describe('Short-press set cycle', () => {
     for (let i = 0; i < 5; i++) {
       await user.click(firstSet);
     }
-    expect(screen.getAllByLabelText('Set 1')[0].getAttribute('aria-label')).toBe('Set 1, 1 reps');
+    expect(firstSet).toHaveAttribute('aria-label', 'Set 1, 1 reps');
 
     await user.click(firstSet);
-    expect(screen.getAllByLabelText('Set 1')[0].getAttribute('aria-label')).toBe('Set 1');
+    expect(firstSet).toHaveAttribute('aria-label', 'Set 1');
   });
 });
