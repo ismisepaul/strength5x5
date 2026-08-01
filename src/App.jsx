@@ -16,6 +16,7 @@ import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useTimer } from './hooks/useTimer';
+import { useWakeLock } from './hooks/useWakeLock';
 import RestTimer from './components/RestTimer';
 import ExerciseCard from './components/ExerciseCard';
 import StatsChart from './components/StatsChart';
@@ -71,6 +72,8 @@ const App = () => {
   const reverbRef = useRef(null);
 
   const gdrive = useGoogleDrive();
+
+  useWakeLock();
 
   const playChime = useCallback(() => {
     try {
