@@ -5,13 +5,13 @@ import {
   ToggleRight, ToggleLeft, AlertCircle, HelpCircle, Zap, TrendingDown,
   Clock, Vibrate, Trash2, Bell, ChevronRight, Menu, Timer,
   FileSpreadsheet, MoveRight, Flame, ChevronDown, CheckCircle2, MinusCircle, Trophy,
-  Globe, Cloud, HardDrive, FolderSync
+  Globe, Cloud, HardDrive, FolderSync, SlidersHorizontal
 } from 'lucide-react';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY } from './constants';
-import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations } from './utils';
+import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, DEFAULT_PROGRAM } from './constants';
+import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -19,6 +19,8 @@ import { useTimer } from './hooks/useTimer';
 import { useWakeLock } from './hooks/useWakeLock';
 import RestTimer from './components/RestTimer';
 import ExerciseCard from './components/ExerciseCard';
+import RepPicker from './components/RepPicker';
+import ProgramEditor from './components/ProgramEditor';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
 import { useToast } from './hooks/useToast';
@@ -32,6 +34,7 @@ const App = () => {
   const { toasts, showToast } = useToast();
 
   const [weights, setWeights] = useState(saved.weights ?? INITIAL_WEIGHTS);
+  const [program, setProgram] = useState(() => normalizeProgram(saved.program));
   const [history, setHistory] = useState(Array.isArray(saved.history) ? saved.history : []);
   const [currentWorkoutType, setCurrentWorkoutType] = useState(saved.nextType ?? 'A');
   const [isDark, setIsDark] = useState(saved.isDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -65,6 +68,7 @@ const App = () => {
   const [pendingLocalImport, setPendingLocalImport] = useState(null);
   const [connectSyncPrompt, setConnectSyncPrompt] = useState(null);
   const [longBreakDeloadForDate, setLongBreakDeloadForDate] = useState(() => localStorage.getItem(LONG_BREAK_DELOAD_KEY));
+  const [repPicker, setRepPicker] = useState(null);
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -133,12 +137,13 @@ const App = () => {
   });
 
   useSyncStorage({
-    weights, history, nextType: currentWorkoutType,
+    weights, program, history, nextType: currentWorkoutType,
     isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
   });
 
   useStorageSync(STORAGE_KEY, (updated) => {
     if (updated.weights) setWeights(updated.weights);
+    if (updated.program) setProgram(normalizeProgram(updated.program));
     if (Array.isArray(updated.history)) setHistory(updated.history);
     if (updated.isDark !== undefined) setIsDark(updated.isDark);
   });
@@ -170,8 +175,8 @@ const App = () => {
   const trainedToday = historyDateSet.has(new Date().toISOString().slice(0, 10));
 
   const getAppState = useCallback(() => ({
-    weights, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
-  }), [weights, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping]);
+    weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
+  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping]);
 
   const exportData = useCallback((targetHistory) => {
     const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState(), history: targetHistory || history };
@@ -197,14 +202,18 @@ const App = () => {
     setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, e.weight + diff) })) }) : null);
   }, []);
 
-  const handleToggleSet = useCallback((exIdx, setIdx) => {
+  // Shared by the short-press cycle and the long-press rep picker: given the current
+  // logged value, resolveNext computes the next one, then this stamps setTimes and
+  // drives the rest timer identically either way.
+  const applySetValue = useCallback((exIdx, setIdx, resolveNext) => {
     if (timer.isExpired) timer.reset();
     setNavExpanded(false);
     setCurrentWorkout(prev => {
       if (!prev) return prev;
       const ex = prev.exercises[exIdx];
       const currVal = ex.setsCompleted[setIdx];
-      let nextVal = currVal === null ? 5 : currVal > 0 ? currVal - 1 : null;
+      const target = targetReps(ex);
+      const nextVal = resolveNext(currVal, target);
       const isLastSet = setIdx === ex.setsCompleted.length - 1;
       // Stamp on first completion, clear when the set is cycled back to unlogged.
       // Rep adjustments in between keep the original time — the set finished when it finished.
@@ -223,7 +232,7 @@ const App = () => {
           setIsExerciseComplete(allDone ? 'workout' : true);
         } else {
           setIsExerciseComplete(false);
-          const req = nextVal === 5 ? preferredRest : 300;
+          const req = nextVal === target ? preferredRest : 300;
           timer.start(req);
         }
       } else { timer.stop(); setIsExerciseComplete(false); }
@@ -231,13 +240,31 @@ const App = () => {
     });
   }, [timer, preferredRest]);
 
+  const handleToggleSet = useCallback((exIdx, setIdx) => {
+    // Short-press cycle never lands on 0 -- from 1 it clears straight back to
+    // unlogged. 0 reps done is only reachable via the long-press rep picker.
+    applySetValue(exIdx, setIdx, (currVal, target) => currVal === null ? target : currVal > 1 ? currVal - 1 : null);
+  }, [applySetValue]);
+
+  const handleOpenRepPicker = useCallback((exIdx, setIdx) => {
+    const ex = currentWorkout?.exercises[exIdx];
+    if (!ex) return;
+    setRepPicker({ exIdx, setIdx, ex });
+  }, [currentWorkout]);
+
+  const handleSetReps = useCallback((value) => {
+    if (!repPicker) return;
+    applySetValue(repPicker.exIdx, repPicker.setIdx, () => value);
+    setRepPicker(null);
+  }, [repPicker, applySetValue]);
+
   const evaluateWorkoutOutcome = useCallback((workout, priorHistory, baseWeights) => {
     const nextWeights = { ...baseWeights };
     const progressions = [];
     const pendingDeloads = [];
 
     workout.exercises.forEach(ex => {
-      const passed = ex.setsCompleted.every(r => r === 5);
+      const passed = isExercisePassed(ex);
       const defaultIncrement = ex.id === 'deadlift' ? 5 : 2.5;
       const increment = ex.increment
         ?? WORKOUTS[workout.type]?.exercises.find(e => e.id === ex.id)?.increment
@@ -324,10 +351,10 @@ const App = () => {
 
     const nextType = currentWorkoutType === 'A' ? 'B' : 'A';
     saveToDriveQuietly({
-      weights: nextWeights, history: newHistory, nextType,
+      weights: nextWeights, program, history: newHistory, nextType,
       isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
     });
-  }, [currentWorkout, history, weights, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome]);
+  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -336,9 +363,9 @@ const App = () => {
   }, [timer]);
 
   const initializeWorkout = useCallback((workoutWeights) => {
-    setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: WORKOUTS[currentWorkoutType].exercises.map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
+    setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: getProgramExercises(currentWorkoutType, program).map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
     setIsWorkoutActive(true); setActiveTab('workout'); setExpandedWarmups({}); setShowRestorePrompt(false); setIsExerciseComplete(false);
-  }, [currentWorkoutType]);
+  }, [currentWorkoutType, program]);
 
   const startWorkout = useCallback((force = false) => {
     if (history.length === 0 && !force) { setShowRestorePrompt(true); return; }
@@ -357,7 +384,7 @@ const App = () => {
   }, [history, weights, initializeWorkout, getStartDeloadPrompt, t]);
 
   const applyLocalImport = useCallback((d) => {
-    setWeights(d.weights); setHistory(d.history);
+    setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
     if (d.nextType) setCurrentWorkoutType(d.nextType);
     setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
     if (d.preferredRest) setPreferredRest(d.preferredRest);
@@ -369,7 +396,7 @@ const App = () => {
     setPendingLocalImport(null);
     showToast(t('toast.backupRestored'), 'success');
     saveToDriveQuietly({
-      weights: d.weights, history: d.history, nextType: d.nextType || currentWorkoutType,
+      weights: d.weights, program: normalizeProgram(d.program), history: d.history, nextType: d.nextType || currentWorkoutType,
       isDark: d.isDark ?? true, autoSave: d.autoSave ?? false,
       preferredRest: d.preferredRest || preferredRest,
       soundEnabled: d.soundEnabled ?? soundEnabled,
@@ -472,7 +499,7 @@ const App = () => {
   }, [pendingCSVImport, showToast, getAppState, saveToDriveQuietly]);
 
   const applyDriveRestore = useCallback((d) => {
-    setWeights(d.weights); setHistory(d.history);
+    setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
     if (d.nextType) setCurrentWorkoutType(d.nextType);
     setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
     if (d.preferredRest) setPreferredRest(d.preferredRest);
@@ -649,7 +676,7 @@ const App = () => {
             {!isWorkoutActive ? (
               <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
                 <div className="mb-6"><p className="text-[10px] font-bold uppercase text-slate-500 mb-1 tracking-widest">{t('workout.nextUp')}</p><button onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')} className="flex items-start gap-2 hover:opacity-70 transition-opacity"><h2 className="text-4xl font-black uppercase leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2><RefreshCw size={20} className="mt-3 text-indigo-500" /></button></div>
-                <div className="space-y-3 mb-8">{WORKOUTS[currentWorkoutType].exercises.map(ex => (
+                <div className="space-y-3 mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
                   <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-transparent'}`}>
                     <div className="flex justify-between items-center">
                       <div className="flex-1 pr-4"><p className={`font-black text-sm uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t('exercises.' + ex.id)}</p><p className="text-[10px] font-bold text-slate-500">{ex.sets}x{ex.reps}</p></div>
@@ -665,7 +692,7 @@ const App = () => {
               <div className="space-y-6">
                 <div className="flex justify-center mb-2"><h2 className="font-black uppercase tracking-widest text-slate-500">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
                 {currentWorkout?.exercises.map((ex, exIdx) => (
-                  <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} />
+                  <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} />
                 ))}
                 <div className="pt-4 flex flex-col items-center">
                   <button onClick={finishWorkout} disabled={!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null))} className={`w-full py-5 rounded-[1.5rem] font-black text-lg shadow-xl ${currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) ? 'bg-emerald-600 text-white active:scale-95 shadow-emerald-900/20' : 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed'}`}>{t('workout.finishWorkout')}</button>
@@ -687,7 +714,7 @@ const App = () => {
                   const workout = {
                     date: new Date().toISOString(),
                     type,
-                    exercises: WORKOUTS[type].exercises.map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(5) })),
+                    exercises: getProgramExercises(type, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
                   };
                   setEditingEntry({ index: -1, session: workout });
                 }}
@@ -731,7 +758,7 @@ const App = () => {
               history.map((s, i) => (
                 <button key={i} onClick={() => setEditingEntry({ index: i, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
                   <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t(`workout.type${s.type}`)}</span><span className="text-xs font-bold text-slate-500">{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span></div>
-                  <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{t('exercises.' + ex.id)}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === 5 ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
+                  <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{t('exercises.' + ex.id)}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === targetReps(ex) ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
                 </button>
               ))
             ) : (
@@ -753,7 +780,7 @@ const App = () => {
                       {group.entries.map(({ session: s, originalIndex }) => (
                         <button key={originalIndex} onClick={() => setEditingEntry({ index: originalIndex, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
                           <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t(`workout.type${s.type}`)}</span><span className="text-xs font-bold text-slate-500">{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span></div>
-                          <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{t('exercises.' + ex.id)}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === 5 ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
+                          <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{t('exercises.' + ex.id)}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === targetReps(ex) ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
                         </button>
                       ))}
                     </div>
@@ -810,6 +837,10 @@ const App = () => {
               </>
             )}
           </div>
+        )}
+
+        {activeTab === 'program' && (
+          <ProgramEditor program={program} onChange={setProgram} isDark={isDark} isWorkoutActive={isWorkoutActive} />
         )}
 
         {activeTab === 'settings' && (
@@ -944,6 +975,7 @@ const App = () => {
           <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-6 flex justify-between items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
             {[
               { id: 'workout', label: drawerOpen ? t('tabs.close') : t('tabs.train'), icon: drawerOpen ? X : Dumbbell },
+              { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
               { id: 'history', label: t('tabs.log'), icon: History },
               { id: 'progress', label: t('tabs.stats'), icon: TrendingUp },
               { id: 'settings', label: t('tabs.options'), icon: SettingsIcon },
@@ -1064,6 +1096,16 @@ const App = () => {
         </div>
       )}
 
+      {repPicker && (
+        <RepPicker
+          ex={repPicker.ex}
+          setIdx={repPicker.setIdx}
+          isDark={isDark}
+          onSelect={handleSetReps}
+          onClose={() => setRepPicker(null)}
+        />
+      )}
+
       {showPlateCalc && (
         <div role="dialog" aria-modal="true" aria-label="Plate calculator" className={`fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm ${isDark ? 'bg-slate-950/80' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -1121,7 +1163,7 @@ const App = () => {
                         session: {
                           ...prev.session,
                           type: wt,
-                          exercises: WORKOUTS[wt].exercises.map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(5) })),
+                          exercises: getProgramExercises(wt, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
                         },
                       }))}
                       className={`flex-1 py-3 rounded-xl font-black uppercase text-sm transition-all ${editingEntry.session.type === wt ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-100 text-slate-500 border border-slate-200')}`}
@@ -1180,8 +1222,9 @@ const App = () => {
                     <span className="text-[10px] font-bold text-slate-500 uppercase">{t('modals.setsLabel')}</span>
                     <div className="flex gap-2">
                       {ex.setsCompleted.map((reps, setIdx) => {
+                        const target = targetReps(ex);
                         const bgColor = reps === null ? (isDark ? 'bg-slate-700' : 'bg-slate-300')
-                          : reps === 5 ? 'bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.4)]'
+                          : reps === target ? 'bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.4)]'
                           : reps === 0 ? 'bg-rose-500'
                           : 'bg-amber-500';
                         return (
@@ -1190,7 +1233,7 @@ const App = () => {
                             onClick={() => setEditingEntry(prev => {
                               const s = JSON.parse(JSON.stringify(prev.session));
                               const cur = s.exercises[exIdx].setsCompleted[setIdx];
-                              s.exercises[exIdx].setsCompleted[setIdx] = cur === null ? 5 : cur === 0 ? null : cur - 1;
+                              s.exercises[exIdx].setsCompleted[setIdx] = cur === null ? target : cur === 0 ? null : cur - 1;
                               return { ...prev, session: s };
                             })}
                             aria-label={`Set ${setIdx + 1}: ${reps === null ? 'not done' : reps + ' reps'}`}
@@ -1286,7 +1329,7 @@ const App = () => {
             )}
             <div className="space-y-3 mb-8">
               {completionSummary.workout.exercises.map(ex => {
-                const passed = ex.setsCompleted.every(r => r === 5);
+                const passed = isExercisePassed(ex);
                 const progressed = completionSummary.progressions.includes(ex.id);
                 const needsDeload = completionSummary.pendingDeloads?.some(d => d.id === ex.id);
                 const StatusIcon = passed ? CheckCircle2 : needsDeload ? TrendingDown : MinusCircle;
@@ -1308,7 +1351,7 @@ const App = () => {
                     <div className="flex justify-center gap-1.5 mt-3">
                       {ex.setsCompleted.map((r, i) => {
                         const val = r ?? 0;
-                        const failed = val < 5;
+                        const failed = val < targetReps(ex);
                         const split = formatClock(setDurations[i]);
                         return (
                           <div key={i} className={`flex-1 basis-0 max-w-[3.5rem] rounded-lg py-1.5 ${isDark ? 'bg-slate-900/70' : 'bg-white'}`}>

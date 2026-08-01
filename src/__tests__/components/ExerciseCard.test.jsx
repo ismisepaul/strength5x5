@@ -31,18 +31,19 @@ describe('ExerciseCard', () => {
     expect(screen.getByText('60kg')).toBeInTheDocument();
   });
 
-  it('renders 5 set buttons', () => {
+  it('renders 5 set buttons, each showing the goal rep count while unlogged', () => {
     render(<ExerciseCard {...defaultProps} />);
     for (let i = 1; i <= 5; i++) {
-      expect(screen.getByText(String(i))).toBeInTheDocument();
+      expect(screen.getByLabelText(`Set ${i}`)).toBeInTheDocument();
     }
+    expect(screen.getAllByText('5')).toHaveLength(5);
   });
 
   it('calls onToggleSet when a set button is clicked', async () => {
     const onToggleSet = vi.fn();
     const user = userEvent.setup();
     render(<ExerciseCard {...defaultProps} onToggleSet={onToggleSet} />);
-    await user.click(screen.getByText('1'));
+    await user.click(screen.getByLabelText('Set 1'));
     expect(onToggleSet).toHaveBeenCalledWith(0, 0);
   });
 
@@ -89,10 +90,29 @@ describe('ExerciseCard', () => {
     expect(onShowPlates).toHaveBeenCalledWith(baseEx);
   });
 
-  it('shows 1x5 Target label for single-set exercise', () => {
+  it('renders 1 live set button and 4 disabled X placeholders for a single-set exercise', () => {
     const deadliftEx = { ...baseEx, id: 'deadlift', name: 'Deadlift', sets: 1, setsCompleted: [null] };
     render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
-    expect(screen.getByText('1x5 Target')).toBeInTheDocument();
+    const setButtons = screen.getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
+    expect(setButtons).toHaveLength(1);
+  });
+
+  it('long-pressing a set opens the rep picker via onOpenRepPicker', async () => {
+    vi.useFakeTimers();
+    const onOpenRepPicker = vi.fn();
+    render(<ExerciseCard {...defaultProps} onOpenRepPicker={onOpenRepPicker} />);
+    const firstSet = screen.getByLabelText('Set 1');
+    firstSet.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    vi.advanceTimersByTime(500);
+    expect(onOpenRepPicker).toHaveBeenCalledWith(0, 0);
+    vi.useRealTimers();
+  });
+
+  it('shows the customized rep target, not the set number, on unlogged sets', () => {
+    const customEx = { ...baseEx, reps: 8, setsCompleted: [null, null, null, null, null] };
+    render(<ExerciseCard {...defaultProps} ex={customEx} />);
+    expect(screen.getAllByText('8')).toHaveLength(5);
+    expect(screen.queryByText('1')).not.toBeInTheDocument();
   });
 
   it('displays completed reps count for done sets', () => {

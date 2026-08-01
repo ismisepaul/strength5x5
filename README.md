@@ -17,6 +17,7 @@ Data lives in your browser and optionally backs up to your own Google Drive. Wor
 - Automatic weight progression (+2.5kg per exercise, +5kg for deadlift)
 - Adjustable weights before and during workouts
 - Set completion tracking optimized for mobile use
+- **Customizable program** -- set sets (1-5) and reps (1-10) per exercise from the Program tab; long-press a set to log a specific rep count
 
 ### Smart Rest Timer
 - Wall-clock anchored countdown (no drift over long rests)
@@ -40,7 +41,7 @@ Data lives in your browser and optionally backs up to your own Google Drive. Wor
 - Date conflict and future-date validation
 
 ### Smart Training Logic
-- Automatic progression when all 5x5 sets are completed
+- Automatic progression when all sets hit the configured rep target
 - **Deload recommendations** after 14+ days off (with option to skip)
 - **Auto-deload** after 3 consecutive failures at the same weight (10% reduction, 20kg floor)
 - Plate calculator for easy bar loading
@@ -150,13 +151,20 @@ All user data is stored in a single JSON document under `strength5x5_data`:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "weights": {
     "squat": 60,
     "bench": 45,
     "row": 50,
     "press": 32.5,
     "deadlift": 80
+  },
+  "program": {
+    "squat": { "sets": 5, "reps": 5 },
+    "bench": { "sets": 5, "reps": 5 },
+    "row": { "sets": 5, "reps": 5 },
+    "press": { "sets": 5, "reps": 5 },
+    "deadlift": { "sets": 1, "reps": 5 }
   },
   "history": [],
   "nextType": "A",
