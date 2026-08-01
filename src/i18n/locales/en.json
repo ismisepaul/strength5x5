@@ -4,6 +4,7 @@
   },
   "tabs": {
     "train": "Train",
+    "close": "Close",
     "log": "Log",
     "stats": "Stats",
     "options": "Options"
@@ -142,6 +143,8 @@
   },
   "completion": {
     "complete": "{{name}} Complete",
+    "totalTime": "Total Time",
+    "exerciseTime": "{{time}} total",
     "progressNext": "+{{increment}}kg next",
     "deloadTo": "Deload needed",
     "sameWeight": "Same weight next",

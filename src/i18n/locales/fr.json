@@ -4,6 +4,7 @@
   },
   "tabs": {
     "train": "Séance",
+    "close": "Fermer",
     "log": "Journal",
     "stats": "Stats",
     "options": "Options"
@@ -142,6 +143,8 @@
   },
   "completion": {
     "complete": "{{name}} terminée",
+    "totalTime": "Durée totale",
+    "exerciseTime": "{{time}} au total",
     "progressNext": "+{{increment}}kg prochaine",
     "deloadTo": "Deload nécessaire",
     "sameWeight": "Même poids prochain",
