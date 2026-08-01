@@ -11,6 +11,8 @@ import {
   calculateWarmup,
   validateImportData,
   migrate,
+  formatClock,
+  calculateSetDurations,
 } from '../utils';
 import { SCHEMA_VERSION } from '../constants';
 
@@ -306,6 +308,114 @@ describe('formatDuration', () => {
 
   it('handles multi-hour durations', () => {
     expect(formatDuration(150 * 60000)).toBe('2h 30m');
+  });
+});
+
+describe('formatClock', () => {
+  it('formats zero as 0:00', () => {
+    expect(formatClock(0)).toBe('0:00');
+  });
+
+  it('zero-pads seconds', () => {
+    expect(formatClock(65000)).toBe('1:05');
+  });
+
+  it('formats sub-minute spans', () => {
+    expect(formatClock(42000)).toBe('0:42');
+  });
+
+  it('rounds to the nearest second', () => {
+    expect(formatClock(89600)).toBe('1:30');
+  });
+
+  it('keeps counting minutes up to an hour', () => {
+    expect(formatClock(59 * 60000)).toBe('59:00');
+  });
+
+  it('rolls over to h:mm:ss past an hour', () => {
+    expect(formatClock(72 * 60000 + 5000)).toBe('1:12:05');
+  });
+
+  it('returns null for missing or invalid input', () => {
+    expect(formatClock(null)).toBeNull();
+    expect(formatClock(undefined)).toBeNull();
+    expect(formatClock(-1000)).toBeNull();
+    expect(formatClock(NaN)).toBeNull();
+  });
+});
+
+describe('calculateSetDurations', () => {
+  const started = 1_000_000;
+
+  it('measures the first set from startedAt and each later set from the previous one', () => {
+    const exercises = [{
+      id: 'squat',
+      setsCompleted: [5, 5, 5],
+      setTimes: [started + 60000, started + 180000, started + 300000],
+    }];
+
+    const [squat] = calculateSetDurations(exercises, started);
+    expect(squat.setDurations).toEqual([60000, 120000, 120000]);
+  });
+
+  it('drops the transient setTimes field and preserves other exercise data', () => {
+    const exercises = [{
+      id: 'squat',
+      weight: 60,
+      increment: 2.5,
+      setsCompleted: [5],
+      setTimes: [started + 60000],
+    }];
+
+    const [squat] = calculateSetDurations(exercises, started);
+    expect(squat).not.toHaveProperty('setTimes');
+    expect(squat.weight).toBe(60);
+    expect(squat.increment).toBe(2.5);
+    expect(squat.setsCompleted).toEqual([5]);
+  });
+
+  it('leaves uncompleted sets as null without disturbing neighbours', () => {
+    const exercises = [{
+      id: 'squat',
+      setsCompleted: [5, null, 5],
+      setTimes: [started + 60000, null, started + 200000],
+    }];
+
+    const [squat] = calculateSetDurations(exercises, started);
+    expect(squat.setDurations).toEqual([60000, null, 140000]);
+  });
+
+  it('chains across exercises in chronological order, not array order', () => {
+    // Row (second in the array) was finished before squat's later sets.
+    const exercises = [
+      { id: 'squat', setsCompleted: [5, 5], setTimes: [started + 10000, started + 90000] },
+      { id: 'row', setsCompleted: [5], setTimes: [started + 40000] },
+    ];
+
+    const [squat, row] = calculateSetDurations(exercises, started);
+    expect(squat.setDurations).toEqual([10000, 50000]);
+    expect(row.setDurations).toEqual([30000]);
+  });
+
+  it('returns all-null durations for an exercise with nothing logged', () => {
+    const exercises = [{ id: 'squat', setsCompleted: [null, null], setTimes: [null, null] }];
+
+    const [squat] = calculateSetDurations(exercises, started);
+    expect(squat.setDurations).toEqual([null, null]);
+  });
+
+  it('handles an exercise that predates set timing (no setTimes at all)', () => {
+    const exercises = [{ id: 'squat', setsCompleted: [5, 5] }];
+
+    const [squat] = calculateSetDurations(exercises, started);
+    expect(squat.setDurations).toEqual([null, null]);
+  });
+
+  it('never produces a negative duration if a stamp precedes startedAt', () => {
+    const exercises = [{ id: 'squat', setsCompleted: [5], setTimes: [started - 5000] }];
+
+    const [squat] = calculateSetDurations(exercises, started);
+    expect(squat.setDurations).toEqual([0]);
   });
 });
 

@@ -11,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY } from './constants';
-import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration } from './utils';
+import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -206,7 +206,15 @@ const App = () => {
       const currVal = ex.setsCompleted[setIdx];
       let nextVal = currVal === null ? 5 : currVal > 0 ? currVal - 1 : null;
       const isLastSet = setIdx === ex.setsCompleted.length - 1;
-      const nextWorkout = { ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, setsCompleted: e.setsCompleted.map((r, j) => j === setIdx ? nextVal : r) })) };
+      // Stamp on first completion, clear when the set is cycled back to unlogged.
+      // Rep adjustments in between keep the original time — the set finished when it finished.
+      const stampChanged = currVal === null || nextVal === null;
+      const nextStamp = currVal === null ? Date.now() : null;
+      const nextWorkout = { ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({
+        ...e,
+        setsCompleted: e.setsCompleted.map((r, j) => j === setIdx ? nextVal : r),
+        setTimes: (e.setTimes ?? new Array(e.setsCompleted.length).fill(null)).map((at, j) => j === setIdx && stampChanged ? nextStamp : at),
+      })) };
 
       if (nextVal !== null) {
         if (isLastSet) {
@@ -299,7 +307,11 @@ const App = () => {
 
   const finishWorkout = useCallback(() => {
     const { nextWeights, progressions, pendingDeloads } = evaluateWorkoutOutcome(currentWorkout, history, weights);
-    const savedWorkout = { ...currentWorkout, duration: Date.now() - (currentWorkout.startedAt || Date.now()) };
+    const savedWorkout = {
+      ...currentWorkout,
+      duration: Date.now() - (currentWorkout.startedAt || Date.now()),
+      exercises: calculateSetDurations(currentWorkout.exercises, currentWorkout.startedAt),
+    };
     delete savedWorkout.startedAt;
     const newHistory = [savedWorkout, ...history];
     setWeights(nextWeights); setHistory(newHistory);
@@ -324,7 +336,7 @@ const App = () => {
   }, [timer]);
 
   const initializeWorkout = useCallback((workoutWeights) => {
-    setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: WORKOUTS[currentWorkoutType].exercises.map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null) })) });
+    setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: WORKOUTS[currentWorkoutType].exercises.map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
     setIsWorkoutActive(true); setActiveTab('workout'); setExpandedWarmups({}); setShowRestorePrompt(false); setIsExerciseComplete(false);
   }, [currentWorkoutType]);
 
@@ -926,13 +938,25 @@ const App = () => {
             <Menu size={24} />
           </button>
         </nav>
-      ) : (
-        <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-6 flex justify-between items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
-          {[{ id: 'workout', label: t('tabs.train'), icon: Dumbbell }, { id: 'history', label: t('tabs.log'), icon: History }, { id: 'progress', label: t('tabs.stats'), icon: TrendingUp }, { id: 'settings', label: t('tabs.options'), icon: SettingsIcon }].map(tab => (
-            <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex flex-col items-center gap-1.5 transition-all active:scale-125 ${activeTab === tab.id ? (isDark ? 'text-indigo-400' : 'text-indigo-600') : (isDark ? 'text-slate-700' : 'text-slate-300')}`}><tab.icon size={24} strokeWidth={activeTab === tab.id ? 3 : 2} /><span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span></button>
-          ))}
-        </nav>
-      )}
+      ) : (() => {
+        const drawerOpen = isWorkoutActive && activeTab === 'workout' && navExpanded;
+        return (
+          <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-6 flex justify-between items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
+            {[
+              { id: 'workout', label: drawerOpen ? t('tabs.close') : t('tabs.train'), icon: drawerOpen ? X : Dumbbell },
+              { id: 'history', label: t('tabs.log'), icon: History },
+              { id: 'progress', label: t('tabs.stats'), icon: TrendingUp },
+              { id: 'settings', label: t('tabs.options'), icon: SettingsIcon },
+            ].map(tab => {
+              const isCloseButton = drawerOpen && tab.id === 'workout';
+              const isActive = !isCloseButton && activeTab === tab.id;
+              return (
+                <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex flex-col items-center gap-1.5 transition-all active:scale-125 ${isCloseButton ? (isDark ? 'text-rose-400' : 'text-rose-500') : isActive ? (isDark ? 'text-indigo-400' : 'text-indigo-600') : (isDark ? 'text-slate-700' : 'text-slate-300')}`}><tab.icon size={24} strokeWidth={isCloseButton || isActive ? 3 : 2} /><span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span></button>
+              );
+            })}
+          </nav>
+        );
+      })()}
 
       {showCancelModal && (
         <div role="dialog" aria-modal="true" aria-label="Discard workout" className={`fixed inset-0 z-[500] flex items-center justify-center p-8 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
@@ -1247,12 +1271,19 @@ const App = () => {
         );
       })()}
 
-      {completionSummary && (
+      {completionSummary && (() => {
+        const totalTime = formatClock(completionSummary.workout.duration);
+        return (
         <div role="dialog" aria-modal="true" aria-label="Workout complete" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex justify-center mb-6"><div className="p-5 rounded-full bg-emerald-500/10 text-emerald-500"><Trophy size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('completion.complete', { name: t(`workout.type${completionSummary.workout.type}`) })}</h3>
-            {completionSummary.workout.duration > 0 && <p className="text-slate-500 text-xs font-bold mb-6">{formatDuration(completionSummary.workout.duration, t)}</p>}
+            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('completion.complete', { name: t(`workout.type${completionSummary.workout.type}`) })}</h3>
+            {totalTime && (
+              <div className={`flex items-center justify-between px-5 py-3 rounded-2xl mb-6 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-100 border border-slate-200'}`}>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{t('completion.totalTime')}</span>
+                <span className={`text-lg font-black font-mono tabular-nums leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{totalTime}</span>
+              </div>
+            )}
             <div className="space-y-3 mb-8">
               {completionSummary.workout.exercises.map(ex => {
                 const passed = ex.setsCompleted.every(r => r === 5);
@@ -1261,6 +1292,10 @@ const App = () => {
                 const StatusIcon = passed ? CheckCircle2 : needsDeload ? TrendingDown : MinusCircle;
                 const statusColor = passed ? 'text-emerald-500' : needsDeload ? 'text-blue-500' : 'text-amber-500';
                 const mutedColor = isDark ? 'text-slate-500' : 'text-slate-400';
+                const setDurations = ex.setDurations ?? [];
+                const logged = setDurations.filter(d => typeof d === 'number');
+                const hasSplits = logged.length > 0;
+                const exerciseTime = hasSplits ? formatClock(logged.reduce((sum, d) => sum + d, 0)) : null;
                 return (
                   <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
                     <div className="flex items-center justify-between">
@@ -1270,14 +1305,21 @@ const App = () => {
                       </div>
                       <span className="font-black text-sm">{ex.weight}kg</span>
                     </div>
-                    <div className="flex items-center justify-between mt-2 pl-[30px]">
-                      <span className="text-[10px] font-bold">
-                        {ex.setsCompleted.map((r, i) => {
-                          const val = r ?? 0;
-                          const failed = val < 5;
-                          return <React.Fragment key={i}>{i > 0 && <span className={mutedColor}> · </span>}<span className={failed && !passed ? statusColor : mutedColor}>{val}</span></React.Fragment>;
-                        })}
-                      </span>
+                    <div className="flex justify-center gap-1.5 mt-3">
+                      {ex.setsCompleted.map((r, i) => {
+                        const val = r ?? 0;
+                        const failed = val < 5;
+                        const split = formatClock(setDurations[i]);
+                        return (
+                          <div key={i} className={`flex-1 basis-0 max-w-[3.5rem] rounded-lg py-1.5 ${isDark ? 'bg-slate-900/70' : 'bg-white'}`}>
+                            <div className={`text-xs font-black leading-none ${failed && !passed ? statusColor : (isDark ? 'text-slate-300' : 'text-slate-600')}`}>{val}</div>
+                            {hasSplits && <div className={`text-[9px] font-bold tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between mt-3 min-h-[14px]">
+                      <span className={`text-[10px] font-bold tabular-nums ${mutedColor}`}>{exerciseTime ? t('completion.exerciseTime', { time: exerciseTime }) : ''}</span>
                       {progressed && <span className="text-emerald-500 text-[10px] font-black">{t('completion.progressNext', { increment: ex.increment })}</span>}
                       {needsDeload && <span className="text-blue-500 text-[10px] font-black">{t('completion.deloadTo')}</span>}
                       {!passed && !progressed && !needsDeload && <span className="text-amber-500 text-[10px] font-black">{t('completion.sameWeight')}</span>}
@@ -1289,7 +1331,8 @@ const App = () => {
             <button onClick={() => setCompletionSummary(null)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl active:scale-95">{t('completion.done')}</button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {pendingFailureDeloads && (() => {
         const previewDeloads = pendingFailureDeloads.map(d => ({

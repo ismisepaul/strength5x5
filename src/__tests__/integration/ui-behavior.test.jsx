@@ -82,7 +82,7 @@ describe('Nav collapse during workout', () => {
     expect(screen.queryByLabelText('Train')).not.toBeInTheDocument();
   });
 
-  it('expands full nav when menu icon is clicked', async () => {
+  it('expands full nav when menu icon is clicked, showing a close button in place of Train', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
@@ -90,10 +90,27 @@ describe('Nav collapse during workout', () => {
     await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByLabelText('Show navigation'));
 
-    expect(screen.getByLabelText('Train')).toBeInTheDocument();
+    expect(screen.getByLabelText('Close')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Train')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Log')).toBeInTheDocument();
     expect(screen.getByLabelText('Stats')).toBeInTheDocument();
     expect(screen.getByLabelText('Options')).toBeInTheDocument();
+  });
+
+  it('collapses the drawer back to the menu icon when the close button is clicked', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByLabelText('Show navigation'));
+    expect(screen.getByLabelText('Close')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Close'));
+
+    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Close')).not.toBeInTheDocument();
+    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
   });
 
   it('collapses nav when returning to workout tab from another tab', async () => {
@@ -124,7 +141,7 @@ describe('Nav collapse during workout', () => {
     await user.click(screen.getByText('Start Workout'));
     await user.click(screen.getByLabelText('Show navigation'));
 
-    expect(screen.getByLabelText('Train')).toBeInTheDocument();
+    expect(screen.getByLabelText('Close')).toBeInTheDocument();
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');

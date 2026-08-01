@@ -116,6 +116,33 @@ describe('Workout completion summary', () => {
     expect(dialog).toHaveTextContent('Barbell Row');
   });
 
+  it('labels the session duration instead of showing a bare number', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Start Workout'));
+
+    const setButtons = screen.getAllByRole('button').filter(btn => {
+      const label = btn.getAttribute('aria-label');
+      return label && label.startsWith('Set ');
+    });
+    for (const btn of setButtons) {
+      await user.click(btn);
+    }
+
+    await user.click(screen.getByText('Finish Workout'));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Workout complete' });
+    expect(dialog).toHaveTextContent('Total Time');
+    // Clock-formatted (m:ss), not formatDuration's whole-minute rounding.
+    expect(dialog.textContent).toMatch(/\d+:\d{2}/);
+    // Per-set splits were computed, so each exercise shows its subtotal. The clicks
+    // all land in the same millisecond here, so the values are 0:00 — utils.test.js
+    // covers the actual arithmetic.
+    expect(dialog.textContent).toMatch(/\d+:\d{2} total/);
+  });
+
   it('dismisses completion summary when Done is clicked', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();

@@ -105,3 +105,47 @@ export function formatDuration(ms, t) {
   const mins = totalMinutes % 60;
   return t ? t('duration.hoursMinutes', { h: hours, m: mins }) : `${hours}h ${mins}m`;
 }
+
+// Clock-style m:ss (or h:mm:ss past an hour) for short spans where formatDuration's
+// whole-minute rounding would collapse everything to the same value.
+export function formatClock(ms) {
+  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0) return null;
+  const totalSeconds = Math.round(ms / 1000);
+  const seconds = totalSeconds % 60;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  if (totalMinutes < 60) return `${totalMinutes}:${String(seconds).padStart(2, '0')}`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+// Turns the transient per-set completion timestamps recorded during a workout into
+// elapsed durations. A set's duration is the gap since the previously completed set
+// (rest + lifting); the earliest one measures from startedAt. Timestamps are sorted
+// chronologically rather than walked in array order so that finishing exercises out
+// of order still yields sane splits. Sets never completed stay null.
+export function calculateSetDurations(exercises, startedAt) {
+  const stamps = [];
+  exercises.forEach((ex, exIdx) => {
+    (ex.setTimes || []).forEach((at, setIdx) => {
+      if (typeof at === 'number' && Number.isFinite(at)) stamps.push({ exIdx, setIdx, at });
+    });
+  });
+  stamps.sort((a, b) => a.at - b.at);
+
+  const durations = new Map();
+  let previous = startedAt;
+  for (const stamp of stamps) {
+    const elapsed = typeof previous === 'number' ? Math.max(0, stamp.at - previous) : null;
+    durations.set(`${stamp.exIdx}:${stamp.setIdx}`, elapsed);
+    previous = stamp.at;
+  }
+
+  return exercises.map((ex, exIdx) => {
+    const { setTimes, ...rest } = ex;
+    return {
+      ...rest,
+      setDurations: ex.setsCompleted.map((_, setIdx) => durations.get(`${exIdx}:${setIdx}`) ?? null),
+    };
+  });
+}
