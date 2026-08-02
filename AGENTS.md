@@ -128,7 +128,7 @@ describe('Component', () => {
 - **Workouts alternate** between A (squat/bench/row) and B (squat/press/deadlift)
 - **Program is customizable** per exercise (1-5 sets, 1-10 reps) via the Program tab; defaults are 5x5, deadlift defaults to 1x5. Stored under `program` in `strength5x5_data`; each history entry snapshots the `sets`/`reps` it was performed against, so editing the program never rewrites past workouts
 - **Progression:** +2.5kg per exercise on success (all sets hit the configured rep target), +5kg for deadlift
-- **Manual weight adjustment:** The idle Train screen has −/+ steppers per exercise (same as mid-session) that write to `weights` directly, floored at the empty 20kg bar
+- **Manual weight adjustment:** Both the idle Train screen and `ExerciseCard` support tap-to-edit weight adjustment (tap the weight to reveal −/+ steppers and a Done button); the idle screen writes to `weights` directly, floored at the empty 20kg bar
 - **Auto-deload:** After 3 consecutive failures at the same weight (with 20kg floor)
 - **Long-break deload:** Suggests 10/25/50% reduction based on days off (14+ days)
 - **Plate calculator:** Greedy algorithm from 25kg down to 1.25kg plates

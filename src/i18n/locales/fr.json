@@ -35,7 +35,8 @@
     "weekProgress_other": "{{count}} séances sur 3 cette semaine",
     "setHint": "Touchez pour valider les {{count}} répétitions · maintenez pour choisir un nombre exact",
     "missedNote": "Répétitions manquées — {{weight}}kg maintenu la prochaine fois",
-    "discardWorkout": "Abandonner"
+    "discardWorkout": "Abandonner",
+    "doneEditingWeight": "Terminé"
   },
   "program": {
     "title": "Programme",

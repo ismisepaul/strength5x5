@@ -50,14 +50,16 @@ describe('Workout Flow', () => {
     render(<App />);
 
     expect(screen.getByText('60kg')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Increase Back Squat weight')).not.toBeInTheDocument();
 
+    await user.click(screen.getByLabelText('Edit Back Squat weight'));
     await user.click(screen.getByLabelText('Increase Back Squat weight'));
-    expect(screen.getByText('62.5kg')).toBeInTheDocument();
+    expect(screen.getAllByText('62.5kg').length).toBeGreaterThan(0);
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(62.5);
 
     await user.click(screen.getByText('Start workout'));
     expect(screen.getByLabelText('Decrease Back Squat weight')).toBeInTheDocument();
-    expect(screen.getByText('62.5kg')).toBeInTheDocument();
+    expect(screen.getAllByText('62.5kg').length).toBeGreaterThan(0);
   });
 
   it('floors idle-screen weight adjustments at the empty 20kg bar', async () => {
@@ -76,8 +78,9 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await user.click(screen.getByLabelText('Edit Back Squat weight'));
     await user.click(screen.getByLabelText('Decrease Back Squat weight'));
-    expect(screen.getByText('20kg')).toBeInTheDocument();
+    expect(screen.getAllByText('20kg').length).toBeGreaterThan(0);
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(20);
   });
 

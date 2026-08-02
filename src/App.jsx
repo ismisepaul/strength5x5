@@ -5,7 +5,7 @@ import {
   Question, TrendDown, Moon, Pause,
   Trash, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown,
-  Cloud, SlidersHorizontal, ChartLineUp
+  Cloud, SlidersHorizontal, ChartLineUp, PencilSimple
 } from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
@@ -55,6 +55,7 @@ const App = () => {
   const [deloadPercent, setDeloadPercent] = useState(10);
   const [pendingFailureDeloads, setPendingFailureDeloads] = useState(null);
   const [expandedWarmups, setExpandedWarmups] = useState({});
+  const [editingWeightId, setEditingWeightId] = useState(null);
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
@@ -669,16 +670,32 @@ const App = () => {
                   <p className={`text-[13.5px] mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{getProgramExercises(currentWorkoutType, program).map(ex => t('exercises.' + ex.id)).join(' · ')}</p>
                 </div>
                 <div className="mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
-                  <div key={ex.id} className={`flex justify-between items-center py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
-                    <div>
-                      <p className="text-[16px] font-medium">{t('exercises.' + ex.id)}</p>
-                      <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
+                  <div key={ex.id} className={`py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-[16px] font-medium">{t('exercises.' + ex.id)}</p>
+                        <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
+                      </div>
+                      <button
+                        onClick={() => setEditingWeightId(ex.id)}
+                        aria-label={`Edit ${t('exercises.' + ex.id)} weight`}
+                        className="flex items-center gap-1.5 min-h-[44px] shrink-0"
+                      >
+                        <span className="text-[19px] text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
+                        <PencilSimple size={13} className={isDark ? 'text-ink/35' : 'text-ink-lt/35'} />
+                      </button>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <StepperButton onClick={() => handleUpdateIdleWeight(ex.id, -ex.increment)} ariaLabel={`Decrease ${t('exercises.' + ex.id)} weight`} icon={Minus} isDark={isDark} />
-                      <span className="text-[19px] text-accent-300 tabular-nums min-w-[70px] text-center">{weights[ex.id]}kg</span>
-                      <StepperButton onClick={() => handleUpdateIdleWeight(ex.id, ex.increment)} ariaLabel={`Increase ${t('exercises.' + ex.id)} weight`} icon={Plus} isDark={isDark} />
-                    </div>
+                    {editingWeightId === ex.id && (
+                      <div className={`mt-2 rounded-[9px] py-2 px-2.5 flex items-center gap-2 ${isDark ? 'bg-surface/70' : 'bg-surface-lt/70'}`}>
+                        <StepperButton onClick={() => handleUpdateIdleWeight(ex.id, -ex.increment)} ariaLabel={`Decrease ${t('exercises.' + ex.id)} weight`} icon={Minus} isDark={isDark} size={44} iconSize={15} />
+                        <span className="flex-1 text-center text-[22px] text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
+                        <StepperButton onClick={() => handleUpdateIdleWeight(ex.id, ex.increment)} ariaLabel={`Increase ${t('exercises.' + ex.id)} weight`} icon={Plus} isDark={isDark} size={44} iconSize={15} />
+                        <button
+                          onClick={() => setEditingWeightId(null)}
+                          className="h-11 px-[18px] rounded-lg border border-accent text-accent text-[13px] font-semibold active:scale-95 shrink-0"
+                        >{t('workout.doneEditingWeight')}</button>
+                      </div>
+                    )}
                   </div>
                 ))}</div>
                 <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
@@ -690,7 +707,7 @@ const App = () => {
                 {(() => {
                   const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
                   return currentWorkout?.exercises.map((ex, exIdx) => (
-                    <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} showHint={exIdx === 0 && !anySetLogged} />
+                    <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} showHint={exIdx === 0 && !anySetLogged} isEditingWeight={editingWeightId === ex.id} onStartEditWeight={() => setEditingWeightId(ex.id)} onStopEditWeight={() => setEditingWeightId(null)} />
                   ));
                 })()}
                 <div className="pt-4 flex flex-col items-center">

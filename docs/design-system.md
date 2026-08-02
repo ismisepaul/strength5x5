@@ -153,9 +153,10 @@ picker and help are **bottom sheets** (`items-end` overlay). Keep `role="dialog"
 **Switches.** Custom 46×26 track, 20px knob (`translate-x-[21px]` when on) — accent border,
 `accent-900` track and accent knob when on; `ink/18` border and neutral knob when off.
 
-**Steppers.** Every − / + control (idle-screen and `ExerciseCard` weight adjustment,
-`ProgramEditor` sets/reps) shares one `StepperButton` component: 40×40px, 8px radius,
-16px icon, outlined `ink/18` border.
+**Steppers.** Every − / + control shares one `StepperButton` component: 8px radius,
+outlined `ink/18` border. `ProgramEditor` sets/reps use the default 40×40px / 16px icon.
+The idle-screen and `ExerciseCard` weight editors use the 44×44px / 15px-icon variant
+(`size={44} iconSize={15}`), sized to match the 44px "Done" button beside them.
 
 **Segmented controls.** Active segment = `accent-900` fill with an inset accent ring;
 inactive = transparent, `ink/45` label.
@@ -184,11 +185,19 @@ with a colour dot; at least one series is always on.
 - During an active workout on the Train tab, the **timer strip replaces the header** at
   the top of the screen — it is not docked at the bottom. Header everywhere else.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
-- The **idle screen's exercise rows are editable**: the same − / + weight steppers as
-  `ExerciseCard` (40px buttons) sit beside each weight, adjusting in the exercise's
-  program increment (2.5 kg, 5 kg for deadlift) with a floor at the empty 20 kg bar.
-  They write to `weights` state directly — there's no active workout yet to hold a
-  per-session override — so the change persists into the started workout, Stats, and
+- The **idle screen's exercise rows and `ExerciseCard` are weight-editable** via a tap-to-edit
+  pattern, not always-visible steppers: the default state shows the weight (accent-300,
+  tabular) plus a 13px `PencilSimple` at 35% alpha, the pair forming one ≥44px-hit button.
+  Tapping it opens a full-width edit bar *below* the row/card header (not inline) — a
+  recessed panel (`bg-ground/60` on cards, `bg-surface/70` on rows), 9px radius, with
+  44px − / + steppers, a centred 22px weight readout, and an outlined accent "Done"
+  button (44px tall) to close it. A single `editingWeightId` piece of state (owned by
+  `App.jsx`, passed down to `ExerciseCard`) means opening one editor closes any other —
+  idle rows and the active-workout card share the same state, since only one of those
+  screens is ever visible at a time. Adjustments happen in the exercise's program
+  increment (2.5 kg, 5 kg for deadlift) with a floor at the empty 20 kg bar. On the idle
+  screen this writes to `weights` state directly — there's no active workout yet to hold
+  a per-session override — so the change persists into the started workout, Stats, and
   everywhere else `weights` is read, the same as adjusting mid-session.
 
 ## 5. Interaction rules

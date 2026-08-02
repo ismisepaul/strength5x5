@@ -1,12 +1,12 @@
 import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CaretUp, CaretDown, Plus, Minus, ArrowBendDownRight, X } from '@phosphor-icons/react';
+import { CaretUp, CaretDown, Plus, Minus, ArrowBendDownRight, X, PencilSimple } from '@phosphor-icons/react';
 import { calculateWarmup, targetReps } from '../utils';
 import StepperButton from './StepperButton';
 
 const LONG_PRESS_MS = 450;
 
-const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates, expanded, onToggleWarmup, onUpdateWeight, onOpenRepPicker, showHint }) => {
+const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates, expanded, onToggleWarmup, onUpdateWeight, onOpenRepPicker, showHint, isEditingWeight, onStartEditWeight, onStopEditWeight }) => {
   const { t } = useTranslation();
   const target = targetReps(ex);
   const pressTimerRef = useRef(null);
@@ -37,21 +37,37 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates,
 
   return (
     <div className={`p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
-      <div className="flex justify-between items-start mb-5">
-        <div className="flex-1 min-w-0 pr-4">
-          <h3 className="font-semibold text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
-          <div className="flex items-center gap-3 mt-1">
-            <button onClick={() => onToggleWarmup(ex.id)} className="flex items-center gap-1 text-[12.5px] text-accent">
-              {t('warmup.warmup')} {expanded ? <CaretUp size={12} /> : <CaretDown size={12} />}
-            </button>
-            <button onClick={() => onShowPlates(ex)} className={`text-[12.5px] ${mutedClass}`}>{t('warmup.plates')}</button>
+      <div className="mb-5">
+        <div className="flex justify-between items-start">
+          <div className="flex-1 min-w-0 pr-4">
+            <h3 className="font-semibold text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
+            <div className="flex items-center gap-3 mt-1">
+              <button onClick={() => onToggleWarmup(ex.id)} className="flex items-center gap-1 text-[12.5px] text-accent">
+                {t('warmup.warmup')} {expanded ? <CaretUp size={12} /> : <CaretDown size={12} />}
+              </button>
+              <button onClick={() => onShowPlates(ex)} className={`text-[12.5px] ${mutedClass}`}>{t('warmup.plates')}</button>
+            </div>
           </div>
+          <button
+            onClick={onStartEditWeight}
+            aria-label={`Edit ${t('exercises.' + ex.id)} weight`}
+            className="flex items-center gap-1.5 min-h-[44px] shrink-0"
+          >
+            <span className="text-[20px] text-accent-300 tabular-nums leading-none">{ex.weight}kg</span>
+            <PencilSimple size={13} className={isDark ? 'text-ink/35' : 'text-ink-lt/35'} />
+          </button>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <StepperButton onClick={() => onUpdateWeight(exIdx, -ex.increment)} ariaLabel={`Decrease ${t('exercises.' + ex.id)} weight`} icon={Minus} isDark={isDark} />
-          <span className="text-[20px] text-accent-300 tabular-nums leading-none min-w-[76px] text-center">{ex.weight}kg</span>
-          <StepperButton onClick={() => onUpdateWeight(exIdx, ex.increment)} ariaLabel={`Increase ${t('exercises.' + ex.id)} weight`} icon={Plus} isDark={isDark} />
-        </div>
+        {isEditingWeight && (
+          <div className={`mt-3 rounded-[9px] py-2 px-2.5 flex items-center gap-2 ${isDark ? 'bg-ground/60' : 'bg-ground-lt/60'}`}>
+            <StepperButton onClick={() => onUpdateWeight(exIdx, -ex.increment)} ariaLabel={`Decrease ${t('exercises.' + ex.id)} weight`} icon={Minus} isDark={isDark} size={44} iconSize={15} />
+            <span className="flex-1 text-center text-[22px] text-accent-300 tabular-nums">{ex.weight}kg</span>
+            <StepperButton onClick={() => onUpdateWeight(exIdx, ex.increment)} ariaLabel={`Increase ${t('exercises.' + ex.id)} weight`} icon={Plus} isDark={isDark} size={44} iconSize={15} />
+            <button
+              onClick={onStopEditWeight}
+              className="h-11 px-[18px] rounded-lg border border-accent text-accent text-[13px] font-semibold active:scale-95 shrink-0"
+            >{t('workout.doneEditingWeight')}</button>
+          </div>
+        )}
       </div>
       {expanded && (
         <div className={`mb-5 p-3 rounded-lg ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
