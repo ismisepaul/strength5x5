@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   Barbell, ListChecks, Gear, Play, TrendUp,
   Plus, Minus, ArrowsClockwise, X, DownloadSimple, UploadSimple,
-  WarningCircle, Question, TrendDown,
+  Question, TrendDown, Moon, Pause,
   Trash, CaretRight, Timer,
-  FileCsv, ArrowRight, Flame, CaretDown, MinusCircle,
+  FileCsv, ArrowRight, Flame, CaretDown,
   Cloud, SlidersHorizontal, ChartLineUp
 } from '@phosphor-icons/react';
 
@@ -674,7 +674,7 @@ const App = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex justify-center mb-2"><h2 className="font-black uppercase tracking-widest text-slate-500">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
+                <div className="flex justify-center mb-2"><h2 className={`text-[9.5px] font-semibold uppercase tracking-[0.14em] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
                 {(() => {
                   const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
                   return currentWorkout?.exercises.map((ex, exIdx) => (
@@ -1440,40 +1440,26 @@ const App = () => {
       })()}
 
       {showHelp && (
-        <div role="dialog" aria-modal="true" aria-label="How it works" onClick={() => setShowHelp(false)} className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div onClick={e => e.stopPropagation()} className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('help.title')}</h3>
-            <div className="max-h-[60vh] overflow-y-auto space-y-5 mb-8 text-left">
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Barbell size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.programTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.programBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><TrendUp size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.progressionTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.progressionBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-amber-950/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><MinusCircle size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.stallTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.stallBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><TrendDown size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.deloadTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.deloadBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Timer size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.restTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.restBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><WarningCircle size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.longBreaksTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.longBreaksBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><Cloud size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.backupsTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.backupsBody')}</p></div>
-              </div>
+        <div role="dialog" aria-modal="true" aria-label="How it works" onClick={() => setShowHelp(false)} className="fixed inset-0 z-[500] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
+            <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
+            <div className="max-h-[60vh] overflow-y-auto space-y-5 mb-6 text-left">
+              {[
+                { Icon: Barbell, title: t('help.programTitle'), body: t('help.programBody') },
+                { Icon: TrendUp, title: t('help.progressionTitle'), body: t('help.progressionBody') },
+                { Icon: Pause, title: t('help.stallTitle'), body: t('help.stallBody') },
+                { Icon: TrendDown, title: t('help.deloadTitle'), body: t('help.deloadBody') },
+                { Icon: Timer, title: t('help.restTitle'), body: t('help.restBody') },
+                { Icon: Moon, title: t('help.longBreaksTitle'), body: t('help.longBreaksBody') },
+                { Icon: Cloud, title: t('help.backupsTitle'), body: t('help.backupsBody') },
+              ].map(({ Icon, title, body }) => (
+                <div key={title} className="flex items-start gap-3">
+                  <div className={`w-[30px] h-[30px] rounded-lg border border-accent text-accent flex items-center justify-center shrink-0`}><Icon size={16} /></div>
+                  <div><p className="text-sm font-medium">{title}</p><p className={`text-xs leading-relaxed ${isDark ? 'text-ink/55' : 'text-ink-lt/55'}`}>{body}</p></div>
+                </div>
+              ))}
             </div>
-            <button autoFocus onClick={() => setShowHelp(false)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl active:scale-95">{t('help.gotIt')}</button>
+            <button autoFocus onClick={() => setShowHelp(false)} className={`w-full py-3.5 rounded-lg border text-sm font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('help.gotIt')}</button>
           </div>
         </div>
       )}
