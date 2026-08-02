@@ -168,22 +168,38 @@ describe('ExerciseCard', () => {
     expect(missedSet.className).not.toContain('border-dashed');
   });
 
-  it('encodes the completion fraction as a dash/gap pair on the missed-set ring', () => {
-    const missedEx = { ...baseEx, setsCompleted: [3, null, null, null, null] }; // 3 of 5 reps
+  it('uses a fixed dash length with a gap that widens per missed rep', () => {
+    const missedEx = { ...baseEx, setsCompleted: [3, null, null, null, null] }; // 2 short of 5
     render(<ExerciseCard {...defaultProps} ex={missedEx} />);
     const missedSet = screen.getByLabelText('Set 1, 3 reps');
     const circle = missedSet.querySelector('circle');
     expect(circle).toBeTruthy();
-    expect(circle.getAttribute('stroke-dasharray')).toBe('6.8 7.6'); // f=0.6: 2+8*.6, 2+14*.4
+    expect(circle.getAttribute('stroke-dasharray')).toBe('3 6'); // gap = 3 * (5 - 3)
     expect(circle.getAttribute('stroke')).toBe('rgba(233,233,237,.55)');
   });
 
-  it('varies the dash/gap ratio with a different rep target', () => {
-    const customEx = { ...baseEx, reps: 8, setsCompleted: [2, null, null, null, null] }; // 2 of 8 reps
+  it('mimics a classic fine dashed border when exactly one rep short', () => {
+    const missedEx = { ...baseEx, setsCompleted: [4, null, null, null, null] }; // 1 short of 5
+    render(<ExerciseCard {...defaultProps} ex={missedEx} />);
+    const missedSet = screen.getByLabelText('Set 1, 4 reps');
+    const circle = missedSet.querySelector('circle');
+    expect(circle.getAttribute('stroke-dasharray')).toBe('3 3'); // dash === gap
+  });
+
+  it('varies the gap with a different rep target', () => {
+    const customEx = { ...baseEx, reps: 8, setsCompleted: [2, null, null, null, null] }; // 6 short of 8
     render(<ExerciseCard {...defaultProps} ex={customEx} />);
     const missedSet = screen.getByLabelText('Set 1, 2 reps');
     const circle = missedSet.querySelector('circle');
-    expect(circle.getAttribute('stroke-dasharray')).toBe('4.0 12.5'); // f=0.25: 2+8*.25, 2+14*.75
+    expect(circle.getAttribute('stroke-dasharray')).toBe('3 18'); // gap = 3 * (8 - 2)
+  });
+
+  it('clamps the gap at 24 for a badly missed set', () => {
+    const customEx = { ...baseEx, reps: 10, setsCompleted: [1, null, null, null, null] }; // 9 short of 10
+    render(<ExerciseCard {...defaultProps} ex={customEx} />);
+    const missedSet = screen.getByLabelText('Set 1, 1 reps');
+    const circle = missedSet.querySelector('circle');
+    expect(circle.getAttribute('stroke-dasharray')).toBe('3 24'); // 3 * 9 = 27, clamped to 24
   });
 
   it('uses faint specks for a fully missed (0-rep) set regardless of the formula', () => {

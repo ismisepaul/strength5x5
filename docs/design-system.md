@@ -147,12 +147,13 @@ Never render a slot for a set the program doesn't include.
 
 **Missed-set ring.** An SVG circle overlaid on the button (`inset: -1.5px`, `pathLength="100"`,
 `rotate(-90 50 50)` so it starts at 12 o'clock), stroke `rgba(233,233,237,.55)` — fixed, not
-theme-swapped, matching the rest of this state's ink-token styling — at 3px width. The
-dash/gap encodes completion fraction `f = reps/target`: `stroke-dasharray = "{(2+8f).toFixed(1)}
-{(2+14(1-f)).toFixed(1)}"` — denser dashes closer to the target, wider gaps further off; 0
-reps is a hardcoded `"0.5 24"` (faint specks) rather than the formula's result, so a
-fully-missed set doesn't read as "half done". Fraction-based, so it holds for any Program-tab
-rep target (1–10). Never becomes red — status here is shape/density, not hue.
+theme-swapped, matching the rest of this state's ink-token styling — at 3px width. Dash length
+is fixed at 3; the gap is `min(24, 3 × (target − reps))` — one rep short gives a 3/3 dash-equals-gap
+ratio (a classic fine dashed border), and each additional missed rep widens the gap further,
+clamped at 24 so a badly missed set doesn't dissolve into nothing. 0 reps is a hardcoded
+`"0.5 24"` (faint specks) rather than the formula's result (which would give a 3-length dash),
+so a fully-missed set reads as clearly emptier than a 1-rep set. Works for any Program-tab rep
+target (1–10). Never becomes red — status here is shape/density, not hue.
 
 **Modals and sheets.** `surface` background, 12px radius centred / `14px 14px 0 0` when
 bottom-anchored, outlined primary action, plain-text secondary. Rep picker and help are

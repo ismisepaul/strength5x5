@@ -75,8 +75,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
           if (passed) stateClass = 'border border-accent bg-accent-900 text-accent-300';
           else if (missed) stateClass = 'border-[1.5px] border-transparent bg-neutral-tint text-ink';
           else stateClass = isDark ? 'border border-ink/18 text-ink/40' : 'border border-ink-lt/18 text-ink-lt/40';
-          const missedFraction = missed ? r / target : 0;
-          const missedDasharray = r === 0 ? '0.5 24' : `${(2 + 8 * missedFraction).toFixed(1)} ${(2 + 14 * (1 - missedFraction)).toFixed(1)}`;
+          const missedDasharray = r === 0 ? '0.5 24' : `3 ${Math.min(24, 3 * (target - r))}`;
           return (
             <button
               key={ri}
