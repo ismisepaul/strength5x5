@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  Dumbbell, History, Settings as SettingsIcon, Play, TrendingUp,
-  Plus, Minus, RefreshCw, Moon, X, Download, Upload,
-  ToggleRight, ToggleLeft, AlertCircle, HelpCircle, Zap, TrendingDown,
-  Clock, Vibrate, Trash2, Bell, ChevronRight, Menu, Timer,
-  FileSpreadsheet, MoveRight, Flame, ChevronDown, CheckCircle2, MinusCircle, Trophy,
-  Globe, Cloud, HardDrive, FolderSync, SlidersHorizontal
-} from 'lucide-react';
+  Barbell, ListChecks, Gear, Play, TrendUp,
+  Plus, Minus, ArrowsClockwise, Moon, X, DownloadSimple, UploadSimple,
+  ToggleRight, ToggleLeft, WarningCircle, Question, Lightning, TrendDown,
+  Vibrate, Trash, Bell, CaretRight, List, Timer,
+  FileCsv, ArrowRight, Flame, CaretDown, CheckCircle, MinusCircle, Trophy,
+  GlobeSimple, Cloud, SlidersHorizontal
+} from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
@@ -642,10 +642,10 @@ const App = () => {
             ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
             : t(`workout.type${currentWorkout?.type}`) || t('liveWorkout.activeWorkout');
         const liveIcon = timer.isExpired
-          ? <Dumbbell size={14} className="text-white" />
+          ? <Barbell size={14} className="text-white" />
           : timer.isActive
             ? <Timer size={14} className="text-white" />
-            : <Play size={14} fill="currentColor" className="text-white" />;
+            : <Play size={14} weight="fill" className="text-white" />;
         return (
           <div className={`fixed bottom-[80px] inset-x-0 max-w-md mx-auto z-[100] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)] transition-all duration-300 ${isDark ? 'bg-indigo-900' : 'bg-indigo-600'}`}>
             <button onClick={() => handleTabClick('workout')} className="w-full px-6 py-4 flex items-center justify-between group">
@@ -656,7 +656,7 @@ const App = () => {
                   <p className={`text-xs font-black uppercase text-white tracking-tight ${timer.isActive || timer.isExpired ? 'font-mono' : ''}`}>{liveDetail}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-[10px] font-black uppercase text-white/90 bg-black/10 px-3 py-1.5 rounded-lg">{t('liveWorkout.return')} <ChevronRight size={12} /></div>
+              <div className="flex items-center gap-1 text-[10px] font-black uppercase text-white/90 bg-black/10 px-3 py-1.5 rounded-lg">{t('liveWorkout.return')} <CaretRight size={12} /></div>
             </button>
           </div>
         );
@@ -664,10 +664,10 @@ const App = () => {
 
       <header className={`px-6 pt-10 pb-4 flex justify-between items-center transition-all duration-300 ${isDark ? 'bg-slate-950/80' : 'bg-slate-50/80'} backdrop-blur-md sticky z-40`} style={{ top: getTopOffset() }}>
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-indigo-600 shadow-lg"><Dumbbell className="text-white" size={20} /></div>
+          <div className="p-2 rounded-xl bg-indigo-600 shadow-lg"><Barbell weight="fill" className="text-white" size={20} /></div>
           <h1 className={`text-xl font-black tracking-tight uppercase ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('app.title')}</h1>
         </div>
-        <button onClick={() => setShowHelp(true)} aria-label="How it works" className={`p-2.5 rounded-2xl border transition-all ${isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-100 text-slate-500'}`}><HelpCircle size={20} /></button>
+        <button onClick={() => setShowHelp(true)} aria-label="How it works" className={`p-2.5 rounded-2xl border transition-all ${isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-100 text-slate-500'}`}><Question size={20} /></button>
       </header>
 
       <main className={`flex-1 px-4 py-4 overflow-y-auto ${timerVisible ? 'pb-44' : liveWorkoutVisible ? 'pb-52' : navCollapsed ? 'pb-24' : 'pb-32'}`}>
@@ -675,7 +675,7 @@ const App = () => {
           <div className="space-y-4">
             {!isWorkoutActive ? (
               <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                <div className="mb-6"><p className="text-[10px] font-bold uppercase text-slate-500 mb-1 tracking-widest">{t('workout.nextUp')}</p><button onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')} className="flex items-start gap-2 hover:opacity-70 transition-opacity"><h2 className="text-4xl font-black uppercase leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2><RefreshCw size={20} className="mt-3 text-indigo-500" /></button></div>
+                <div className="mb-6"><p className="text-[10px] font-bold uppercase text-slate-500 mb-1 tracking-widest">{t('workout.nextUp')}</p><button onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')} className="flex items-start gap-2 hover:opacity-70 transition-opacity"><h2 className="text-4xl font-black uppercase leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2><ArrowsClockwise size={20} className="mt-3 text-indigo-500" /></button></div>
                 <div className="space-y-3 mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
                   <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-transparent'}`}>
                     <div className="flex justify-between items-center">
@@ -684,7 +684,7 @@ const App = () => {
                     </div>
                   </div>
                 ))}</div>
-                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full py-5 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-transform ${trainedToday ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-[0.98]'}`}><Play size={20} fill="currentColor" /> {t('workout.startWorkout')}</button>
+                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full py-5 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-transform ${trainedToday ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-[0.98]'}`}><Play size={20} weight="fill" /> {t('workout.startWorkout')}</button>
                 {trainedToday && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest">{t('workout.alreadyTrained')}</p>}
                 {!trainedToday && history.length === 0 && <p className="text-slate-500 text-[10px] font-bold text-center mt-3">{t('workout.autoIncreaseHint')}</p>}
               </div>
@@ -697,7 +697,7 @@ const App = () => {
                 <div className="pt-4 flex flex-col items-center">
                   <button onClick={finishWorkout} disabled={!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null))} className={`w-full py-5 rounded-[1.5rem] font-black text-lg shadow-xl ${currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) ? 'bg-emerald-600 text-white active:scale-95 shadow-emerald-900/20' : 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed'}`}>{t('workout.finishWorkout')}</button>
                   {!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest animate-pulse">{t('workout.completeAllSets')}</p>}
-                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-600 border-slate-900' : 'text-slate-400 border-slate-100'} px-6 py-3 border rounded-xl active:text-rose-500 transition-colors`}><Trash2 size={12} /> {t('workout.discardWorkout')}</button>
+                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-600 border-slate-900' : 'text-slate-400 border-slate-100'} px-6 py-3 border rounded-xl active:text-rose-500 transition-colors`}><Trash size={12} /> {t('workout.discardWorkout')}</button>
                 </div>
               </div>
             )}
@@ -770,7 +770,7 @@ const App = () => {
                     className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all active:scale-[0.99] ${isDark ? 'bg-slate-900/60 border-slate-800 hover:bg-slate-900' : 'bg-white/60 border-slate-100 hover:bg-white'}`}
                   >
                     <div className="flex items-center gap-3">
-                      <ChevronDown size={16} className={`transition-transform duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${expandedGroups[group.key] ? 'rotate-0' : '-rotate-90'}`} />
+                      <CaretDown size={16} className={`transition-transform duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${expandedGroups[group.key] ? 'rotate-0' : '-rotate-90'}`} />
                       <span className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{group.key}</span>
                     </div>
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{group.entries.length}</span>
@@ -795,7 +795,7 @@ const App = () => {
           <div className="space-y-6">
             {history.length === 0 ? (
               <div className="py-20 text-center px-10">
-                <div className="flex justify-center mb-6"><div className={`p-5 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-500' : 'bg-indigo-50 text-indigo-600'}`}><TrendingUp size={48} /></div></div>
+                <div className="flex justify-center mb-6"><div className={`p-5 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-500' : 'bg-indigo-50 text-indigo-600'}`}><TrendUp size={48} /></div></div>
                 <h2 className="text-2xl font-black uppercase tracking-tight mb-2">{t('stats.noStats')}</h2>
                 <p className="text-slate-500 text-sm font-bold leading-relaxed">{t('stats.noStatsBody')}</p>
               </div>
@@ -805,7 +805,7 @@ const App = () => {
               <>
                 {(() => {
                   const big3Trend = getBig3Trend(history);
-                  const TrendIcon = big3Trend === 'up' ? TrendingUp : big3Trend === 'down' ? TrendingDown : MoveRight;
+                  const TrendIcon = big3Trend === 'up' ? TrendUp : big3Trend === 'down' ? TrendDown : ArrowRight;
                   const trendColor = big3Trend === 'up' ? 'text-emerald-500' : big3Trend === 'down' ? 'text-rose-500' : 'text-amber-500';
                   return (
                     <button onClick={() => setStatsView('big3')} className={`w-full p-6 rounded-[2rem] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
@@ -813,22 +813,22 @@ const App = () => {
                       <div className="flex items-center gap-2">
                         {big3Trend && <TrendIcon size={16} className={trendColor} />}
                         <div className="text-right"><p className="text-[10px] font-bold text-slate-500 uppercase">{t('stats.big3Total')}</p><p className={`text-2xl font-black ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{big3Total}kg</p></div>
-                        <ChevronRight size={16} className="text-slate-500 ml-1" />
+                        <CaretRight size={16} className="text-slate-500 ml-1" />
                       </div>
                     </button>
                   );
                 })()}
                 <div className="grid gap-3">{EXPECTED_WEIGHT_KEYS.map(id => {
                   const trend = getExerciseTrend(history, id);
-                  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : MoveRight;
+                  const TrendIcon = trend === 'up' ? TrendUp : trend === 'down' ? TrendDown : ArrowRight;
                   const trendColor = trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-rose-500' : 'text-amber-500';
                   return (
                     <button key={id} onClick={() => setStatsView(id)} className={`w-full p-6 rounded-[2rem] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                      <div className="flex items-center gap-4 flex-1 min-w-0"><div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Zap size={20} /></div><div className="min-w-0 pr-2"><p className={`text-sm font-black uppercase truncate ${isDark ? 'text-indigo-100' : 'text-slate-900'}`}>{t('exercises.' + id)}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-none">{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p></div></div>
+                      <div className="flex items-center gap-4 flex-1 min-w-0"><div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Lightning size={20} /></div><div className="min-w-0 pr-2"><p className={`text-sm font-black uppercase truncate ${isDark ? 'text-indigo-100' : 'text-slate-900'}`}>{t('exercises.' + id)}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-none">{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p></div></div>
                       <div className="flex items-center gap-2">
                         {trend && <TrendIcon size={16} className={trendColor} />}
                         <span className={`shrink-0 font-black text-xl ${isDark ? 'text-indigo-500' : 'text-indigo-600'}`}>{weights[id]}kg</span>
-                        <ChevronRight size={16} className="text-slate-500" />
+                        <CaretRight size={16} className="text-slate-500" />
                       </div>
                     </button>
                   );
@@ -848,7 +848,7 @@ const App = () => {
             <h2 className="text-3xl font-black mb-6 uppercase tracking-tighter">{t('options.title')}</h2>
             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
               <div className="flex items-center gap-4 mb-6">
-                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Clock size={20} /></div>
+                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Timer size={20} /></div>
                 <div><p className="text-sm font-black uppercase tracking-tight">{t('options.restInterval')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.restIntervalDesc')}</p></div>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -888,14 +888,14 @@ const App = () => {
             {/* Backup & Sync */}
             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
               <div className="flex items-center gap-4 mb-5">
-                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><FolderSync size={20} /></div>
+                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Cloud size={20} /></div>
                 <div><p className="text-sm font-black uppercase">{t('options.backupSync')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.backupSyncDesc')}</p></div>
               </div>
 
               {/* Local Backup toggle */}
               <div className={`flex items-center justify-between p-4 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-50 border border-slate-100'}`}>
                 <div className="flex items-center gap-3">
-                  <HardDrive size={16} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
+                  <Cloud size={16} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
                   <div><p className="text-xs font-black uppercase">{t('options.localBackup')}</p><p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.localBackupDesc')}</p></div>
                 </div>
                 <button onClick={() => setLocalBackup(!localBackup)} role="switch" aria-checked={localBackup} aria-label="Local backup">{localBackup ? <ToggleRight size={36} className="text-indigo-500" /> : <ToggleLeft size={36} className={isDark ? 'text-slate-700' : 'text-slate-300'} />}</button>
@@ -934,10 +934,10 @@ const App = () => {
               {/* Backup & Restore buttons */}
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => exportData()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform bg-indigo-600 text-white shadow-lg`}>
-                  <Download size={20} /> {t('options.backupToDevice')}
+                  <DownloadSimple size={20} /> {t('options.backupToDevice')}
                 </button>
                 <button onClick={() => fileInputRef.current?.click()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-white text-slate-600 border-slate-200'}`}>
-                  <Upload size={20} /> {t('options.restore')}
+                  <UploadSimple size={20} /> {t('options.restore')}
                 </button>
               </div>
             </div>
@@ -945,7 +945,7 @@ const App = () => {
             <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Globe size={20} /></div>
+                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><GlobeSimple size={20} /></div>
                   <div><p className="text-sm font-black uppercase">{t('options.language')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.languageDesc')}</p></div>
                 </div>
                 <div className="flex gap-1.5">
@@ -956,7 +956,7 @@ const App = () => {
               </div>
             </div>
             <button onClick={() => csvInputRef.current?.click()} className={`w-full p-5 rounded-[2rem] flex items-center gap-4 border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-              <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><FileSpreadsheet size={20} /></div>
+              <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><FileCsv size={20} /></div>
               <div className="text-left"><p className="text-sm font-black uppercase">{t('options.importStronglifts')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.importStrongliftsDesc')}</p></div>
             </button>
           </div>
@@ -966,7 +966,7 @@ const App = () => {
       {isWorkoutActive && activeTab === 'workout' && !navExpanded ? (
         <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-3 flex justify-center items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
           <button onClick={() => setNavExpanded(true)} aria-label="Show navigation" className={`p-2 rounded-xl transition-all active:scale-110 ${isDark ? 'text-slate-600 hover:text-slate-400' : 'text-slate-300 hover:text-slate-500'}`}>
-            <Menu size={24} />
+            <List size={24} />
           </button>
         </nav>
       ) : (() => {
@@ -974,16 +974,16 @@ const App = () => {
         return (
           <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-6 flex justify-between items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
             {[
-              { id: 'workout', label: drawerOpen ? t('tabs.close') : t('tabs.train'), icon: drawerOpen ? X : Dumbbell },
+              { id: 'workout', label: drawerOpen ? t('tabs.close') : t('tabs.train'), icon: drawerOpen ? X : Barbell },
               { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
-              { id: 'history', label: t('tabs.log'), icon: History },
-              { id: 'progress', label: t('tabs.stats'), icon: TrendingUp },
-              { id: 'settings', label: t('tabs.options'), icon: SettingsIcon },
+              { id: 'history', label: t('tabs.log'), icon: ListChecks },
+              { id: 'progress', label: t('tabs.stats'), icon: TrendUp },
+              { id: 'settings', label: t('tabs.options'), icon: Gear },
             ].map(tab => {
               const isCloseButton = drawerOpen && tab.id === 'workout';
               const isActive = !isCloseButton && activeTab === tab.id;
               return (
-                <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex flex-col items-center gap-1.5 transition-all active:scale-125 ${isCloseButton ? (isDark ? 'text-rose-400' : 'text-rose-500') : isActive ? (isDark ? 'text-indigo-400' : 'text-indigo-600') : (isDark ? 'text-slate-700' : 'text-slate-300')}`}><tab.icon size={24} strokeWidth={isCloseButton || isActive ? 3 : 2} /><span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span></button>
+                <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex flex-col items-center gap-1.5 transition-all active:scale-125 ${isCloseButton ? (isDark ? 'text-rose-400' : 'text-rose-500') : isActive ? (isDark ? 'text-indigo-400' : 'text-indigo-600') : (isDark ? 'text-slate-700' : 'text-slate-300')}`}><tab.icon size={24} weight={isCloseButton || isActive ? 'fill' : 'regular'} /><span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span></button>
               );
             })}
           </nav>
@@ -993,7 +993,7 @@ const App = () => {
       {showCancelModal && (
         <div role="dialog" aria-modal="true" aria-label="Discard workout" className={`fixed inset-0 z-[500] flex items-center justify-center p-8 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-xs flex flex-col items-center p-8 rounded-[2.5rem] border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="p-5 rounded-full bg-rose-500/10 text-rose-500 mb-6"><Trash2 size={48} /></div>
+            <div className="p-5 rounded-full bg-rose-500/10 text-rose-500 mb-6"><Trash size={48} /></div>
             <h3 className={`text-2xl font-black uppercase mb-4 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.discardTitle')}</h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10">{t('modals.discardBody')}</p>
             <button onClick={() => setShowCancelModal(false)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl shadow-indigo-900/40 mb-6 active:scale-95">{t('modals.keepLifting')}</button>
@@ -1007,7 +1007,7 @@ const App = () => {
         return (
         <div role="dialog" aria-modal="true" aria-label="Deload recommendation" className={`fixed inset-0 z-[400] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendingDown size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendDown size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.acceptDeload')}</h3>
             <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">{deloadAlert.message}</p>
             <div className="mb-4">
@@ -1043,15 +1043,15 @@ const App = () => {
       {showRestorePrompt && (
         <div role="dialog" aria-modal="true" aria-label="Restore backup" className={`fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-10 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-indigo-500/10 text-indigo-500 animate-pulse"><AlertCircle size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-indigo-500/10 text-indigo-500 animate-pulse"><WarningCircle size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.syncHistory')}</h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10">{t('modals.syncHistoryBody')}</p>
             <div className="space-y-4">
-              <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95"><Upload size={20} className="inline mr-2" /> {t('modals.restoreBackup')}</button>
+              <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95"><UploadSimple size={20} className="inline mr-2" /> {t('modals.restoreBackup')}</button>
               {driveConfigured && (
                 <button onClick={handleConnect} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-700'}`}><Cloud size={20} className="inline mr-2" /> {t('modals.restoreFromDrive')}</button>
               )}
-              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}><FileSpreadsheet size={20} className="inline mr-2" /> {t('options.importStronglifts')}</button>
+              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}><FileCsv size={20} className="inline mr-2" /> {t('options.importStronglifts')}</button>
               <button onClick={() => startWorkout(true)} className="text-[10px] font-black uppercase text-slate-700 tracking-[0.3em] mt-8 block mx-auto">{t('modals.skipAndStart')}</button>
             </div>
           </div>
@@ -1061,7 +1061,7 @@ const App = () => {
       {showResumePrompt && saved.activeSession && (
         <div role="dialog" aria-modal="true" aria-label="Resume workout" className={`fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Dumbbell size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Barbell size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.resumeWorkout')}</h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-2">{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
             <p className="text-slate-500 text-xs font-bold mb-8">
@@ -1120,7 +1120,7 @@ const App = () => {
       {pendingCSVImport && (
         <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className={`fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><FileSpreadsheet size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><FileCsv size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.importData')}</h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-6">{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
             <div className="grid grid-cols-2 gap-2 mb-8">
@@ -1285,7 +1285,7 @@ const App = () => {
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase text-rose-500 tracking-widest py-3 active:scale-90"
-                ><Trash2 size={12} /> {t('modals.deleteWorkout')}</button>
+                ><Trash size={12} /> {t('modals.deleteWorkout')}</button>
               ) : (
                 <div className={`p-4 rounded-2xl border ${isDark ? 'bg-rose-950/20 border-rose-900/30' : 'bg-rose-50 border-rose-200'}`}>
                   <p className={`text-xs font-bold text-center mb-3 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{t('modals.deleteConfirm')}</p>
@@ -1332,7 +1332,7 @@ const App = () => {
                 const passed = isExercisePassed(ex);
                 const progressed = completionSummary.progressions.includes(ex.id);
                 const needsDeload = completionSummary.pendingDeloads?.some(d => d.id === ex.id);
-                const StatusIcon = passed ? CheckCircle2 : needsDeload ? TrendingDown : MinusCircle;
+                const StatusIcon = passed ? CheckCircle : needsDeload ? TrendDown : MinusCircle;
                 const statusColor = passed ? 'text-emerald-500' : needsDeload ? 'text-blue-500' : 'text-amber-500';
                 const mutedColor = isDark ? 'text-slate-500' : 'text-slate-400';
                 const setDurations = ex.setDurations ?? [];
@@ -1385,7 +1385,7 @@ const App = () => {
         return (
         <div role="dialog" aria-modal="true" aria-label="Failure deload" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendingDown size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendDown size={48} /></div></div>
             <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.failureDeloadTitle')}</h3>
             <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">{t('modals.failureDeloadMessage')}</p>
             <div className="mb-4">
@@ -1423,11 +1423,11 @@ const App = () => {
             <h3 className={`text-2xl font-black uppercase tracking-tight mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('help.title')}</h3>
             <div className="max-h-[60vh] overflow-y-auto space-y-5 mb-8 text-left">
               <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Dumbbell size={18} /></div>
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Barbell size={18} /></div>
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.programTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.programBody')}</p></div>
               </div>
               <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><TrendingUp size={18} /></div>
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><TrendUp size={18} /></div>
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.progressionTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.progressionBody')}</p></div>
               </div>
               <div className="flex items-start gap-3">
@@ -1435,15 +1435,15 @@ const App = () => {
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.stallTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.stallBody')}</p></div>
               </div>
               <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><TrendingDown size={18} /></div>
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><TrendDown size={18} /></div>
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.deloadTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.deloadBody')}</p></div>
               </div>
               <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Clock size={18} /></div>
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Timer size={18} /></div>
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.restTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.restBody')}</p></div>
               </div>
               <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><AlertCircle size={18} /></div>
+                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><WarningCircle size={18} /></div>
                 <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.longBreaksTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.longBreaksBody')}</p></div>
               </div>
               <div className="flex items-start gap-3">
@@ -1459,7 +1459,7 @@ const App = () => {
       {pendingDriveRestore && (
         <div role="dialog" aria-modal="true" aria-label="Older backup warning" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><WarningCircle size={48} /></div></div>
             <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
             <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
@@ -1471,7 +1471,7 @@ const App = () => {
       {pendingLocalImport && (
         <div role="dialog" aria-modal="true" aria-label="Older backup warning" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><WarningCircle size={48} /></div></div>
             <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
             <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
             <button onClick={() => applyLocalImport(pendingLocalImport.data)} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
@@ -1483,7 +1483,7 @@ const App = () => {
       {connectSyncPrompt && (
         <div role="dialog" aria-modal="true" aria-label="Data conflict" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
           <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
+            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><WarningCircle size={48} /></div></div>
             <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {t('modals.dataConflictTitle')}
             </h3>

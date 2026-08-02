@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Timer, BellRing, Dumbbell } from 'lucide-react';
+import { CheckCircle, Timer, Barbell } from '@phosphor-icons/react';
 
 const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComplete, isExpired, navExpanded, elapsed }) => {
   const { t } = useTranslation();
@@ -17,7 +17,7 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest leading-none mb-1">{isExerciseComplete === 'workout' ? t('timer.workoutComplete') : t('timer.movementFinished')}</span>
             <div className="flex items-center gap-3">
-              <CheckCircle2 size={20} className="text-emerald-500" />
+              <CheckCircle size={20} className="text-emerald-500" />
               <span className={`text-[11px] font-bold leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isExerciseComplete === 'workout' ? t('timer.allSetsDone') : t('timer.setupNext')}</span>
             </div>
           </div>
@@ -25,7 +25,7 @@ const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComple
           <div className="flex flex-col">
             <span className={`text-[10px] font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'} tracking-widest leading-none mb-1`}>{t('timer.lifting')}</span>
             <div className="flex items-center gap-3">
-              <Dumbbell size={24} className={isDark ? 'text-indigo-500' : 'text-indigo-600'} />
+              <Barbell size={24} className={isDark ? 'text-indigo-500' : 'text-indigo-600'} />
               <span className={`text-4xl font-black font-mono leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatTime(elapsed || 0)}</span>
             </div>
           </div>

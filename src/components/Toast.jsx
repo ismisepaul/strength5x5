@@ -1,9 +1,9 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { CheckCircle, WarningCircle, Info } from '@phosphor-icons/react';
 
 const ICONS = {
-  success: CheckCircle2,
-  error: AlertCircle,
+  success: CheckCircle,
+  error: WarningCircle,
   info: Info,
 };
 

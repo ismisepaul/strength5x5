@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronUp, ChevronDown, Plus, Minus, X } from 'lucide-react';
+import { CaretUp, CaretDown, Plus, Minus, X } from '@phosphor-icons/react';
 import { calculateWarmup, targetReps } from '../utils';
 import { MAX_SETS } from '../constants';
 
@@ -38,7 +38,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates,
         <div className="flex-1 min-w-0 pr-4">
           <h3 className={`font-black text-lg truncate uppercase tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('exercises.' + ex.id)}</h3>
           <button onClick={() => onToggleWarmup(ex.id)} className={`flex items-center gap-1.5 text-[10px] font-black px-2 py-1 rounded-lg mt-1 transition-colors ${expanded ? 'bg-indigo-600 text-white' : isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400'}`}>
-            {expanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />} {t('warmup.warmup')}
+            {expanded ? <CaretUp size={10} /> : <CaretDown size={10} />} {t('warmup.warmup')}
           </button>
         </div>
         <div className="flex flex-col items-end gap-1">

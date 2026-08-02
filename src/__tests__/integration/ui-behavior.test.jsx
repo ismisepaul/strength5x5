@@ -272,12 +272,15 @@ describe('Stats charts', () => {
   it('shows trend arrows on exercise cards', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    render(<App />);
 
     await user.click(screen.getByText('Stats'));
 
-    const chevrons = container.querySelectorAll('.lucide-chevron-right');
-    expect(chevrons.length).toBeGreaterThanOrEqual(5);
+    const exerciseNames = ['Back Squat', 'Bench Press', 'Barbell Row', 'Overhead Press', 'Deadlift'];
+    for (const name of exerciseNames) {
+      const row = screen.getByText(name).closest('button');
+      expect(row.querySelector('svg')).toBeTruthy();
+    }
   });
 
   it('Weight toggle is on by default and Est. 1RM can be toggled on independently', async () => {

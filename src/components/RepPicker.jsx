@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { X } from '@phosphor-icons/react';
 import { targetReps } from '../utils';
 
 const RepPicker = ({ ex, setIdx, isDark, onSelect, onClose }) => {

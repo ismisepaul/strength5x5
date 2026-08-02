@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Minus, RefreshCw } from 'lucide-react';
+import { Plus, Minus, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, DEFAULT_PROGRAM } from '../constants';
 
 const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
@@ -20,7 +20,7 @@ const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
         <button
           onClick={() => onChange(() => JSON.parse(JSON.stringify(DEFAULT_PROGRAM)))}
           className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-3 py-2 rounded-xl border active:scale-95 transition-transform ${isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-500'}`}
-        ><RefreshCw size={12} /> {t('program.resetDefaults')}</button>
+        ><ArrowCounterClockwise size={12} /> {t('program.resetDefaults')}</button>
       </div>
       <p className="text-slate-500 text-xs font-bold leading-relaxed -mt-1">{t('program.subtitle')}</p>
       {isWorkoutActive && (
