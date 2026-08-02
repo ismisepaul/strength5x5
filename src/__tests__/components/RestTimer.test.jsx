@@ -35,7 +35,7 @@ describe('RestTimer', () => {
 
   it('renders "Movement Finished" when exercise is complete', () => {
     render(<RestTimer {...defaultProps} seconds={0} isExerciseComplete={true} />);
-    expect(screen.getByText('Movement Finished')).toBeInTheDocument();
+    expect(screen.getByText('Movement finished')).toBeInTheDocument();
     expect(screen.getByText('Got it')).toBeInTheDocument();
   });
 
@@ -63,8 +63,8 @@ describe('RestTimer', () => {
 
   it('renders "Workout Complete" when isExerciseComplete is workout', () => {
     render(<RestTimer {...defaultProps} seconds={0} isExerciseComplete={'workout'} />);
-    expect(screen.getByText('Workout Complete')).toBeInTheDocument();
-    expect(screen.queryByText('Movement Finished')).not.toBeInTheDocument();
+    expect(screen.getByText('Workout complete')).toBeInTheDocument();
+    expect(screen.queryByText('Movement finished')).not.toBeInTheDocument();
     expect(screen.getByText('Got it')).toBeInTheDocument();
   });
 });

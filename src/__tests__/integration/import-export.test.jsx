@@ -55,7 +55,7 @@ describe('Import / Export', () => {
     render(<App />);
 
     await user.click(screen.getByText('Options'));
-    await user.click(screen.getByText('Backup to Device'));
+    await user.click(screen.getByText('Backup'));
 
     expect(URL.createObjectURL).toHaveBeenCalled();
     expect(URL.revokeObjectURL).toHaveBeenCalled();
@@ -281,7 +281,7 @@ describe('StrongLifts CSV Import', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByText('Options'));
-    expect(screen.getByText('Import StrongLifts')).toBeTruthy();
+    expect(screen.getByText('Import from StrongLifts')).toBeTruthy();
   });
 
   it('opens confirmation modal with session count after selecting a CSV file', async () => {
@@ -360,11 +360,11 @@ describe('StrongLifts CSV Import', () => {
   it('shows Import StrongLifts option in first-launch restore prompt', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     await waitFor(() => {
       expect(screen.getByText('Sync History?')).toBeTruthy();
-      expect(screen.getByText(/Import StrongLifts/)).toBeTruthy();
+      expect(screen.getByText(/Import.*StrongLifts/)).toBeTruthy();
     });
   });
 

@@ -27,7 +27,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
     expect(screen.getByText('Bench Press')).toBeInTheDocument();
     expect(screen.getByText('Barbell Row')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -82,7 +82,7 @@ describe('Workout Flow', () => {
       await user.click(btn);
     }
 
-    const finishBtn = screen.getByText('Finish Workout');
+    const finishBtn = screen.getByText('Finish workout');
     expect(finishBtn).not.toBeDisabled();
     await user.click(finishBtn);
 
@@ -109,7 +109,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -126,7 +126,7 @@ describe('Workout Flow', () => {
       await user.click(setButtons[i]);
     }
 
-    await user.click(screen.getByText('Finish Workout'));
+    await user.click(screen.getByText('Finish workout'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     // Squat should NOT have incremented because set 1 was 4, not 5
@@ -140,7 +140,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     expect(screen.getByText('Sync History?')).toBeInTheDocument();
   });
 
@@ -148,7 +148,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByText('Skip and start fresh'));
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
   });
@@ -169,11 +169,11 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
-    await user.click(screen.getByText('Discard Workout'));
-    expect(screen.getByText('Discard workout?')).toBeInTheDocument();
-    await user.click(screen.getByText('Yes, Discard Everything'));
-    expect(screen.getByText('Start Workout')).toBeInTheDocument();
+    await user.click(screen.getByText('Start workout'));
+    await user.click(screen.getByText('Discard workout'));
+    expect(screen.getByText('Discard this workout?')).toBeInTheDocument();
+    await user.click(screen.getByText('Yes, discard'));
+    expect(screen.getByText('Start workout')).toBeInTheDocument();
   });
 
   it('shows deload slider after 3 consecutive failures and applies on confirm', async () => {
@@ -202,7 +202,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -219,7 +219,7 @@ describe('Workout Flow', () => {
       await user.click(setButtons[i]);
     }
 
-    await user.click(screen.getByText('Finish Workout'));
+    await user.click(screen.getByText('Finish workout'));
 
     expect(screen.getByText(/Deload needed/)).toBeInTheDocument();
 
@@ -231,7 +231,7 @@ describe('Workout Flow', () => {
     await user.click(screen.getByText('Done'));
 
     expect(screen.queryByText('Deload Needed')).not.toBeInTheDocument();
-    expect(screen.getByText('Already trained today')).toBeInTheDocument();
+    expect(screen.getByText('Already trained today — rest up.')).toBeInTheDocument();
   });
 
   it('shows failure deload on start and applies deloaded weights', async () => {
@@ -260,7 +260,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     expect(screen.getByText('Deload Needed')).toBeInTheDocument();
     expect(screen.getByRole('slider')).toBeInTheDocument();
     expect(screen.getByText('Recommended: 10%')).toBeInTheDocument();
@@ -269,7 +269,7 @@ describe('Workout Flow', () => {
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.weights.squat).toBe(55);
-    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
+    expect(screen.getByText('Finish workout')).toBeInTheDocument();
   });
 
   it('shows failure deload on start and skips into workout without changing weight', async () => {
@@ -298,11 +298,11 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     expect(screen.getByText('Deload Needed')).toBeInTheDocument();
 
     await user.click(screen.getByText('Skip Deload'));
-    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
+    expect(screen.getByText('Finish workout')).toBeInTheDocument();
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.weights.squat).toBe(60);

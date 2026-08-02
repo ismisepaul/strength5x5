@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
@@ -28,7 +28,7 @@ describe('Skip button behavior', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -50,7 +50,7 @@ describe('Skip button behavior', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -61,10 +61,10 @@ describe('Skip button behavior', () => {
       await user.click(setButtons[i]);
     }
 
-    expect(screen.getByText('Movement Finished')).toBeInTheDocument();
+    expect(screen.getByText('Movement finished')).toBeInTheDocument();
     await user.click(screen.getByText('Got it'));
 
-    expect(screen.queryByText('Movement Finished')).not.toBeInTheDocument();
+    expect(screen.queryByText('Movement finished')).not.toBeInTheDocument();
     expect(screen.queryByText('Lifting')).not.toBeInTheDocument();
     expect(screen.queryByText('Recovery Phase')).not.toBeInTheDocument();
   });
@@ -76,7 +76,7 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
     expect(screen.queryByLabelText('Train')).not.toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Show navigation'));
 
     expect(screen.getByLabelText('Close')).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Show navigation'));
     expect(screen.getByLabelText('Close')).toBeInTheDocument();
 
@@ -110,7 +110,7 @@ describe('Nav collapse during workout', () => {
 
     expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
     expect(screen.queryByLabelText('Close')).not.toBeInTheDocument();
-    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
+    expect(screen.getByText('Finish workout')).toBeInTheDocument();
   });
 
   it('collapses nav when returning to workout tab from another tab', async () => {
@@ -118,19 +118,19 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
-    expect(screen.getByText('Workout Log')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Log' })).toBeInTheDocument();
     expect(screen.getByLabelText('Train')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Train'));
 
     expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
     expect(screen.queryByLabelText('Log')).not.toBeInTheDocument();
-    expect(screen.queryByText('Start Workout')).not.toBeInTheDocument();
-    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
+    expect(screen.queryByText('Start workout')).not.toBeInTheDocument();
+    expect(screen.getByText('Finish workout')).toBeInTheDocument();
   });
 
   it('collapses nav when toggling a set during workout', async () => {
@@ -138,7 +138,7 @@ describe('Nav collapse during workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Show navigation'));
 
     expect(screen.getByLabelText('Close')).toBeInTheDocument();
@@ -168,7 +168,7 @@ describe('Live Workout bar', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
@@ -181,14 +181,14 @@ describe('Live Workout bar', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
     await user.click(screen.getByText('Return'));
 
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
-    expect(screen.queryByText('Workout Log')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Log' })).not.toBeInTheDocument();
   });
 });
 
@@ -254,7 +254,7 @@ describe('Stats charts', () => {
     await user.click(screen.getByText('Back Squat'));
     await user.click(screen.getByLabelText('Back to stats'));
 
-    expect(screen.getByText('Peak Stats')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Stats' })).toBeInTheDocument();
   });
 
   it('tapping Big 3 Total shows chart view', async () => {
@@ -263,9 +263,9 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Peak Stats'));
+    await user.click(screen.getByRole('heading', { name: 'Stats' }));
 
-    expect(screen.getByText('Big 3 Total')).toBeInTheDocument();
+    expect(screen.getByText('Big-3 total')).toBeInTheDocument();
     expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
   });
 
@@ -349,7 +349,7 @@ describe('Log entry editing', () => {
     await user.click(cards[0].closest('button'));
 
     expect(screen.getByLabelText('Edit workout')).toBeInTheDocument();
-    expect(screen.getByText('Edit Workout')).toBeInTheDocument();
+    expect(screen.getByText('Edit workout')).toBeInTheDocument();
     expect(screen.getByText('Save Changes')).toBeInTheDocument();
   });
 
@@ -438,7 +438,7 @@ describe('Manual log entry', () => {
 
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
-    expect(screen.getByText('Add Workout', { selector: 'h3' })).toBeInTheDocument();
+    expect(screen.getByText('Add workout', { selector: 'h3' })).toBeInTheDocument();
     const toggleButtons = dialog.querySelectorAll('button');
     const toggleLabels = Array.from(toggleButtons).map(b => b.textContent);
     expect(toggleLabels).toContain('Workout A');
@@ -456,7 +456,8 @@ describe('Manual log entry', () => {
     expect(cardsBefore).toHaveLength(1);
 
     await user.click(screen.getByLabelText('Add workout'));
-    await user.click(screen.getByRole('button', { name: 'Add Workout' }));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Add workout' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     const cardsAfter = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-3xl"]'));
@@ -497,18 +498,18 @@ describe('Same-day workout prevention', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithToday));
     render(<App />);
 
-    const btn = screen.getByText('Start Workout').closest('button');
+    const btn = screen.getByText('Start workout').closest('button');
     expect(btn).toBeDisabled();
-    expect(screen.getByText('Already trained today')).toBeInTheDocument();
+    expect(screen.getByText('Already trained today — rest up.')).toBeInTheDocument();
   });
 
   it('enables Start Workout when no workout exists for today', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithYesterday));
     render(<App />);
 
-    const btn = screen.getByText('Start Workout').closest('button');
+    const btn = screen.getByText('Start workout').closest('button');
     expect(btn).not.toBeDisabled();
-    expect(screen.queryByText('Already trained today')).not.toBeInTheDocument();
+    expect(screen.queryByText('Already trained today — rest up.')).not.toBeInTheDocument();
   });
 
   it('shows date conflict warning when edit date collides with existing session', async () => {

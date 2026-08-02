@@ -65,20 +65,20 @@ describe('ExerciseCard', () => {
 
   it('shows warmup section when expanded', () => {
     render(<ExerciseCard {...defaultProps} expanded={true} />);
-    expect(screen.getByText('Empty Bar')).toBeInTheDocument();
-    expect(screen.getByText('Working Prep')).toBeInTheDocument();
+    expect(screen.getByText('Empty bar')).toBeInTheDocument();
+    expect(screen.getByText('Working prep')).toBeInTheDocument();
   });
 
   it('hides warmup section when collapsed', () => {
     render(<ExerciseCard {...defaultProps} expanded={false} />);
-    expect(screen.queryByText('Empty Bar')).not.toBeInTheDocument();
+    expect(screen.queryByText('Empty bar')).not.toBeInTheDocument();
   });
 
   it('calls onToggleWarmup when warmup button is clicked', async () => {
     const onToggleWarmup = vi.fn();
     const user = userEvent.setup();
     render(<ExerciseCard {...defaultProps} onToggleWarmup={onToggleWarmup} />);
-    await user.click(screen.getByText('Warmup'));
+    await user.click(screen.getByText('Warm-up'));
     expect(onToggleWarmup).toHaveBeenCalledWith('squat');
   });
 

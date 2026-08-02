@@ -40,7 +40,7 @@ describe('Program tab', () => {
     expect(stored.program.bench.sets).toBe(3);
 
     await user.click(screen.getByLabelText('Train'));
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const benchSetButtons = benchCard().getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
     expect(benchSetButtons).toHaveLength(3);
@@ -59,7 +59,7 @@ describe('Program tab', () => {
     expect(stored.program.bench.reps).toBe(3);
 
     await user.click(screen.getByLabelText('Train'));
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const benchButtons = benchCard().getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
     // Each set cycles target -> target-1 -> ... -> unlogged; one tap logs the 3-rep target.
@@ -72,7 +72,7 @@ describe('Program tab', () => {
       if (!benchButtons.includes(btn)) await user.click(btn);
     }
 
-    await user.click(screen.getByText('Finish Workout'));
+    await user.click(screen.getByText('Finish workout'));
 
     stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.weights.bench).toBe(47.5);
@@ -113,7 +113,7 @@ describe('Rep picker', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const firstSet = screen.getAllByLabelText('Set 1')[0];
     fireEvent.pointerDown(firstSet);
@@ -130,7 +130,7 @@ describe('Rep picker', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const firstSet = screen.getAllByLabelText('Set 1')[0];
     fireEvent.pointerDown(firstSet);
@@ -147,7 +147,7 @@ describe('Short-press set cycle', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const firstSet = screen.getAllByLabelText('Set 1')[0];
     // Cycle: unlogged -> 5 -> 4 -> 3 -> 2 -> 1 -> unlogged (skips 0 entirely).
