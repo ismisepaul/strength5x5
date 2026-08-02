@@ -153,6 +153,10 @@ picker and help are **bottom sheets** (`items-end` overlay). Keep `role="dialog"
 **Switches.** Custom 46×26 track, 20px knob (`translate-x-[21px]` when on) — accent border,
 `accent-900` track and accent knob when on; `ink/18` border and neutral knob when off.
 
+**Steppers.** Every − / + control (idle-screen and `ExerciseCard` weight adjustment,
+`ProgramEditor` sets/reps) shares one `StepperButton` component: 40×40px, 8px radius,
+16px icon, outlined `ink/18` border.
+
 **Segmented controls.** Active segment = `accent-900` fill with an inset accent ring;
 inactive = transparent, `ink/45` label.
 
@@ -181,7 +185,7 @@ with a colour dot; at least one series is always on.
   the top of the screen — it is not docked at the bottom. Header everywhere else.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
 - The **idle screen's exercise rows are editable**: the same − / + weight steppers as
-  `ExerciseCard` (36px buttons) sit beside each weight, adjusting in the exercise's
+  `ExerciseCard` (40px buttons) sit beside each weight, adjusting in the exercise's
   program increment (2.5 kg, 5 kg for deadlift) with a floor at the empty 20 kg bar.
   They write to `weights` state directly — there's no active workout yet to hold a
   per-session override — so the change persists into the started workout, Stats, and

@@ -23,6 +23,7 @@ import RepPicker from './components/RepPicker';
 import ProgramEditor from './components/ProgramEditor';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
+import StepperButton from './components/StepperButton';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
 
@@ -674,9 +675,9 @@ const App = () => {
                       <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <button onClick={() => handleUpdateIdleWeight(ex.id, -ex.increment)} aria-label={`Decrease ${t('exercises.' + ex.id)} weight`} className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Minus size={16} /></button>
+                      <StepperButton onClick={() => handleUpdateIdleWeight(ex.id, -ex.increment)} ariaLabel={`Decrease ${t('exercises.' + ex.id)} weight`} icon={Minus} isDark={isDark} />
                       <span className="text-[19px] text-accent-300 tabular-nums min-w-[70px] text-center">{weights[ex.id]}kg</span>
-                      <button onClick={() => handleUpdateIdleWeight(ex.id, ex.increment)} aria-label={`Increase ${t('exercises.' + ex.id)} weight`} className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Plus size={16} /></button>
+                      <StepperButton onClick={() => handleUpdateIdleWeight(ex.id, ex.increment)} ariaLabel={`Increase ${t('exercises.' + ex.id)} weight`} icon={Plus} isDark={isDark} />
                     </div>
                   </div>
                 ))}</div>

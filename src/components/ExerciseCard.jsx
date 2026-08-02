@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CaretUp, CaretDown, Plus, Minus, ArrowBendDownRight, X } from '@phosphor-icons/react';
 import { calculateWarmup, targetReps } from '../utils';
+import StepperButton from './StepperButton';
 
 const LONG_PRESS_MS = 450;
 
@@ -47,9 +48,9 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates,
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => onUpdateWeight(exIdx, -ex.increment)} aria-label={`Decrease ${t('exercises.' + ex.id)} weight`} className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Minus size={16} /></button>
+          <StepperButton onClick={() => onUpdateWeight(exIdx, -ex.increment)} ariaLabel={`Decrease ${t('exercises.' + ex.id)} weight`} icon={Minus} isDark={isDark} />
           <span className="text-[20px] text-accent-300 tabular-nums leading-none min-w-[76px] text-center">{ex.weight}kg</span>
-          <button onClick={() => onUpdateWeight(exIdx, ex.increment)} aria-label={`Increase ${t('exercises.' + ex.id)} weight`} className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Plus size={16} /></button>
+          <StepperButton onClick={() => onUpdateWeight(exIdx, ex.increment)} ariaLabel={`Increase ${t('exercises.' + ex.id)} weight`} icon={Plus} isDark={isDark} />
         </div>
       </div>
       {expanded && (

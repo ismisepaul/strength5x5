@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Minus, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, DEFAULT_PROGRAM } from '../constants';
+import StepperButton from './StepperButton';
 
 const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
   const { t } = useTranslation();
@@ -13,8 +14,6 @@ const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
       [id]: { ...prev[id], [field]: Math.min(max, Math.max(min, prev[id][field] + delta)) },
     }));
   };
-
-  const stepperClass = `w-[46px] h-[46px] rounded-lg border flex items-center justify-center shrink-0 transition-colors hover:border-accent ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'}`;
 
   return (
     <div className="space-y-6">
@@ -48,17 +47,19 @@ const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
                   <div key={i} className={`flex-1 h-1.5 rounded-full ${i < sets ? 'bg-accent' : (isDark ? 'bg-ink/12' : 'bg-ink-lt/12')}`} />
                 ))}
               </div>
-              <button
+              <StepperButton
                 onClick={() => update(id, 'sets', -1, MIN_SETS, MAX_SETS)}
-                aria-label={`Decrease ${id} sets`}
-                className={stepperClass}
-              ><Minus size={18} /></button>
+                ariaLabel={`Decrease ${id} sets`}
+                icon={Minus}
+                isDark={isDark}
+              />
               <span className="w-6 text-center text-[19px] tabular-nums">{sets}</span>
-              <button
+              <StepperButton
                 onClick={() => update(id, 'sets', 1, MIN_SETS, MAX_SETS)}
-                aria-label={`Increase ${id} sets`}
-                className={stepperClass}
-              ><Plus size={18} /></button>
+                ariaLabel={`Increase ${id} sets`}
+                icon={Plus}
+                isDark={isDark}
+              />
             </div>
 
             <div className="flex items-center gap-3">
@@ -68,17 +69,19 @@ const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
                   <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < reps ? 'bg-accent' : (isDark ? 'bg-ink/12' : 'bg-ink-lt/12')}`} />
                 ))}
               </div>
-              <button
+              <StepperButton
                 onClick={() => update(id, 'reps', -1, MIN_REPS, MAX_REPS)}
-                aria-label={`Decrease ${id} reps`}
-                className={stepperClass}
-              ><Minus size={18} /></button>
+                ariaLabel={`Decrease ${id} reps`}
+                icon={Minus}
+                isDark={isDark}
+              />
               <span className="w-6 text-center text-[19px] tabular-nums">{reps}</span>
-              <button
+              <StepperButton
                 onClick={() => update(id, 'reps', 1, MIN_REPS, MAX_REPS)}
-                aria-label={`Increase ${id} reps`}
-                className={stepperClass}
-              ><Plus size={18} /></button>
+                ariaLabel={`Increase ${id} reps`}
+                icon={Plus}
+                isDark={isDark}
+              />
             </div>
           </div>
         );
