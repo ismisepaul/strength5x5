@@ -19,10 +19,13 @@ describe('ExerciseCard', () => {
     exIdx: 0,
     isDark: true,
     onToggleSet: vi.fn(),
-    onUpdateWeight: vi.fn(),
     isEditingWeight: false,
+    draftWeight: '60',
+    onDraftWeightChange: vi.fn(),
     onStartEditWeight: vi.fn(),
-    onStopEditWeight: vi.fn(),
+    onStepWeight: vi.fn(),
+    onCommitWeight: vi.fn(),
+    onCancelEditWeight: vi.fn(),
   };
 
   it('renders exercise name and weight', () => {
@@ -40,12 +43,28 @@ describe('ExerciseCard', () => {
     expect(onStartEditWeight).toHaveBeenCalled();
   });
 
-  it('calls onStopEditWeight when Done is tapped in the weight editor', async () => {
-    const onStopEditWeight = vi.fn();
+  it('calls onCommitWeight when the check button is tapped', async () => {
+    const onCommitWeight = vi.fn();
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onStopEditWeight={onStopEditWeight} />);
-    await user.click(screen.getByText('Done'));
-    expect(onStopEditWeight).toHaveBeenCalled();
+    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onCommitWeight={onCommitWeight} />);
+    await user.click(screen.getByLabelText('Done'));
+    expect(onCommitWeight).toHaveBeenCalled();
+  });
+
+  it('calls onCancelEditWeight when the cancel button is tapped', async () => {
+    const onCancelEditWeight = vi.fn();
+    const user = userEvent.setup();
+    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onCancelEditWeight={onCancelEditWeight} />);
+    await user.click(screen.getByLabelText('Cancel'));
+    expect(onCancelEditWeight).toHaveBeenCalled();
+  });
+
+  it('calls onDraftWeightChange when typing in the weight input', async () => {
+    const onDraftWeightChange = vi.fn();
+    const user = userEvent.setup();
+    render(<ExerciseCard {...defaultProps} isEditingWeight={true} draftWeight="60" onDraftWeightChange={onDraftWeightChange} />);
+    await user.type(screen.getByDisplayValue('60'), '5');
+    expect(onDraftWeightChange).toHaveBeenCalled();
   });
 
   it('renders 5 set buttons, each showing the goal rep count while unlogged', () => {
@@ -64,20 +83,20 @@ describe('ExerciseCard', () => {
     expect(onToggleSet).toHaveBeenCalledWith(0, 0);
   });
 
-  it('calls onUpdateWeight with positive increment', async () => {
-    const onUpdateWeight = vi.fn();
+  it('calls onStepWeight with the positive increment when + is tapped', async () => {
+    const onStepWeight = vi.fn();
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onUpdateWeight={onUpdateWeight} />);
+    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onStepWeight={onStepWeight} />);
     await user.click(screen.getByLabelText('Increase Back Squat weight'));
-    expect(onUpdateWeight).toHaveBeenCalledWith(0, 2.5);
+    expect(onStepWeight).toHaveBeenCalledWith(2.5);
   });
 
-  it('calls onUpdateWeight with negative increment', async () => {
-    const onUpdateWeight = vi.fn();
+  it('calls onStepWeight with the negative increment when - is tapped', async () => {
+    const onStepWeight = vi.fn();
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onUpdateWeight={onUpdateWeight} />);
+    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onStepWeight={onStepWeight} />);
     await user.click(screen.getByLabelText('Decrease Back Squat weight'));
-    expect(onUpdateWeight).toHaveBeenCalledWith(0, -2.5);
+    expect(onStepWeight).toHaveBeenCalledWith(-2.5);
   });
 
   it('keeps the warm-up and bar-setup panels closed by default', () => {

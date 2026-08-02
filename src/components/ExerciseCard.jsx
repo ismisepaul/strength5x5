@@ -1,13 +1,13 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CaretUp, CaretDown, Plus, Minus, ArrowBendDownRight, X, PencilSimple } from '@phosphor-icons/react';
+import { CaretUp, CaretDown, ArrowBendDownRight, X, PencilSimple } from '@phosphor-icons/react';
 import { calculatePlates, targetReps } from '../utils';
-import StepperButton from './StepperButton';
+import WeightEditBar from './WeightEditBar';
 
 const LONG_PRESS_MS = 450;
 const PLATE_HEIGHTS = { 25: 124, 20: 112, 15: 100, 10: 88, 5: 70, 2.5: 56, 1.25: 44 };
 
-const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onUpdateWeight, onOpenRepPicker, showHint, isEditingWeight, onStartEditWeight, onStopEditWeight }) => {
+const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPicker, showHint, isEditingWeight, draftWeight, onDraftWeightChange, onStartEditWeight, onStepWeight, onCommitWeight, onCancelEditWeight }) => {
   const { t } = useTranslation();
   const target = targetReps(ex);
   const pressTimerRef = useRef(null);
@@ -46,7 +46,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onUpdateWeigh
           <h3 className="font-semibold text-[17px] truncate flex-1 min-w-0 pr-4">{t('exercises.' + ex.id)}</h3>
           <button
             onClick={onStartEditWeight}
-            aria-label={`Edit ${t('exercises.' + ex.id)} weight`}
+            aria-label={t('workout.editWeightAria', { name: t('exercises.' + ex.id) })}
             className="flex items-center gap-1.5 min-h-[44px] shrink-0"
           >
             <span className="text-[20px] text-accent-300 tabular-nums leading-none">{ex.weight}kg</span>
@@ -54,15 +54,17 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onUpdateWeigh
           </button>
         </div>
         {isEditingWeight && (
-          <div className={`mt-3 rounded-[9px] py-2 px-2.5 flex items-center gap-2 ${isDark ? 'bg-ground/60' : 'bg-ground-lt/60'}`}>
-            <StepperButton onClick={() => onUpdateWeight(exIdx, -ex.increment)} ariaLabel={`Decrease ${t('exercises.' + ex.id)} weight`} icon={Minus} isDark={isDark} size={44} iconSize={15} />
-            <span className="flex-1 text-center text-[22px] text-accent-300 tabular-nums">{ex.weight}kg</span>
-            <StepperButton onClick={() => onUpdateWeight(exIdx, ex.increment)} ariaLabel={`Increase ${t('exercises.' + ex.id)} weight`} icon={Plus} isDark={isDark} size={44} iconSize={15} />
-            <button
-              onClick={onStopEditWeight}
-              className="h-11 px-[18px] rounded-lg border border-accent text-accent text-[13px] font-semibold active:scale-95 shrink-0"
-            >{t('workout.doneEditingWeight')}</button>
-          </div>
+          <WeightEditBar
+            value={draftWeight}
+            onChange={onDraftWeightChange}
+            onDecrement={() => onStepWeight(-ex.increment)}
+            onIncrement={() => onStepWeight(ex.increment)}
+            onCommit={onCommitWeight}
+            onCancel={onCancelEditWeight}
+            isDark={isDark}
+            variant="card"
+            exerciseName={t('exercises.' + ex.id)}
+          />
         )}
       </div>
       <div className="flex justify-between gap-2 items-center">

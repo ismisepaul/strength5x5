@@ -23,7 +23,7 @@ import RepPicker from './components/RepPicker';
 import ProgramEditor from './components/ProgramEditor';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
-import StepperButton from './components/StepperButton';
+import WeightEditBar from './components/WeightEditBar';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
 
@@ -198,6 +198,43 @@ const App = () => {
   const handleUpdateIdleWeight = useCallback((id, diff) => {
     setWeights(prev => ({ ...prev, [id]: Math.max(20, (prev[id] ?? 0) + diff) }));
   }, []);
+
+  const [draftWeight, setDraftWeight] = useState('');
+
+  const parseWeightInput = (str) => {
+    const n = parseFloat(String(str).replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  // A single draft lives alongside editingWeightId: opening another editor
+  // overwrites it, discarding whatever was being typed for the previous one.
+  const handleStartEditWeight = useCallback((id, currentWeight) => {
+    setEditingWeightId(id);
+    setDraftWeight(String(currentWeight));
+  }, []);
+
+  const handleCancelEditWeight = useCallback(() => {
+    setEditingWeightId(null);
+    setDraftWeight('');
+  }, []);
+
+  const stepDraftWeight = useCallback((diff, fallback) => {
+    setDraftWeight(prev => {
+      const parsed = parseWeightInput(prev);
+      const base = parsed !== null ? parsed : fallback;
+      return String(Math.max(20, base + diff));
+    });
+  }, []);
+
+  // Commits by computing a diff against the current weight and handing it to the
+  // existing per-screen update fn, so the real write path (and its own floor) is untouched.
+  const commitEditWeight = useCallback((currentWeight, applyDiff) => {
+    const parsed = parseWeightInput(draftWeight);
+    const final = parsed !== null ? Math.max(20, Math.round(parsed / 2.5) * 2.5) : currentWeight;
+    if (final !== currentWeight) applyDiff(final - currentWeight);
+    setEditingWeightId(null);
+    setDraftWeight('');
+  }, [draftWeight]);
 
   // Shared by the short-press cycle and the long-press rep picker: given the current
   // logged value, resolveNext computes the next one, then this stamps setTimes and
@@ -673,8 +710,8 @@ const App = () => {
                         <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
                       </div>
                       <button
-                        onClick={() => setEditingWeightId(ex.id)}
-                        aria-label={`Edit ${t('exercises.' + ex.id)} weight`}
+                        onClick={() => handleStartEditWeight(ex.id, weights[ex.id])}
+                        aria-label={t('workout.editWeightAria', { name: t('exercises.' + ex.id) })}
                         className="flex items-center gap-1.5 min-h-[44px] shrink-0"
                       >
                         <span className="text-[19px] text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
@@ -682,15 +719,17 @@ const App = () => {
                       </button>
                     </div>
                     {editingWeightId === ex.id && (
-                      <div className={`mt-2 rounded-[9px] py-2 px-2.5 flex items-center gap-2 ${isDark ? 'bg-surface/70' : 'bg-surface-lt/70'}`}>
-                        <StepperButton onClick={() => handleUpdateIdleWeight(ex.id, -ex.increment)} ariaLabel={`Decrease ${t('exercises.' + ex.id)} weight`} icon={Minus} isDark={isDark} size={44} iconSize={15} />
-                        <span className="flex-1 text-center text-[22px] text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
-                        <StepperButton onClick={() => handleUpdateIdleWeight(ex.id, ex.increment)} ariaLabel={`Increase ${t('exercises.' + ex.id)} weight`} icon={Plus} isDark={isDark} size={44} iconSize={15} />
-                        <button
-                          onClick={() => setEditingWeightId(null)}
-                          className="h-11 px-[18px] rounded-lg border border-accent text-accent text-[13px] font-semibold active:scale-95 shrink-0"
-                        >{t('workout.doneEditingWeight')}</button>
-                      </div>
+                      <WeightEditBar
+                        value={draftWeight}
+                        onChange={setDraftWeight}
+                        onDecrement={() => stepDraftWeight(-ex.increment, weights[ex.id])}
+                        onIncrement={() => stepDraftWeight(ex.increment, weights[ex.id])}
+                        onCommit={() => commitEditWeight(weights[ex.id], (diff) => handleUpdateIdleWeight(ex.id, diff))}
+                        onCancel={handleCancelEditWeight}
+                        isDark={isDark}
+                        variant="row"
+                        exerciseName={t('exercises.' + ex.id)}
+                      />
                     )}
                   </div>
                 ))}</div>
@@ -703,7 +742,22 @@ const App = () => {
                 {(() => {
                   const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
                   return currentWorkout?.exercises.map((ex, exIdx) => (
-                    <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} showHint={exIdx === 0 && !anySetLogged} isEditingWeight={editingWeightId === ex.id} onStartEditWeight={() => setEditingWeightId(ex.id)} onStopEditWeight={() => setEditingWeightId(null)} />
+                    <ExerciseCard
+                      key={ex.id}
+                      ex={ex}
+                      exIdx={exIdx}
+                      isDark={isDark}
+                      onToggleSet={handleToggleSet}
+                      onOpenRepPicker={handleOpenRepPicker}
+                      showHint={exIdx === 0 && !anySetLogged}
+                      isEditingWeight={editingWeightId === ex.id}
+                      draftWeight={draftWeight}
+                      onDraftWeightChange={setDraftWeight}
+                      onStartEditWeight={() => handleStartEditWeight(ex.id, ex.weight)}
+                      onStepWeight={(diff) => stepDraftWeight(diff, ex.weight)}
+                      onCommitWeight={() => commitEditWeight(ex.weight, (diff) => handleUpdateActiveWeight(exIdx, diff))}
+                      onCancelEditWeight={handleCancelEditWeight}
+                    />
                   ));
                 })()}
                 <div className="pt-4 flex flex-col items-center">

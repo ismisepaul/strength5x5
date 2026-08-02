@@ -176,7 +176,7 @@ flips from `CaretDown` to `CaretUp`. State is `null | 'warm' | 'bar'`, local to 
 **Steppers.** Every − / + control shares one `StepperButton` component: 8px radius,
 outlined `ink/18` border. `ProgramEditor` sets/reps use the default 40×40px / 16px icon.
 The idle-screen and `ExerciseCard` weight editors use the 44×44px / 15px-icon variant
-(`size={44} iconSize={15}`), sized to match the 44px "Done" button beside them.
+(`size={44} iconSize={15}`), matching the 44px-tall commit/cancel buttons in the same bar.
 
 **Segmented controls.** Active segment = `accent-900` fill with an inset accent ring;
 inactive = transparent, `ink/45` label.
@@ -208,17 +208,30 @@ with a colour dot; at least one series is always on.
 - The **idle screen's exercise rows and `ExerciseCard` are weight-editable** via a tap-to-edit
   pattern, not always-visible steppers: the default state shows the weight (accent-300,
   tabular) plus a 13px `PencilSimple` at 35% alpha, the pair forming one ≥44px-hit button.
-  Tapping it opens a full-width edit bar *below* the row/card header (not inline) — a
-  recessed panel (`bg-ground/60` on cards, `bg-surface/70` on rows), 9px radius, with
-  44px − / + steppers, a centred 22px weight readout, and an outlined accent "Done"
-  button (44px tall) to close it. A single `editingWeightId` piece of state (owned by
-  `App.jsx`, passed down to `ExerciseCard`) means opening one editor closes any other —
-  idle rows and the active-workout card share the same state, since only one of those
-  screens is ever visible at a time. Adjustments happen in the exercise's program
-  increment (2.5 kg, 5 kg for deadlift) with a floor at the empty 20 kg bar. On the idle
-  screen this writes to `weights` state directly — there's no active workout yet to hold
-  a per-session override — so the change persists into the started workout, Stats, and
-  everywhere else `weights` is read, the same as adjusting mid-session.
+  Tapping it opens `WeightEditBar` — a full-width edit bar *below* the row/card header
+  (not inline): a recessed panel (`bg-ground/60` on cards, `bg-surface/70` on rows), 9px
+  radius, `12px 10px` padding, column layout with a 12px gap.
+  - **Row 1** (`justify-around`): a 44px − stepper, a bare `<input inputMode="decimal">`
+    (22px/500 accent-300, transparent background, only a 1.5px accent bottom border, ~76px
+    wide, a muted "kg" suffix beside it), and a 44px + stepper.
+  - **Row 2** (16px gap): two flex-1 44px buttons — an accent-outlined ✓ (commit) and a
+    neutral-outlined ✕ (cancel).
+  - **Editing is draft-based, not live.** Opening the editor seeds a `draftWeight` string
+    from the current weight. The − / + steppers and typing both only mutate the draft;
+    nothing is written to real state until ✓ is tapped. ✓ parses the draft (comma decimals
+    accepted), snaps to the nearest 2.5 kg, clamps to the 20 kg floor, and — if the draft
+    can't be parsed at all — falls back to the unchanged previous weight. ✕ discards the
+    draft and closes without writing anything.
+  - **One editor at a time.** A single `editingWeightId` + `draftWeight` pair (owned by
+    `App.jsx`, passed to `ExerciseCard`) means opening another editor — even for a
+    different exercise, even on the other screen — overwrites the draft and silently
+    discards whatever was being typed for the previous one. Idle rows and the
+    active-workout card share this state since only one of those screens is ever visible
+    at a time.
+  - On the idle screen a commit writes to `weights` state directly — there's no active
+    workout yet to hold a per-session override — so the change persists into the started
+    workout, Stats, and everywhere else `weights` is read, the same as committing
+    mid-session.
 
 ## 5. Interaction rules
 

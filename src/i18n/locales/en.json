@@ -36,7 +36,9 @@
     "setHint": "Tap to log all {{count}} reps · hold a set to pick an exact count",
     "missedNote": "Missed reps — {{weight}}kg holds next session",
     "discardWorkout": "Discard workout",
-    "doneEditingWeight": "Done"
+    "editWeightAria": "Edit {{name}} weight",
+    "doneEditingWeight": "Done",
+    "cancelEditWeight": "Cancel"
   },
   "program": {
     "title": "Program",

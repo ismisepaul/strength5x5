@@ -36,7 +36,9 @@
     "setHint": "Touchez pour valider les {{count}} répétitions · maintenez pour choisir un nombre exact",
     "missedNote": "Répétitions manquées — {{weight}}kg maintenu la prochaine fois",
     "discardWorkout": "Abandonner",
-    "doneEditingWeight": "Terminé"
+    "editWeightAria": "Modifier le poids de {{name}}",
+    "doneEditingWeight": "Terminé",
+    "cancelEditWeight": "Annuler"
   },
   "program": {
     "title": "Programme",
