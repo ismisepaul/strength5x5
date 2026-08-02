@@ -635,7 +635,7 @@ const App = () => {
         </header>
       )}
 
-      <main className="flex-1 px-4 py-4 overflow-y-auto">
+      <main className="flex-1 min-h-0 px-4 py-4 overflow-y-auto">
         {activeTab === 'workout' && (
           <div className="space-y-4">
             {!isWorkoutActive ? (
@@ -992,21 +992,20 @@ const App = () => {
       {deloadAlert && (() => {
         const previewWeights = calculateDeload(weights, deloadPercent);
         return (
-        <div role="dialog" aria-modal="true" aria-label="Deload recommendation" className={`fixed inset-0 z-[400] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendDown size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.acceptDeload')}</h3>
-            <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">{deloadAlert.message}</p>
+        <div role="dialog" aria-modal="true" aria-label="Deload recommendation" className="fixed inset-0 z-[400] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.acceptDeload')}</h3>
+            <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{deloadAlert.message}</p>
             <div className="mb-4">
-              <p className={`text-2xl font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.deloadPercent', { percent: deloadPercent })}</p>
-              <p className={`text-[10px] font-bold ${deloadPercent === deloadAlert.recommended ? 'text-emerald-500' : 'text-slate-500'}`}>{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
+              <p className="text-2xl font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+              <p className={`text-[10px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
             </div>
-            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-blue-500" />
-            <div className="space-y-2 mb-8">
+            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-accent" />
+            <div className="space-y-2 mb-6">
               {EXPECTED_WEIGHT_KEYS.filter(id => weights[id] > 0).map(id => (
-                <div key={id} className={`flex justify-between items-center px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
-                  <span className="text-[10px] font-black uppercase text-slate-500">{t('exercises.' + id)}</span>
-                  <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{weights[id]}kg <span className="text-slate-500 mx-1">&rarr;</span> {previewWeights[id]}kg</span>
+                <div key={id} className={`flex justify-between items-center px-4 py-2.5 rounded-lg ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+                  <span className={`text-[10px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('exercises.' + id)}</span>
+                  <span className="text-sm tabular-nums">{weights[id]}kg <span className="text-accent mx-1">&rarr;</span> {previewWeights[id]}kg</span>
                 </div>
               ))}
             </div>
@@ -1020,38 +1019,36 @@ const App = () => {
               setWeights(newW);
               initializeWorkout(newW);
               setDeloadAlert(null);
-            }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.acceptAndLift')}</button>
-            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
+            }} className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 mb-3">{t('modals.acceptAndLift')}</button>
+            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className={`text-sm active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipDeload')}</button>
           </div>
         </div>
         );
       })()}
 
       {showRestorePrompt && (
-        <div role="dialog" aria-modal="true" aria-label="Restore backup" className={`fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-10 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-indigo-500/10 text-indigo-500 animate-pulse"><WarningCircle size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.syncHistory')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10">{t('modals.syncHistoryBody')}</p>
-            <div className="space-y-4">
-              <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95"><UploadSimple size={20} className="inline mr-2" /> {t('modals.restoreBackup')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Restore backup" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-2">{t('modals.syncHistory')}</h3>
+            <p className={`text-sm leading-relaxed mb-8 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.syncHistoryBody')}</p>
+            <div className="space-y-3">
+              <button onClick={() => fileInputRef.current?.click()} className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 flex items-center justify-center gap-2"><UploadSimple size={16} /> {t('modals.restoreBackup')}</button>
               {driveConfigured && (
-                <button onClick={handleConnect} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-700'}`}><Cloud size={20} className="inline mr-2" /> {t('modals.restoreFromDrive')}</button>
+                <button onClick={handleConnect} className={`w-full py-3.5 rounded-lg font-medium text-sm active:scale-95 border flex items-center justify-center gap-2 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}><Cloud size={16} /> {t('modals.restoreFromDrive')}</button>
               )}
-              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}><FileCsv size={20} className="inline mr-2" /> {t('options.importStronglifts')}</button>
-              <button onClick={() => startWorkout(true)} className="text-[10px] font-black uppercase text-slate-700 tracking-[0.3em] mt-8 block mx-auto">{t('modals.skipAndStart')}</button>
+              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-3.5 rounded-lg font-medium text-sm active:scale-95 border flex items-center justify-center gap-2 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}><FileCsv size={16} /> {t('options.importStronglifts')}</button>
+              <button onClick={() => startWorkout(true)} className={`text-sm mt-4 block mx-auto ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipAndStart')}</button>
             </div>
           </div>
         </div>
       )}
 
       {showResumePrompt && saved.activeSession && (
-        <div role="dialog" aria-modal="true" aria-label="Resume workout" className={`fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Barbell size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.resumeWorkout')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-2">{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
-            <p className="text-slate-500 text-xs font-bold mb-8">
+        <div role="dialog" aria-modal="true" aria-label="Resume workout" className="fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-2">{t('modals.resumeWorkout')}</h3>
+            <p className={`text-sm leading-relaxed mb-1 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
+            <p className={`text-xs mb-8 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>
               {t('modals.setsCompleted', { completed: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.filter(s => s !== null).length, 0), total: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.length, 0) })}
             </p>
             <button
@@ -1070,14 +1067,14 @@ const App = () => {
                 }
                 setShowResumePrompt(false);
               }}
-              className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4"
+              className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 mb-3"
             >{t('modals.resume')}</button>
             <button
               onClick={() => {
                 localStorage.removeItem(ACTIVE_WORKOUT_KEY);
                 setShowResumePrompt(false);
               }}
-              className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90"
+              className={`text-sm active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
             >{t('modals.discard')}</button>
           </div>
         </div>
@@ -1094,32 +1091,31 @@ const App = () => {
       )}
 
       {showPlateCalc && (
-        <div role="dialog" aria-modal="true" aria-label="Plate calculator" className={`fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm ${isDark ? 'bg-slate-950/80' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <button onClick={() => setShowPlateCalc(null)} aria-label="Close plate calculator" className={`absolute top-4 right-4 p-2 rounded-full ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}><X size={20} /></button>
-            <div className="text-center mb-8"><h3 className={`text-3xl font-black uppercase ${isDark ? 'text-white' : 'text-slate-900'}`}>{showPlateCalc.weight} KG</h3><p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">{t('modals.platesPerSide')}</p></div>
-            <div className="flex flex-wrap justify-center gap-3 mb-8">{plates.map((p, i) => (<div key={i} className={`w-14 h-14 rounded-full border-2 flex flex-col items-center justify-center font-black ${p >= 20 ? 'bg-indigo-600 border-indigo-500 text-white' : p >= 10 ? 'bg-slate-800 border-slate-700 text-white' : (isDark ? 'bg-slate-950 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-400')}`}><span className="text-[10px] opacity-50 leading-none">KG</span><span>{p}</span></div>))}</div>
-            <button onClick={() => setShowPlateCalc(null)} className={`w-full py-4 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95 ${isDark ? 'bg-slate-800 text-white' : 'bg-slate-900 text-white'}`}>{t('modals.close')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Plate calculator" className="fixed inset-0 z-[200] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-md relative rounded-t-[14px] pt-[22px] px-5 pb-6 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
+            <button onClick={() => setShowPlateCalc(null)} aria-label="Close plate calculator" className={`absolute top-4 right-4 w-7 h-7 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/15 text-ink' : 'border-ink-lt/15 text-ink-lt'}`}><X size={16} /></button>
+            <div className="text-center mb-6"><h3 className="text-2xl font-semibold tabular-nums">{showPlateCalc.weight} kg</h3><p className={`text-[10px] uppercase tracking-[0.12em] mt-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.platesPerSide')}</p></div>
+            <div className="flex flex-wrap justify-center gap-3 mb-6">{plates.map((p, i) => (<div key={i} className={`w-14 h-14 rounded-lg border flex flex-col items-center justify-center font-medium ${p >= 20 ? 'border-accent text-accent-300 bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}><span className="text-[10px] opacity-60 leading-none">kg</span><span>{p}</span></div>))}</div>
+            <button onClick={() => setShowPlateCalc(null)} className={`w-full py-3.5 rounded-lg border text-sm font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('modals.close')}</button>
           </div>
         </div>
       )}
 
       {pendingCSVImport && (
-        <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className={`fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><FileCsv size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.importData')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-6">{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
-            <div className="grid grid-cols-2 gap-2 mb-8">
+        <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-2">{t('modals.importData')}</h3>
+            <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
+            <div className="grid grid-cols-2 gap-2 mb-6">
               {EXPECTED_WEIGHT_KEYS.map(id => (
-                <div key={id} className={`p-3 rounded-xl text-left ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">{t('exercises.' + id)}</p>
-                  <p className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{pendingCSVImport.weights[id]}kg</p>
+                <div key={id} className={`p-3 rounded-lg text-left ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+                  <p className={`text-[10px] uppercase leading-none mb-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('exercises.' + id)}</p>
+                  <p className="text-sm tabular-nums">{pendingCSVImport.weights[id]}kg</p>
                 </div>
               ))}
             </div>
-            <button onClick={applyCSVImport} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4">{t('modals.import')}</button>
-            <button onClick={() => setPendingCSVImport(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+            <button onClick={applyCSVImport} className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 mb-3">{t('modals.import')}</button>
+            <button onClick={() => setPendingCSVImport(null)} className={`text-sm active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
@@ -1131,16 +1127,16 @@ const App = () => {
         const dateConflict = selectedDate !== originalDate && historyDateSet.has(selectedDate);
         const isFutureDate = selectedDate > new Date().toISOString().slice(0, 10);
         return (
-        <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className={`fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-md mx-auto my-6 rounded-[2.5rem] p-6 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className="fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-md mx-auto my-6 rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className={`text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
-              <button onClick={() => { setEditingEntry(null); setShowDeleteConfirm(false); }} aria-label="Close edit modal" className={`p-2 rounded-full ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400'}`}><X size={20} /></button>
+              <h3 className="text-lg font-semibold">{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
+              <button onClick={() => { setEditingEntry(null); setShowDeleteConfirm(false); }} aria-label="Close edit modal" className={`w-7 h-7 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/15 text-ink' : 'border-ink-lt/15 text-ink-lt'}`}><X size={16} /></button>
             </div>
 
             {isNewEntry && (
               <div className="mb-6">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">{t('modals.workoutType')}</label>
+                <label className={`text-[10px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.workoutType')}</label>
                 <div className="flex gap-2">
                   {['A', 'B'].map(wt => (
                     <button
@@ -1153,7 +1149,7 @@ const App = () => {
                           exercises: getProgramExercises(wt, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
                         },
                       }))}
-                      className={`flex-1 py-3 rounded-xl font-black uppercase text-sm transition-all ${editingEntry.session.type === wt ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-100 text-slate-500 border border-slate-200')}`}
+                      className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
                     >{t(`workout.type${wt}`)}</button>
                   ))}
                 </div>
@@ -1161,7 +1157,7 @@ const App = () => {
             )}
 
             <div className="mb-6">
-              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">{t('modals.date')}</label>
+              <label className={`text-[10px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.date')}</label>
               <input
                 type="date"
                 value={editingEntry.session.date.slice(0, 10)}
@@ -1171,18 +1167,18 @@ const App = () => {
                   newDate.setHours(12, 0, 0, 0);
                   setEditingEntry(prev => ({ ...prev, session: { ...prev.session, date: newDate.toISOString() } }));
                 }}
-                className={`w-full p-3 rounded-xl font-bold text-sm border ${dateConflict || isFutureDate ? 'border-rose-500' : (isDark ? 'border-slate-700' : 'border-slate-200')} ${isDark ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-900'}`}
+                className={`w-full p-3 rounded-lg text-sm border ${dateConflict || isFutureDate ? 'border-dashed border-ink/50' : (isDark ? 'border-ink/18' : 'border-ink-lt/18')} ${isDark ? 'bg-surface-deep text-ink' : 'bg-surface-deep-lt text-ink-lt'}`}
               />
-              {dateConflict && <p className="text-rose-500 text-xs font-bold mt-2">{t('modals.dateConflict')}</p>}
-              {isFutureDate && <p className="text-rose-500 text-xs font-bold mt-2">{t('modals.futureDate')}</p>}
+              {dateConflict && <p className={`text-xs mt-2 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.dateConflict')}</p>}
+              {isFutureDate && <p className={`text-xs mt-2 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.futureDate')}</p>}
             </div>
 
-            <div className="space-y-4 mb-8">
+            <div className="space-y-3 mb-6">
               {editingEntry.session.exercises.map((ex, exIdx) => (
-                <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                  <p className={`font-black text-xs uppercase mb-3 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t('exercises.' + ex.id)}</p>
+                <div key={ex.id} className={`p-4 rounded-lg border ${isDark ? 'bg-surface-deep border-ink/8' : 'bg-surface-deep-lt border-ink-lt/8'}`}>
+                  <p className="text-xs font-medium mb-3">{t('exercises.' + ex.id)}</p>
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">{t('modals.weightLabel')}</span>
+                    <span className={`text-[10px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.weightLabel')}</span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setEditingEntry(prev => {
@@ -1191,9 +1187,9 @@ const App = () => {
                           return { ...prev, session: s };
                         })}
                         aria-label={`Decrease ${ex.name} weight`}
-                        className={`p-2 rounded-xl border ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'} active:scale-90`}
+                        className={`w-7 h-7 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
                       ><Minus size={14} /></button>
-                      <span className="font-black w-14 text-center text-lg">{ex.weight}kg</span>
+                      <span className="w-14 text-center text-sm tabular-nums">{ex.weight}kg</span>
                       <button
                         onClick={() => setEditingEntry(prev => {
                           const s = JSON.parse(JSON.stringify(prev.session));
@@ -1201,19 +1197,20 @@ const App = () => {
                           return { ...prev, session: s };
                         })}
                         aria-label={`Increase ${ex.name} weight`}
-                        className={`p-2 rounded-xl border ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'} active:scale-90`}
+                        className={`w-7 h-7 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
                       ><Plus size={14} /></button>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">{t('modals.setsLabel')}</span>
+                    <span className={`text-[10px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.setsLabel')}</span>
                     <div className="flex gap-2">
                       {ex.setsCompleted.map((reps, setIdx) => {
                         const target = targetReps(ex);
-                        const bgColor = reps === null ? (isDark ? 'bg-slate-700' : 'bg-slate-300')
-                          : reps === target ? 'bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.4)]'
-                          : reps === 0 ? 'bg-rose-500'
-                          : 'bg-amber-500';
+                        const stateClass = reps === null
+                          ? (isDark ? 'border border-ink/18 text-ink/40' : 'border border-ink-lt/18 text-ink-lt/40')
+                          : reps === target
+                            ? 'border border-accent bg-accent-900 text-accent-300'
+                            : 'border border-dashed border-ink/50 bg-neutral-tint text-ink';
                         return (
                           <button
                             key={setIdx}
@@ -1224,7 +1221,7 @@ const App = () => {
                               return { ...prev, session: s };
                             })}
                             aria-label={`Set ${setIdx + 1}: ${reps === null ? 'not done' : reps + ' reps'}`}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white active:scale-90 transition-transform ${bgColor}`}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium active:scale-90 transition-transform ${stateClass}`}
                           >
                             {reps === null ? '–' : reps}
                           </button>
@@ -1264,18 +1261,18 @@ const App = () => {
                 setEditingEntry(null);
                 handleManualLogSave({ history: newHistory, weights: nextWeights, nextType });
               }}
-              className={`w-full py-4 rounded-2xl font-black uppercase text-sm shadow-xl mb-4 ${dateConflict || isFutureDate ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 text-white active:scale-95'}`}
+              className={`w-full py-3.5 rounded-lg border text-sm font-medium mb-3 ${dateConflict || isFutureDate ? (isDark ? 'border-ink/12 text-ink/30' : 'border-ink-lt/12 text-ink-lt/30') : 'border-accent text-accent active:scale-95'}`}
             >{isNewEntry ? t('modals.addWorkout') : t('modals.saveChanges')}</button>
 
             {!isNewEntry && (
               !showDeleteConfirm ? (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase text-rose-500 tracking-widest py-3 active:scale-90"
+                  className={`w-full flex items-center justify-center gap-2 text-sm py-3 active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
                 ><Trash size={12} /> {t('modals.deleteWorkout')}</button>
               ) : (
-                <div className={`p-4 rounded-2xl border ${isDark ? 'bg-rose-950/20 border-rose-900/30' : 'bg-rose-50 border-rose-200'}`}>
-                  <p className={`text-xs font-bold text-center mb-3 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{t('modals.deleteConfirm')}</p>
+                <div className={`p-4 rounded-lg border border-dashed ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`}>
+                  <p className="text-xs text-center mb-3">{t('modals.deleteConfirm')}</p>
                   <div className="flex gap-3">
                     <button
                       onClick={() => {
@@ -1286,11 +1283,11 @@ const App = () => {
                         showToast(t('toast.workoutDeleted'), 'success');
                         saveToDriveQuietly({ ...getAppState(), history: newHistory });
                       }}
-                      className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black uppercase text-xs active:scale-95"
+                      className={`flex-1 py-3 rounded-lg border text-xs font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
                     >{t('modals.delete')}</button>
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className={`flex-1 py-3 rounded-xl font-black uppercase text-xs ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'} active:scale-95`}
+                      className={`flex-1 py-3 text-xs active:scale-95 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
                     >{t('modals.cancel')}</button>
                   </div>
                 </div>
@@ -1370,21 +1367,20 @@ const App = () => {
           newWeight: deloadWeightByPercent(d.currentWeight, deloadPercent, d.id),
         }));
         return (
-        <div role="dialog" aria-modal="true" aria-label="Failure deload" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendDown size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.failureDeloadTitle')}</h3>
-            <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">{t('modals.failureDeloadMessage')}</p>
+        <div role="dialog" aria-modal="true" aria-label="Failure deload" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.failureDeloadTitle')}</h3>
+            <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.failureDeloadMessage')}</p>
             <div className="mb-4">
-              <p className={`text-2xl font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.deloadPercent', { percent: deloadPercent })}</p>
-              <p className={`text-[10px] font-bold ${deloadPercent === 10 ? 'text-emerald-500' : 'text-slate-500'}`}>{t('modals.deloadRecommended', { percent: 10 })}</p>
+              <p className="text-2xl font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+              <p className={`text-[10px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.deloadRecommended', { percent: 10 })}</p>
             </div>
-            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-blue-500" />
-            <div className="space-y-2 mb-8">
+            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-accent" />
+            <div className="space-y-2 mb-6">
               {previewDeloads.map(d => (
-                <div key={d.id} className={`flex justify-between items-center px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
-                  <span className="text-[10px] font-black uppercase text-slate-500">{t('exercises.' + d.id)}</span>
-                  <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{d.currentWeight}kg <span className="text-slate-500 mx-1">&rarr;</span> {d.newWeight}kg</span>
+                <div key={d.id} className={`flex justify-between items-center px-4 py-2.5 rounded-lg ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+                  <span className={`text-[10px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('exercises.' + d.id)}</span>
+                  <span className="text-sm tabular-nums">{d.currentWeight}kg <span className="text-accent mx-1">&rarr;</span> {d.newWeight}kg</span>
                 </div>
               ))}
             </div>
@@ -1394,11 +1390,11 @@ const App = () => {
               setWeights(updatedWeights);
               setPendingFailureDeloads(null);
               initializeWorkout(updatedWeights);
-            }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.confirmDeload')}</button>
+            }} className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 mb-3">{t('modals.confirmDeload')}</button>
             <button onClick={() => {
               setPendingFailureDeloads(null);
               initializeWorkout(weights);
-            }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
+            }} className={`text-sm active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipDeload')}</button>
           </div>
         </div>
         );
@@ -1444,37 +1440,34 @@ const App = () => {
       )}
 
       {pendingDriveRestore && (
-        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><WarningCircle size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
-            <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
-            <button onClick={() => setPendingDriveRestore(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
+            <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
+            <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
+            <button onClick={() => setPendingDriveRestore(null)} className={`text-sm active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
 
       {pendingLocalImport && (
-        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><WarningCircle size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
-            <button onClick={() => applyLocalImport(pendingLocalImport.data)} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
-            <button onClick={() => setPendingLocalImport(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
+            <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
+            <button onClick={() => applyLocalImport(pendingLocalImport.data)} className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
+            <button onClick={() => setPendingLocalImport(null)} className={`text-sm active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
 
       {connectSyncPrompt && (
-        <div role="dialog" aria-modal="true" aria-label="Data conflict" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><WarningCircle size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <div role="dialog" aria-modal="true" aria-label="Data conflict" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">
               {t('modals.dataConflictTitle')}
             </h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">
+            <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>
               {t('modals.dataConflictBody', {
                 driveCount: connectSyncPrompt.driveCount,
                 cloudDate: connectSyncPrompt.cloudDate,
@@ -1492,7 +1485,7 @@ const App = () => {
                   setConnectSyncPrompt(null);
                 }}
                 disabled={!connectSyncPrompt.driveData}
-                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 disabled:opacity-50"
+                className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 disabled:opacity-35"
               >
                 {t('modals.useDriveData')}
               </button>
@@ -1502,12 +1495,12 @@ const App = () => {
                   if (result.success) showToast(t('toast.savedToDrive'), 'success');
                   setConnectSyncPrompt(null);
                 }}
-                className={`w-full py-5 rounded-2xl font-black uppercase text-sm tracking-widest active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-100 border-slate-200 text-slate-900'}`}
+                className={`w-full py-3.5 rounded-lg font-medium text-sm active:scale-95 border ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
               >
                 {t('modals.useLocalData')}
               </button>
             </div>
-            <button onClick={() => setConnectSyncPrompt(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+            <button onClick={() => setConnectSyncPrompt(null)} className={`text-sm active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
