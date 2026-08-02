@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   Barbell, ListChecks, Gear, Play, TrendUp,
   Plus, Minus, Check, X, DownloadSimple, UploadSimple,
-  Question, TrendDown, Moon, Pause,
+  Question, TrendDown, Moon,
   Trash, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown,
   Cloud, SlidersHorizontal, ChartLineUp, PencilSimple
@@ -1708,10 +1708,6 @@ const App = () => {
             <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
             <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-5 mb-6 text-left">
               {[
-                { Icon: Barbell, title: t('help.programTitle'), body: t('help.programBody') },
-                { Icon: TrendUp, title: t('help.progressionTitle'), body: t('help.progressionBody') },
-                { Icon: Pause, title: t('help.stallTitle'), body: t('help.stallBody') },
-                { Icon: TrendDown, title: t('help.deloadTitle'), body: t('help.deloadBody') },
                 { Icon: Timer, title: t('help.restTitle'), body: t('help.restBody') },
                 { Icon: Moon, title: t('help.longBreaksTitle'), body: t('help.longBreaksBody') },
                 { Icon: Cloud, title: t('help.backupsTitle'), body: t('help.backupsBody') },
@@ -1722,6 +1718,17 @@ const App = () => {
                 </div>
               ))}
             </div>
+            <button
+              onClick={() => { setShowHelp(false); setActiveTab('program'); }}
+              className={`w-full flex items-center justify-between p-4 rounded-[10px] border mb-3 active:scale-[0.99] transition-transform ${isDark ? 'bg-surface-deep border-ink/8' : 'bg-surface-deep-lt border-ink-lt/8'}`}
+            >
+              <span className="flex items-center gap-2 text-[14.5px] font-medium">
+                <Barbell weight="fill" size={17} className="text-accent" /> {t('help.programLink')}
+              </span>
+              <span className="flex items-center gap-1 text-[13.5px] text-accent-300 shrink-0">
+                {t(`program.strip.${preset}Name`)} <CaretRight size={14} />
+              </span>
+            </button>
             <button autoFocus onClick={() => setShowHelp(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('help.gotIt')}</button>
           </div>
         </div>
