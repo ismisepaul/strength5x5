@@ -98,6 +98,29 @@ describe('Switching to Madcow', () => {
   });
 });
 
+describe('Stats under Madcow', () => {
+  it('lists Incline Bench instead of Overhead Press, and Standard exercises when active', async () => {
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Stats'));
+    const inclineCard = within(screen.getByText('Incline Bench').closest('.border'));
+    expect(inclineCard.getByText('No sessions logged for this lift yet.')).toBeInTheDocument();
+    expect(screen.queryByText('Overhead Press')).not.toBeInTheDocument();
+  });
+
+  it('drops back to Overhead Press once switched back to Standard', async () => {
+    seedHistory({ preset: 'standard' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Stats'));
+    expect(screen.getByText('Overhead Press')).toBeInTheDocument();
+    expect(screen.queryByText('Incline Bench')).not.toBeInTheDocument();
+  });
+});
+
 describe('Switching back to Standard', () => {
   it('carries the current top set back as the flat working weight', async () => {
     seedHistory({ preset: 'madcow', mcTop: { squat: 120, bench: 70, row: 75, deadlift: 130, press: 60, incline: 55 }, mcWeek: 5, mcPress: 'incline' });

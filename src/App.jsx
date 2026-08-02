@@ -178,7 +178,7 @@ const App = () => {
 
   const best1RMs = useMemo(() => {
     const result = {};
-    for (const id of EXPECTED_WEIGHT_KEYS) {
+    for (const id of [...EXPECTED_WEIGHT_KEYS, 'incline']) {
       result[id] = calculateBest1RM(history, id);
     }
     return result;
@@ -1046,14 +1046,19 @@ const App = () => {
                     </button>
                   );
                 })()}
-                <div className="grid gap-3">{EXPECTED_WEIGHT_KEYS.map(id => {
+                <div className="grid gap-3">{(preset === 'madcow' ? ['squat', 'bench', 'row', 'deadlift', mcPress] : EXPECTED_WEIGHT_KEYS).map(id => {
                   const trend = getExerciseTrend(history, id);
                   const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
+                  const hasData = history.some(s => s.exercises?.some(e => e.id === id));
                   return (
                     <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
                       <div className="min-w-0 pr-2 text-left">
                         <p className="text-[15px] font-medium truncate">{t('exercises.' + id)}</p>
-                        <p className={`text-[12px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
+                        {hasData ? (
+                          <p className={`text-[12px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
+                        ) : (
+                          <p className={`text-[12px] leading-snug mt-1 ${mutedClass}`}>{t('stats.noSessionsForLift')}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {trend && <TrendIcon size={18} className={trendClass} />}
