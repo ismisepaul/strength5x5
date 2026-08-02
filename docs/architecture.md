@@ -10,7 +10,6 @@ Strength 5x5 is a client-side React application with no backend. All data is sto
 strength5x5/
   index.html              # HTML entry point (GIS script, manifest link)
   vite.config.js          # Vite build configuration
-  tailwind.config.js      # Tailwind CSS configuration
   vercel.json             # Security headers (CSP, X-Frame-Options, etc.)
   .env.example            # Environment variables template
   src/
@@ -18,10 +17,12 @@ strength5x5/
     App.jsx               # App shell: all state, tab routing, modals
     constants.js           # Workouts, weights, storage keys, limits
     utils.js               # Pure functions (plates, 1RM, deload, validation)
-    index.css              # Tailwind base imports
+    index.css              # Tailwind import + @theme design tokens
     components/
       ExerciseCard.jsx     # Single exercise during a workout (React.memo)
       RestTimer.jsx        # Rest countdown + lifting stopwatch (React.memo)
+      RepPicker.jsx        # Long-press rep count picker
+      ProgramEditor.jsx    # Per-exercise sets/reps configuration
       StatsChart.jsx       # Recharts-powered progress charts
       ErrorBoundary.jsx    # React error boundary (class component)
       Toast.jsx            # Toast notification display
@@ -29,6 +30,7 @@ strength5x5/
       useLocalStorage.js   # Load, sync, and cross-tab storage hooks
       useTimer.js          # Wall-clock anchored timer
       useToast.js          # Toast state management
+      useWakeLock.js       # Keeps the screen awake during a workout
       useGoogleDrive.js    # Google Drive backup/restore (optional)
     utils/
       chartData.js         # Timeline builders, trends, workout stats
@@ -43,6 +45,8 @@ strength5x5/
       setup.js             # Vitest setup (i18n, localStorage mock)
       fixtures/            # Test data files
   docs/                    # Architecture and integration documentation
+    design-system.md       # Nocturne design language (authority for UI work)
+    design/                # Redesign spec + prototype handoff
 ```
 
 ## Component Hierarchy
@@ -174,10 +178,17 @@ Regression coverage:
 
 ## Styling
 
-- Tailwind CSS utility classes only -- no CSS modules or styled-components
+- Tailwind CSS **v4** utility classes only -- no CSS modules or styled-components. There is
+  no `tailwind.config.js`; design tokens are declared in the `@theme` block of `src/index.css`
+  and become utilities automatically
 - Dark/light mode via conditional class strings keyed on `isDark` prop
 - Mobile-first design with `max-w-md mx-auto` container
-- Rounded cards with `rounded-[2rem]` / `rounded-[2.5rem]`
+- Visual language is defined by [docs/design-system.md](design-system.md) (Nocturne): single
+  accent `#9184d9`, Inter at weight ≤ 600, 8--10px radii, outlined primary buttons. **Read it
+  before any UI change**
+- The current code predates Nocturne (slate/indigo/emerald palette, `font-black`,
+  `rounded-[2rem]` / `rounded-[2.5rem]` cards). The migration is tracked as a single redesign
+  issue; the spec is in [docs/design/nocturne-implementation-plan.md](design/nocturne-implementation-plan.md)
 
 ## Testing
 
