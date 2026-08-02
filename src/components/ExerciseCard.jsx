@@ -1,11 +1,11 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CaretUp, CaretDown, ArrowBendDownRight, X, PencilSimple } from '@phosphor-icons/react';
-import { calculatePlates, targetReps } from '../utils';
+import { targetReps } from '../utils';
 import WeightEditBar from './WeightEditBar';
+import BarSetupDiagram from './BarSetupDiagram';
 
 const LONG_PRESS_MS = 450;
-const PLATE_HEIGHTS = { 25: 124, 20: 112, 15: 100, 10: 88, 5: 70, 2.5: 56, 1.25: 44 };
 
 const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPicker, showHint, isEditingWeight, draftWeight, onDraftWeightChange, onStartEditWeight, onStepWeight, onCommitWeight, onCancelEditWeight }) => {
   const { t } = useTranslation();
@@ -15,7 +15,6 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
   const hasMissed = ex.setsCompleted.some(r => r !== null && r < target);
   const [panel, setPanel] = useState(null);
   const prepWeight = Math.round((20 + (ex.weight - 20) * 0.6) / 2.5) * 2.5;
-  const plates = useMemo(() => calculatePlates(ex.weight), [ex.weight]);
 
   const clearPressTimer = () => {
     if (pressTimerRef.current) { clearTimeout(pressTimerRef.current); pressTimerRef.current = null; }
@@ -160,21 +159,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
       )}
       {panel === 'bar' && (
         <div className={`mt-2 rounded-[9px] p-3.5 ${isDark ? 'bg-ground/60' : 'bg-ground-lt/60'}`}>
-          <div className="flex items-center justify-center gap-1">
-            <div className="w-[30px] h-[11px] bg-neutral-tint rounded-l-[3px]" />
-            <div className="w-[9px] h-[46px] bg-neutral-tint rounded-[3px]" />
-            {plates.map((p, i) => (
-              <div
-                key={i}
-                style={{ height: PLATE_HEIGHTS[p] ?? 44 }}
-                className={`w-[26px] rounded-[6px] flex items-center justify-center text-[12px] font-semibold tabular-nums ${i === 0 ? 'bg-accent text-ground' : 'bg-neutral-tint text-ink'}`}
-              >{p}</div>
-            ))}
-            <div className="h-[11px] rounded-r-[3px] bg-neutral-tint flex items-center px-[10px] text-[12px] font-semibold tabular-nums text-ink">20</div>
-          </div>
-          <p className={`text-center text-[11px] mt-3 ${isDark ? 'text-ink/40' : 'text-ink-lt/40'}`}>
-            {ex.weight <= 20 ? t('warmup.emptyBarCaption') : t('warmup.perSideCaption', { total: ex.weight })}
-          </p>
+          <BarSetupDiagram weight={ex.weight} isDark={isDark} />
         </div>
       )}
     </div>

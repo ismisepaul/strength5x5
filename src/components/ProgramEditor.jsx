@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Minus, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { Plus, Minus, ArrowCounterClockwise, CaretUp, CaretDown } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, DEFAULT_PROGRAM } from '../constants';
 import StepperButton from './StepperButton';
 
 const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
   const { t } = useTranslation();
+  const [openHowTo, setOpenHowTo] = useState({});
   const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
 
   const update = (id, field, delta, min, max) => {
@@ -83,6 +84,27 @@ const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
                 isDark={isDark}
               />
             </div>
+
+            <button
+              onClick={() => setOpenHowTo(prev => ({ ...prev, [id]: !prev[id] }))}
+              aria-expanded={!!openHowTo[id]}
+              className={`flex items-center gap-1 min-h-9 mt-3 text-[12.5px] font-medium ${openHowTo[id] ? 'text-accent-300' : mutedClass}`}
+            >
+              {t('program.howTo')}
+              {openHowTo[id] ? <CaretUp size={11} /> : <CaretDown size={11} />}
+            </button>
+            {openHowTo[id] && (
+              <div className={`mt-2 rounded-[9px] p-3.5 space-y-3 ${isDark ? 'bg-ground/60' : 'bg-ground-lt/60'}`}>
+                {t('program.howToSteps.' + id, { returnObjects: true }).map((step, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span
+                      className="w-[22px] h-[22px] shrink-0 rounded-full border border-accent/50 text-accent-300 text-[11px] font-semibold flex items-center justify-center tabular-nums"
+                    >{i + 1}</span>
+                    <p className={`text-[13px] leading-[1.5] ${isDark ? 'text-ink/70' : 'text-ink-lt/70'}`}>{step}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}

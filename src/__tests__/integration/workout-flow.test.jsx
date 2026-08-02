@@ -90,6 +90,63 @@ describe('Workout Flow', () => {
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(20);
   });
 
+  it('toggles the bar-setup panel independently per exercise on the idle screen', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 1,
+      weights: { squat: 60, bench: 20, row: 50, press: 32.5, deadlift: 80 },
+      history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
+      nextType: 'A',
+      isDark: true,
+      autoSave: false,
+      preferredRest: 90,
+      soundEnabled: false,
+      vibrationEnabled: false,
+    }));
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.queryByText(/Per side/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByText('Back Squat'));
+    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Bench Press'));
+    expect(screen.getByText('Empty bar · 20 kg')).toBeInTheDocument();
+    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Back Squat'));
+    expect(screen.queryByText('Per side · 20 kg bar · 60 total')).not.toBeInTheDocument();
+    expect(screen.getByText('Empty bar · 20 kg')).toBeInTheDocument();
+  });
+
+  it('keeps the idle-screen bar-setup toggle independent of the weight editor', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 1,
+      weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+      history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
+      nextType: 'A',
+      isDark: true,
+      autoSave: false,
+      preferredRest: 90,
+      soundEnabled: false,
+      vibrationEnabled: false,
+    }));
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Back Squat'));
+    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Edit Back Squat weight'));
+    expect(screen.getByLabelText('Increase Back Squat weight')).toBeInTheDocument();
+    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Done'));
+    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
+  });
+
   it('accepts comma decimals and snaps the committed weight to the nearest 2.5kg', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,

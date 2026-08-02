@@ -51,7 +51,60 @@
     "repsCount_other": "{{count}} répétitions",
     "summary": "{{sets}} de {{reps}}",
     "resetDefaults": "Réinitialiser",
-    "activeWorkoutNote": "Une séance est en cours — elle garde ses séries et répétitions d'origine. Les changements s'appliqueront la prochaine fois."
+    "activeWorkoutNote": "Une séance est en cours — elle garde ses séries et répétitions d'origine. Les changements s'appliqueront la prochaine fois.",
+    "howTo": "Comment faire l'exercice",
+    "howToSteps": {
+      "squat": [
+        "Placez la barre sur le haut du dos et décrochez-la du rack.",
+        "Reculez et tenez-vous debout, pieds écartés à la largeur des épaules.",
+        "Gainez votre tronc et gardez la poitrine haute.",
+        "Fléchissez les hanches et les genoux pour descendre en squat.",
+        "Descendez jusqu'à ce que les hanches soient au niveau des genoux ou juste en dessous.",
+        "Poussez à travers les pieds pour remonter.",
+        "Étendez complètement les hanches et les genoux en haut du mouvement.",
+        "Après la dernière répétition, avancez et raccrochez la barre au rack."
+      ],
+      "bench": [
+        "Allongez-vous sur le banc, les yeux sous la barre.",
+        "Ancrez vos pieds au sol et saisissez la barre un peu plus large que la largeur des épaules.",
+        "Rétractez les omoplates et décrochez la barre du rack.",
+        "Descendez la barre de façon contrôlée jusqu'au milieu de la poitrine.",
+        "Touchez légèrement la poitrine sans rebondir.",
+        "Repoussez la barre jusqu'à extension complète des bras.",
+        "Répétez pour le nombre de répétitions requis.",
+        "Raccrochez la barre en toute sécurité après la dernière répétition."
+      ],
+      "row": [
+        "Tenez-vous debout, pieds écartés à la largeur des hanches, et saisissez la barre juste à l'extérieur des jambes.",
+        "Basculez au niveau des hanches jusqu'à ce que le torse soit incliné à environ 30–45° au-dessus de l'horizontale.",
+        "Gainez votre tronc et gardez le dos plat.",
+        "Laissez la barre pendre sous les épaules.",
+        "Tirez la barre vers le bas de la poitrine ou le haut de l'abdomen.",
+        "Serrez les omoplates l'une vers l'autre en haut du mouvement.",
+        "Redescendez la barre de façon contrôlée jusqu'à extension complète des bras.",
+        "Après la dernière répétition, redressez-vous et reposez la barre en toute sécurité."
+      ],
+      "press": [
+        "Saisissez la barre juste au-delà de la largeur des épaules et décrochez-la sur vos épaules.",
+        "Tenez-vous debout, pieds écartés à la largeur des épaules, et gainez le tronc.",
+        "Poussez la barre à la verticale au-dessus de la tête.",
+        "Avancez légèrement la tête lorsque la barre passe devant le front.",
+        "Verrouillez les coudes, la barre alignée au-dessus des épaules et du milieu des pieds.",
+        "Redescendez la barre de façon contrôlée jusqu'aux épaules.",
+        "Répétez pour le nombre de répétitions requis.",
+        "Raccrochez la barre après la dernière répétition."
+      ],
+      "deadlift": [
+        "Tenez-vous debout, la barre au-dessus du milieu des pieds.",
+        "Fléchissez les hanches et les genoux pour saisir la barre juste à l'extérieur des jambes.",
+        "Aplatissez le dos, gainez le tronc et tendez la barre pour enlever le mou.",
+        "Poussez à travers les pieds et redressez-vous, la barre proche du corps.",
+        "Terminez debout bien droit, sans vous pencher en arrière.",
+        "Reculez les hanches et redescendez la barre au-delà des genoux.",
+        "Fléchissez les genoux et reposez la barre au sol de façon contrôlée.",
+        "Repositionnez-vous avant chaque répétition."
+      ]
+    }
   },
   "timer": {
     "inSession": "Séance en cours",

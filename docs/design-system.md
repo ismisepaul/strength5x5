@@ -172,13 +172,17 @@ flips from `CaretDown` to `CaretUp`. State is `null | 'warm' | 'bar'`, local to 
 - **Warm-up:** three rows (13px, tabular) — empty bar (20 kg × 5), prep
   (`round((20 + (weight−20) × 0.6) / 2.5) × 2.5` kg × 3), and working weight
   (`accent-300`, weight kg × reps).
-- **Bar setup:** a side-view bar diagram built from `calculatePlates` (the same greedy
-  20/15/10/5/2.5/1.25-per-side breakdown used elsewhere) — shaft, collar, one chip per
-  plate (largest first, tallest first, `accent`-filled with `ground` text for the
-  largest, `neutral-tint` with `ink` text for the rest), then a sleeve labelled "20".
-  Colours here are fixed hex, not theme tokens — the diagram reads the same in light and
-  dark mode. A caption below reads "Per side · 20 kg bar · {total} total", or
-  "Empty bar · 20 kg" when loaded weight is at or below the bar itself.
+- **Bar setup:** a side-view bar diagram, used on both the start screen and workout
+  cards, built from `calculatePlates` (the same greedy 25/20/15/10/5/2.5/1.25-per-side
+  breakdown used elsewhere) — shaft, collar, one chip per plate (largest first, tallest
+  first), then a sleeve labelled "20". Plate fills are standard muted plate colours
+  scoped to this diagram only: 25 `#a8403e`, 20 `#37628f`, 15 `#b8971f` with `#1a1608`
+  text, 10 `#3a7a53`, 5 `#2a2c38`, 2.5 `#5f636f`, 1.25 `#7c8090`, with light `#e9e9ed`
+  text elsewhere. Plate heights are 118/112/100/88/70/56/44px respectively. The weight
+  is printed on every plate, so colour is never the only cue. Colours here are fixed
+  hex, not theme tokens — the diagram reads the same in light and dark mode. A caption
+  below reads "Per side · 20 kg bar · {total} total", or "Empty bar · 20 kg" when loaded
+  weight is at or below the bar itself.
 
 **Switches.** Custom 46×26 track, 20px knob (`translate-x-[21px]` when on) — accent border,
 `accent-900` track and accent knob when on; `ink/18` border and neutral knob when off.

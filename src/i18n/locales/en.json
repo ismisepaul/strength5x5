@@ -51,7 +51,60 @@
     "repsCount_other": "{{count}} reps",
     "summary": "{{sets}} of {{reps}}",
     "resetDefaults": "Reset",
-    "activeWorkoutNote": "You have a workout in progress -- it keeps its original sets and reps. Changes here apply next time."
+    "activeWorkoutNote": "You have a workout in progress -- it keeps its original sets and reps. Changes here apply next time.",
+    "howTo": "How to perform",
+    "howToSteps": {
+      "squat": [
+        "Set the bar on your upper back and unrack it.",
+        "Step back and stand with feet about shoulder-width apart.",
+        "Brace your core and keep your chest up.",
+        "Bend your hips and knees to squat down.",
+        "Lower until your hips are at or just below knee level.",
+        "Drive through your feet to stand back up.",
+        "Fully extend your hips and knees at the top.",
+        "After the final rep, walk forward and rack the bar."
+      ],
+      "bench": [
+        "Lie on the bench with your eyes under the bar.",
+        "Plant your feet and grip the bar slightly wider than shoulder width.",
+        "Retract your shoulder blades and unrack the bar.",
+        "Lower the bar under control to your mid-chest.",
+        "Lightly touch your chest without bouncing.",
+        "Press the bar back up until your arms are straight.",
+        "Repeat for the required repetitions.",
+        "Rack the bar securely after the final rep."
+      ],
+      "row": [
+        "Stand with feet hip-width apart and grip the bar just outside your legs.",
+        "Hinge at your hips until your torso is about 30–45° above horizontal.",
+        "Brace your core and keep your back flat.",
+        "Let the bar hang below your shoulders.",
+        "Pull the bar toward your lower chest or upper abdomen.",
+        "Squeeze your shoulder blades together at the top.",
+        "Lower the bar under control to full arm extension.",
+        "After the final rep, stand up and lower the bar safely."
+      ],
+      "press": [
+        "Grip the bar just outside shoulder width and unrack it onto your shoulders.",
+        "Stand with feet shoulder-width apart and brace your core.",
+        "Press the bar straight overhead.",
+        "Move your head slightly forward as the bar passes your forehead.",
+        "Lock your elbows with the bar over your shoulders and mid-foot.",
+        "Lower the bar under control back to your shoulders.",
+        "Repeat for the required repetitions.",
+        "Rack the bar after the final rep."
+      ],
+      "deadlift": [
+        "Stand with the bar over the middle of your feet.",
+        "Bend at your hips and knees to grip the bar just outside your legs.",
+        "Flatten your back, brace your core, and pull the slack from the bar.",
+        "Push through your feet and stand up with the bar close to your body.",
+        "Finish standing tall without leaning backward.",
+        "Push your hips back and lower the bar past your knees.",
+        "Bend your knees and return the bar to the floor under control.",
+        "Reset your position before each repetition."
+      ]
+    }
   },
   "timer": {
     "inSession": "In session",

@@ -93,6 +93,26 @@ describe('Program tab', () => {
     expect(benchSets).toBeInTheDocument();
   });
 
+  it('toggles the how-to-perform accordion independently per exercise', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+
+    expect(benchCard().queryByText('Lie on the bench with your eyes under the bar.')).not.toBeInTheDocument();
+
+    await user.click(benchCard().getByText('How to perform'));
+    expect(benchCard().getByText('Lie on the bench with your eyes under the bar.')).toBeInTheDocument();
+    expect(benchCard().getByText('Rack the bar securely after the final rep.')).toBeInTheDocument();
+
+    const squatCard = () => within(screen.getByText('Back Squat').closest('.border'));
+    expect(squatCard().queryByText('Set the bar on your upper back and unrack it.')).not.toBeInTheDocument();
+
+    await user.click(benchCard().getByText('How to perform'));
+    expect(benchCard().queryByText('Lie on the bench with your eyes under the bar.')).not.toBeInTheDocument();
+  });
+
   it('resets to defaults', async () => {
     seedHistory();
     const user = userEvent.setup();

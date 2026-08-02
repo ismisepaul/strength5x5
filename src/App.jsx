@@ -19,6 +19,7 @@ import { useTimer } from './hooks/useTimer';
 import { useWakeLock } from './hooks/useWakeLock';
 import RestTimer from './components/RestTimer';
 import ExerciseCard from './components/ExerciseCard';
+import BarSetupDiagram from './components/BarSetupDiagram';
 import RepPicker from './components/RepPicker';
 import ProgramEditor from './components/ProgramEditor';
 import StatsChart from './components/StatsChart';
@@ -61,6 +62,7 @@ const App = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logGrouping, setLogGrouping] = useState(saved.logGrouping ?? 'all');
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [expandedBarSetup, setExpandedBarSetup] = useState({});
   const [completionSummary, setCompletionSummary] = useState(null);
   const [showResumePrompt, setShowResumePrompt] = useState(() => !!saved.activeSession);
   const [pendingDriveRestore, setPendingDriveRestore] = useState(null);
@@ -702,16 +704,26 @@ const App = () => {
                   </div>
                   <p className={`text-[13.5px] mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{getProgramExercises(currentWorkoutType, program).map(ex => t('exercises.' + ex.id)).join(' · ')}</p>
                 </div>
-                <div className="mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
+                <div className="mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => {
+                  const exName = t('exercises.' + ex.id);
+                  const isBarSetupOpen = !!expandedBarSetup[ex.id];
+                  return (
                   <div key={ex.id} className={`py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
                     <div className="flex justify-between items-center">
-                      <div>
-                        <p className="text-[16px] font-medium">{t('exercises.' + ex.id)}</p>
-                        <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
-                      </div>
+                      <button
+                        onClick={() => setExpandedBarSetup(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}
+                        aria-expanded={isBarSetupOpen}
+                        className="flex items-center gap-1.5 min-h-[44px] text-left flex-1 min-w-0 pr-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-[16px] font-medium truncate">{exName}</p>
+                          <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
+                        </div>
+                        <CaretDown size={12} weight="bold" className={`shrink-0 opacity-35 transition-transform ${isBarSetupOpen ? 'rotate-180' : ''}`} />
+                      </button>
                       <button
                         onClick={() => handleStartEditWeight(ex.id, weights[ex.id])}
-                        aria-label={t('workout.editWeightAria', { name: t('exercises.' + ex.id) })}
+                        aria-label={t('workout.editWeightAria', { name: exName })}
                         className="flex items-center gap-1.5 min-h-[44px] shrink-0"
                       >
                         <span className="text-[19px] text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
@@ -728,11 +740,17 @@ const App = () => {
                         onCancel={handleCancelEditWeight}
                         isDark={isDark}
                         variant="row"
-                        exerciseName={t('exercises.' + ex.id)}
+                        exerciseName={exName}
                       />
                     )}
+                    {isBarSetupOpen && (
+                      <div className={`mt-3 rounded-[9px] p-3.5 ${isDark ? 'bg-surface/70' : 'bg-surface-lt/70'}`}>
+                        <BarSetupDiagram weight={weights[ex.id]} isDark={isDark} />
+                      </div>
+                    )}
                   </div>
-                ))}</div>
+                  );
+                })}</div>
                 <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
                 <p className={`text-[12px] text-center mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
               </div>
