@@ -52,14 +52,9 @@
   "timer": {
     "inSession": "In session",
     "rest": "Rest",
-    "recoveryPhase": "Recovery Phase",
     "lifting": "Lifting",
     "workoutComplete": "Workout complete",
-    "movementFinished": "Movement finished",
-    "allSetsDone": "All sets done. Tap Finish to save your workout.",
-    "setupNext": "Setup next exercise. No rest required.",
-    "skip": "Skip",
-    "gotIt": "Got it"
+    "movementFinished": "Movement finished"
   },
   "log": {
     "title": "Log",

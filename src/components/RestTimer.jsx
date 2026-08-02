@@ -1,64 +1,71 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, Timer, Barbell } from '@phosphor-icons/react';
+import { SkipForward } from '@phosphor-icons/react';
+import { formatClock } from '../utils';
+import { useElapsedSince } from '../hooks/useElapsedSince';
 
-const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComplete, isExpired, elapsed }) => {
+const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComplete, isExpired, isActive, elapsed, startedAt, workoutType }) => {
   const { t } = useTranslation();
-  if (seconds <= 0 && !isExerciseComplete && !isExpired) return null;
-  const progress = (isExerciseComplete || isExpired) ? 100 : (seconds / total) * 100;
+  const sessionElapsed = useElapsedSince(startedAt, true);
 
-  const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+  let kicker, digits, showSkip, accentState, progress;
+  if (isExerciseComplete) {
+    kicker = isExerciseComplete === 'workout' ? t('timer.workoutComplete') : t('timer.movementFinished');
+    digits = sessionElapsed;
+    showSkip = true;
+    accentState = true;
+    progress = 100;
+  } else if (isExpired) {
+    kicker = t('timer.lifting');
+    digits = elapsed || 0;
+    showSkip = true;
+    accentState = true;
+    progress = 100;
+  } else if (isActive) {
+    kicker = t('timer.rest');
+    digits = seconds;
+    showSkip = true;
+    accentState = false;
+    progress = total > 0 ? (1 - seconds / total) * 100 : 0;
+  } else {
+    kicker = t('timer.inSession');
+    digits = sessionElapsed;
+    showSkip = false;
+    accentState = false;
+    progress = 0;
+  }
+
+  const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
 
   return (
-    <div className={`flex-none transition-all duration-300 ${isDark ? 'bg-slate-900 border-t border-slate-800' : 'bg-white border-t border-slate-200'} shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)]`}>
-      <div className="py-4 px-6 flex justify-between items-center">
-        {isExerciseComplete ? (
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase text-emerald-500 tracking-widest leading-none mb-1">{isExerciseComplete === 'workout' ? t('timer.workoutComplete') : t('timer.movementFinished')}</span>
-            <div className="flex items-center gap-3">
-              <CheckCircle size={20} className="text-emerald-500" />
-              <span className={`text-[11px] font-bold leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{isExerciseComplete === 'workout' ? t('timer.allSetsDone') : t('timer.setupNext')}</span>
-            </div>
+    <div className={`flex-none pt-3 px-5 pb-2.5 ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+      <div className="flex items-end justify-between">
+        <div className="flex items-end gap-2">
+          <div>
+            <p className={`text-[9.5px] font-semibold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent' : mutedClass}`}>{kicker}</p>
+            <p className={`text-2xl font-medium tabular-nums leading-none ${accentState ? 'text-accent' : ''}`}>{formatClock(digits * 1000)}</p>
           </div>
-        ) : isExpired ? (
-          <div className="flex flex-col">
-            <span className={`text-[10px] font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'} tracking-widest leading-none mb-1`}>{t('timer.lifting')}</span>
-            <div className="flex items-center gap-3">
-              <Barbell size={24} className={isDark ? 'text-indigo-500' : 'text-indigo-600'} />
-              <span className={`text-4xl font-black font-mono leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatTime(elapsed || 0)}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">{t('timer.recoveryPhase')}</span>
-            <div className="flex items-center gap-3">
-              <Timer size={24} className={isDark ? 'text-indigo-500' : 'text-indigo-600'} />
-              <span className={`text-4xl font-black font-mono leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{formatTime(seconds)}</span>
-            </div>
-          </div>
-        )}
-        {isExerciseComplete ? (
-          <button
-            onClick={onSkip}
-            aria-label="Dismiss"
-            className="px-6 py-2.5 rounded-2xl font-black text-xs uppercase transition-all active:scale-95 bg-emerald-500/10 text-emerald-500"
-          >
-            {t('timer.gotIt')}
-          </button>
-        ) : !isExpired ? (
-          <button
-            onClick={onSkip}
-            aria-label="Skip rest"
-            className="px-6 py-2.5 rounded-2xl font-black text-xs uppercase transition-all active:scale-95 bg-rose-500/10 text-rose-500"
-          >
-            {t('timer.skip')}
-          </button>
-        ) : null}
+          {showSkip && (
+            <button
+              onClick={onSkip}
+              aria-label={isExerciseComplete ? 'Dismiss' : 'Skip rest'}
+              className={`w-6 h-6 rounded-[7px] border flex items-center justify-center shrink-0 ${isDark ? 'border-ink/18' : 'border-ink-lt/18'}`}
+            ><SkipForward size={12} weight="fill" /></button>
+          )}
+        </div>
+        <div className="text-right">
+          <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-0.5">{t(`workout.type${workoutType}`)}</p>
+          <p className={`text-sm tabular-nums leading-none ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{formatClock(sessionElapsed * 1000)}</p>
+        </div>
       </div>
-      <div className={`h-1.5 w-full ${isDark ? 'bg-slate-800' : 'bg-slate-200'} overflow-hidden`}>
+      <div className={`h-0.5 w-full mt-2.5 ${isDark ? 'bg-ink/8' : 'bg-ink-lt/8'} overflow-hidden`}>
         <div
-          className={`h-full transition-all duration-1000 linear ${isExerciseComplete ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-          style={{ width: `${progress}%` }}
+          className="h-full"
+          style={{
+            width: `${progress}%`,
+            background: 'linear-gradient(to right, transparent, #9184d9 24px, #9184d9)',
+            transition: 'width 1s linear',
+          }}
         />
       </div>
     </div>

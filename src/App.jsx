@@ -591,9 +591,9 @@ const App = () => {
     return isToday ? `Today, ${time}` : `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, ${time}`;
   }, []);
 
-  const timerVisible = activeTab === 'workout' && (timer.isActive || timer.isExpired || isExerciseComplete);
   const liveWorkoutVisible = isWorkoutActive && currentWorkout && activeTab !== 'workout';
   const isMidWorkout = isWorkoutActive && activeTab === 'workout';
+  const timerVisible = isMidWorkout;
 
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
@@ -633,6 +633,15 @@ const App = () => {
             ><Question size={16} /></button>
           </div>
         </header>
+      )}
+
+      {timerVisible && (
+        <RestTimer
+          seconds={timer.seconds} total={preferredRest}
+          isDark={isDark} isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired} isActive={timer.isActive}
+          onSkip={handleTimerSkip} elapsed={timer.elapsed}
+          startedAt={currentWorkout?.startedAt} workoutType={currentWorkout?.type}
+        />
       )}
 
       <main className="flex-1 min-h-0 px-4 py-4 overflow-y-auto">
@@ -938,14 +947,6 @@ const App = () => {
           </div>
         )}
       </main>
-
-      {activeTab === 'workout' && (
-        <RestTimer
-          seconds={timer.seconds} total={preferredRest}
-          isDark={isDark} isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired}
-          onSkip={handleTimerSkip} elapsed={timer.elapsed}
-        />
-      )}
 
       {liveWorkoutVisible && (() => {
         const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;

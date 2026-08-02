@@ -36,13 +36,13 @@ describe('Skip button behavior', () => {
     });
     await user.click(setButtons[0]);
 
-    expect(screen.getByText('Recovery Phase')).toBeInTheDocument();
-    expect(screen.getByText('Skip')).toBeInTheDocument();
+    expect(screen.getByText('Rest')).toBeInTheDocument();
+    expect(screen.getByLabelText('Skip rest')).toBeInTheDocument();
 
-    await user.click(screen.getByText('Skip'));
+    await user.click(screen.getByLabelText('Skip rest'));
 
     expect(screen.getByText('Lifting')).toBeInTheDocument();
-    expect(screen.queryByText('Recovery Phase')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rest')).not.toBeInTheDocument();
   });
 
   it('Got it on exercise complete fully dismisses the timer bar', async () => {
@@ -62,11 +62,11 @@ describe('Skip button behavior', () => {
     }
 
     expect(screen.getByText('Movement finished')).toBeInTheDocument();
-    await user.click(screen.getByText('Got it'));
+    await user.click(screen.getByLabelText('Dismiss'));
 
     expect(screen.queryByText('Movement finished')).not.toBeInTheDocument();
     expect(screen.queryByText('Lifting')).not.toBeInTheDocument();
-    expect(screen.queryByText('Recovery Phase')).not.toBeInTheDocument();
+    expect(screen.getByText('In session')).toBeInTheDocument();
   });
 });
 

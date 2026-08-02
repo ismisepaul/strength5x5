@@ -52,14 +52,9 @@
   "timer": {
     "inSession": "Séance en cours",
     "rest": "Repos",
-    "recoveryPhase": "Phase de repos",
     "lifting": "En cours",
     "workoutComplete": "Séance terminée",
-    "movementFinished": "Mouvement terminé",
-    "allSetsDone": "Toutes les séries faites. Appuyez sur Terminer pour sauvegarder.",
-    "setupNext": "Préparez l'exercice suivant. Pas de repos nécessaire.",
-    "skip": "Passer",
-    "gotIt": "Compris"
+    "movementFinished": "Mouvement terminé"
   },
   "log": {
     "title": "Journal d'entraînement",
