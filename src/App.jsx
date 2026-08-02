@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Barbell, ListChecks, Gear, Play, TrendUp,
-  Plus, Minus, ArrowsClockwise, Moon, X, DownloadSimple, UploadSimple,
-  ToggleRight, ToggleLeft, WarningCircle, Question, TrendDown,
-  Vibrate, Trash, Bell, CaretRight, Timer,
+  Plus, Minus, ArrowsClockwise, X, DownloadSimple, UploadSimple,
+  WarningCircle, Question, TrendDown,
+  Trash, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown, MinusCircle,
-  GlobeSimple, Cloud, SlidersHorizontal, ChartLineUp
+  Cloud, SlidersHorizontal, ChartLineUp
 } from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
@@ -853,88 +853,99 @@ const App = () => {
           <ProgramEditor program={program} onChange={setProgram} isDark={isDark} isWorkoutActive={isWorkoutActive} />
         )}
 
-        {activeTab === 'settings' && (
+        {activeTab === 'settings' && (() => {
+          const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
+          const cardClass = `p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`;
+          const innerRowClass = isDark ? 'rule-fade' : 'rule-fade-lt';
+          const Switch = ({ checked, onChange, ariaLabel }) => (
+            <button
+              onClick={onChange}
+              role="switch"
+              aria-checked={checked}
+              aria-label={ariaLabel}
+              className={`w-[38px] h-[22px] rounded-full border relative shrink-0 transition-colors ${checked ? 'border-accent bg-accent-900' : (isDark ? 'border-ink/18' : 'border-ink-lt/18')}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${checked ? `translate-x-[16px] bg-accent` : `translate-x-0 ${isDark ? 'bg-ink/45' : 'bg-ink-lt/45'}`}`} />
+            </button>
+          );
+          const Segmented = ({ options, value, onChange }) => (
+            <div className={`flex rounded-lg border overflow-hidden ${isDark ? 'border-ink/10' : 'border-ink-lt/10'}`}>
+              {options.map((opt, i) => (
+                <button
+                  key={opt.val}
+                  onClick={() => onChange(opt.val)}
+                  className={`flex-1 py-2 text-[10px] uppercase tracking-wide transition-all ${i > 0 ? (isDark ? 'border-l border-ink/10' : 'border-l border-ink-lt/10') : ''} ${value === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+                >{opt.label}</button>
+              ))}
+            </div>
+          );
+          return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-black mb-6 uppercase tracking-tighter">{t('options.title')}</h2>
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Timer size={20} /></div>
-                <div><p className="text-sm font-black uppercase tracking-tight">{t('options.restInterval')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.restIntervalDesc')}</p></div>
+            <h2 className="text-[22px] font-medium mb-6">{t('options.title')}</h2>
+            <div className={cardClass}>
+              <div className="mb-4">
+                <p className="text-sm font-semibold">{t('options.restInterval')}</p>
+                <p className={`text-[10px] uppercase leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }].map(opt => (
-                  <button key={opt.val} onClick={() => setPreferredRest(opt.val)} className={`py-3 rounded-xl font-black text-xs transition-all ${preferredRest === opt.val ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')}`}>{opt.label}</button>
-                ))}
+              <Segmented
+                options={[{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }]}
+                value={preferredRest}
+                onChange={setPreferredRest}
+              />
+            </div>
+
+            <div className={cardClass}>
+              <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
+                <div><p className="text-sm font-semibold">{t('options.soundAlert')}</p><p className={`text-[10px] uppercase leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
+                <Switch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} ariaLabel="Sound alert" />
+              </div>
+              <div className="flex items-center justify-between">
+                <div><p className="text-sm font-semibold">{t('options.vibration')}</p><p className={`text-[10px] uppercase leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>
+                <Switch checked={vibrationEnabled} onChange={() => setVibrationEnabled(!vibrationEnabled)} ariaLabel="Vibration" />
               </div>
             </div>
 
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Bell size={20} /></div>
-                  <div><p className="text-sm font-black uppercase">{t('options.soundAlert')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.soundAlertDesc')}</p></div>
-                </div>
-                <button onClick={() => setSoundEnabled(!soundEnabled)} role="switch" aria-checked={soundEnabled} aria-label="Sound alert">{soundEnabled ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button>
-              </div>
+            <div className={cardClass}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Vibrate size={20} /></div>
-                  <div><p className="text-sm font-black uppercase">{t('options.vibration')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.vibrationDesc')}</p></div>
-                </div>
-                <button onClick={() => setVibrationEnabled(!vibrationEnabled)} role="switch" aria-checked={vibrationEnabled} aria-label="Vibration">{vibrationEnabled ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button>
-              </div>
-            </div>
-
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Moon size={20} /></div>
-                  <div><p className="text-sm font-black uppercase">{t('options.darkMode')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.darkModeDesc')}</p></div>
-                </div>
-                <button onClick={() => setIsDark(!isDark)} role="switch" aria-checked={isDark} aria-label="Dark mode">{isDark ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button>
+                <div><p className="text-sm font-semibold">{t('options.darkMode')}</p><p className={`text-[10px] uppercase leading-tight ${mutedClass}`}>{t('options.darkModeDesc')}</p></div>
+                <Switch checked={isDark} onChange={() => setIsDark(!isDark)} ariaLabel="Dark mode" />
               </div>
             </div>
 
             {/* Backup & Sync */}
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex items-center gap-4 mb-5">
-                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Cloud size={20} /></div>
-                <div><p className="text-sm font-black uppercase">{t('options.backupSync')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.backupSyncDesc')}</p></div>
+            <div className={cardClass}>
+              <div className={`pb-4 mb-4 ${innerRowClass}`}>
+                <p className="text-sm font-semibold">{t('options.backupSync')}</p>
+                <p className={`text-[10px] uppercase leading-tight ${mutedClass}`}>{t('options.backupSyncDesc')}</p>
               </div>
 
               {/* Local Backup toggle */}
-              <div className={`flex items-center justify-between p-4 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-50 border border-slate-100'}`}>
-                <div className="flex items-center gap-3">
-                  <Cloud size={16} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
-                  <div><p className="text-xs font-black uppercase">{t('options.localBackup')}</p><p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.localBackupDesc')}</p></div>
-                </div>
-                <button onClick={() => setLocalBackup(!localBackup)} role="switch" aria-checked={localBackup} aria-label="Local backup">{localBackup ? <ToggleRight size={36} className="text-indigo-500" /> : <ToggleLeft size={36} className={isDark ? 'text-slate-700' : 'text-slate-300'} />}</button>
+              <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
+                <div><p className="text-xs font-medium">{t('options.localBackup')}</p><p className={`text-[10px] leading-tight ${mutedClass}`}>{t('options.localBackupDesc')}</p></div>
+                <Switch checked={localBackup} onChange={() => setLocalBackup(!localBackup)} ariaLabel="Local backup" />
               </div>
 
               {/* Google Drive section */}
               {driveConfigured && (
-                <div className={`p-4 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-50 border border-slate-100'}`}>
+                <div className={`pb-4 mb-4 ${innerRowClass}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <Cloud size={16} className={gdrive.isConnected ? 'text-emerald-500' : gdrive.hasEverConnected ? 'text-amber-500' : (isDark ? 'text-slate-400' : 'text-slate-500')} />
-                      <div><p className="text-xs font-black uppercase">{t('options.googleDrive')}</p><p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.googleDriveDesc')}</p></div>
-                    </div>
+                    <div><p className="text-xs font-medium">{t('options.googleDrive')}</p><p className={`text-[10px] leading-tight ${mutedClass}`}>{t('options.googleDriveDesc')}</p></div>
                     {gdrive.isConnected ? (
-                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t('options.connectedToDrive')}</span>
+                      <span className={`text-[10px] uppercase px-2.5 py-1 rounded-lg text-accent-300 bg-accent-900`}>{t('options.connectedToDrive')}</span>
                     ) : (
-                      <button onClick={handleConnect} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-blue-950/30 text-blue-400 border border-blue-900/40' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
+                      <button onClick={handleConnect} className={`text-[10px] uppercase px-3 py-1.5 rounded-lg border active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
                     )}
                   </div>
                   {(gdrive.isConnected || gdrive.hasEverConnected) && (
                     <div className="mt-3 space-y-2">
-                      <p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.savesAfterWorkout')}</p>
+                      <p className={`text-[10px] leading-tight ${mutedClass}`}>{t('options.savesAfterWorkout')}</p>
                       <div className="flex items-center justify-between">
                         {gdrive.saveFailed ? (
-                          <button onClick={handleDriveSave} className="text-[10px] font-bold text-rose-500 active:scale-95">{t('options.saveFailed')}</button>
+                          <button onClick={handleDriveSave} className={`text-[10px] active:scale-95 ${mutedClass}`}>{t('options.saveFailed')}</button>
                         ) : gdrive.lastSavedAt ? (
-                          <p className="text-[10px] font-bold text-emerald-500">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
+                          <p className="text-[10px] text-accent">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
                         ) : <span />}
-                        <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-indigo-950/30 text-indigo-400 border border-indigo-900/40' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'} disabled:opacity-50`}>{t('options.syncNow')}</button>
+                        <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-[10px] uppercase px-3 py-1.5 rounded-lg border active:scale-95 disabled:opacity-35 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('options.syncNow')}</button>
                       </div>
                     </div>
                   )}
@@ -942,35 +953,34 @@ const App = () => {
               )}
 
               {/* Backup & Restore buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => exportData()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform bg-indigo-600 text-white shadow-lg`}>
-                  <DownloadSimple size={20} /> {t('options.backupToDevice')}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <button onClick={() => exportData()} className="p-3 rounded-lg border border-accent text-accent flex flex-col items-center gap-2 text-[10px] uppercase active:scale-95 transition-transform">
+                  <DownloadSimple size={18} /> {t('options.backupToDevice')}
                 </button>
-                <button onClick={() => fileInputRef.current?.click()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-white text-slate-600 border-slate-200'}`}>
-                  <UploadSimple size={20} /> {t('options.restore')}
+                <button onClick={() => fileInputRef.current?.click()} className={`p-3 rounded-lg border flex flex-col items-center gap-2 text-[10px] uppercase active:scale-95 transition-transform ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>
+                  <UploadSimple size={18} /> {t('options.restore')}
                 </button>
               </div>
+              <button onClick={() => csvInputRef.current?.click()} className={`w-full p-3 rounded-lg border flex items-center justify-center gap-2 text-[10px] uppercase active:scale-95 transition-transform ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>
+                <FileCsv size={18} /> {t('options.importStronglifts')}
+              </button>
             </div>
 
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+            <div className={cardClass}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><GlobeSimple size={20} /></div>
-                  <div><p className="text-sm font-black uppercase">{t('options.language')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.languageDesc')}</p></div>
-                </div>
-                <div className="flex gap-1.5">
-                  {[{ code: 'en', label: 'EN' }, { code: 'fr', label: 'FR' }].map(lang => (
-                    <button key={lang.code} onClick={() => i18n.changeLanguage(lang.code)} className={`px-3 py-1.5 rounded-xl font-black text-[10px] uppercase transition-all ${i18n.language?.startsWith(lang.code) ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')}`}>{lang.label}</button>
-                  ))}
+                <div><p className="text-sm font-semibold">{t('options.language')}</p><p className={`text-[10px] uppercase leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
+                <div className="w-24">
+                  <Segmented
+                    options={[{ label: 'EN', val: 'en' }, { label: 'FR', val: 'fr' }]}
+                    value={i18n.language?.startsWith('fr') ? 'fr' : 'en'}
+                    onChange={(code) => i18n.changeLanguage(code)}
+                  />
                 </div>
               </div>
             </div>
-            <button onClick={() => csvInputRef.current?.click()} className={`w-full p-5 rounded-[2rem] flex items-center gap-4 border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-              <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><FileCsv size={20} /></div>
-              <div className="text-left"><p className="text-sm font-black uppercase">{t('options.importStronglifts')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.importStrongliftsDesc')}</p></div>
-            </button>
           </div>
-        )}
+          );
+        })()}
       </main>
 
       {liveWorkoutVisible && (() => {
