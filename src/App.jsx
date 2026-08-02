@@ -653,10 +653,10 @@ const App = () => {
   const workoutStats = getWorkoutStats(history);
 
   return (
-    <div className={`h-[100dvh] max-w-md mx-auto flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-ground text-ink' : 'bg-ground-lt text-ink-lt'}`}>
+    <div className={`h-viewport max-w-md mx-auto flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-ground text-ink' : 'bg-ground-lt text-ink-lt'}`}>
 
       {!isMidWorkout && (
-        <header className="flex-none pt-3.5 px-5 pb-2.5 flex justify-between items-center">
+        <header className="flex-none header-safe px-5 pb-2.5 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Barbell weight="fill" size={20} className="text-accent" />
             <h1 className="text-[17px] font-semibold">{t('app.title')}</h1>
@@ -684,7 +684,7 @@ const App = () => {
         />
       )}
 
-      <main className="flex-1 min-h-0 px-4 py-4 overflow-y-auto">
+      <main className="flex-1 min-h-0 px-4 py-4 overflow-y-auto overscroll-contain">
         {activeTab === 'workout' && (
           <div className="space-y-4">
             {!isWorkoutActive ? (
@@ -1084,7 +1084,7 @@ const App = () => {
         );
       })()}
 
-      <nav className={`flex-none border-t flex justify-between px-2 py-1.5 ${isDark ? 'bg-surface-nav border-ink/8' : 'bg-surface-nav-lt border-ink-lt/8'}`}>
+      <nav className={`flex-none border-t flex justify-between px-2 pt-1.5 nav-safe ${isDark ? 'bg-surface-nav border-ink/8' : 'bg-surface-nav-lt border-ink-lt/8'}`}>
         {[
           { id: 'workout', label: t('tabs.train'), icon: Barbell },
           { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
@@ -1241,7 +1241,7 @@ const App = () => {
         const dateConflict = selectedDate !== originalDate && historyDateSet.has(selectedDate);
         const isFutureDate = selectedDate > new Date().toISOString().slice(0, 10);
         return (
-        <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className="fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+        <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className="fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto overscroll-contain backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
           <div className={`w-full max-w-md mx-auto my-6 rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold">{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
@@ -1511,7 +1511,7 @@ const App = () => {
         <div role="dialog" aria-modal="true" aria-label="How it works" onClick={() => setShowHelp(false)} className="fixed inset-0 z-[500] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
           <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
             <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
-            <div className="max-h-[60vh] overflow-y-auto space-y-5 mb-6 text-left">
+            <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-5 mb-6 text-left">
               {[
                 { Icon: Barbell, title: t('help.programTitle'), body: t('help.programBody') },
                 { Icon: TrendUp, title: t('help.progressionTitle'), body: t('help.progressionBody') },
