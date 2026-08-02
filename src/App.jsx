@@ -3,9 +3,9 @@ import {
   Barbell, ListChecks, Gear, Play, TrendUp,
   Plus, Minus, ArrowsClockwise, Moon, X, DownloadSimple, UploadSimple,
   ToggleRight, ToggleLeft, WarningCircle, Question, Lightning, TrendDown,
-  Vibrate, Trash, Bell, CaretRight, List, Timer,
+  Vibrate, Trash, Bell, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown, CheckCircle, MinusCircle, Trophy,
-  GlobeSimple, Cloud, SlidersHorizontal
+  GlobeSimple, Cloud, SlidersHorizontal, ChartLineUp
 } from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
@@ -55,7 +55,6 @@ const App = () => {
   const [pendingFailureDeloads, setPendingFailureDeloads] = useState(null);
   const [expandedWarmups, setExpandedWarmups] = useState({});
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
-  const [navExpanded, setNavExpanded] = useState(false);
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -154,12 +153,6 @@ const App = () => {
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
   }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
 
-  useEffect(() => {
-    if (!navExpanded || activeTab !== 'workout') return;
-    const id = setTimeout(() => setNavExpanded(false), 30000);
-    return () => clearTimeout(id);
-  }, [navExpanded, activeTab]);
-
   const big3Total = useMemo(() => (weights?.squat || 0) + (weights?.bench || 0) + (weights?.deadlift || 0), [weights]);
   const plates = useMemo(() => calculatePlates(showPlateCalc?.weight), [showPlateCalc?.weight]);
 
@@ -207,7 +200,6 @@ const App = () => {
   // drives the rest timer identically either way.
   const applySetValue = useCallback((exIdx, setIdx, resolveNext) => {
     if (timer.isExpired) timer.reset();
-    setNavExpanded(false);
     setCurrentWorkout(prev => {
       if (!prev) return prev;
       const ex = prev.exercises[exIdx];
@@ -599,15 +591,12 @@ const App = () => {
     return isToday ? `Today, ${time}` : `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, ${time}`;
   }, []);
 
-  const getTopOffset = () => 0;
-
   const timerVisible = activeTab === 'workout' && (timer.isActive || timer.isExpired || isExerciseComplete);
-  const navCollapsed = isWorkoutActive && activeTab === 'workout' && !navExpanded;
   const liveWorkoutVisible = isWorkoutActive && currentWorkout && activeTab !== 'workout';
+  const isMidWorkout = isWorkoutActive && activeTab === 'workout';
 
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'workout') setNavExpanded(false);
   }, []);
 
   const handleTimerSkip = useCallback(() => {
@@ -618,59 +607,35 @@ const App = () => {
     } else {
       timer.skip();
     }
-    setNavExpanded(false);
   }, [timer, isExerciseComplete]);
 
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const workoutStats = getWorkoutStats(history);
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans max-w-md mx-auto relative transition-colors duration-300 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-[100dvh] max-w-md mx-auto flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-ground text-ink' : 'bg-ground-lt text-ink-lt'}`}>
 
-      {activeTab === 'workout' && (
-        <RestTimer
-          seconds={timer.seconds} total={preferredRest}
-          isDark={isDark} isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired}
-          onSkip={handleTimerSkip} navExpanded={navExpanded} elapsed={timer.elapsed}
-        />
+      {!isMidWorkout && (
+        <header className="flex-none pt-3.5 px-5 pb-2.5 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Barbell weight="fill" size={18} className="text-accent" />
+            <h1 className="text-[15px] font-semibold">{t('app.title')}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Flame size={13} weight="fill" className="text-accent" />
+              <span className={`text-[11px] ${isDark ? 'text-ink/55' : 'text-ink-lt/55'}`}>{t('header.streak', { count: workoutStats.streak })}</span>
+            </div>
+            <button
+              onClick={() => setShowHelp(true)}
+              aria-label="How it works"
+              className={`w-7 h-7 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/15 text-ink' : 'border-ink-lt/15 text-ink-lt'}`}
+            ><Question size={16} /></button>
+          </div>
+        </header>
       )}
 
-      {isWorkoutActive && currentWorkout && activeTab !== 'workout' && (() => {
-        const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-        const liveDetail = timer.isExpired
-          ? t('liveWorkout.lifting', { time: formatTime(timer.elapsed) })
-          : timer.isActive
-            ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
-            : t(`workout.type${currentWorkout?.type}`) || t('liveWorkout.activeWorkout');
-        const liveIcon = timer.isExpired
-          ? <Barbell size={14} className="text-white" />
-          : timer.isActive
-            ? <Timer size={14} className="text-white" />
-            : <Play size={14} weight="fill" className="text-white" />;
-        return (
-          <div className={`fixed bottom-[80px] inset-x-0 max-w-md mx-auto z-[100] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)] transition-all duration-300 ${isDark ? 'bg-indigo-900' : 'bg-indigo-600'}`}>
-            <button onClick={() => handleTabClick('workout')} className="w-full px-6 py-4 flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-white/20">{liveIcon}</div>
-                <div className="text-left">
-                  <p className="text-[10px] font-black uppercase text-white/60 leading-none mb-0.5">{t('liveWorkout.title')}</p>
-                  <p className={`text-xs font-black uppercase text-white tracking-tight ${timer.isActive || timer.isExpired ? 'font-mono' : ''}`}>{liveDetail}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-[10px] font-black uppercase text-white/90 bg-black/10 px-3 py-1.5 rounded-lg">{t('liveWorkout.return')} <CaretRight size={12} /></div>
-            </button>
-          </div>
-        );
-      })()}
-
-      <header className={`px-6 pt-10 pb-4 flex justify-between items-center transition-all duration-300 ${isDark ? 'bg-slate-950/80' : 'bg-slate-50/80'} backdrop-blur-md sticky z-40`} style={{ top: getTopOffset() }}>
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-indigo-600 shadow-lg"><Barbell weight="fill" className="text-white" size={20} /></div>
-          <h1 className={`text-xl font-black tracking-tight uppercase ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('app.title')}</h1>
-        </div>
-        <button onClick={() => setShowHelp(true)} aria-label="How it works" className={`p-2.5 rounded-2xl border transition-all ${isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-100 text-slate-500'}`}><Question size={20} /></button>
-      </header>
-
-      <main className={`flex-1 px-4 py-4 overflow-y-auto ${timerVisible ? 'pb-44' : liveWorkoutVisible ? 'pb-52' : navCollapsed ? 'pb-24' : 'pb-32'}`}>
+      <main className="flex-1 px-4 py-4 overflow-y-auto">
         {activeTab === 'workout' && (
           <div className="space-y-4">
             {!isWorkoutActive ? (
@@ -963,32 +928,60 @@ const App = () => {
         )}
       </main>
 
-      {isWorkoutActive && activeTab === 'workout' && !navExpanded ? (
-        <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-3 flex justify-center items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
-          <button onClick={() => setNavExpanded(true)} aria-label="Show navigation" className={`p-2 rounded-xl transition-all active:scale-110 ${isDark ? 'text-slate-600 hover:text-slate-400' : 'text-slate-300 hover:text-slate-500'}`}>
-            <List size={24} />
-          </button>
-        </nav>
-      ) : (() => {
-        const drawerOpen = isWorkoutActive && activeTab === 'workout' && navExpanded;
+      {activeTab === 'workout' && (
+        <RestTimer
+          seconds={timer.seconds} total={preferredRest}
+          isDark={isDark} isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired}
+          onSkip={handleTimerSkip} elapsed={timer.elapsed}
+        />
+      )}
+
+      {liveWorkoutVisible && (() => {
+        const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+        const liveDetail = timer.isExpired
+          ? t('liveWorkout.lifting', { time: formatTime(timer.elapsed) })
+          : timer.isActive
+            ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
+            : t(`workout.type${currentWorkout?.type}`) || t('liveWorkout.activeWorkout');
+        const liveIcon = timer.isExpired
+          ? <Barbell size={14} className="text-white" />
+          : timer.isActive
+            ? <Timer size={14} className="text-white" />
+            : <Play size={14} weight="fill" className="text-white" />;
         return (
-          <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-6 flex justify-between items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
-            {[
-              { id: 'workout', label: drawerOpen ? t('tabs.close') : t('tabs.train'), icon: drawerOpen ? X : Barbell },
-              { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
-              { id: 'history', label: t('tabs.log'), icon: ListChecks },
-              { id: 'progress', label: t('tabs.stats'), icon: TrendUp },
-              { id: 'settings', label: t('tabs.options'), icon: Gear },
-            ].map(tab => {
-              const isCloseButton = drawerOpen && tab.id === 'workout';
-              const isActive = !isCloseButton && activeTab === tab.id;
-              return (
-                <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex flex-col items-center gap-1.5 transition-all active:scale-125 ${isCloseButton ? (isDark ? 'text-rose-400' : 'text-rose-500') : isActive ? (isDark ? 'text-indigo-400' : 'text-indigo-600') : (isDark ? 'text-slate-700' : 'text-slate-300')}`}><tab.icon size={24} weight={isCloseButton || isActive ? 'fill' : 'regular'} /><span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span></button>
-              );
-            })}
-          </nav>
+          <div className={`flex-none shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)] transition-all duration-300 ${isDark ? 'bg-indigo-900' : 'bg-indigo-600'}`}>
+            <button onClick={() => handleTabClick('workout')} className="w-full px-6 py-4 flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 rounded-lg bg-white/20">{liveIcon}</div>
+                <div className="text-left">
+                  <p className="text-[10px] font-black uppercase text-white/60 leading-none mb-0.5">{t('liveWorkout.title')}</p>
+                  <p className={`text-xs font-black uppercase text-white tracking-tight ${timer.isActive || timer.isExpired ? 'font-mono' : ''}`}>{liveDetail}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-black uppercase text-white/90 bg-black/10 px-3 py-1.5 rounded-lg">{t('liveWorkout.return')} <CaretRight size={12} /></div>
+            </button>
+          </div>
         );
       })()}
+
+      <nav className={`flex-none border-t flex justify-between px-2 py-1.5 ${isDark ? 'bg-surface-nav border-ink/8' : 'bg-surface-nav-lt border-ink-lt/8'}`}>
+        {[
+          { id: 'workout', label: t('tabs.train'), icon: Barbell },
+          { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
+          { id: 'history', label: t('tabs.log'), icon: ListChecks },
+          { id: 'progress', label: t('tabs.stats'), icon: ChartLineUp },
+          { id: 'settings', label: t('tabs.options'), icon: Gear },
+        ].map(tab => {
+          const isActive = activeTab === tab.id;
+          const colorClass = isActive ? 'text-accent-300' : (isDark ? 'text-ink/35' : 'text-ink-lt/35');
+          return (
+            <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex-1 flex flex-col items-center gap-1 py-1.5 transition-all active:scale-95 ${colorClass}`}>
+              <tab.icon size={21} weight={isActive ? 'fill' : 'regular'} />
+              <span className="text-[10px]">{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {showCancelModal && (
         <div role="dialog" aria-modal="true" aria-label="Discard workout" className={`fixed inset-0 z-[500] flex items-center justify-center p-8 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>

@@ -2,16 +2,15 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, Timer, Barbell } from '@phosphor-icons/react';
 
-const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComplete, isExpired, navExpanded, elapsed }) => {
+const RestTimer = React.memo(({ seconds, total, isDark, onSkip, isExerciseComplete, isExpired, elapsed }) => {
   const { t } = useTranslation();
   if (seconds <= 0 && !isExerciseComplete && !isExpired) return null;
   const progress = (isExerciseComplete || isExpired) ? 100 : (seconds / total) * 100;
-  const bottomOffset = navExpanded ? 'bottom-[80px]' : 'bottom-[48px]';
 
   const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className={`fixed ${bottomOffset} inset-x-0 max-w-md mx-auto z-[100] transition-all duration-300 ${isDark ? 'bg-slate-900 border-t border-slate-800' : 'bg-white border-t border-slate-200'} shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)]`}>
+    <div className={`flex-none transition-all duration-300 ${isDark ? 'bg-slate-900 border-t border-slate-800' : 'bg-white border-t border-slate-200'} shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)]`}>
       <div className="py-4 px-6 flex justify-between items-center">
         {isExerciseComplete ? (
           <div className="flex flex-col">

@@ -70,56 +70,28 @@ describe('Skip button behavior', () => {
   });
 });
 
-describe('Nav collapse during workout', () => {
-  it('shows collapsed nav (menu icon) during an active workout on workout tab', async () => {
+describe('Tab bar during an active workout', () => {
+  it('keeps all five tabs visible during an active workout on the workout tab', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Start workout'));
 
-    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Train')).not.toBeInTheDocument();
-  });
-
-  it('expands full nav when menu icon is clicked, showing a close button in place of Train', async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByText('Start workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
-
-    expect(screen.getByLabelText('Close')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Train')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Train')).toBeInTheDocument();
+    expect(screen.getByLabelText('Program')).toBeInTheDocument();
     expect(screen.getByLabelText('Log')).toBeInTheDocument();
     expect(screen.getByLabelText('Stats')).toBeInTheDocument();
     expect(screen.getByLabelText('Options')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Show navigation')).not.toBeInTheDocument();
   });
 
-  it('collapses the drawer back to the menu icon when the close button is clicked', async () => {
+  it('returns to the live workout when returning to the Train tab from another tab', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Start workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
-    expect(screen.getByLabelText('Close')).toBeInTheDocument();
-
-    await user.click(screen.getByLabelText('Close'));
-
-    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Close')).not.toBeInTheDocument();
-    expect(screen.getByText('Finish workout')).toBeInTheDocument();
-  });
-
-  it('collapses nav when returning to workout tab from another tab', async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByText('Start workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
     expect(screen.getByRole('heading', { name: 'Log' })).toBeInTheDocument();
@@ -127,21 +99,17 @@ describe('Nav collapse during workout', () => {
 
     await user.click(screen.getByLabelText('Train'));
 
-    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Log')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Log' })).not.toBeInTheDocument();
     expect(screen.queryByText('Start workout')).not.toBeInTheDocument();
     expect(screen.getByText('Finish workout')).toBeInTheDocument();
   });
 
-  it('collapses nav when toggling a set during workout', async () => {
+  it('keeps the tab bar visible while toggling a set during a workout', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Start workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
-
-    expect(screen.getByLabelText('Close')).toBeInTheDocument();
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -149,7 +117,8 @@ describe('Nav collapse during workout', () => {
     });
     await user.click(setButtons[0]);
 
-    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Train')).toBeInTheDocument();
+    expect(screen.getByLabelText('Log')).toBeInTheDocument();
   });
 
   it('shows full nav before workout starts', () => {
@@ -169,7 +138,6 @@ describe('Live Workout bar', () => {
     render(<App />);
 
     await user.click(screen.getByText('Start workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
     expect(screen.getByText('Live Workout')).toBeInTheDocument();
@@ -182,7 +150,6 @@ describe('Live Workout bar', () => {
     render(<App />);
 
     await user.click(screen.getByText('Start workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
     await user.click(screen.getByLabelText('Log'));
 
     await user.click(screen.getByText('Return'));
@@ -195,7 +162,7 @@ describe('Live Workout bar', () => {
 describe('System dark mode preference', () => {
   it('defaults to system preference when no saved isDark', () => {
     const { container } = render(<App />);
-    expect(container.firstChild).toHaveClass('bg-slate-950');
+    expect(container.firstChild).toHaveClass('bg-ground');
   });
 
   it('respects saved light mode preference over system default', () => {
@@ -204,7 +171,7 @@ describe('System dark mode preference', () => {
       isDark: false,
     }));
     const { container } = render(<App />);
-    expect(container.firstChild).toHaveClass('bg-slate-50');
+    expect(container.firstChild).toHaveClass('bg-ground-lt');
   });
 });
 
