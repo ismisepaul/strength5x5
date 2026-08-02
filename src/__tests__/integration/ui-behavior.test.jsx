@@ -230,7 +230,7 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByRole('heading', { name: 'Stats' }));
+    await user.click(screen.getByText('Big-3 total'));
 
     expect(screen.getByText('Big-3 total')).toBeInTheDocument();
     expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
@@ -261,12 +261,14 @@ describe('Stats charts', () => {
     const weightBtn = screen.getByText('Weight').closest('button');
     const e1rmBtn = screen.getByText('Est. 1RM').closest('button');
 
-    expect(weightBtn.className).toContain('bg-indigo-600');
-    expect(e1rmBtn.className).not.toContain('bg-emerald-600');
+    expect(weightBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(e1rmBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(weightBtn.className).toContain('border-accent');
 
     await user.click(e1rmBtn);
-    expect(e1rmBtn.className).toContain('bg-emerald-600');
-    expect(weightBtn.className).toContain('bg-indigo-600');
+    expect(e1rmBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(e1rmBtn.className).toContain('border-accent');
+    expect(weightBtn).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('time range pills are present in chart view', async () => {

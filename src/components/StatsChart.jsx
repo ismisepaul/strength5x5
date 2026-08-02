@@ -13,8 +13,8 @@ const RANGES = [
   { label: 'All', days: null },
 ];
 
-const WEIGHT_COLOR = '#6366f1';
-const E1RM_COLOR = '#10b981';
+const WEIGHT_COLOR = '#9184d9';
+const E1RM_COLOR = '#d2cefd';
 
 const RANGE_STORAGE_KEY = 'strength5x5_stats_range';
 
@@ -64,8 +64,8 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
     return `${d.getDate()}/${d.getMonth() + 1}`;
   };
 
-  const axisColor = isDark ? '#475569' : '#cbd5e1';
-  const textColor = isDark ? '#94a3b8' : '#64748b';
+  const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
+  const axisColor = isDark ? 'rgba(233,233,237,.4)' : 'rgba(27,28,40,.4)';
 
   return (
     <div className="space-y-4">
@@ -73,27 +73,27 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
         <button
           onClick={onBack}
           aria-label="Back to stats"
-          className={`p-2.5 rounded-2xl border transition-all active:scale-95 ${isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-500'}`}
+          className={`w-9 h-9 rounded-lg border flex items-center justify-center active:scale-95 ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'}`}
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={18} />
         </button>
         <div className="flex-1">
-          <h2 className="text-2xl font-black uppercase tracking-tighter">{title}</h2>
-          <p className="text-sm font-black">
-            {showWeight && <span style={{ color: WEIGHT_COLOR }}>{currentWeight}kg</span>}
-            {showWeight && showE1rm && <span className="text-slate-500"> / </span>}
-            {showE1rm && <span style={{ color: E1RM_COLOR }}>{t('stats.est1rmValue', { value: currentE1rm })}</span>}
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <p className="text-sm tabular-nums">
+            {showWeight && <span className="text-accent">{currentWeight}kg</span>}
+            {showWeight && showE1rm && <span className={mutedClass}> / </span>}
+            {showE1rm && <span className="text-accent-300">{t('stats.est1rmValue', { value: currentE1rm })}</span>}
           </p>
         </div>
       </div>
 
-      <div className={`p-5 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-        <div className="flex gap-1.5 mb-5">
-          {RANGES.map(r => (
+      <div className={`p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+        <div className={`flex rounded-lg border overflow-hidden mb-4 ${isDark ? 'border-ink/10' : 'border-ink-lt/10'}`}>
+          {RANGES.map((r, i) => (
             <button
               key={r.label}
               onClick={() => { setRange(r.label); try { localStorage.setItem(RANGE_STORAGE_KEY, r.label); } catch {} }}
-              className={`flex-1 py-2 rounded-xl font-black text-[10px] uppercase transition-all ${range === r.label ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')}`}
+              className={`flex-1 py-2 text-[10px] uppercase tracking-wide transition-all ${i > 0 ? (isDark ? 'border-l border-ink/10' : 'border-l border-ink-lt/10') : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
             >
               {r.label}
             </button>
@@ -102,28 +102,28 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
 
         {filteredData.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-slate-500 text-sm font-bold">{t('stats.noDataForRange')}</p>
+            <p className={`text-sm ${mutedClass}`}>{t('stats.noDataForRange')}</p>
           </div>
         ) : (
           <div className="h-56 relative">
             {filteredData.length === 1 && (
               <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <p className={`text-xs font-bold px-4 py-2 rounded-xl ${isDark ? 'bg-slate-800/90 text-slate-400' : 'bg-white/90 text-slate-500'}`}>{t('stats.minTwoWorkouts')}</p>
+                <p className={`text-xs px-4 py-2 rounded-lg ${isDark ? 'bg-surface-deep/90' : 'bg-surface-deep-lt/90'} ${mutedClass}`}>{t('stats.minTwoWorkouts')}</p>
               </div>
             )}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(233,233,237,.07)" />
                 <XAxis
                   dataKey="date"
                   tickFormatter={formatDate}
-                  tick={{ fontSize: 10, fontWeight: 700, fill: textColor }}
+                  tick={{ fontSize: 9, fill: axisColor }}
                   stroke={axisColor}
                   tickLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fontWeight: 700, fill: textColor }}
+                  tick={{ fontSize: 9, fill: axisColor }}
                   stroke={axisColor}
                   tickLine={false}
                   axisLine={false}
@@ -132,11 +132,10 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-                    border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
-                    borderRadius: '1rem',
+                    backgroundColor: isDark ? '#232532' : '#ffffff',
+                    border: `1px solid ${isDark ? 'rgba(233,233,237,.1)' : 'rgba(27,28,40,.1)'}`,
+                    borderRadius: '8px',
                     fontSize: 12,
-                    fontWeight: 700,
                   }}
                   labelFormatter={(val) => new Date(val).toLocaleDateString()}
                   formatter={(val, name) => [`${val}kg`, name === 'weight' ? t('stats.weight') : t('stats.est1rm')]}
@@ -146,9 +145,9 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
                     type="monotone"
                     dataKey="weight"
                     stroke={WEIGHT_COLOR}
-                    strokeWidth={2.5}
+                    strokeWidth={2}
                     dot={{ r: 3, fill: WEIGHT_COLOR, strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: WEIGHT_COLOR, strokeWidth: 2, stroke: isDark ? '#0f172a' : '#ffffff' }}
+                    activeDot={{ r: 5, fill: WEIGHT_COLOR, strokeWidth: 2, stroke: isDark ? '#161826' : '#ffffff' }}
                   />
                 )}
                 {showE1rm && (
@@ -156,9 +155,11 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
                     type="monotone"
                     dataKey="e1rm"
                     stroke={E1RM_COLOR}
-                    strokeWidth={2.5}
-                    dot={{ r: 3, fill: E1RM_COLOR, strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: E1RM_COLOR, strokeWidth: 2, stroke: isDark ? '#0f172a' : '#ffffff' }}
+                    strokeOpacity={0.55}
+                    strokeWidth={1.5}
+                    strokeDasharray="4 3"
+                    dot={{ r: 3, fill: E1RM_COLOR, strokeWidth: 0, fillOpacity: 0.55 }}
+                    activeDot={{ r: 5, fill: E1RM_COLOR, strokeWidth: 2, stroke: isDark ? '#161826' : '#ffffff' }}
                   />
                 )}
               </LineChart>
@@ -169,14 +170,16 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
         <div className="mt-4 flex gap-2">
           <button
             onClick={toggleWeight}
-            className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${showWeight ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-slate-100 text-slate-400 border border-slate-200')}`}
+            aria-pressed={showWeight}
+            className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : (isDark ? 'border-ink/18 text-ink/45' : 'border-ink-lt/18 text-ink-lt/45')}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: WEIGHT_COLOR }} />
             {t('stats.weight')}
           </button>
           <button
             onClick={toggleE1rm}
-            className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase transition-all flex items-center justify-center gap-2 ${showE1rm ? 'bg-emerald-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-slate-100 text-slate-400 border border-slate-200')}`}
+            aria-pressed={showE1rm}
+            className={`flex-1 py-2.5 rounded-lg text-[10px] uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : (isDark ? 'border-ink/18 text-ink/45' : 'border-ink-lt/18 text-ink-lt/45')}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: E1RM_COLOR }} />
             {t('stats.est1rm')}

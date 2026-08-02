@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   Barbell, ListChecks, Gear, Play, TrendUp,
   Plus, Minus, ArrowsClockwise, Moon, X, DownloadSimple, UploadSimple,
-  ToggleRight, ToggleLeft, WarningCircle, Question, Lightning, TrendDown,
+  ToggleRight, ToggleLeft, WarningCircle, Question, TrendDown,
   Vibrate, Trash, Bell, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown, MinusCircle,
   GlobeSimple, Cloud, SlidersHorizontal, ChartLineUp
@@ -793,44 +793,51 @@ const App = () => {
           );
         })()}
 
-        {activeTab === 'progress' && (
+        {activeTab === 'progress' && (() => {
+          const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
+          const cardClass = `w-full p-4 rounded-[10px] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`;
+          const trendIconFor = (trend) => trend === 'up' ? { Icon: TrendUp, className: 'text-accent' } : trend === 'down' ? { Icon: TrendDown, className: mutedClass } : { Icon: ArrowRight, className: isDark ? 'text-ink/40' : 'text-ink-lt/40' };
+          return (
           <div className="space-y-6">
             {history.length === 0 ? (
               <div className="py-20 text-center px-10">
-                <div className="flex justify-center mb-6"><div className={`p-5 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-500' : 'bg-indigo-50 text-indigo-600'}`}><TrendUp size={48} /></div></div>
-                <h2 className="text-2xl font-black uppercase tracking-tight mb-2">{t('stats.noStats')}</h2>
-                <p className="text-slate-500 text-sm font-bold leading-relaxed">{t('stats.noStatsBody')}</p>
+                <h2 className="text-lg font-semibold mb-2">{t('stats.noStats')}</h2>
+                <p className={`text-sm leading-relaxed ${mutedClass}`}>{t('stats.noStatsBody')}</p>
               </div>
             ) : statsView ? (
               <StatsChart exerciseId={statsView} history={history} isDark={isDark} onBack={() => setStatsView(null)} weights={weights} best1RMs={best1RMs} />
             ) : (
               <>
+                <h2 className="text-[22px] font-medium mb-4">{t('stats.title')}</h2>
                 {(() => {
                   const big3Trend = getBig3Trend(history);
-                  const TrendIcon = big3Trend === 'up' ? TrendUp : big3Trend === 'down' ? TrendDown : ArrowRight;
-                  const trendColor = big3Trend === 'up' ? 'text-emerald-500' : big3Trend === 'down' ? 'text-rose-500' : 'text-amber-500';
+                  const { Icon: TrendIcon, className: trendClass } = trendIconFor(big3Trend);
                   return (
-                    <button onClick={() => setStatsView('big3')} className={`w-full p-6 rounded-[2rem] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                      <div className="text-left"><h2 className="text-3xl font-black uppercase tracking-tighter">{t('stats.title')}</h2></div>
+                    <button onClick={() => setStatsView('big3')} className={cardClass}>
+                      <div className="text-left">
+                        <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('stats.big3Total')}</p>
+                        <p className="text-2xl font-medium tabular-nums">{big3Total}kg</p>
+                      </div>
                       <div className="flex items-center gap-2">
-                        {big3Trend && <TrendIcon size={16} className={trendColor} />}
-                        <div className="text-right"><p className="text-[10px] font-bold text-slate-500 uppercase">{t('stats.big3Total')}</p><p className={`text-2xl font-black ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{big3Total}kg</p></div>
-                        <CaretRight size={16} className="text-slate-500 ml-1" />
+                        {big3Trend && <TrendIcon size={16} className={trendClass} />}
+                        <CaretRight size={16} className={mutedClass} />
                       </div>
                     </button>
                   );
                 })()}
                 <div className="grid gap-3">{EXPECTED_WEIGHT_KEYS.map(id => {
                   const trend = getExerciseTrend(history, id);
-                  const TrendIcon = trend === 'up' ? TrendUp : trend === 'down' ? TrendDown : ArrowRight;
-                  const trendColor = trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-rose-500' : 'text-amber-500';
+                  const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
                   return (
-                    <button key={id} onClick={() => setStatsView(id)} className={`w-full p-6 rounded-[2rem] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                      <div className="flex items-center gap-4 flex-1 min-w-0"><div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Lightning size={20} /></div><div className="min-w-0 pr-2"><p className={`text-sm font-black uppercase truncate ${isDark ? 'text-indigo-100' : 'text-slate-900'}`}>{t('exercises.' + id)}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-none">{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p></div></div>
-                      <div className="flex items-center gap-2">
-                        {trend && <TrendIcon size={16} className={trendColor} />}
-                        <span className={`shrink-0 font-black text-xl ${isDark ? 'text-indigo-500' : 'text-indigo-600'}`}>{weights[id]}kg</span>
-                        <CaretRight size={16} className="text-slate-500" />
+                    <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
+                      <div className="min-w-0 pr-2 text-left">
+                        <p className="text-sm font-medium truncate">{t('exercises.' + id)}</p>
+                        <p className={`text-[10px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {trend && <TrendIcon size={16} className={trendClass} />}
+                        <span className="text-accent-300 tabular-nums">{weights[id]}kg</span>
+                        <CaretRight size={16} className={mutedClass} />
                       </div>
                     </button>
                   );
@@ -839,7 +846,8 @@ const App = () => {
               </>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {activeTab === 'program' && (
           <ProgramEditor program={program} onChange={setProgram} isDark={isDark} isWorkoutActive={isWorkoutActive} />
