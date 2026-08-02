@@ -717,13 +717,13 @@ const App = () => {
                       <button
                         onClick={() => setExpandedBarSetup(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}
                         aria-expanded={isBarSetupOpen}
-                        className="flex items-center gap-1.5 min-h-[44px] text-left flex-1 min-w-0 pr-3"
+                        className="flex flex-col items-start min-h-[44px] text-left flex-1 min-w-0 pr-3"
                       >
-                        <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0">
                           <p className="text-[16px] font-medium truncate">{exName}</p>
-                          <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
+                          <CaretDown size={12} weight="bold" className={`shrink-0 opacity-35 transition-transform ${isBarSetupOpen ? 'rotate-180' : ''}`} />
                         </div>
-                        <CaretDown size={12} weight="bold" className={`shrink-0 opacity-35 transition-transform ${isBarSetupOpen ? 'rotate-180' : ''}`} />
+                        <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
                       </button>
                       <button
                         onClick={() => handleStartEditWeight(ex.id, weights[ex.id])}
