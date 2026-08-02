@@ -676,9 +676,12 @@ const App = () => {
             ) : (
               <div className="space-y-6">
                 <div className="flex justify-center mb-2"><h2 className="font-black uppercase tracking-widest text-slate-500">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
-                {currentWorkout?.exercises.map((ex, exIdx) => (
-                  <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} />
-                ))}
+                {(() => {
+                  const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
+                  return currentWorkout?.exercises.map((ex, exIdx) => (
+                    <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} showHint={exIdx === 0 && !anySetLogged} />
+                  ));
+                })()}
                 <div className="pt-4 flex flex-col items-center">
                   <button onClick={finishWorkout} disabled={!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null))} className={`w-full py-5 rounded-[1.5rem] font-black text-lg shadow-xl ${currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) ? 'bg-emerald-600 text-white active:scale-95 shadow-emerald-900/20' : 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed'}`}>{t('workout.finishWorkout')}</button>
                   {!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest animate-pulse">{t('workout.completeAllSets')}</p>}

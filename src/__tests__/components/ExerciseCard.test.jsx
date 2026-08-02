@@ -90,11 +90,28 @@ describe('ExerciseCard', () => {
     expect(onShowPlates).toHaveBeenCalledWith(baseEx);
   });
 
-  it('renders 1 live set button and 4 disabled X placeholders for a single-set exercise', () => {
+  it('renders exactly 1 set target for a single-set exercise and no placeholder slots', () => {
     const deadliftEx = { ...baseEx, id: 'deadlift', name: 'Deadlift', sets: 1, setsCompleted: [null] };
-    render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
+    const { container } = render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
     const setButtons = screen.getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
     expect(setButtons).toHaveLength(1);
+    expect(container.querySelector('.border-dashed')).not.toBeInTheDocument();
+  });
+
+  it('shows a missed-set badge and "holds next session" note when a set is under target', () => {
+    const missedEx = { ...baseEx, setsCompleted: [5, 3, null, null, null] };
+    render(<ExerciseCard {...defaultProps} ex={missedEx} />);
+    const missedSet = screen.getByLabelText('Set 2, 3 reps');
+    expect(missedSet.querySelector('svg')).toBeTruthy();
+    expect(screen.getByText(/holds next session/)).toBeInTheDocument();
+  });
+
+  it('shows the teaching caption on the first exercise until a set is logged', () => {
+    const { rerender } = render(<ExerciseCard {...defaultProps} showHint={true} />);
+    expect(screen.getByText(/hold a set to pick an exact count/)).toBeInTheDocument();
+
+    rerender(<ExerciseCard {...defaultProps} showHint={false} />);
+    expect(screen.queryByText(/hold a set to pick an exact count/)).not.toBeInTheDocument();
   });
 
   it('long-pressing a set opens the rep picker via onOpenRepPicker', async () => {

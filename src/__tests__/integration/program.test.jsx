@@ -24,7 +24,7 @@ function seedHistory() {
   }));
 }
 
-const benchCard = () => within(screen.getByText('Bench Press').closest('.p-6'));
+const benchCard = () => within(screen.getByText('Bench Press').closest('.border'));
 
 describe('Program tab', () => {
   it('reduces the number of live set buttons for an exercise set below 5', async () => {
