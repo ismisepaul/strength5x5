@@ -57,8 +57,10 @@ export const MADCOW_PRESS_OPTIONS = ['incline', 'press'];
 export const MADCOW_ONRAMP_WEEKS = 4;
 export const MADCOW_DEFAULT_INTERVAL = 12.5;
 export const MADCOW_INTERVAL_OPTIONS = [10, 12.5, 15];
-// How light Workout B's squat ramp tops out, relative to mcTop.squat.
-export const MADCOW_LIGHT_SQUAT_FACTOR = 0.5;
+// Madcow's own weekly top-set progression -- distinct from EXERCISE_INCREMENTS, which
+// is Standard's per-session step. Squat/deadlift move in 2.5kg jumps; bench, row and
+// the second press move in 1.25kg fractional-plate jumps.
+export const MADCOW_WEEKLY_INCREMENTS = { squat: 2.5, bench: 1.25, row: 1.25, press: 1.25, deadlift: 2.5, incline: 1.25 };
 
 export const STORAGE_KEY = 'strength5x5_data';
 export const SCHEMA_VERSION = 2;

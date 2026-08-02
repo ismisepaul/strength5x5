@@ -6,6 +6,7 @@ import i18n from '../../i18n/index.js';
 import { STORAGE_KEY } from '../../constants';
 import legacyBackup from '../../test/fixtures/legacy-backup.json';
 import { validateImportData } from '../../utils';
+import { EXPECTED_WEIGHT_KEYS } from '../../constants';
 
 const CSV_HEADER = 'Date (yyyy/mm/dd),Workout,Workout Name,Program Name,Body Weight (KG),Exercise,SetsxReps,SetsxTime,Top Set Reps x KG,e1RM  (KG),Reps,Volume (KG),Workout Volume (KG),Duration (hours),Start Time (h:mm),End Time (h:mm),Notes,Set 1 (Reps), Set 1 (KG),Set 2 (Reps), Set 2 (KG),Set 3 (Reps), Set 3 (KG),Set 4 (Reps), Set 4 (KG),Set 5 (Reps), Set 5 (KG)';
 
@@ -33,9 +34,14 @@ describe('Import / Export', () => {
 
   it('legacy backup weights are normalized to 2.5kg increments', () => {
     const result = validateImportData(legacyBackup);
-    for (const key of Object.keys(result.weights)) {
+    for (const key of EXPECTED_WEIGHT_KEYS) {
       expect(result.weights[key] % 2.5).toBe(0);
     }
+  });
+
+  it('legacy backup seeds an incline weight at 1.25kg increments', () => {
+    const result = validateImportData(legacyBackup);
+    expect(result.weights.incline % 1.25).toBe(0);
   });
 
   it('exports data when backup button is clicked', async () => {
