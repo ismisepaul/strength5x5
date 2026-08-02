@@ -701,7 +701,7 @@ const App = () => {
                       </>
                     );
                   })()}
-                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 text-[15px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('workout.discardWorkout')}</button>
+                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 w-full min-h-[44px] flex items-center justify-center text-[15px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('workout.discardWorkout')}</button>
                 </div>
               </div>
             )}
@@ -1040,7 +1040,7 @@ const App = () => {
             <h3 className="text-lg font-semibold mb-3">{t('modals.discardTitle')}</h3>
             <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.discardBody')}</p>
             <button onClick={() => setShowCancelModal(false)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.keepLifting')}</button>
-            <button onClick={cancelWorkout} className={`py-2 text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.yesDiscard')}</button>
+            <button onClick={cancelWorkout} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.yesDiscard')}</button>
           </div>
         </div>
       )}
@@ -1075,8 +1075,8 @@ const App = () => {
               setWeights(newW);
               initializeWorkout(newW);
               setDeloadAlert(null);
-            }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.acceptAndLift')}</button>
-            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className={`text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipDeload')}</button>
+            }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.acceptAndLift')}</button>
+            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipDeload')}</button>
           </div>
         </div>
         );
@@ -1123,14 +1123,14 @@ const App = () => {
                 }
                 setShowResumePrompt(false);
               }}
-              className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3"
+              className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6"
             >{t('modals.resume')}</button>
             <button
               onClick={() => {
                 localStorage.removeItem(ACTIVE_WORKOUT_KEY);
                 setShowResumePrompt(false);
               }}
-              className={`text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
+              className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
             >{t('modals.discard')}</button>
           </div>
         </div>
@@ -1317,19 +1317,19 @@ const App = () => {
                 setEditingEntry(null);
                 handleManualLogSave({ history: newHistory, weights: nextWeights, nextType });
               }}
-              className={`w-full h-12 flex items-center justify-center rounded-lg border text-[14.5px] font-medium mb-3 ${dateConflict || isFutureDate ? (isDark ? 'border-ink/12 text-ink/30' : 'border-ink-lt/12 text-ink-lt/30') : 'border-accent text-accent active:scale-95'}`}
+              className={`w-full h-12 flex items-center justify-center rounded-lg border text-[14.5px] font-medium mb-6 ${dateConflict || isFutureDate ? (isDark ? 'border-ink/12 text-ink/30' : 'border-ink-lt/12 text-ink-lt/30') : 'border-accent text-accent active:scale-95'}`}
             >{isNewEntry ? t('modals.addWorkout') : t('modals.saveChanges')}</button>
 
             {!isNewEntry && (
               !showDeleteConfirm ? (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className={`w-full flex items-center justify-center gap-2 text-[15px] py-3 active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
+                  className={`w-full min-h-[44px] flex items-center justify-center gap-2 text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
                 ><Trash size={14} /> {t('modals.deleteWorkout')}</button>
               ) : (
                 <div className={`p-4 rounded-lg border border-dashed ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`}>
                   <p className="text-[13.5px] text-center mb-3">{t('modals.deleteConfirm')}</p>
-                  <div className="flex gap-3">
+                  <div className="flex gap-4">
                     <button
                       onClick={() => {
                         const newHistory = history.filter((_, idx) => idx !== editingEntry.index);
@@ -1439,11 +1439,11 @@ const App = () => {
               setWeights(updatedWeights);
               setPendingFailureDeloads(null);
               initializeWorkout(updatedWeights);
-            }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.confirmDeload')}</button>
+            }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.confirmDeload')}</button>
             <button onClick={() => {
               setPendingFailureDeloads(null);
               initializeWorkout(weights);
-            }} className={`text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipDeload')}</button>
+            }} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipDeload')}</button>
           </div>
         </div>
         );

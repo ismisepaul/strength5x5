@@ -63,7 +63,7 @@ const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
 
             <div className="flex items-center gap-3">
               <span className={`w-9 text-[12px] uppercase ${mutedClass}`}>{t('program.repsLabel')}</span>
-              <div className="flex-1 flex gap-1">
+              <div className="flex-1 flex justify-between">
                 {Array.from({ length: MAX_REPS }, (_, i) => (
                   <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < reps ? 'bg-accent' : (isDark ? 'bg-ink/12' : 'bg-ink-lt/12')}`} />
                 ))}

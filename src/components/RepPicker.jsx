@@ -25,7 +25,7 @@ const RepPicker = ({ ex, setIdx, isDark, onSelect, onClose }) => {
           ))}
         </div>
         <p className={`text-center text-[12.5px] mb-6 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.repPickerNote', { count: target })}</p>
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <button onClick={() => onSelect(null)} className={`flex-1 h-[46px] rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('modals.clearSet')}</button>
           <button onClick={onClose} className={`flex-1 h-[46px] rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('modals.cancel')}</button>
         </div>
