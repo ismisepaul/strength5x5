@@ -34,7 +34,6 @@
     "weekProgress_other": "{{count}} of 3 workouts this week",
     "setHint": "Tap to log all {{count}} reps · hold a set to pick an exact count",
     "missedNote": "Missed reps — {{weight}}kg holds next session",
-    "autoIncreaseHint": "Weights auto-increase by 2.5kg when you complete all sets.",
     "discardWorkout": "Discard workout"
   },
   "program": {

@@ -468,7 +468,7 @@ describe('Same-day workout prevention', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithToday));
     render(<App />);
 
-    const btn = screen.getByText('Start workout').closest('button');
+    const btn = screen.getByText('Trained today').closest('button');
     expect(btn).toBeDisabled();
     expect(screen.getByText('Already trained today — rest up.')).toBeInTheDocument();
   });

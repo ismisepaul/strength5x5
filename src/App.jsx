@@ -639,19 +639,30 @@ const App = () => {
         {activeTab === 'workout' && (
           <div className="space-y-4">
             {!isWorkoutActive ? (
-              <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                <div className="mb-6"><p className="text-[10px] font-bold uppercase text-slate-500 mb-1 tracking-widest">{t('workout.nextUp')}</p><button onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')} className="flex items-start gap-2 hover:opacity-70 transition-opacity"><h2 className="text-4xl font-black uppercase leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2><ArrowsClockwise size={20} className="mt-3 text-indigo-500" /></button></div>
-                <div className="space-y-3 mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
-                  <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-transparent'}`}>
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1 pr-4"><p className={`font-black text-sm uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t('exercises.' + ex.id)}</p><p className="text-[10px] font-bold text-slate-500">{ex.sets}x{ex.reps}</p></div>
-                      <span className="font-black text-xl tabular-nums">{weights[ex.id]}kg</span>
+              <div>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('workout.nextUp')}</p>
+                    <h2 className="text-[30px] font-medium leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{getProgramExercises(currentWorkoutType, program).map(ex => t('exercises.' + ex.id)).join(' · ')}</p>
+                  </div>
+                  <button
+                    onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')}
+                    aria-label="Swap workout"
+                    className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
+                  ><ArrowsClockwise size={16} /></button>
+                </div>
+                <div className="mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
+                  <div key={ex.id} className={`flex justify-between items-center py-3 ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
+                    <div>
+                      <p className="text-sm font-medium">{t('exercises.' + ex.id)}</p>
+                      <p className={`text-[11px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
                     </div>
+                    <span className="text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
                   </div>
                 ))}</div>
-                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full py-5 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-transform ${trainedToday ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-[0.98]'}`}><Play size={20} weight="fill" /> {t('workout.startWorkout')}</button>
-                {trainedToday && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest">{t('workout.alreadyTrained')}</p>}
-                {!trainedToday && history.length === 0 && <p className="text-slate-500 text-[10px] font-bold text-center mt-3">{t('workout.autoIncreaseHint')}</p>}
+                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-12 rounded-lg border border-accent text-accent font-medium flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={16} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
+                <p className={`text-[10px] text-center mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
               </div>
             ) : (
               <div className="space-y-6">

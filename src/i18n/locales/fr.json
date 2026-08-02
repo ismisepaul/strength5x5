@@ -34,7 +34,6 @@
     "weekProgress_other": "{{count}} séances sur 3 cette semaine",
     "setHint": "Touchez pour valider les {{count}} répétitions · maintenez pour choisir un nombre exact",
     "missedNote": "Répétitions manquées — {{weight}}kg maintenu la prochaine fois",
-    "autoIncreaseHint": "Les poids augmentent de 2.5kg quand toutes les séries sont complétées.",
     "discardWorkout": "Abandonner"
   },
   "program": {
