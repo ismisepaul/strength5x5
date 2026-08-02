@@ -1,6 +1,28 @@
 @import 'tailwindcss';
 
 @theme {
+  --color-ground:        #161826;
+  --color-surface:       #232532;
+  --color-surface-deep:  #1c1e2c;
+  --color-surface-nav:   #141624;
+  --color-ink:           #e9e9ed;
+  --color-accent:        #9184d9;
+  --color-accent-300:    #d2cefd;
+  --color-accent-800:    #423a6a;
+  --color-accent-900:    #2b2741;
+  --color-neutral-tint:  #3f424d;
+
+  /* interim light palette — see docs/design-system.md §7 */
+  --color-ground-lt:       #f5f5f8;
+  --color-surface-lt:      #ffffff;
+  --color-surface-deep-lt: #ececf2;
+  --color-surface-nav-lt:  #ffffff;
+  --color-ink-lt:          #1b1c28;
+  --color-accent-ink-lt:   #5b4fb0;
+  --color-accent-tint-lt:  #efedfa;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+
   @keyframes slideIn {
     0% {
       opacity: 0;
@@ -11,6 +33,17 @@
       transform: translateY(0) scale(1);
     }
   }
+}
+
+.rule-fade {
+  background: linear-gradient(to right, transparent,
+    rgba(233,233,237,.09) 48px, rgba(233,233,237,.09) calc(100% - 48px),
+    transparent) bottom / 100% 1px no-repeat;
+}
+.rule-fade-lt {
+  background: linear-gradient(to right, transparent,
+    rgba(27,28,40,.10) 48px, rgba(27,28,40,.10) calc(100% - 48px),
+    transparent) bottom / 100% 1px no-repeat;
 }
 
 /*
