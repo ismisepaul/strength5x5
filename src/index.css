@@ -35,6 +35,18 @@
   }
 }
 
+.h-viewport {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.nav-safe {
+  padding-bottom: calc(0.375rem + env(safe-area-inset-bottom, 0px));
+}
+.header-safe {
+  padding-top: calc(0.875rem + env(safe-area-inset-top, 0px));
+}
+
 .rule-fade {
   background: linear-gradient(to right, transparent,
     rgba(233,233,237,.09) 48px, rgba(233,233,237,.09) calc(100% - 48px),
@@ -71,5 +83,10 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
+  }
+
+  html, body {
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 }
