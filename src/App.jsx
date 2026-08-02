@@ -612,7 +612,7 @@ const App = () => {
   const workoutStats = getWorkoutStats(history);
 
   return (
-    <div className={`min-h-[100dvh] max-w-md mx-auto flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-ground text-ink' : 'bg-ground-lt text-ink-lt'}`}>
+    <div className={`h-[100dvh] max-w-md mx-auto flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-ground text-ink' : 'bg-ground-lt text-ink-lt'}`}>
 
       {!isMidWorkout && (
         <header className="flex-none pt-3.5 px-5 pb-2.5 flex justify-between items-center">
