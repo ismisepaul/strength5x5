@@ -1039,8 +1039,8 @@ const App = () => {
           <div className={`w-full max-w-xs flex flex-col items-center p-6 rounded-xl border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
             <h3 className="text-lg font-semibold mb-3">{t('modals.discardTitle')}</h3>
             <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.discardBody')}</p>
-            <button onClick={() => setShowCancelModal(false)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.keepLifting')}</button>
-            <button onClick={cancelWorkout} className={`text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.yesDiscard')}</button>
+            <button onClick={() => setShowCancelModal(false)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.keepLifting')}</button>
+            <button onClick={cancelWorkout} className={`py-2 text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.yesDiscard')}</button>
           </div>
         </div>
       )}

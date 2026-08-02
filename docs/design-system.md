@@ -79,15 +79,19 @@ separate grey. Canonical steps:
 
 | Role | Size / weight |
 | --- | --- |
-| Page title | 22px / 500 |
-| Hero (workout name on Train) | 30px / 500 |
-| Card title | 14–15px / 600 |
-| Body | 12–13px |
-| Meta | 11–11.5px |
-| Kicker | 9.5–10px / 600, uppercase, letter-spacing .12–.14em, accent |
+| Page title | 24px / 500 |
+| Hero (workout name on Train) | 32px / 500 |
+| Card title | 15–17px / 600 |
+| Body | 13.5–15px |
+| Meta | 12–12.5px |
+| Kicker | 10.5px / 600, uppercase, letter-spacing .14em, accent |
+| Tab label | 11px (the one exception below the 12px type floor besides kickers) |
 
 **Kickers are the only uppercase text in the app.** Font family is Inter (400/500/600);
-never `font-bold`+ beyond 600, never `font-black`.
+never `font-bold`+ beyond 600, never `font-black`. **Type floor is 12px** everywhere
+except kickers (10.5px) and tab labels (11px) — a gym-legibility pass raised every size
+in this table by roughly 1.5–2px from the original redesign handoff; if you're touching
+type sizes, hold this floor rather than the historical plan's smaller values.
 
 ### Radii
 
@@ -113,7 +117,9 @@ background: linear-gradient(
 
 **Phosphor** (`@phosphor-icons/react`) — replaces Lucide. Weight `regular` by default;
 `fill` for the active tab icon, the brand barbell and play glyphs; `bold` only for the
-8px ✕ on a missed-set badge. The full glyph inventory is in the implementation plan.
+9px ✕ on a missed-set badge. Icon sizes generally run ~2px larger than the original
+redesign handoff (a gym-legibility pass bumped every icon `size` prop uniformly). The
+full glyph inventory is in the implementation plan.
 
 ---
 
@@ -129,13 +135,13 @@ a card inside a card — use rows with fading rules.
 **Rows.** Label left, value right, fading rule underneath. This is the default layout
 for lists (exercise lists, options, program editor).
 
-**Set targets.** ~44–52px circles, 16px/600 number.
+**Set targets.** ~62px circles (capped `max-w-[62px]`), 20px/600 number.
 
 | State | Treatment |
 | --- | --- |
 | Unlogged | 1px `ink/18` border, `ink/40` number, shows the target |
 | Passed | 1px accent border, `accent-900` fill, `accent-300` number |
-| Missed (0 ≤ reps < target) | 1.5px **dashed** `ink/50` border, neutral tint fill, shows reps achieved, plus a 16px corner badge (`neutral-tint` circle, bold 8px ✕) |
+| Missed (0 ≤ reps < target) | 1.5px **dashed** `ink/50` border, neutral tint fill, shows reps achieved, plus a 19px corner badge (`neutral-tint` circle, bold 9px ✕) |
 
 Never render a slot for a set the program doesn't include.
 
@@ -144,8 +150,8 @@ bottom-anchored, outlined primary action, plain-text secondary. Plate calculator
 picker and help are **bottom sheets** (`items-end` overlay). Keep `role="dialog"`,
 `aria-modal="true"` and `aria-label` on every one.
 
-**Switches.** Custom 38×22 — accent border, `accent-900` track and accent knob when on;
-`ink/18` border and neutral knob when off.
+**Switches.** Custom 46×26 track, 20px knob (`translate-x-[21px]` when on) — accent border,
+`accent-900` track and accent knob when on; `ink/18` border and neutral knob when off.
 
 **Segmented controls.** Active segment = `accent-900` fill with an inset accent ring;
 inactive = transparent, `ink/45` label.
@@ -155,7 +161,7 @@ nav bar.
 
 **Charts** ([StatsChart.jsx](../src/components/StatsChart.jsx), Recharts stays). Weight
 line `#9184d9` 2px with dots; e1RM line `#d2cefd` at 55% alpha, 1.5px dashed; grid
-`rgba(233,233,237,.07)`; axis text 9px at 40% alpha. Series toggles are outlined chips
+`rgba(233,233,237,.07)`; axis text 11px at 40% alpha, tooltip text 13.5px. Series toggles are outlined chips
 with a colour dot; at least one series is always on.
 
 **Trends are never red or green.** Up = accent, down = neutral, flat = `ink/40`.
