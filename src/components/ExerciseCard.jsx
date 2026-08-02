@@ -38,24 +38,24 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates,
     <div className={`p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
       <div className="flex justify-between items-start mb-5">
         <div className="flex-1 min-w-0 pr-4">
-          <h3 className="font-semibold text-[15px] truncate">{t('exercises.' + ex.id)}</h3>
+          <h3 className="font-semibold text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
           <div className="flex items-center gap-3 mt-1">
-            <button onClick={() => onToggleWarmup(ex.id)} className="flex items-center gap-1 text-[11px] text-accent">
-              {t('warmup.warmup')} {expanded ? <CaretUp size={10} /> : <CaretDown size={10} />}
+            <button onClick={() => onToggleWarmup(ex.id)} className="flex items-center gap-1 text-[12.5px] text-accent">
+              {t('warmup.warmup')} {expanded ? <CaretUp size={12} /> : <CaretDown size={12} />}
             </button>
-            <button onClick={() => onShowPlates(ex)} className={`text-[11px] ${mutedClass}`}>{t('warmup.plates')}</button>
+            <button onClick={() => onShowPlates(ex)} className={`text-[12.5px] ${mutedClass}`}>{t('warmup.plates')}</button>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => onUpdateWeight(exIdx, -ex.increment)} aria-label={`Decrease ${t('exercises.' + ex.id)} weight`} className={`w-7 h-7 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Minus size={14} /></button>
-          <span className="text-[17px] text-accent-300 tabular-nums leading-none">{ex.weight}kg</span>
-          <button onClick={() => onUpdateWeight(exIdx, ex.increment)} aria-label={`Increase ${t('exercises.' + ex.id)} weight`} className={`w-7 h-7 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Plus size={14} /></button>
+          <button onClick={() => onUpdateWeight(exIdx, -ex.increment)} aria-label={`Decrease ${t('exercises.' + ex.id)} weight`} className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Minus size={16} /></button>
+          <span className="text-[20px] text-accent-300 tabular-nums leading-none min-w-[76px] text-center">{ex.weight}kg</span>
+          <button onClick={() => onUpdateWeight(exIdx, ex.increment)} aria-label={`Increase ${t('exercises.' + ex.id)} weight`} className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Plus size={16} /></button>
         </div>
       </div>
       {expanded && (
         <div className={`mb-5 p-3 rounded-lg ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
-          <div className={`flex justify-between text-xs mb-1 ${mutedClass}`}><span>{t('warmup.emptyBar')}</span><span>20kg × 5</span></div>
-          <div className={`flex justify-between text-xs ${mutedClass}`}><span>{t('warmup.workingPrep')}</span><span>{calculateWarmup(ex.weight)}kg × 3</span></div>
+          <div className={`flex justify-between text-[13.5px] mb-1 ${mutedClass}`}><span>{t('warmup.emptyBar')}</span><span>20kg × 5</span></div>
+          <div className={`flex justify-between text-[13.5px] ${mutedClass}`}><span>{t('warmup.workingPrep')}</span><span>{calculateWarmup(ex.weight)}kg × 3</span></div>
         </div>
       )}
       <div className="flex justify-between gap-2 items-center">
@@ -76,12 +76,12 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates,
               onPointerCancel={handlePointerUp}
               onContextMenu={(e) => e.preventDefault()}
               aria-label={`Set ${ri + 1}${r !== null ? `, ${r} reps` : ''}`}
-              className={`relative flex-1 aspect-square max-w-[52px] rounded-full flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
+              className={`relative flex-1 aspect-square max-w-[62px] rounded-full flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
             >
-              <span className="text-base font-semibold">{r !== null ? r : target}</span>
+              <span className="text-[20px] font-semibold">{r !== null ? r : target}</span>
               {missed && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-neutral-tint flex items-center justify-center">
-                  <X size={8} weight="bold" />
+                <span className="absolute -top-1 -right-1 w-[19px] h-[19px] rounded-full bg-neutral-tint flex items-center justify-center">
+                  <X size={9} weight="bold" />
                 </span>
               )}
             </button>
@@ -89,13 +89,13 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onShowPlates,
         })}
       </div>
       {hasMissed && (
-        <p className="flex items-center gap-1 text-[11px] mt-3">
-          <ArrowBendDownRight size={11} className="text-accent shrink-0" />
+        <p className="flex items-center gap-1 text-[12.5px] mt-3">
+          <ArrowBendDownRight size={13} className="text-accent shrink-0" />
           <span className={isDark ? 'text-ink/55' : 'text-ink-lt/55'}>{t('workout.missedNote', { weight: ex.weight })}</span>
         </p>
       )}
       {showHint && (
-        <p className={`text-[10.5px] mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{t('workout.setHint', { count: target })}</p>
+        <p className={`text-[12px] mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{t('workout.setHint', { count: target })}</p>
       )}
     </div>
   );
