@@ -233,9 +233,8 @@ const App = () => {
   }, [timer, preferredRest]);
 
   const handleToggleSet = useCallback((exIdx, setIdx) => {
-    // Short-press cycle never lands on 0 -- from 1 it clears straight back to
-    // unlogged. 0 reps done is only reachable via the long-press rep picker.
-    applySetValue(exIdx, setIdx, (currVal, target) => currVal === null ? target : currVal > 1 ? currVal - 1 : null);
+    // Short-press cycle: unlogged -> target -> target-1 -> ... -> 1 -> 0 -> unlogged.
+    applySetValue(exIdx, setIdx, (currVal, target) => currVal === null ? target : currVal > 0 ? currVal - 1 : null);
   }, [applySetValue]);
 
   const handleOpenRepPicker = useCallback((exIdx, setIdx) => {

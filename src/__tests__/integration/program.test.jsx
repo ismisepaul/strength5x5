@@ -125,7 +125,7 @@ describe('Rep picker', () => {
     expect(screen.getByLabelText('Set 1, 3 reps')).toBeInTheDocument();
   });
 
-  it('logs 0 reps via the picker, distinct from the short-press cycle which never shows 0', async () => {
+  it('logs 0 reps via the picker', async () => {
     seedHistory();
     const user = userEvent.setup();
     render(<App />);
@@ -142,7 +142,7 @@ describe('Rep picker', () => {
 });
 
 describe('Short-press set cycle', () => {
-  it('never shows 0 -- from 1 rep it clears straight back to unlogged', async () => {
+  it('reaches 0 before clearing back to unlogged', async () => {
     seedHistory();
     const user = userEvent.setup();
     render(<App />);
@@ -150,11 +150,11 @@ describe('Short-press set cycle', () => {
     await user.click(screen.getByText('Start workout'));
 
     const firstSet = screen.getAllByLabelText('Set 1')[0];
-    // Cycle: unlogged -> 5 -> 4 -> 3 -> 2 -> 1 -> unlogged (skips 0 entirely).
-    for (let i = 0; i < 5; i++) {
+    // Cycle: unlogged -> 5 -> 4 -> 3 -> 2 -> 1 -> 0 -> unlogged.
+    for (let i = 0; i < 6; i++) {
       await user.click(firstSet);
     }
-    expect(firstSet).toHaveAttribute('aria-label', 'Set 1, 1 reps');
+    expect(firstSet).toHaveAttribute('aria-label', 'Set 1, 0 reps');
 
     await user.click(firstSet);
     expect(firstSet).toHaveAttribute('aria-label', 'Set 1');
