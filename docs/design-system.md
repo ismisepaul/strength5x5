@@ -146,9 +146,29 @@ for lists (exercise lists, options, program editor).
 Never render a slot for a set the program doesn't include.
 
 **Modals and sheets.** `surface` background, 12px radius centred / `14px 14px 0 0` when
-bottom-anchored, outlined primary action, plain-text secondary. Plate calculator, rep
-picker and help are **bottom sheets** (`items-end` overlay). Keep `role="dialog"`,
-`aria-modal="true"` and `aria-label` on every one.
+bottom-anchored, outlined primary action, plain-text secondary. Rep picker and help are
+**bottom sheets** (`items-end` overlay). Keep `role="dialog"`, `aria-modal="true"` and
+`aria-label` on every one. There is no plate-calculator modal — the bar-load diagram is
+an inline accordion on `ExerciseCard` (see below).
+
+**ExerciseCard warm-up/bar-setup accordions.** Below the set circles (and below the
+missed-reps note / teaching caption, when present): a faded top rule (`.rule-fade-top`
+/ `-lt`, 1px, 32px fade), then a `flex justify-between` row of two text-buttons, each
+≥36px tall, 12.5px/500 — "⌄ Warm-up" (caret before label) and "Bar setup ⌄" (caret
+after). Inactive text is 45% alpha; the open one brightens to `accent-300` and its caret
+flips from `CaretDown` to `CaretUp`. State is `null | 'warm' | 'bar'`, local to the card
+— opening one closes the other. The open panel is a recessed block (`bg-ground/60` /
+`bg-ground-lt/60`, 9px radius, ~14px padding) directly below the footer row:
+- **Warm-up:** three rows (13px, tabular) — empty bar (20 kg × 5), prep
+  (`round((20 + (weight−20) × 0.6) / 2.5) × 2.5` kg × 3), and working weight
+  (`accent-300`, weight kg × reps).
+- **Bar setup:** a side-view bar diagram built from `calculatePlates` (the same greedy
+  20/15/10/5/2.5/1.25-per-side breakdown used elsewhere) — shaft, collar, one chip per
+  plate (largest first, tallest first, `accent`-filled with `ground` text for the
+  largest, `neutral-tint` with `ink` text for the rest), then a sleeve labelled "20".
+  Colours here are fixed hex, not theme tokens — the diagram reads the same in light and
+  dark mode. A caption below reads "Per side · 20 kg bar · {total} total", or
+  "Empty bar · 20 kg" when loaded weight is at or below the bar itself.
 
 **Switches.** Custom 46×26 track, 20px knob (`translate-x-[21px]` when on) — accent border,
 `accent-900` track and accent knob when on; `ink/18` border and neutral knob when off.

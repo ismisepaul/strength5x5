@@ -19,9 +19,6 @@ describe('ExerciseCard', () => {
     exIdx: 0,
     isDark: true,
     onToggleSet: vi.fn(),
-    onShowPlates: vi.fn(),
-    expanded: false,
-    onToggleWarmup: vi.fn(),
     onUpdateWeight: vi.fn(),
     isEditingWeight: false,
     onStartEditWeight: vi.fn(),
@@ -83,31 +80,48 @@ describe('ExerciseCard', () => {
     expect(onUpdateWeight).toHaveBeenCalledWith(0, -2.5);
   });
 
-  it('shows warmup section when expanded', () => {
-    render(<ExerciseCard {...defaultProps} expanded={true} />);
-    expect(screen.getByText('Empty bar')).toBeInTheDocument();
-    expect(screen.getByText('Working prep')).toBeInTheDocument();
+  it('keeps the warm-up and bar-setup panels closed by default', () => {
+    render(<ExerciseCard {...defaultProps} />);
+    expect(screen.queryByText('Prep')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Per side/)).not.toBeInTheDocument();
   });
 
-  it('hides warmup section when collapsed', () => {
-    render(<ExerciseCard {...defaultProps} expanded={false} />);
-    expect(screen.queryByText('Empty bar')).not.toBeInTheDocument();
-  });
-
-  it('calls onToggleWarmup when warmup button is clicked', async () => {
-    const onToggleWarmup = vi.fn();
+  it('opens the warm-up panel showing empty bar, prep, and working weight rows', async () => {
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} onToggleWarmup={onToggleWarmup} />);
+    render(<ExerciseCard {...defaultProps} />);
     await user.click(screen.getByText('Warm-up'));
-    expect(onToggleWarmup).toHaveBeenCalledWith('squat');
+    expect(screen.getByText('Empty bar')).toBeInTheDocument();
+    expect(screen.getByText('20 kg × 5')).toBeInTheDocument();
+    expect(screen.getByText('Prep')).toBeInTheDocument();
+    expect(screen.getByText('45 kg × 3')).toBeInTheDocument();
+    expect(screen.getByText('Working weight')).toBeInTheDocument();
+    expect(screen.getByText('60 kg × 5')).toBeInTheDocument();
   });
 
-  it('calls onShowPlates when plates button is clicked', async () => {
-    const onShowPlates = vi.fn();
+  it('opens the bar-setup panel showing the plate diagram and per-side caption', async () => {
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} onShowPlates={onShowPlates} />);
-    await user.click(screen.getByText('Plates'));
-    expect(onShowPlates).toHaveBeenCalledWith(baseEx);
+    render(<ExerciseCard {...defaultProps} />);
+    await user.click(screen.getByText('Bar setup'));
+    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
+    expect(screen.getAllByText('20').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('shows the empty-bar caption in the bar-setup panel when weight is at the empty bar', async () => {
+    const user = userEvent.setup();
+    const emptyBarEx = { ...baseEx, weight: 20 };
+    render(<ExerciseCard {...defaultProps} ex={emptyBarEx} />);
+    await user.click(screen.getByText('Bar setup'));
+    expect(screen.getByText('Empty bar · 20 kg')).toBeInTheDocument();
+  });
+
+  it('opening the bar-setup panel closes an open warm-up panel', async () => {
+    const user = userEvent.setup();
+    render(<ExerciseCard {...defaultProps} />);
+    await user.click(screen.getByText('Warm-up'));
+    expect(screen.getByText('Prep')).toBeInTheDocument();
+    await user.click(screen.getByText('Bar setup'));
+    expect(screen.queryByText('Prep')).not.toBeInTheDocument();
+    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
   });
 
   it('renders exactly 1 set target for a single-set exercise and no placeholder slots', () => {
@@ -179,9 +193,11 @@ describe('ExerciseCard', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
-  it('clamps warmup weight to 20kg minimum', () => {
+  it('computes the prep weight as 60% of the way from the empty bar to the working weight', async () => {
+    const user = userEvent.setup();
     const lightEx = { ...baseEx, weight: 25 };
-    render(<ExerciseCard {...defaultProps} ex={lightEx} expanded={true} />);
-    expect(screen.getByText('20kg × 3')).toBeInTheDocument();
+    render(<ExerciseCard {...defaultProps} ex={lightEx} />);
+    await user.click(screen.getByText('Warm-up'));
+    expect(screen.getByText('22.5 kg × 3')).toBeInTheDocument();
   });
 });

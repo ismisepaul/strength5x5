@@ -131,7 +131,7 @@ describe('Component', () => {
 - **Manual weight adjustment:** Both the idle Train screen and `ExerciseCard` support tap-to-edit weight adjustment (tap the weight to reveal −/+ steppers and a Done button); the idle screen writes to `weights` directly, floored at the empty 20kg bar
 - **Auto-deload:** After 3 consecutive failures at the same weight (with 20kg floor)
 - **Long-break deload:** Suggests 10/25/50% reduction based on days off (14+ days)
-- **Plate calculator:** Greedy algorithm from 25kg down to 1.25kg plates
+- **Plate breakdown:** Greedy algorithm from 25kg down to 1.25kg plates (`calculatePlates`), rendered as a bar-load diagram in `ExerciseCard`'s "Bar setup" accordion — there is no standalone plate-calculator modal
 - **1RM estimate:** Brzycki formula — `weight * (1 + reps / 30)`
 
 ## Things to Avoid

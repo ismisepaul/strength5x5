@@ -137,8 +137,6 @@
     "setsCompleted": "{{completed}} sur {{total}} séries complétées",
     "resume": "Reprendre",
     "discard": "Abandonner",
-    "platesPerSide": "Disques par côté · barre 20 kg",
-    "close": "Fermer",
     "importData": "Importer les données StrongLifts ?",
     "foundWorkouts": "{{count}} séances trouvées",
     "import": "Importer",
@@ -230,9 +228,12 @@
   },
   "warmup": {
     "warmup": "Échauffement",
-    "plates": "Disques",
+    "barSetup": "Chargement",
     "emptyBar": "Barre vide",
-    "workingPrep": "Préparation"
+    "prep": "Préparation",
+    "workingWeight": "Poids de travail",
+    "perSideCaption": "Par côté · barre de 20 kg · {{total}} au total",
+    "emptyBarCaption": "Barre vide · 20 kg"
   },
   "error": {
     "title": "Une erreur est survenue",

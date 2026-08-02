@@ -11,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, DEFAULT_PROGRAM } from './constants';
-import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed } from './utils';
+import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -47,14 +47,12 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('workout');
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState(null);
-  const [showPlateCalc, setShowPlateCalc] = useState(null);
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [deloadAlert, setDeloadAlert] = useState(null);
   const [deloadPercent, setDeloadPercent] = useState(10);
   const [pendingFailureDeloads, setPendingFailureDeloads] = useState(null);
-  const [expandedWarmups, setExpandedWarmups] = useState({});
   const [editingWeightId, setEditingWeightId] = useState(null);
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
@@ -156,7 +154,6 @@ const App = () => {
   }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
 
   const big3Total = useMemo(() => (weights?.squat || 0) + (weights?.bench || 0) + (weights?.deadlift || 0), [weights]);
-  const plates = useMemo(() => calculatePlates(showPlateCalc?.weight), [showPlateCalc?.weight]);
 
   const best1RMs = useMemo(() => {
     const result = {};
@@ -191,7 +188,6 @@ const App = () => {
     }
   }, [gdrive, showToast, t]);
 
-  const handleToggleWarmup = useCallback((id) => setExpandedWarmups(prev => ({ ...prev, [id]: !prev[id] })), []);
 
   const handleUpdateActiveWeight = useCallback((exIdx, diff) => {
     setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, e.weight + diff) })) }) : null);
@@ -363,7 +359,7 @@ const App = () => {
 
   const initializeWorkout = useCallback((workoutWeights) => {
     setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: getProgramExercises(currentWorkoutType, program).map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
-    setIsWorkoutActive(true); setActiveTab('workout'); setExpandedWarmups({}); setShowRestorePrompt(false); setIsExerciseComplete(false);
+    setIsWorkoutActive(true); setActiveTab('workout'); setShowRestorePrompt(false); setIsExerciseComplete(false);
   }, [currentWorkoutType, program]);
 
   const startWorkout = useCallback((force = false) => {
@@ -707,7 +703,7 @@ const App = () => {
                 {(() => {
                   const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
                   return currentWorkout?.exercises.map((ex, exIdx) => (
-                    <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} showHint={exIdx === 0 && !anySetLogged} isEditingWeight={editingWeightId === ex.id} onStartEditWeight={() => setEditingWeightId(ex.id)} onStopEditWeight={() => setEditingWeightId(null)} />
+                    <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} showHint={exIdx === 0 && !anySetLogged} isEditingWeight={editingWeightId === ex.id} onStartEditWeight={() => setEditingWeightId(ex.id)} onStopEditWeight={() => setEditingWeightId(null)} />
                   ));
                 })()}
                 <div className="pt-4 flex flex-col items-center">
@@ -1163,17 +1159,6 @@ const App = () => {
           onSelect={handleSetReps}
           onClose={() => setRepPicker(null)}
         />
-      )}
-
-      {showPlateCalc && (
-        <div role="dialog" aria-modal="true" aria-label="Plate calculator" className="fixed inset-0 z-[200] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-md relative rounded-t-[14px] pt-[22px] px-5 pb-6 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
-            <button onClick={() => setShowPlateCalc(null)} aria-label="Close plate calculator" className={`absolute top-4 right-4 w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/15 text-ink' : 'border-ink-lt/15 text-ink-lt'}`}><X size={18} /></button>
-            <div className="text-center mb-6"><h3 className="text-[24px] font-semibold tabular-nums">{showPlateCalc.weight} kg</h3><p className={`text-[12px] uppercase tracking-[0.12em] mt-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.platesPerSide')}</p></div>
-            <div className="flex flex-wrap justify-center gap-3 mb-6">{plates.map((p, i) => (<div key={i} className={`w-[54px] h-[54px] rounded-lg border flex flex-col items-center justify-center font-medium ${p >= 20 ? 'border-accent text-accent-300 bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}><span className="text-[12px] opacity-60 leading-none">kg</span><span>{p}</span></div>))}</div>
-            <button onClick={() => setShowPlateCalc(null)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('modals.close')}</button>
-          </div>
-        </div>
       )}
 
       {pendingCSVImport && (

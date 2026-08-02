@@ -137,8 +137,6 @@
     "setsCompleted": "{{completed}} of {{total}} sets completed",
     "resume": "Resume",
     "discard": "Discard",
-    "platesPerSide": "Plates per side · 20 kg bar",
-    "close": "Close",
     "importData": "Import StrongLifts Data?",
     "foundWorkouts": "Found {{count}} workouts",
     "import": "Import",
@@ -230,9 +228,12 @@
   },
   "warmup": {
     "warmup": "Warm-up",
-    "plates": "Plates",
+    "barSetup": "Bar setup",
     "emptyBar": "Empty bar",
-    "workingPrep": "Working prep"
+    "prep": "Prep",
+    "workingWeight": "Working weight",
+    "perSideCaption": "Per side · 20 kg bar · {{total}} total",
+    "emptyBarCaption": "Empty bar · 20 kg"
   },
   "error": {
     "title": "Something went wrong",

@@ -45,6 +45,16 @@
     rgba(27,28,40,.10) 48px, rgba(27,28,40,.10) calc(100% - 48px),
     transparent) bottom / 100% 1px no-repeat;
 }
+.rule-fade-top {
+  background: linear-gradient(to right, transparent,
+    rgba(233,233,237,.08) 32px, rgba(233,233,237,.08) calc(100% - 32px),
+    transparent) top / 100% 1px no-repeat;
+}
+.rule-fade-top-lt {
+  background: linear-gradient(to right, transparent,
+    rgba(27,28,40,.09) 32px, rgba(27,28,40,.09) calc(100% - 32px),
+    transparent) top / 100% 1px no-repeat;
+}
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
