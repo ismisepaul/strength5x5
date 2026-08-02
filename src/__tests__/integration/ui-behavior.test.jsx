@@ -422,7 +422,7 @@ describe('Manual log entry', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    const cardsBefore = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-3xl"]'));
+    const cardsBefore = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-[10px]"]'));
     expect(cardsBefore).toHaveLength(1);
 
     await user.click(screen.getByLabelText('Add workout'));
@@ -430,7 +430,7 @@ describe('Manual log entry', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Add workout' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    const cardsAfter = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-3xl"]'));
+    const cardsAfter = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-[10px]"]'));
     expect(cardsAfter).toHaveLength(2);
   });
 });
@@ -495,7 +495,7 @@ describe('Same-day workout prevention', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[1]);
 
     const dialog = screen.getByRole('dialog');
@@ -513,7 +513,7 @@ describe('Same-day workout prevention', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[0]);
 
     const dialog = screen.getByRole('dialog');
@@ -532,7 +532,7 @@ describe('Same-day workout prevention', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[0]);
 
     expect(screen.queryByText('A workout already exists on this date')).not.toBeInTheDocument();
