@@ -186,9 +186,9 @@ Regression coverage:
 - Visual language is defined by [docs/design-system.md](design-system.md) (Nocturne): single
   accent `#9184d9`, Inter at weight ≤ 600, 8--10px radii, outlined primary buttons. **Read it
   before any UI change**
-- The current code predates Nocturne (slate/indigo/emerald palette, `font-black`,
-  `rounded-[2rem]` / `rounded-[2.5rem]` cards). The migration is tracked as a single redesign
-  issue; the spec is in [docs/design/nocturne-implementation-plan.md](design/nocturne-implementation-plan.md)
+- The Nocturne migration (issue #18) has landed: dark palette plus an interim light palette
+  (design-system.md §7), Phosphor icons, Inter self-hosted via `@fontsource/inter`. Light mode
+  is intentionally transitional -- a full light-specific redesign is a follow-up issue
 
 ## Testing
 

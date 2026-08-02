@@ -81,16 +81,16 @@ describe('Settings', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    expect(screen.getByText('Workout Log')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Log' })).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Stats'));
     expect(screen.getByText('No Stats Yet')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Options'));
-    expect(screen.getByText('Rest Interval')).toBeInTheDocument();
+    expect(screen.getByText('Rest interval')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Train'));
-    expect(screen.getByText('Start Workout')).toBeInTheDocument();
+    expect(screen.getByText('Start workout')).toBeInTheDocument();
   });
 });
 
@@ -114,7 +114,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     expect(screen.getByText('Deload Recommended')).toBeInTheDocument();
     expect(screen.getByRole('slider')).toBeInTheDocument();
     expect(screen.getByText('Accept & Lift')).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByText('Skip Deload'));
 
     expect(screen.getByText('60kg')).toBeInTheDocument();
@@ -165,7 +165,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByText('Accept & Lift'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -191,7 +191,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     expect(screen.getByText('Recommended: 50%')).toBeInTheDocument();
   });
 
@@ -214,7 +214,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     const dialog = screen.getByRole('dialog', { name: 'Deload recommendation' });
     expect(within(dialog).getByText(/100kg/)).toBeInTheDocument();
     expect(within(dialog).getByText(/90kg/)).toBeInTheDocument();
@@ -239,15 +239,15 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByText('Accept & Lift'));
 
-    await user.click(screen.getByText('Discard Workout'));
-    await user.click(screen.getByText('Yes, Discard Everything'));
+    await user.click(screen.getByText('Discard workout'));
+    await user.click(screen.getByText('Yes, discard'));
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     expect(screen.queryByText('Deload Recommended')).not.toBeInTheDocument();
-    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
+    expect(screen.getByText('Finish workout')).toBeInTheDocument();
   });
 
   it('requests deload when latest manually logged workout creates 3-failure streak', async () => {
@@ -288,12 +288,13 @@ describe('Deload', () => {
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
     const dateInput = screen.getByDisplayValue(new Date().toISOString().slice(0, 10));
     fireEvent.change(dateInput, { target: { value: yesterday } });
-    await user.click(screen.getByRole('button', { name: 'Add Workout' }));
+    const addDialog = screen.getByRole('dialog');
+    await user.click(within(addDialog).getByRole('button', { name: 'Add workout' }));
 
     expect(screen.queryByText('Deload Needed')).not.toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Train'));
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     expect(screen.getByText('Deload Needed')).toBeInTheDocument();
   });
 });
@@ -305,7 +306,7 @@ describe('Help modal', () => {
 
     await user.click(screen.getByLabelText('How it works'));
     expect(screen.getByRole('dialog', { name: 'How it works' })).toBeInTheDocument();
-    expect(screen.getByText('How It Works')).toBeInTheDocument();
+    expect(screen.getByText('How it works')).toBeInTheDocument();
   });
 
   it('closes when "Got It" button is clicked', async () => {
@@ -315,7 +316,7 @@ describe('Help modal', () => {
     await user.click(screen.getByLabelText('How it works'));
     expect(screen.getByRole('dialog', { name: 'How it works' })).toBeInTheDocument();
 
-    await user.click(screen.getByText('Got It'));
+    await user.click(screen.getByText('Got it'));
     expect(screen.queryByRole('dialog', { name: 'How it works' })).not.toBeInTheDocument();
   });
 

@@ -2,6 +2,10 @@
   "app": {
     "title": "Strength 5x5"
   },
+  "header": {
+    "streak_one": "{{count}} semaine d'affilée",
+    "streak_other": "{{count}} semaines d'affilée"
+  },
   "tabs": {
     "train": "Séance",
     "close": "Fermer",
@@ -21,30 +25,40 @@
     "typeA": "Séance A",
     "typeB": "Séance B",
     "nextUp": "À suivre",
+    "switchTo": "Basculer vers {{type}}",
     "startWorkout": "Commencer",
     "finishWorkout": "Terminer",
     "completeAllSets": "Complétez toutes les séries",
-    "alreadyTrained": "Déjà entraîné aujourd'hui",
-    "autoIncreaseHint": "Les poids augmentent de 2.5kg quand toutes les séries sont complétées.",
-    "discardWorkout": "Abandonner"
+    "alreadyTrained": "Déjà entraîné aujourd'hui — reposez-vous.",
+    "trainedToday": "Entraîné aujourd'hui",
+    "weekProgress": "{{count}} séance sur 3 cette semaine",
+    "weekProgress_other": "{{count}} séances sur 3 cette semaine",
+    "setHint": "Touchez pour valider les {{count}} répétitions · maintenez pour choisir un nombre exact",
+    "missedNote": "Répétitions manquées — {{weight}}kg maintenu la prochaine fois",
+    "discardWorkout": "Abandonner",
+    "editWeightAria": "Modifier le poids de {{name}}",
+    "doneEditingWeight": "Terminé",
+    "cancelEditWeight": "Annuler"
   },
   "program": {
     "title": "Programme",
-    "subtitle": "Personnalisez les séries et répétitions par exercice. Les changements s'appliquent à la prochaine séance.",
+    "subtitle": "Séries et répétitions par exercice. Les poids continuent de progresser automatiquement.",
     "setsLabel": "Séries",
     "repsLabel": "Répétitions",
+    "setsCount_one": "{{count}} série",
+    "setsCount_other": "{{count}} séries",
+    "repsCount_one": "{{count}} répétition",
+    "repsCount_other": "{{count}} répétitions",
+    "summary": "{{sets}} de {{reps}}",
     "resetDefaults": "Réinitialiser",
     "activeWorkoutNote": "Une séance est en cours — elle garde ses séries et répétitions d'origine. Les changements s'appliqueront la prochaine fois."
   },
   "timer": {
-    "recoveryPhase": "Phase de repos",
+    "inSession": "Séance en cours",
+    "rest": "Repos",
     "lifting": "En cours",
     "workoutComplete": "Séance terminée",
-    "movementFinished": "Mouvement terminé",
-    "allSetsDone": "Toutes les séries faites. Appuyez sur Terminer pour sauvegarder.",
-    "setupNext": "Préparez l'exercice suivant. Pas de repos nécessaire.",
-    "skip": "Passer",
-    "gotIt": "Compris"
+    "movementFinished": "Mouvement terminé"
   },
   "log": {
     "title": "Journal d'entraînement",
@@ -55,6 +69,9 @@
     "year": "Année",
     "weekUnit_one": "{{count}} semaine",
     "weekUnit_other": "{{count}} semaines",
+    "weekDone": "Semaine complète",
+    "toGo_one": "{{count}} restante cette semaine",
+    "toGo_other": "{{count}} restantes cette semaine",
     "total": "total"
   },
   "stats": {
@@ -63,7 +80,7 @@
     "noStatsBody": "Les séances complétées alimentent les analyses. Revenez plus tard.",
     "big3Total": "Total Big 3",
     "est1rm": "1RM est.",
-    "est1rmValue": "1RM est. : {{value}}kg",
+    "est1rmValue": "1RM est. {{value}}kg",
     "weight": "Poids",
     "noDataForRange": "Aucune donnée pour cette période",
     "minTwoWorkouts": "Complétez au moins 2 séances pour voir les tendances"
@@ -71,20 +88,20 @@
   "options": {
     "title": "Options",
     "restInterval": "Temps de repos",
-    "restIntervalDesc": "Durée du compte à rebours",
+    "restIntervalDesc": "Compte à rebours entre les séries",
     "soundAlert": "Alerte sonore",
-    "soundAlertDesc": "Son à la fin du repos",
+    "soundAlertDesc": "Carillon à la fin du repos",
     "vibration": "Vibration",
-    "vibrationDesc": "Vibrer à la fin du repos",
+    "vibrationDesc": "Vibration à la fin du repos",
     "darkMode": "Mode sombre",
     "darkModeDesc": "Activer le thème sombre",
     "backupSync": "Sauvegarde et synchronisation",
-    "backupSyncDesc": "Sauvegarder et restaurer vos données",
+    "backupSyncDesc": "Vos données restent sur cet appareil",
     "localBackup": "Sauvegarde locale",
     "localBackupDesc": "Télécharger sur l'appareil après chaque séance",
-    "backupToDevice": "Sauvegarder sur l'appareil",
-    "restore": "Restaurer depuis l'appareil",
-    "importStronglifts": "Importer StrongLifts",
+    "backupToDevice": "Sauvegarder",
+    "restore": "Restaurer",
+    "importStronglifts": "Importer depuis StrongLifts",
     "importStrongliftsDesc": "Téléchargez votre export CSV StrongLifts 5x5",
     "language": "Langue",
     "languageDesc": "Choisissez votre langue",
@@ -100,10 +117,10 @@
     "notConnected": "Non connecté"
   },
   "modals": {
-    "discardTitle": "Abandonner la séance ?",
-    "discardBody": "Cette séance sera définitivement supprimée.",
+    "discardTitle": "Abandonner cette séance ?",
+    "discardBody": "Les séries enregistrées ne seront pas sauvegardées et les poids ne changeront pas.",
     "keepLifting": "Continuer",
-    "yesDiscard": "Oui, tout supprimer",
+    "yesDiscard": "Oui, abandonner",
     "acceptDeload": "Deload recommandé",
     "deloadMessage": "{{days}} jours depuis la dernière séance. Un deload est recommandé pour reprendre en sécurité.",
     "deloadPercent": "Réduction de {{percent}}%",
@@ -122,8 +139,6 @@
     "setsCompleted": "{{completed}} sur {{total}} séries complétées",
     "resume": "Reprendre",
     "discard": "Abandonner",
-    "platesPerSide": "Disques par côté (barre 20kg)",
-    "close": "Fermer",
     "importData": "Importer les données StrongLifts ?",
     "foundWorkouts": "{{count}} séances trouvées",
     "import": "Importer",
@@ -148,40 +163,41 @@
     "olderBackupBody": "Cette sauvegarde contient {{backupCount}} séances (dernière : {{backupDate}}). Vous avez {{localCount}} séances. Vous perdrez {{lossCount}} séances.",
     "restoreFromDrive": "Restaurer depuis Google Drive",
     "restoreAnyway": "Restaurer quand même",
-    "repPickerSet": "Série {{set}}"
+    "repPickerTitle": "{{name}} · Série {{set}}",
+    "repPickerQuestion": "Combien de répétitions ?",
+    "repPickerNote": "{{count}} = réussi · moins signifie que le poids est maintenu",
+    "clearSet": "Effacer la série"
   },
   "completion": {
-    "complete": "{{name}} terminée",
+    "kicker": "Séance terminée",
     "totalTime": "Durée totale",
     "exerciseTime": "{{time}} au total",
-    "progressNext": "+{{increment}}kg prochaine",
-    "deloadTo": "Deload nécessaire",
-    "sameWeight": "Même poids prochain",
+    "progressedTo": "{{from}}kg → {{to}}kg",
+    "staysAt": "reste à {{weight}}kg",
     "done": "Terminé"
   },
   "help": {
     "title": "Comment ça marche",
     "gotIt": "Compris",
     "programTitle": "Programme",
-    "programBody": "Alternez les séances A et B, trois fois par semaine. Chaque exercice comprend par défaut 5 séries de 5 répétitions (le deadlift est en 1x5) — personnalisez séries et répétitions dans l'onglet Programme.",
+    "programBody": "Alternez les séances A et B, trois fois par semaine. Chaque exercice est en 5×5 par défaut (deadlift 1×5) — ajustez dans Programme.",
     "progressionTitle": "Progression",
-    "progressionBody": "Les poids augmentent de 2.5kg (5kg pour le deadlift) quand toutes les séries sont complétées.",
+    "progressionBody": "Réussissez toutes les répétitions et le poids augmente de 2.5 kg (5 kg pour le deadlift).",
     "stallTitle": "Plateau",
-    "stallBody": "Si vous manquez des répétitions, le poids reste le même à la prochaine séance.",
+    "stallBody": "Si vous manquez des répétitions, le poids reste identique à la prochaine séance.",
     "deloadTitle": "Deload",
-    "deloadBody": "Après 3 échecs consécutifs au même poids, un deload est recommandé. Vous pouvez ajuster le pourcentage de réduction.",
+    "deloadBody": "Trois échecs consécutifs au même poids et un deload de 10% est suggéré.",
     "restTitle": "Repos",
-    "restBody": "Reposez-vous entre les séries. Les séries lourdes nécessitent 3 à 5 minutes.",
+    "restBody": "Reposez-vous entre les séries — les séries lourdes demandent 3 à 5 minutes. Réglez la valeur par défaut dans Options.",
     "longBreaksTitle": "Longues pauses",
-    "longBreaksBody": "Après plus de 14 jours d'arrêt, un deload de sécurité est recommandé. Le pourcentage suggéré augmente avec la durée de la pause.",
+    "longBreaksBody": "Après plus de 14 jours d'arrêt, un deload de sécurité est recommandé — plus important pour les longues pauses.",
     "backupsTitle": "Sauvegardes",
-    "backupsBody": "Google Drive se synchronise automatiquement mais le fichier n'est pas visible dans votre Drive. Utilisez « Sauvegarder sur l'appareil » pour une copie téléchargeable."
+    "backupsBody": "La synchronisation Drive est automatique mais invisible ; utilisez « Sauvegarder » dans Options pour un fichier à vous."
   },
   "liveWorkout": {
-    "title": "Séance en cours",
     "lifting": "En cours · {{time}}",
     "resting": "Repos · {{time}}",
-    "activeWorkout": "Séance active",
+    "activeWorkout": "Séance en cours",
     "return": "Retour"
   },
   "toast": {
@@ -214,9 +230,12 @@
   },
   "warmup": {
     "warmup": "Échauffement",
-    "plates": "Disques",
+    "barSetup": "Chargement",
     "emptyBar": "Barre vide",
-    "workingPrep": "Préparation"
+    "prep": "Préparation",
+    "workingWeight": "Poids de travail",
+    "perSideCaption": "Par côté · barre de 20 kg · {{total}} au total",
+    "emptyBarCaption": "Barre vide · 20 kg"
   },
   "error": {
     "title": "Une erreur est survenue",

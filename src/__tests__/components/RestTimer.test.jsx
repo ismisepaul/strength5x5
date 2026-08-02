@@ -10,61 +10,59 @@ describe('RestTimer', () => {
     isDark: true,
     isExerciseComplete: false,
     isExpired: false,
+    isActive: false,
     onSkip: vi.fn(),
+    startedAt: Date.now(),
+    workoutType: 'A',
   };
 
-  it('renders nothing when seconds=0 and not complete/expired', () => {
-    const { container } = render(
-      <RestTimer {...defaultProps} seconds={0} />
-    );
-    expect(container.firstChild).toBeNull();
+  it('renders the in-session state with no skip button when no timer is running', () => {
+    render(<RestTimer {...defaultProps} />);
+    expect(screen.getByText('In session')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Skip rest')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Dismiss')).not.toBeInTheDocument();
   });
 
   it('renders countdown when timer is active', () => {
-    render(<RestTimer {...defaultProps} seconds={65} />);
+    render(<RestTimer {...defaultProps} isActive={true} seconds={65} />);
     expect(screen.getByText('1:05')).toBeInTheDocument();
-    expect(screen.getByText('Recovery Phase')).toBeInTheDocument();
-    expect(screen.getByText('Skip')).toBeInTheDocument();
+    expect(screen.getByText('Rest')).toBeInTheDocument();
+    expect(screen.getByLabelText('Skip rest')).toBeInTheDocument();
   });
 
   it('renders count-up "Lifting" state when expired', () => {
-    render(<RestTimer {...defaultProps} seconds={0} isExpired={true} elapsed={5} />);
+    render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} />);
     expect(screen.getByText('Lifting')).toBeInTheDocument();
     expect(screen.getByText('0:05')).toBeInTheDocument();
+    expect(screen.getByLabelText('Skip rest')).toBeInTheDocument();
   });
 
-  it('renders "Movement Finished" when exercise is complete', () => {
-    render(<RestTimer {...defaultProps} seconds={0} isExerciseComplete={true} />);
-    expect(screen.getByText('Movement Finished')).toBeInTheDocument();
-    expect(screen.getByText('Got it')).toBeInTheDocument();
+  it('renders "Movement finished" when exercise is complete', () => {
+    render(<RestTimer {...defaultProps} isExerciseComplete={true} />);
+    expect(screen.getByText('Movement finished')).toBeInTheDocument();
+    expect(screen.getByLabelText('Dismiss')).toBeInTheDocument();
   });
 
-  it('calls onSkip when skip button is clicked', async () => {
+  it('calls onSkip when the skip icon button is clicked', async () => {
     const onSkip = vi.fn();
     const user = userEvent.setup();
-    render(<RestTimer {...defaultProps} onSkip={onSkip} />);
-    await user.click(screen.getByText('Skip'));
+    render(<RestTimer {...defaultProps} isActive={true} onSkip={onSkip} />);
+    await user.click(screen.getByLabelText('Skip rest'));
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onSkip when "Got it" button is clicked', async () => {
+  it('calls onSkip when the dismiss icon button is clicked', async () => {
     const onSkip = vi.fn();
     const user = userEvent.setup();
-    render(<RestTimer {...defaultProps} seconds={0} isExerciseComplete={true} onSkip={onSkip} />);
-    await user.click(screen.getByText('Got it'));
+    render(<RestTimer {...defaultProps} isExerciseComplete={true} onSkip={onSkip} />);
+    await user.click(screen.getByLabelText('Dismiss'));
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
 
-  it('does not render a button in expired state (dismissed by tapping next set)', () => {
-    render(<RestTimer {...defaultProps} seconds={0} isExpired={true} elapsed={10} />);
-    expect(screen.getByText('Lifting')).toBeInTheDocument();
-    expect(screen.queryByRole('button')).toBeNull();
-  });
-
-  it('renders "Workout Complete" when isExerciseComplete is workout', () => {
-    render(<RestTimer {...defaultProps} seconds={0} isExerciseComplete={'workout'} />);
-    expect(screen.getByText('Workout Complete')).toBeInTheDocument();
-    expect(screen.queryByText('Movement Finished')).not.toBeInTheDocument();
-    expect(screen.getByText('Got it')).toBeInTheDocument();
+  it('renders "Workout complete" when isExerciseComplete is workout', () => {
+    render(<RestTimer {...defaultProps} isExerciseComplete="workout" />);
+    expect(screen.getByText('Workout complete')).toBeInTheDocument();
+    expect(screen.queryByText('Movement finished')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Dismiss')).toBeInTheDocument();
   });
 });

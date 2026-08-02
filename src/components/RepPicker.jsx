@@ -1,30 +1,33 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
 import { targetReps } from '../utils';
 
 const RepPicker = ({ ex, setIdx, isDark, onSelect, onClose }) => {
   const { t } = useTranslation();
   const target = targetReps(ex);
-  const options = Array.from({ length: target + 1 }, (_, i) => target - i);
+  const options = Array.from({ length: target + 1 }, (_, i) => i);
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="Rep picker" className={`fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm ${isDark ? 'bg-slate-950/80' : 'bg-slate-500/50'}`}>
-      <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-        <button onClick={onClose} aria-label="Close rep picker" className={`absolute top-4 right-4 p-2 rounded-full ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}><X size={20} /></button>
-        <div className="text-center mb-8">
-          <h3 className={`text-xl font-black uppercase ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('exercises.' + ex.id)}</h3>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">{t('modals.repPickerSet', { set: setIdx + 1 })}</p>
+    <div role="dialog" aria-modal="true" aria-label="Rep picker" className="fixed inset-0 z-[200] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+      <div className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold">{t('modals.repPickerTitle', { name: t('exercises.' + ex.id), set: setIdx + 1 })}</h3>
+          <p className={`text-[12.5px] mt-1 ${isDark ? 'text-ink/50' : 'text-ink-lt/50'}`}>{t('modals.repPickerQuestion')}</p>
         </div>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="flex flex-wrap justify-center gap-3 mb-4">
           {options.map(r => (
             <button
               key={r}
               onClick={() => onSelect(r)}
               aria-label={`${r} reps`}
-              className={`aspect-square rounded-2xl flex items-center justify-center font-black text-lg active:scale-90 transition-transform ${r === target ? 'bg-indigo-600 text-white' : r > 0 ? 'bg-rose-500/10 text-rose-500' : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')}`}
+              className={`w-[50px] h-[50px] rounded-full flex items-center justify-center text-[17px] font-semibold active:scale-90 transition-transform border ${r === target ? 'border-accent text-accent-300 bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
             >{r}</button>
           ))}
+        </div>
+        <p className={`text-center text-[12.5px] mb-6 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.repPickerNote', { count: target })}</p>
+        <div className="flex gap-4">
+          <button onClick={() => onSelect(null)} className={`flex-1 h-[46px] rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('modals.clearSet')}</button>
+          <button onClick={onClose} className={`flex-1 h-[46px] rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('modals.cancel')}</button>
         </div>
       </div>
     </div>

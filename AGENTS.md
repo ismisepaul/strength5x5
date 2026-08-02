@@ -16,7 +16,7 @@ Strength 5x5 is a client-side React web app for tracking 5x5 barbell strength tr
 - **Vitest** + React Testing Library for tests
 - **react-i18next** for i18n (English and French)
 - **Recharts** for progress charts
-- **Lucide React** for icons (being replaced by **Phosphor** — see Design System below)
+- **Phosphor Icons** (`@phosphor-icons/react`) — see Design System below
 - **vite-plugin-pwa** for offline/PWA support
 
 ## Commands
@@ -94,10 +94,10 @@ rules you cannot break:
 Tokens are declared in the `@theme` block of `src/index.css` (Tailwind v4 — there is no
 `tailwind.config.js`) and become utilities automatically.
 
-The codebase has **not** been migrated to Nocturne yet; the redesign is tracked as its
-own issue with the spec in [docs/design/nocturne-implementation-plan.md](docs/design/nocturne-implementation-plan.md)
-and the prototype in `docs/design/nocturne-prototype.dc.html`. Until it lands, write new
-UI to these rules and do not deepen the old styling.
+The Nocturne migration has landed (issue #18). `docs/design/nocturne-implementation-plan.md`
+and the prototype in `docs/design/nocturne-prototype.dc.html` are kept for history; the
+current rules live in `docs/design-system.md`, including the interim light palette (§7).
+`ErrorBoundary.jsx`'s crash screen was out of scope and still uses the pre-Nocturne palette.
 
 ## Testing
 
@@ -128,9 +128,10 @@ describe('Component', () => {
 - **Workouts alternate** between A (squat/bench/row) and B (squat/press/deadlift)
 - **Program is customizable** per exercise (1-5 sets, 1-10 reps) via the Program tab; defaults are 5x5, deadlift defaults to 1x5. Stored under `program` in `strength5x5_data`; each history entry snapshots the `sets`/`reps` it was performed against, so editing the program never rewrites past workouts
 - **Progression:** +2.5kg per exercise on success (all sets hit the configured rep target), +5kg for deadlift
+- **Manual weight adjustment:** Both the idle Train screen and `ExerciseCard` support tap-to-edit weight adjustment via `WeightEditBar` — a draft (steppers or typed input) that only writes to real state on ✓ (snapped to nearest 2.5kg, floored at 20kg); ✕ discards it. The idle screen writes to `weights` directly
 - **Auto-deload:** After 3 consecutive failures at the same weight (with 20kg floor)
 - **Long-break deload:** Suggests 10/25/50% reduction based on days off (14+ days)
-- **Plate calculator:** Greedy algorithm from 25kg down to 1.25kg plates
+- **Plate breakdown:** Greedy algorithm from 25kg down to 1.25kg plates (`calculatePlates`), rendered as a bar-load diagram in `ExerciseCard`'s "Bar setup" accordion — there is no standalone plate-calculator modal
 - **1RM estimate:** Brzycki formula — `weight * (1 + reps / 30)`
 
 ## Things to Avoid

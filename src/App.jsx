@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  Dumbbell, History, Settings as SettingsIcon, Play, TrendingUp,
-  Plus, Minus, RefreshCw, Moon, X, Download, Upload,
-  ToggleRight, ToggleLeft, AlertCircle, HelpCircle, Zap, TrendingDown,
-  Clock, Vibrate, Trash2, Bell, ChevronRight, Menu, Timer,
-  FileSpreadsheet, MoveRight, Flame, ChevronDown, CheckCircle2, MinusCircle, Trophy,
-  Globe, Cloud, HardDrive, FolderSync, SlidersHorizontal
-} from 'lucide-react';
+  Barbell, ListChecks, Gear, Play, TrendUp,
+  Plus, Minus, ArrowsLeftRight, X, DownloadSimple, UploadSimple,
+  Question, TrendDown, Moon, Pause,
+  Trash, CaretRight, Timer,
+  FileCsv, ArrowRight, Flame, CaretDown,
+  Cloud, SlidersHorizontal, ChartLineUp, PencilSimple
+} from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, DEFAULT_PROGRAM } from './constants';
-import { validateImportData, calculateBest1RM, calculatePlates, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed } from './utils';
+import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -23,6 +23,7 @@ import RepPicker from './components/RepPicker';
 import ProgramEditor from './components/ProgramEditor';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
+import WeightEditBar from './components/WeightEditBar';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
 
@@ -46,16 +47,14 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('workout');
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [currentWorkout, setCurrentWorkout] = useState(null);
-  const [showPlateCalc, setShowPlateCalc] = useState(null);
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [deloadAlert, setDeloadAlert] = useState(null);
   const [deloadPercent, setDeloadPercent] = useState(10);
   const [pendingFailureDeloads, setPendingFailureDeloads] = useState(null);
-  const [expandedWarmups, setExpandedWarmups] = useState({});
+  const [editingWeightId, setEditingWeightId] = useState(null);
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
-  const [navExpanded, setNavExpanded] = useState(false);
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -154,14 +153,7 @@ const App = () => {
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
   }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
 
-  useEffect(() => {
-    if (!navExpanded || activeTab !== 'workout') return;
-    const id = setTimeout(() => setNavExpanded(false), 30000);
-    return () => clearTimeout(id);
-  }, [navExpanded, activeTab]);
-
   const big3Total = useMemo(() => (weights?.squat || 0) + (weights?.bench || 0) + (weights?.deadlift || 0), [weights]);
-  const plates = useMemo(() => calculatePlates(showPlateCalc?.weight), [showPlateCalc?.weight]);
 
   const best1RMs = useMemo(() => {
     const result = {};
@@ -196,18 +188,59 @@ const App = () => {
     }
   }, [gdrive, showToast, t]);
 
-  const handleToggleWarmup = useCallback((id) => setExpandedWarmups(prev => ({ ...prev, [id]: !prev[id] })), []);
 
   const handleUpdateActiveWeight = useCallback((exIdx, diff) => {
     setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, e.weight + diff) })) }) : null);
   }, []);
+
+  // Idle-screen steppers adjust `weights` directly (there's no active workout yet),
+  // floored at the empty 20kg bar rather than active-session's 0.
+  const handleUpdateIdleWeight = useCallback((id, diff) => {
+    setWeights(prev => ({ ...prev, [id]: Math.max(20, (prev[id] ?? 0) + diff) }));
+  }, []);
+
+  const [draftWeight, setDraftWeight] = useState('');
+
+  const parseWeightInput = (str) => {
+    const n = parseFloat(String(str).replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  // A single draft lives alongside editingWeightId: opening another editor
+  // overwrites it, discarding whatever was being typed for the previous one.
+  const handleStartEditWeight = useCallback((id, currentWeight) => {
+    setEditingWeightId(id);
+    setDraftWeight(String(currentWeight));
+  }, []);
+
+  const handleCancelEditWeight = useCallback(() => {
+    setEditingWeightId(null);
+    setDraftWeight('');
+  }, []);
+
+  const stepDraftWeight = useCallback((diff, fallback) => {
+    setDraftWeight(prev => {
+      const parsed = parseWeightInput(prev);
+      const base = parsed !== null ? parsed : fallback;
+      return String(Math.max(20, base + diff));
+    });
+  }, []);
+
+  // Commits by computing a diff against the current weight and handing it to the
+  // existing per-screen update fn, so the real write path (and its own floor) is untouched.
+  const commitEditWeight = useCallback((currentWeight, applyDiff) => {
+    const parsed = parseWeightInput(draftWeight);
+    const final = parsed !== null ? Math.max(20, Math.round(parsed / 2.5) * 2.5) : currentWeight;
+    if (final !== currentWeight) applyDiff(final - currentWeight);
+    setEditingWeightId(null);
+    setDraftWeight('');
+  }, [draftWeight]);
 
   // Shared by the short-press cycle and the long-press rep picker: given the current
   // logged value, resolveNext computes the next one, then this stamps setTimes and
   // drives the rest timer identically either way.
   const applySetValue = useCallback((exIdx, setIdx, resolveNext) => {
     if (timer.isExpired) timer.reset();
-    setNavExpanded(false);
     setCurrentWorkout(prev => {
       if (!prev) return prev;
       const ex = prev.exercises[exIdx];
@@ -241,9 +274,8 @@ const App = () => {
   }, [timer, preferredRest]);
 
   const handleToggleSet = useCallback((exIdx, setIdx) => {
-    // Short-press cycle never lands on 0 -- from 1 it clears straight back to
-    // unlogged. 0 reps done is only reachable via the long-press rep picker.
-    applySetValue(exIdx, setIdx, (currVal, target) => currVal === null ? target : currVal > 1 ? currVal - 1 : null);
+    // Short-press cycle: unlogged -> target -> target-1 -> ... -> 1 -> 0 -> unlogged.
+    applySetValue(exIdx, setIdx, (currVal, target) => currVal === null ? target : currVal > 0 ? currVal - 1 : null);
   }, [applySetValue]);
 
   const handleOpenRepPicker = useCallback((exIdx, setIdx) => {
@@ -345,7 +377,7 @@ const App = () => {
     setCurrentWorkoutType(prev => prev === 'A' ? 'B' : 'A');
     setIsWorkoutActive(false); setCurrentWorkout(null);
     timer.reset(); setIsExerciseComplete(false);
-    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads });
+    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads, nextWeights });
     localStorage.removeItem(ACTIVE_WORKOUT_KEY);
     if (localBackup) exportData(newHistory);
 
@@ -364,7 +396,7 @@ const App = () => {
 
   const initializeWorkout = useCallback((workoutWeights) => {
     setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: getProgramExercises(currentWorkoutType, program).map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
-    setIsWorkoutActive(true); setActiveTab('workout'); setExpandedWarmups({}); setShowRestorePrompt(false); setIsExerciseComplete(false);
+    setIsWorkoutActive(true); setActiveTab('workout'); setShowRestorePrompt(false); setIsExerciseComplete(false);
   }, [currentWorkoutType, program]);
 
   const startWorkout = useCallback((force = false) => {
@@ -599,15 +631,12 @@ const App = () => {
     return isToday ? `Today, ${time}` : `${date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}, ${time}`;
   }, []);
 
-  const getTopOffset = () => 0;
-
-  const timerVisible = activeTab === 'workout' && (timer.isActive || timer.isExpired || isExerciseComplete);
-  const navCollapsed = isWorkoutActive && activeTab === 'workout' && !navExpanded;
   const liveWorkoutVisible = isWorkoutActive && currentWorkout && activeTab !== 'workout';
+  const isMidWorkout = isWorkoutActive && activeTab === 'workout';
+  const timerVisible = isMidWorkout;
 
   const handleTabClick = useCallback((tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'workout') setNavExpanded(false);
   }, []);
 
   const handleTimerSkip = useCallback(() => {
@@ -618,96 +647,162 @@ const App = () => {
     } else {
       timer.skip();
     }
-    setNavExpanded(false);
   }, [timer, isExerciseComplete]);
 
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const workoutStats = getWorkoutStats(history);
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans max-w-md mx-auto relative transition-colors duration-300 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`h-[100dvh] max-w-md mx-auto flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-ground text-ink' : 'bg-ground-lt text-ink-lt'}`}>
 
-      {activeTab === 'workout' && (
+      {!isMidWorkout && (
+        <header className="flex-none pt-3.5 px-5 pb-2.5 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Barbell weight="fill" size={20} className="text-accent" />
+            <h1 className="text-[17px] font-semibold">{t('app.title')}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Flame size={15} weight="fill" className="text-accent" />
+              <span className={`text-[12.5px] ${isDark ? 'text-ink/55' : 'text-ink-lt/55'}`}>{t('header.streak', { count: workoutStats.streak })}</span>
+            </div>
+            <button
+              onClick={() => setShowHelp(true)}
+              aria-label="How it works"
+              className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/15 text-ink' : 'border-ink-lt/15 text-ink-lt'}`}
+            ><Question size={18} /></button>
+          </div>
+        </header>
+      )}
+
+      {timerVisible && (
         <RestTimer
           seconds={timer.seconds} total={preferredRest}
-          isDark={isDark} isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired}
-          onSkip={handleTimerSkip} navExpanded={navExpanded} elapsed={timer.elapsed}
+          isDark={isDark} isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired} isActive={timer.isActive}
+          onSkip={handleTimerSkip} elapsed={timer.elapsed}
+          startedAt={currentWorkout?.startedAt} workoutType={currentWorkout?.type}
         />
       )}
 
-      {isWorkoutActive && currentWorkout && activeTab !== 'workout' && (() => {
-        const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-        const liveDetail = timer.isExpired
-          ? t('liveWorkout.lifting', { time: formatTime(timer.elapsed) })
-          : timer.isActive
-            ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
-            : t(`workout.type${currentWorkout?.type}`) || t('liveWorkout.activeWorkout');
-        const liveIcon = timer.isExpired
-          ? <Dumbbell size={14} className="text-white" />
-          : timer.isActive
-            ? <Timer size={14} className="text-white" />
-            : <Play size={14} fill="currentColor" className="text-white" />;
-        return (
-          <div className={`fixed bottom-[80px] inset-x-0 max-w-md mx-auto z-[100] shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)] transition-all duration-300 ${isDark ? 'bg-indigo-900' : 'bg-indigo-600'}`}>
-            <button onClick={() => handleTabClick('workout')} className="w-full px-6 py-4 flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-white/20">{liveIcon}</div>
-                <div className="text-left">
-                  <p className="text-[10px] font-black uppercase text-white/60 leading-none mb-0.5">{t('liveWorkout.title')}</p>
-                  <p className={`text-xs font-black uppercase text-white tracking-tight ${timer.isActive || timer.isExpired ? 'font-mono' : ''}`}>{liveDetail}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-[10px] font-black uppercase text-white/90 bg-black/10 px-3 py-1.5 rounded-lg">{t('liveWorkout.return')} <ChevronRight size={12} /></div>
-            </button>
-          </div>
-        );
-      })()}
-
-      <header className={`px-6 pt-10 pb-4 flex justify-between items-center transition-all duration-300 ${isDark ? 'bg-slate-950/80' : 'bg-slate-50/80'} backdrop-blur-md sticky z-40`} style={{ top: getTopOffset() }}>
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-indigo-600 shadow-lg"><Dumbbell className="text-white" size={20} /></div>
-          <h1 className={`text-xl font-black tracking-tight uppercase ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('app.title')}</h1>
-        </div>
-        <button onClick={() => setShowHelp(true)} aria-label="How it works" className={`p-2.5 rounded-2xl border transition-all ${isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-100 text-slate-500'}`}><HelpCircle size={20} /></button>
-      </header>
-
-      <main className={`flex-1 px-4 py-4 overflow-y-auto ${timerVisible ? 'pb-44' : liveWorkoutVisible ? 'pb-52' : navCollapsed ? 'pb-24' : 'pb-32'}`}>
+      <main className="flex-1 min-h-0 px-4 py-4 overflow-y-auto">
         {activeTab === 'workout' && (
           <div className="space-y-4">
             {!isWorkoutActive ? (
-              <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                <div className="mb-6"><p className="text-[10px] font-bold uppercase text-slate-500 mb-1 tracking-widest">{t('workout.nextUp')}</p><button onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')} className="flex items-start gap-2 hover:opacity-70 transition-opacity"><h2 className="text-4xl font-black uppercase leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2><RefreshCw size={20} className="mt-3 text-indigo-500" /></button></div>
-                <div className="space-y-3 mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
-                  <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-transparent'}`}>
+              <div>
+                <div className="mb-4">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('workout.nextUp')}</p>
+                  <div className="flex items-center gap-[10px]">
+                    <h2 className="text-[32px] font-medium leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2>
+                    <button
+                      onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')}
+                      aria-label={t('workout.switchTo', { type: t(`workout.type${currentWorkoutType === 'A' ? 'B' : 'A'}`) })}
+                      title={t('workout.switchTo', { type: t(`workout.type${currentWorkoutType === 'A' ? 'B' : 'A'}`) })}
+                      className={`w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
+                    ><ArrowsLeftRight size={16} /></button>
+                  </div>
+                  <p className={`text-[13.5px] mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{getProgramExercises(currentWorkoutType, program).map(ex => t('exercises.' + ex.id)).join(' · ')}</p>
+                </div>
+                <div className="mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
+                  <div key={ex.id} className={`py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
                     <div className="flex justify-between items-center">
-                      <div className="flex-1 pr-4"><p className={`font-black text-sm uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t('exercises.' + ex.id)}</p><p className="text-[10px] font-bold text-slate-500">{ex.sets}x{ex.reps}</p></div>
-                      <span className="font-black text-xl tabular-nums">{weights[ex.id]}kg</span>
+                      <div>
+                        <p className="text-[16px] font-medium">{t('exercises.' + ex.id)}</p>
+                        <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
+                      </div>
+                      <button
+                        onClick={() => handleStartEditWeight(ex.id, weights[ex.id])}
+                        aria-label={t('workout.editWeightAria', { name: t('exercises.' + ex.id) })}
+                        className="flex items-center gap-1.5 min-h-[44px] shrink-0"
+                      >
+                        <span className="text-[19px] text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
+                        <PencilSimple size={13} className={isDark ? 'text-ink/35' : 'text-ink-lt/35'} />
+                      </button>
                     </div>
+                    {editingWeightId === ex.id && (
+                      <WeightEditBar
+                        value={draftWeight}
+                        onChange={setDraftWeight}
+                        onDecrement={() => stepDraftWeight(-ex.increment, weights[ex.id])}
+                        onIncrement={() => stepDraftWeight(ex.increment, weights[ex.id])}
+                        onCommit={() => commitEditWeight(weights[ex.id], (diff) => handleUpdateIdleWeight(ex.id, diff))}
+                        onCancel={handleCancelEditWeight}
+                        isDark={isDark}
+                        variant="row"
+                        exerciseName={t('exercises.' + ex.id)}
+                      />
+                    )}
                   </div>
                 ))}</div>
-                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full py-5 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-transform ${trainedToday ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-[0.98]'}`}><Play size={20} fill="currentColor" /> {t('workout.startWorkout')}</button>
-                {trainedToday && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest">{t('workout.alreadyTrained')}</p>}
-                {!trainedToday && history.length === 0 && <p className="text-slate-500 text-[10px] font-bold text-center mt-3">{t('workout.autoIncreaseHint')}</p>}
+                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
+                <p className={`text-[12px] text-center mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex justify-center mb-2"><h2 className="font-black uppercase tracking-widest text-slate-500">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
-                {currentWorkout?.exercises.map((ex, exIdx) => (
-                  <ExerciseCard key={ex.id} ex={ex} exIdx={exIdx} isDark={isDark} onToggleSet={handleToggleSet} onShowPlates={setShowPlateCalc} expanded={expandedWarmups[ex.id]} onToggleWarmup={handleToggleWarmup} onUpdateWeight={handleUpdateActiveWeight} onOpenRepPicker={handleOpenRepPicker} />
-                ))}
+                <div className="flex justify-center mb-2"><h2 className={`text-[10.5px] font-semibold uppercase tracking-[0.14em] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
+                {(() => {
+                  const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
+                  return currentWorkout?.exercises.map((ex, exIdx) => (
+                    <ExerciseCard
+                      key={ex.id}
+                      ex={ex}
+                      exIdx={exIdx}
+                      isDark={isDark}
+                      onToggleSet={handleToggleSet}
+                      onOpenRepPicker={handleOpenRepPicker}
+                      showHint={exIdx === 0 && !anySetLogged}
+                      isEditingWeight={editingWeightId === ex.id}
+                      draftWeight={draftWeight}
+                      onDraftWeightChange={setDraftWeight}
+                      onStartEditWeight={() => handleStartEditWeight(ex.id, ex.weight)}
+                      onStepWeight={(diff) => stepDraftWeight(diff, ex.weight)}
+                      onCommitWeight={() => commitEditWeight(ex.weight, (diff) => handleUpdateActiveWeight(exIdx, diff))}
+                      onCancelEditWeight={handleCancelEditWeight}
+                    />
+                  ));
+                })()}
                 <div className="pt-4 flex flex-col items-center">
-                  <button onClick={finishWorkout} disabled={!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null))} className={`w-full py-5 rounded-[1.5rem] font-black text-lg shadow-xl ${currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) ? 'bg-emerald-600 text-white active:scale-95 shadow-emerald-900/20' : 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed'}`}>{t('workout.finishWorkout')}</button>
-                  {!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest animate-pulse">{t('workout.completeAllSets')}</p>}
-                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-600 border-slate-900' : 'text-slate-400 border-slate-100'} px-6 py-3 border rounded-xl active:text-rose-500 transition-colors`}><Trash2 size={12} /> {t('workout.discardWorkout')}</button>
+                  {(() => {
+                    const allDone = currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null));
+                    return (
+                      <>
+                        <button onClick={finishWorkout} disabled={!allDone} className={`w-full h-[52px] rounded-lg border font-medium text-[15.5px] ${allDone ? 'border-accent text-accent active:scale-[0.98]' : (isDark ? 'border-ink/12 text-ink/30' : 'border-ink-lt/12 text-ink-lt/30')}`}>{t('workout.finishWorkout')}</button>
+                        {!allDone && <p className={`text-[12px] text-center mt-3 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('workout.completeAllSets')}</p>}
+                      </>
+                    );
+                  })()}
+                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 w-full min-h-[44px] flex items-center justify-center text-[15px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('workout.discardWorkout')}</button>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {activeTab === 'history' && (
+        {activeTab === 'history' && (() => {
+          const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
+          const renderEntry = (s, key, onClick) => (
+            <button key={key} onClick={onClick} className={`w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[14px] font-semibold text-accent-300">{t(`workout.type${s.type}`)}</span>
+                <span className={`text-[13.5px] ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
+              </div>
+              <div className="space-y-2">{s.exercises.map(ex => (
+                <div key={ex.id} className="flex justify-between text-[15px] items-center">
+                  <span className={`text-[12px] uppercase ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="tabular-nums">{ex.weight}kg</span>
+                    <div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (
+                      <div key={ri} className={r === targetReps(ex) ? 'w-1.5 h-1.5 rounded-full bg-accent' : `w-1.5 h-1.5 rounded-full border ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`} />
+                    ))}</div>
+                  </div>
+                </div>
+              ))}</div>
+            </button>
+          );
+          const stats = getWorkoutStats(history);
+          return (
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-3xl font-black uppercase tracking-tighter">{t('log.title')}</h2>
+              <h2 className="text-[24px] font-medium">{t('log.title')}</h2>
               <button
                 onClick={() => {
                   const type = currentWorkoutType;
@@ -719,116 +814,109 @@ const App = () => {
                   setEditingEntry({ index: -1, session: workout });
                 }}
                 aria-label="Add workout"
-                className={`p-2.5 rounded-xl border active:scale-90 transition-transform ${isDark ? 'bg-slate-900 border-slate-800 text-indigo-400' : 'bg-white border-slate-200 text-indigo-600 shadow-sm'}`}
-              ><Plus size={20} /></button>
+                className={`w-10 h-10 rounded-lg border flex items-center justify-center active:scale-90 transition-transform ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
+              ><Plus size={18} /></button>
             </div>
-            {(() => {
-              const stats = getWorkoutStats(history);
-              const flameColor = stats.streak > 0 ? 'text-amber-500' : 'text-slate-400';
-              return (
-                <div className="flex items-center gap-2 flex-wrap mb-4">
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map(i => (
-                      <div key={i} className={`w-2.5 h-2.5 rounded-full ${i < stats.thisWeek ? 'bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.4)]' : (isDark ? 'bg-slate-700' : 'bg-slate-300')}`} />
-                    ))}
-                  </div>
-                  <span className={`text-xs font-black uppercase ${stats.status.color === 'emerald' ? 'text-emerald-500' : stats.status.color === 'amber' ? 'text-amber-500' : 'text-rose-500'}`}>{t(`status.${stats.status.key}`, { count: stats.status.count })}</span>
-                  <span className="text-slate-500">·</span>
-                  <span className="flex items-center gap-1">
-                    <Flame size={12} className={flameColor} />
-                    <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t('log.weekUnit', { count: stats.streak })}</span>
-                  </span>
-                  <span className="text-slate-500">·</span>
-                  <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{stats.total} {t('log.total')}</span>
-                </div>
-              );
-            })()}
+            <div className="flex items-center gap-2 flex-wrap mb-4">
+              <div className="flex gap-1">
+                {[0, 1, 2].map(i => (
+                  <div key={i} className={i < stats.thisWeek ? 'w-2 h-2 rounded-full bg-accent' : `w-2 h-2 rounded-full border ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`} />
+                ))}
+              </div>
+              <span className={`text-[13.5px] ${mutedClass}`}>{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</span>
+              <span className={mutedClass}>·</span>
+              <span className={`text-[13.5px] ${mutedClass}`}>{t('header.streak', { count: stats.streak })}</span>
+              <span className={mutedClass}>·</span>
+              <span className={`text-[13.5px] ${mutedClass}`}>{stats.total} {t('log.total')}</span>
+            </div>
 
             {history.length > 0 && (
-              <div className="grid grid-cols-4 gap-1.5 mb-2">
-                {[{ label: t('log.all'), val: 'all' }, { label: t('log.week'), val: 'week' }, { label: t('log.month'), val: 'month' }, { label: t('log.year'), val: 'year' }].map(opt => (
-                  <button key={opt.val} onClick={() => { setLogGrouping(opt.val); if (opt.val !== 'all') { const groups = groupHistory(history, opt.val, 0); setExpandedGroups(groups.length > 0 ? { [groups[0].key]: true } : {}); } else { setExpandedGroups({}); } }} className={`py-2 rounded-xl font-black text-[10px] uppercase tracking-wide transition-all ${logGrouping === opt.val ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-900 text-slate-500 border border-slate-800' : 'bg-white text-slate-400 border border-slate-200')}`}>{opt.label}</button>
+              <div className={`flex rounded-lg border overflow-hidden mb-2 ${isDark ? 'border-ink/10' : 'border-ink-lt/10'}`}>
+                {[{ label: t('log.all'), val: 'all' }, { label: t('log.week'), val: 'week' }, { label: t('log.month'), val: 'month' }, { label: t('log.year'), val: 'year' }].map((opt, i) => (
+                  <button
+                    key={opt.val}
+                    onClick={() => { setLogGrouping(opt.val); if (opt.val !== 'all') { const groups = groupHistory(history, opt.val, 0); setExpandedGroups(groups.length > 0 ? { [groups[0].key]: true } : {}); } else { setExpandedGroups({}); } }}
+                    className={`flex-1 py-3 text-[12px] uppercase tracking-wide transition-all ${i > 0 ? (isDark ? 'border-l border-ink/10' : 'border-l border-ink-lt/10') : ''} ${logGrouping === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+                  >{opt.label}</button>
                 ))}
               </div>
             )}
 
             {history.length === 0 ? (
-              <p className="py-20 text-center text-slate-500 font-bold">{t('log.noHistory')}</p>
+              <p className={`py-20 text-center ${mutedClass}`}>{t('log.noHistory')}</p>
             ) : logGrouping === 'all' ? (
-              history.map((s, i) => (
-                <button key={i} onClick={() => setEditingEntry({ index: i, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                  <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t(`workout.type${s.type}`)}</span><span className="text-xs font-bold text-slate-500">{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span></div>
-                  <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{t('exercises.' + ex.id)}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === targetReps(ex) ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
-                </button>
-              ))
+              history.map((s, i) => renderEntry(s, i, () => setEditingEntry({ index: i, session: JSON.parse(JSON.stringify(s)) })))
             ) : (
-              groupHistory(history, logGrouping, 0).map((group, gi) => (
+              groupHistory(history, logGrouping, 0).map((group) => (
                 <div key={group.key}>
                   <button
                     onClick={() => setExpandedGroups(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
                     aria-label={`Toggle ${group.key}`}
-                    className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all active:scale-[0.99] ${isDark ? 'bg-slate-900/60 border-slate-800 hover:bg-slate-900' : 'bg-white/60 border-slate-100 hover:bg-white'}`}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-[10px] border transition-all active:scale-[0.99] ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}
                   >
                     <div className="flex items-center gap-3">
-                      <ChevronDown size={16} className={`transition-transform duration-200 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${expandedGroups[group.key] ? 'rotate-0' : '-rotate-90'}`} />
-                      <span className={`text-sm font-black uppercase tracking-tight ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{group.key}</span>
+                      {expandedGroups[group.key] ? <CaretDown size={18} className={mutedClass} /> : <CaretRight size={18} className={mutedClass} />}
+                      <span className="text-[15px] font-medium">{group.key}</span>
                     </div>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{group.entries.length}</span>
+                    <span className={`text-[13.5px] px-2.5 py-1 rounded-lg ${isDark ? 'bg-surface-deep text-ink/60' : 'bg-surface-deep-lt text-ink-lt/60'}`}>{group.entries.length}</span>
                   </button>
                   {expandedGroups[group.key] && (
                     <div className="space-y-3 mt-3 ml-2">
-                      {group.entries.map(({ session: s, originalIndex }) => (
-                        <button key={originalIndex} onClick={() => setEditingEntry({ index: originalIndex, session: JSON.parse(JSON.stringify(s)) })} className={`w-full text-left p-6 rounded-3xl border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                          <div className="flex justify-between items-center mb-4"><span className={`text-xs font-black uppercase ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t(`workout.type${s.type}`)}</span><span className="text-xs font-bold text-slate-500">{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span></div>
-                          <div className="space-y-2">{s.exercises.map(ex => (<div key={ex.id} className="flex justify-between text-sm items-center"><span className="font-bold text-slate-400 uppercase text-[10px]">{t('exercises.' + ex.id)}</span><div className="flex items-center gap-3"><span className="font-black">{ex.weight}kg</span><div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (<div key={ri} className={`w-1.5 h-1.5 rounded-full ${r === targetReps(ex) ? 'bg-indigo-500' : 'bg-rose-500'}`} />))}</div></div></div>))}</div>
-                        </button>
-                      ))}
+                      {group.entries.map(({ session: s, originalIndex }) => renderEntry(s, originalIndex, () => setEditingEntry({ index: originalIndex, session: JSON.parse(JSON.stringify(s)) })))}
                     </div>
                   )}
                 </div>
               ))
             )}
           </div>
-        )}
+          );
+        })()}
 
-        {activeTab === 'progress' && (
+        {activeTab === 'progress' && (() => {
+          const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
+          const cardClass = `w-full p-4 rounded-[10px] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`;
+          const trendIconFor = (trend) => trend === 'up' ? { Icon: TrendUp, className: 'text-accent' } : trend === 'down' ? { Icon: TrendDown, className: mutedClass } : { Icon: ArrowRight, className: isDark ? 'text-ink/40' : 'text-ink-lt/40' };
+          return (
           <div className="space-y-6">
             {history.length === 0 ? (
               <div className="py-20 text-center px-10">
-                <div className="flex justify-center mb-6"><div className={`p-5 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-500' : 'bg-indigo-50 text-indigo-600'}`}><TrendingUp size={48} /></div></div>
-                <h2 className="text-2xl font-black uppercase tracking-tight mb-2">{t('stats.noStats')}</h2>
-                <p className="text-slate-500 text-sm font-bold leading-relaxed">{t('stats.noStatsBody')}</p>
+                <h2 className="text-lg font-semibold mb-2">{t('stats.noStats')}</h2>
+                <p className={`text-[15px] leading-relaxed ${mutedClass}`}>{t('stats.noStatsBody')}</p>
               </div>
             ) : statsView ? (
               <StatsChart exerciseId={statsView} history={history} isDark={isDark} onBack={() => setStatsView(null)} weights={weights} best1RMs={best1RMs} />
             ) : (
               <>
+                <h2 className="text-[24px] font-medium mb-4">{t('stats.title')}</h2>
                 {(() => {
                   const big3Trend = getBig3Trend(history);
-                  const TrendIcon = big3Trend === 'up' ? TrendingUp : big3Trend === 'down' ? TrendingDown : MoveRight;
-                  const trendColor = big3Trend === 'up' ? 'text-emerald-500' : big3Trend === 'down' ? 'text-rose-500' : 'text-amber-500';
+                  const { Icon: TrendIcon, className: trendClass } = trendIconFor(big3Trend);
                   return (
-                    <button onClick={() => setStatsView('big3')} className={`w-full p-6 rounded-[2rem] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                      <div className="text-left"><h2 className="text-3xl font-black uppercase tracking-tighter">{t('stats.title')}</h2></div>
+                    <button onClick={() => setStatsView('big3')} className={cardClass}>
+                      <div className="text-left">
+                        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('stats.big3Total')}</p>
+                        <p className="text-[24px] font-medium tabular-nums">{big3Total}kg</p>
+                      </div>
                       <div className="flex items-center gap-2">
-                        {big3Trend && <TrendIcon size={16} className={trendColor} />}
-                        <div className="text-right"><p className="text-[10px] font-bold text-slate-500 uppercase">{t('stats.big3Total')}</p><p className={`text-2xl font-black ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{big3Total}kg</p></div>
-                        <ChevronRight size={16} className="text-slate-500 ml-1" />
+                        {big3Trend && <TrendIcon size={18} className={trendClass} />}
+                        <CaretRight size={18} className={mutedClass} />
                       </div>
                     </button>
                   );
                 })()}
                 <div className="grid gap-3">{EXPECTED_WEIGHT_KEYS.map(id => {
                   const trend = getExerciseTrend(history, id);
-                  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : MoveRight;
-                  const trendColor = trend === 'up' ? 'text-emerald-500' : trend === 'down' ? 'text-rose-500' : 'text-amber-500';
+                  const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
                   return (
-                    <button key={id} onClick={() => setStatsView(id)} className={`w-full p-6 rounded-[2rem] border flex justify-between items-center active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-                      <div className="flex items-center gap-4 flex-1 min-w-0"><div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Zap size={20} /></div><div className="min-w-0 pr-2"><p className={`text-sm font-black uppercase truncate ${isDark ? 'text-indigo-100' : 'text-slate-900'}`}>{t('exercises.' + id)}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-none">{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p></div></div>
-                      <div className="flex items-center gap-2">
-                        {trend && <TrendIcon size={16} className={trendColor} />}
-                        <span className={`shrink-0 font-black text-xl ${isDark ? 'text-indigo-500' : 'text-indigo-600'}`}>{weights[id]}kg</span>
-                        <ChevronRight size={16} className="text-slate-500" />
+                    <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
+                      <div className="min-w-0 pr-2 text-left">
+                        <p className="text-[15px] font-medium truncate">{t('exercises.' + id)}</p>
+                        <p className={`text-[12px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {trend && <TrendIcon size={18} className={trendClass} />}
+                        <span className="text-accent-300 tabular-nums">{weights[id]}kg</span>
+                        <CaretRight size={18} className={mutedClass} />
                       </div>
                     </button>
                   );
@@ -837,94 +925,106 @@ const App = () => {
               </>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {activeTab === 'program' && (
           <ProgramEditor program={program} onChange={setProgram} isDark={isDark} isWorkoutActive={isWorkoutActive} />
         )}
 
-        {activeTab === 'settings' && (
+        {activeTab === 'settings' && (() => {
+          const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
+          const cardClass = `p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`;
+          const innerRowClass = isDark ? 'rule-fade' : 'rule-fade-lt';
+          const Switch = ({ checked, onChange, ariaLabel }) => (
+            <button
+              onClick={onChange}
+              role="switch"
+              aria-checked={checked}
+              aria-label={ariaLabel}
+              className={`w-[46px] h-[26px] rounded-full border relative shrink-0 transition-colors ${checked ? 'border-accent bg-accent-900' : (isDark ? 'border-ink/18' : 'border-ink-lt/18')}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform ${checked ? `translate-x-[21px] bg-accent` : `translate-x-0 ${isDark ? 'bg-ink/45' : 'bg-ink-lt/45'}`}`} />
+            </button>
+          );
+          const Segmented = ({ options, value, onChange }) => (
+            <div className={`flex rounded-lg border overflow-hidden ${isDark ? 'border-ink/10' : 'border-ink-lt/10'}`}>
+              {options.map((opt, i) => (
+                <button
+                  key={opt.val}
+                  onClick={() => onChange(opt.val)}
+                  className={`flex-1 py-3 text-[12px] uppercase tracking-wide transition-all ${i > 0 ? (isDark ? 'border-l border-ink/10' : 'border-l border-ink-lt/10') : ''} ${value === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+                >{opt.label}</button>
+              ))}
+            </div>
+          );
+          return (
           <div className="space-y-6">
-            <h2 className="text-3xl font-black mb-6 uppercase tracking-tighter">{t('options.title')}</h2>
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Clock size={20} /></div>
-                <div><p className="text-sm font-black uppercase tracking-tight">{t('options.restInterval')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.restIntervalDesc')}</p></div>
+            <h2 className="text-[24px] font-medium mb-6">{t('options.title')}</h2>
+            <div className={cardClass}>
+              <div className="mb-4">
+                <p className="text-[15px] font-semibold">{t('options.restInterval')}</p>
+                <p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {[{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }].map(opt => (
-                  <button key={opt.val} onClick={() => setPreferredRest(opt.val)} className={`py-3 rounded-xl font-black text-xs transition-all ${preferredRest === opt.val ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')}`}>{opt.label}</button>
-                ))}
+              <Segmented
+                options={[{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }]}
+                value={preferredRest}
+                onChange={setPreferredRest}
+              />
+            </div>
+
+            <div className={cardClass}>
+              <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
+                <div><p className="text-[15px] font-semibold">{t('options.soundAlert')}</p><p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
+                <Switch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} ariaLabel="Sound alert" />
+              </div>
+              <div className="flex items-center justify-between">
+                <div><p className="text-[15px] font-semibold">{t('options.vibration')}</p><p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>
+                <Switch checked={vibrationEnabled} onChange={() => setVibrationEnabled(!vibrationEnabled)} ariaLabel="Vibration" />
               </div>
             </div>
 
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Bell size={20} /></div>
-                  <div><p className="text-sm font-black uppercase">{t('options.soundAlert')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.soundAlertDesc')}</p></div>
-                </div>
-                <button onClick={() => setSoundEnabled(!soundEnabled)} role="switch" aria-checked={soundEnabled} aria-label="Sound alert">{soundEnabled ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button>
-              </div>
+            <div className={cardClass}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Vibrate size={20} /></div>
-                  <div><p className="text-sm font-black uppercase">{t('options.vibration')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.vibrationDesc')}</p></div>
-                </div>
-                <button onClick={() => setVibrationEnabled(!vibrationEnabled)} role="switch" aria-checked={vibrationEnabled} aria-label="Vibration">{vibrationEnabled ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button>
-              </div>
-            </div>
-
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Moon size={20} /></div>
-                  <div><p className="text-sm font-black uppercase">{t('options.darkMode')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.darkModeDesc')}</p></div>
-                </div>
-                <button onClick={() => setIsDark(!isDark)} role="switch" aria-checked={isDark} aria-label="Dark mode">{isDark ? <ToggleRight size={48} className="text-indigo-500" /> : <ToggleLeft size={48} className={isDark ? 'text-slate-800' : 'text-slate-200'} />}</button>
+                <div><p className="text-[15px] font-semibold">{t('options.darkMode')}</p><p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.darkModeDesc')}</p></div>
+                <Switch checked={isDark} onChange={() => setIsDark(!isDark)} ariaLabel="Dark mode" />
               </div>
             </div>
 
             {/* Backup & Sync */}
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-              <div className="flex items-center gap-4 mb-5">
-                <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><FolderSync size={20} /></div>
-                <div><p className="text-sm font-black uppercase">{t('options.backupSync')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.backupSyncDesc')}</p></div>
+            <div className={cardClass}>
+              <div className={`pb-4 mb-4 ${innerRowClass}`}>
+                <p className="text-[15px] font-semibold">{t('options.backupSync')}</p>
+                <p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.backupSyncDesc')}</p>
               </div>
 
               {/* Local Backup toggle */}
-              <div className={`flex items-center justify-between p-4 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-50 border border-slate-100'}`}>
-                <div className="flex items-center gap-3">
-                  <HardDrive size={16} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
-                  <div><p className="text-xs font-black uppercase">{t('options.localBackup')}</p><p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.localBackupDesc')}</p></div>
-                </div>
-                <button onClick={() => setLocalBackup(!localBackup)} role="switch" aria-checked={localBackup} aria-label="Local backup">{localBackup ? <ToggleRight size={36} className="text-indigo-500" /> : <ToggleLeft size={36} className={isDark ? 'text-slate-700' : 'text-slate-300'} />}</button>
+              <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
+                <div><p className="text-[13.5px] font-medium">{t('options.localBackup')}</p><p className={`text-[12px] leading-tight ${mutedClass}`}>{t('options.localBackupDesc')}</p></div>
+                <Switch checked={localBackup} onChange={() => setLocalBackup(!localBackup)} ariaLabel="Local backup" />
               </div>
 
               {/* Google Drive section */}
               {driveConfigured && (
-                <div className={`p-4 rounded-2xl mb-4 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-50 border border-slate-100'}`}>
+                <div className={`pb-4 mb-4 ${innerRowClass}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <Cloud size={16} className={gdrive.isConnected ? 'text-emerald-500' : gdrive.hasEverConnected ? 'text-amber-500' : (isDark ? 'text-slate-400' : 'text-slate-500')} />
-                      <div><p className="text-xs font-black uppercase">{t('options.googleDrive')}</p><p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.googleDriveDesc')}</p></div>
-                    </div>
+                    <div><p className="text-[13.5px] font-medium">{t('options.googleDrive')}</p><p className={`text-[12px] leading-tight ${mutedClass}`}>{t('options.googleDriveDesc')}</p></div>
                     {gdrive.isConnected ? (
-                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t('options.connectedToDrive')}</span>
+                      <span className={`text-[12px] uppercase px-2.5 py-1.5 rounded-lg text-accent-300 bg-accent-900`}>{t('options.connectedToDrive')}</span>
                     ) : (
-                      <button onClick={handleConnect} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-blue-950/30 text-blue-400 border border-blue-900/40' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
+                      <button onClick={handleConnect} className={`text-[12px] uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
                     )}
                   </div>
                   {(gdrive.isConnected || gdrive.hasEverConnected) && (
                     <div className="mt-3 space-y-2">
-                      <p className="text-[10px] font-bold text-slate-500 leading-tight">{t('options.savesAfterWorkout')}</p>
+                      <p className={`text-[12px] leading-tight ${mutedClass}`}>{t('options.savesAfterWorkout')}</p>
                       <div className="flex items-center justify-between">
                         {gdrive.saveFailed ? (
-                          <button onClick={handleDriveSave} className="text-[10px] font-bold text-rose-500 active:scale-95">{t('options.saveFailed')}</button>
+                          <button onClick={handleDriveSave} className={`text-[12px] active:scale-95 ${mutedClass}`}>{t('options.saveFailed')}</button>
                         ) : gdrive.lastSavedAt ? (
-                          <p className="text-[10px] font-bold text-emerald-500">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
+                          <p className="text-[12px] text-accent">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
                         ) : <span />}
-                        <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-all active:scale-95 ${isDark ? 'bg-indigo-950/30 text-indigo-400 border border-indigo-900/40' : 'bg-indigo-50 text-indigo-600 border border-indigo-200'} disabled:opacity-50`}>{t('options.syncNow')}</button>
+                        <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-[12px] uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('options.syncNow')}</button>
                       </div>
                     </div>
                   )}
@@ -932,72 +1032,84 @@ const App = () => {
               )}
 
               {/* Backup & Restore buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => exportData()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform bg-indigo-600 text-white shadow-lg`}>
-                  <Download size={20} /> {t('options.backupToDevice')}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent flex flex-col items-center gap-2 text-[12px] uppercase active:scale-95 transition-transform">
+                  <DownloadSimple size={20} /> {t('options.backupToDevice')}
                 </button>
-                <button onClick={() => fileInputRef.current?.click()} className={`p-4 rounded-2xl flex flex-col items-center gap-2 font-black uppercase text-[10px] active:scale-95 transition-transform border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-white text-slate-600 border-slate-200'}`}>
-                  <Upload size={20} /> {t('options.restore')}
+                <button onClick={() => fileInputRef.current?.click()} className={`py-3.5 rounded-lg border flex flex-col items-center gap-2 text-[12px] uppercase active:scale-95 transition-transform ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>
+                  <UploadSimple size={20} /> {t('options.restore')}
                 </button>
               </div>
+              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-3.5 rounded-lg border flex items-center justify-center gap-2 text-[12px] uppercase active:scale-95 transition-transform ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>
+                <FileCsv size={20} /> {t('options.importStronglifts')}
+              </button>
             </div>
 
-            <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+            <div className={cardClass}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Globe size={20} /></div>
-                  <div><p className="text-sm font-black uppercase">{t('options.language')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.languageDesc')}</p></div>
-                </div>
-                <div className="flex gap-1.5">
-                  {[{ code: 'en', label: 'EN' }, { code: 'fr', label: 'FR' }].map(lang => (
-                    <button key={lang.code} onClick={() => i18n.changeLanguage(lang.code)} className={`px-3 py-1.5 rounded-xl font-black text-[10px] uppercase transition-all ${i18n.language?.startsWith(lang.code) ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')}`}>{lang.label}</button>
-                  ))}
+                <div><p className="text-[15px] font-semibold">{t('options.language')}</p><p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
+                <div className="w-24">
+                  <Segmented
+                    options={[{ label: 'EN', val: 'en' }, { label: 'FR', val: 'fr' }]}
+                    value={i18n.language?.startsWith('fr') ? 'fr' : 'en'}
+                    onChange={(code) => i18n.changeLanguage(code)}
+                  />
                 </div>
               </div>
             </div>
-            <button onClick={() => csvInputRef.current?.click()} className={`w-full p-5 rounded-[2rem] flex items-center gap-4 border active:scale-[0.98] transition-transform ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-              <div className={`p-3 rounded-2xl ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><FileSpreadsheet size={20} /></div>
-              <div className="text-left"><p className="text-sm font-black uppercase">{t('options.importStronglifts')}</p><p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">{t('options.importStrongliftsDesc')}</p></div>
-            </button>
           </div>
-        )}
+          );
+        })()}
       </main>
 
-      {isWorkoutActive && activeTab === 'workout' && !navExpanded ? (
-        <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-3 flex justify-center items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
-          <button onClick={() => setNavExpanded(true)} aria-label="Show navigation" className={`p-2 rounded-xl transition-all active:scale-110 ${isDark ? 'text-slate-600 hover:text-slate-400' : 'text-slate-300 hover:text-slate-500'}`}>
-            <Menu size={24} />
-          </button>
-        </nav>
-      ) : (() => {
-        const drawerOpen = isWorkoutActive && activeTab === 'workout' && navExpanded;
+      {liveWorkoutVisible && (() => {
+        const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+        const liveDetail = timer.isExpired
+          ? t('liveWorkout.lifting', { time: formatTime(timer.elapsed) })
+          : timer.isActive
+            ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
+            : t('liveWorkout.activeWorkout');
         return (
-          <nav className={`fixed bottom-0 left-0 right-0 border-t px-6 py-6 flex justify-between items-center max-w-md mx-auto z-20 backdrop-blur-lg ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]'}`}>
-            {[
-              { id: 'workout', label: drawerOpen ? t('tabs.close') : t('tabs.train'), icon: drawerOpen ? X : Dumbbell },
-              { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
-              { id: 'history', label: t('tabs.log'), icon: History },
-              { id: 'progress', label: t('tabs.stats'), icon: TrendingUp },
-              { id: 'settings', label: t('tabs.options'), icon: SettingsIcon },
-            ].map(tab => {
-              const isCloseButton = drawerOpen && tab.id === 'workout';
-              const isActive = !isCloseButton && activeTab === tab.id;
-              return (
-                <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex flex-col items-center gap-1.5 transition-all active:scale-125 ${isCloseButton ? (isDark ? 'text-rose-400' : 'text-rose-500') : isActive ? (isDark ? 'text-indigo-400' : 'text-indigo-600') : (isDark ? 'text-slate-700' : 'text-slate-300')}`}><tab.icon size={24} strokeWidth={isCloseButton || isActive ? 3 : 2} /><span className="text-[10px] font-black uppercase tracking-tighter">{tab.label}</span></button>
-              );
-            })}
-          </nav>
+          <div className="flex-none px-3 py-1.5">
+            <button onClick={() => handleTabClick('workout')} className="w-full h-10 px-4 rounded-[9px] border border-accent bg-accent-900 text-accent-300 flex items-center justify-between">
+              <span className="flex items-center gap-2 text-[13.5px] tabular-nums">
+                <Play size={13} weight="fill" />
+                {liveDetail}
+              </span>
+              <span className="flex items-center gap-1 text-[13.5px]">
+                {t('liveWorkout.return')} <CaretRight size={12} />
+              </span>
+            </button>
+          </div>
         );
       })()}
 
+      <nav className={`flex-none border-t flex justify-between px-2 py-1.5 ${isDark ? 'bg-surface-nav border-ink/8' : 'bg-surface-nav-lt border-ink-lt/8'}`}>
+        {[
+          { id: 'workout', label: t('tabs.train'), icon: Barbell },
+          { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
+          { id: 'history', label: t('tabs.log'), icon: ListChecks },
+          { id: 'progress', label: t('tabs.stats'), icon: ChartLineUp },
+          { id: 'settings', label: t('tabs.options'), icon: Gear },
+        ].map(tab => {
+          const isActive = activeTab === tab.id;
+          const colorClass = isActive ? 'text-accent-300' : (isDark ? 'text-ink/35' : 'text-ink-lt/35');
+          return (
+            <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex-1 flex flex-col items-center gap-1 py-1.5 px-2.5 transition-all active:scale-95 ${colorClass}`}>
+              <tab.icon size={23} weight={isActive ? 'fill' : 'regular'} />
+              <span className="text-[11px]">{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
       {showCancelModal && (
-        <div role="dialog" aria-modal="true" aria-label="Discard workout" className={`fixed inset-0 z-[500] flex items-center justify-center p-8 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-xs flex flex-col items-center p-8 rounded-[2.5rem] border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="p-5 rounded-full bg-rose-500/10 text-rose-500 mb-6"><Trash2 size={48} /></div>
-            <h3 className={`text-2xl font-black uppercase mb-4 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.discardTitle')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10">{t('modals.discardBody')}</p>
-            <button onClick={() => setShowCancelModal(false)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl shadow-indigo-900/40 mb-6 active:scale-95">{t('modals.keepLifting')}</button>
-            <button onClick={cancelWorkout} className="text-rose-500 text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 active:scale-90">{t('modals.yesDiscard')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Discard workout" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-xs flex flex-col items-center p-6 rounded-xl border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.discardTitle')}</h3>
+            <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.discardBody')}</p>
+            <button onClick={() => setShowCancelModal(false)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.keepLifting')}</button>
+            <button onClick={cancelWorkout} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.yesDiscard')}</button>
           </div>
         </div>
       )}
@@ -1005,21 +1117,20 @@ const App = () => {
       {deloadAlert && (() => {
         const previewWeights = calculateDeload(weights, deloadPercent);
         return (
-        <div role="dialog" aria-modal="true" aria-label="Deload recommendation" className={`fixed inset-0 z-[400] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendingDown size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.acceptDeload')}</h3>
-            <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">{deloadAlert.message}</p>
+        <div role="dialog" aria-modal="true" aria-label="Deload recommendation" className="fixed inset-0 z-[400] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.acceptDeload')}</h3>
+            <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{deloadAlert.message}</p>
             <div className="mb-4">
-              <p className={`text-2xl font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.deloadPercent', { percent: deloadPercent })}</p>
-              <p className={`text-[10px] font-bold ${deloadPercent === deloadAlert.recommended ? 'text-emerald-500' : 'text-slate-500'}`}>{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
+              <p className="text-[24px] font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+              <p className={`text-[12px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
             </div>
-            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-blue-500" />
-            <div className="space-y-2 mb-8">
+            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-accent" />
+            <div className="space-y-2 mb-6">
               {EXPECTED_WEIGHT_KEYS.filter(id => weights[id] > 0).map(id => (
-                <div key={id} className={`flex justify-between items-center px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
-                  <span className="text-[10px] font-black uppercase text-slate-500">{t('exercises.' + id)}</span>
-                  <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{weights[id]}kg <span className="text-slate-500 mx-1">&rarr;</span> {previewWeights[id]}kg</span>
+                <div key={id} className={`flex justify-between items-center px-4 py-3 rounded-lg ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+                  <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('exercises.' + id)}</span>
+                  <span className="text-[15px] tabular-nums">{weights[id]}kg <span className="text-accent mx-1">&rarr;</span> {previewWeights[id]}kg</span>
                 </div>
               ))}
             </div>
@@ -1033,38 +1144,36 @@ const App = () => {
               setWeights(newW);
               initializeWorkout(newW);
               setDeloadAlert(null);
-            }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.acceptAndLift')}</button>
-            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
+            }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.acceptAndLift')}</button>
+            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipDeload')}</button>
           </div>
         </div>
         );
       })()}
 
       {showRestorePrompt && (
-        <div role="dialog" aria-modal="true" aria-label="Restore backup" className={`fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-10 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-indigo-500/10 text-indigo-500 animate-pulse"><AlertCircle size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.syncHistory')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10">{t('modals.syncHistoryBody')}</p>
-            <div className="space-y-4">
-              <button onClick={() => fileInputRef.current?.click()} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95"><Upload size={20} className="inline mr-2" /> {t('modals.restoreBackup')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Restore backup" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-2">{t('modals.syncHistory')}</h3>
+            <p className={`text-[15px] leading-relaxed mb-8 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.syncHistoryBody')}</p>
+            <div className="space-y-3">
+              <button onClick={() => fileInputRef.current?.click()} className="w-full h-12 rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 flex items-center justify-center gap-2"><UploadSimple size={18} /> {t('modals.restoreBackup')}</button>
               {driveConfigured && (
-                <button onClick={handleConnect} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-700'}`}><Cloud size={20} className="inline mr-2" /> {t('modals.restoreFromDrive')}</button>
+                <button onClick={handleConnect} className={`w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}><Cloud size={18} /> {t('modals.restoreFromDrive')}</button>
               )}
-              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-5 rounded-2xl font-black uppercase text-sm active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}><FileSpreadsheet size={20} className="inline mr-2" /> {t('options.importStronglifts')}</button>
-              <button onClick={() => startWorkout(true)} className="text-[10px] font-black uppercase text-slate-700 tracking-[0.3em] mt-8 block mx-auto">{t('modals.skipAndStart')}</button>
+              <button onClick={() => csvInputRef.current?.click()} className={`w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}><FileCsv size={18} /> {t('options.importStronglifts')}</button>
+              <button onClick={() => startWorkout(true)} className={`text-[15px] mt-4 block mx-auto ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipAndStart')}</button>
             </div>
           </div>
         </div>
       )}
 
       {showResumePrompt && saved.activeSession && (
-        <div role="dialog" aria-modal="true" aria-label="Resume workout" className={`fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-indigo-500/10 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Dumbbell size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.resumeWorkout')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-2">{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
-            <p className="text-slate-500 text-xs font-bold mb-8">
+        <div role="dialog" aria-modal="true" aria-label="Resume workout" className="fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-2">{t('modals.resumeWorkout')}</h3>
+            <p className={`text-[15px] leading-relaxed mb-1 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
+            <p className={`text-[13.5px] mb-8 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>
               {t('modals.setsCompleted', { completed: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.filter(s => s !== null).length, 0), total: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.length, 0) })}
             </p>
             <button
@@ -1083,14 +1192,14 @@ const App = () => {
                 }
                 setShowResumePrompt(false);
               }}
-              className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4"
+              className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6"
             >{t('modals.resume')}</button>
             <button
               onClick={() => {
                 localStorage.removeItem(ACTIVE_WORKOUT_KEY);
                 setShowResumePrompt(false);
               }}
-              className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90"
+              className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
             >{t('modals.discard')}</button>
           </div>
         </div>
@@ -1106,33 +1215,21 @@ const App = () => {
         />
       )}
 
-      {showPlateCalc && (
-        <div role="dialog" aria-modal="true" aria-label="Plate calculator" className={`fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm ${isDark ? 'bg-slate-950/80' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <button onClick={() => setShowPlateCalc(null)} aria-label="Close plate calculator" className={`absolute top-4 right-4 p-2 rounded-full ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}><X size={20} /></button>
-            <div className="text-center mb-8"><h3 className={`text-3xl font-black uppercase ${isDark ? 'text-white' : 'text-slate-900'}`}>{showPlateCalc.weight} KG</h3><p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-2">{t('modals.platesPerSide')}</p></div>
-            <div className="flex flex-wrap justify-center gap-3 mb-8">{plates.map((p, i) => (<div key={i} className={`w-14 h-14 rounded-full border-2 flex flex-col items-center justify-center font-black ${p >= 20 ? 'bg-indigo-600 border-indigo-500 text-white' : p >= 10 ? 'bg-slate-800 border-slate-700 text-white' : (isDark ? 'bg-slate-950 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-400')}`}><span className="text-[10px] opacity-50 leading-none">KG</span><span>{p}</span></div>))}</div>
-            <button onClick={() => setShowPlateCalc(null)} className={`w-full py-4 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95 ${isDark ? 'bg-slate-800 text-white' : 'bg-slate-900 text-white'}`}>{t('modals.close')}</button>
-          </div>
-        </div>
-      )}
-
       {pendingCSVImport && (
-        <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className={`fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className={`p-4 rounded-3xl ${isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><FileSpreadsheet size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-2 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.importData')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-6">{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
-            <div className="grid grid-cols-2 gap-2 mb-8">
+        <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-2">{t('modals.importData')}</h3>
+            <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
+            <div className="grid grid-cols-2 gap-2 mb-6">
               {EXPECTED_WEIGHT_KEYS.map(id => (
-                <div key={id} className={`p-3 rounded-xl text-left ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">{t('exercises.' + id)}</p>
-                  <p className={`text-sm font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{pendingCSVImport.weights[id]}kg</p>
+                <div key={id} className={`p-3 rounded-lg text-left ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+                  <p className={`text-[12px] uppercase leading-none mb-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('exercises.' + id)}</p>
+                  <p className="text-[15px] tabular-nums">{pendingCSVImport.weights[id]}kg</p>
                 </div>
               ))}
             </div>
-            <button onClick={applyCSVImport} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 mb-4">{t('modals.import')}</button>
-            <button onClick={() => setPendingCSVImport(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+            <button onClick={applyCSVImport} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.import')}</button>
+            <button onClick={() => setPendingCSVImport(null)} className={`text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
@@ -1144,16 +1241,16 @@ const App = () => {
         const dateConflict = selectedDate !== originalDate && historyDateSet.has(selectedDate);
         const isFutureDate = selectedDate > new Date().toISOString().slice(0, 10);
         return (
-        <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className={`fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-md ${isDark ? 'bg-slate-950/90' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-md mx-auto my-6 rounded-[2.5rem] p-6 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className="fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-md mx-auto my-6 rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className={`text-xl font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
-              <button onClick={() => { setEditingEntry(null); setShowDeleteConfirm(false); }} aria-label="Close edit modal" className={`p-2 rounded-full ${isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400'}`}><X size={20} /></button>
+              <h3 className="text-lg font-semibold">{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
+              <button onClick={() => { setEditingEntry(null); setShowDeleteConfirm(false); }} aria-label="Close edit modal" className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/15 text-ink' : 'border-ink-lt/15 text-ink-lt'}`}><X size={18} /></button>
             </div>
 
             {isNewEntry && (
               <div className="mb-6">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">{t('modals.workoutType')}</label>
+                <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.workoutType')}</label>
                 <div className="flex gap-2">
                   {['A', 'B'].map(wt => (
                     <button
@@ -1166,7 +1263,7 @@ const App = () => {
                           exercises: getProgramExercises(wt, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
                         },
                       }))}
-                      className={`flex-1 py-3 rounded-xl font-black uppercase text-sm transition-all ${editingEntry.session.type === wt ? 'bg-indigo-600 text-white shadow-lg' : (isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-100 text-slate-500 border border-slate-200')}`}
+                      className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
                     >{t(`workout.type${wt}`)}</button>
                   ))}
                 </div>
@@ -1174,7 +1271,7 @@ const App = () => {
             )}
 
             <div className="mb-6">
-              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest block mb-2">{t('modals.date')}</label>
+              <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.date')}</label>
               <input
                 type="date"
                 value={editingEntry.session.date.slice(0, 10)}
@@ -1184,18 +1281,18 @@ const App = () => {
                   newDate.setHours(12, 0, 0, 0);
                   setEditingEntry(prev => ({ ...prev, session: { ...prev.session, date: newDate.toISOString() } }));
                 }}
-                className={`w-full p-3 rounded-xl font-bold text-sm border ${dateConflict || isFutureDate ? 'border-rose-500' : (isDark ? 'border-slate-700' : 'border-slate-200')} ${isDark ? 'bg-slate-800 text-white' : 'bg-slate-50 text-slate-900'}`}
+                className={`w-full p-3 rounded-lg text-[15px] border ${dateConflict || isFutureDate ? 'border-dashed border-ink/50' : (isDark ? 'border-ink/18' : 'border-ink-lt/18')} ${isDark ? 'bg-surface-deep text-ink' : 'bg-surface-deep-lt text-ink-lt'}`}
               />
-              {dateConflict && <p className="text-rose-500 text-xs font-bold mt-2">{t('modals.dateConflict')}</p>}
-              {isFutureDate && <p className="text-rose-500 text-xs font-bold mt-2">{t('modals.futureDate')}</p>}
+              {dateConflict && <p className={`text-[13.5px] mt-2 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.dateConflict')}</p>}
+              {isFutureDate && <p className={`text-[13.5px] mt-2 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.futureDate')}</p>}
             </div>
 
-            <div className="space-y-4 mb-8">
+            <div className="space-y-3 mb-6">
               {editingEntry.session.exercises.map((ex, exIdx) => (
-                <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                  <p className={`font-black text-xs uppercase mb-3 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>{t('exercises.' + ex.id)}</p>
+                <div key={ex.id} className={`p-4 rounded-lg border ${isDark ? 'bg-surface-deep border-ink/8' : 'bg-surface-deep-lt border-ink-lt/8'}`}>
+                  <p className="text-[13.5px] font-medium mb-3">{t('exercises.' + ex.id)}</p>
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">{t('modals.weightLabel')}</span>
+                    <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.weightLabel')}</span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setEditingEntry(prev => {
@@ -1204,9 +1301,9 @@ const App = () => {
                           return { ...prev, session: s };
                         })}
                         aria-label={`Decrease ${ex.name} weight`}
-                        className={`p-2 rounded-xl border ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'} active:scale-90`}
-                      ><Minus size={14} /></button>
-                      <span className="font-black w-14 text-center text-lg">{ex.weight}kg</span>
+                        className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
+                      ><Minus size={16} /></button>
+                      <span className="w-14 text-center text-[15px] tabular-nums">{ex.weight}kg</span>
                       <button
                         onClick={() => setEditingEntry(prev => {
                           const s = JSON.parse(JSON.stringify(prev.session));
@@ -1214,19 +1311,20 @@ const App = () => {
                           return { ...prev, session: s };
                         })}
                         aria-label={`Increase ${ex.name} weight`}
-                        className={`p-2 rounded-xl border ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'} active:scale-90`}
-                      ><Plus size={14} /></button>
+                        className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
+                      ><Plus size={16} /></button>
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">{t('modals.setsLabel')}</span>
+                    <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.setsLabel')}</span>
                     <div className="flex gap-2">
                       {ex.setsCompleted.map((reps, setIdx) => {
                         const target = targetReps(ex);
-                        const bgColor = reps === null ? (isDark ? 'bg-slate-700' : 'bg-slate-300')
-                          : reps === target ? 'bg-indigo-500 shadow-[0_0_6px_rgba(99,102,241,0.4)]'
-                          : reps === 0 ? 'bg-rose-500'
-                          : 'bg-amber-500';
+                        const stateClass = reps === null
+                          ? (isDark ? 'border border-ink/18 text-ink/40' : 'border border-ink-lt/18 text-ink-lt/40')
+                          : reps === target
+                            ? 'border border-accent bg-accent-900 text-accent-300'
+                            : 'border border-dashed border-ink/50 bg-neutral-tint text-ink';
                         return (
                           <button
                             key={setIdx}
@@ -1237,7 +1335,7 @@ const App = () => {
                               return { ...prev, session: s };
                             })}
                             aria-label={`Set ${setIdx + 1}: ${reps === null ? 'not done' : reps + ' reps'}`}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white active:scale-90 transition-transform ${bgColor}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center text-[13.5px] font-medium active:scale-90 transition-transform ${stateClass}`}
                           >
                             {reps === null ? '–' : reps}
                           </button>
@@ -1277,19 +1375,19 @@ const App = () => {
                 setEditingEntry(null);
                 handleManualLogSave({ history: newHistory, weights: nextWeights, nextType });
               }}
-              className={`w-full py-4 rounded-2xl font-black uppercase text-sm shadow-xl mb-4 ${dateConflict || isFutureDate ? 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed' : 'bg-indigo-600 text-white active:scale-95'}`}
+              className={`w-full h-12 flex items-center justify-center rounded-lg border text-[14.5px] font-medium mb-6 ${dateConflict || isFutureDate ? (isDark ? 'border-ink/12 text-ink/30' : 'border-ink-lt/12 text-ink-lt/30') : 'border-accent text-accent active:scale-95'}`}
             >{isNewEntry ? t('modals.addWorkout') : t('modals.saveChanges')}</button>
 
             {!isNewEntry && (
               !showDeleteConfirm ? (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase text-rose-500 tracking-widest py-3 active:scale-90"
-                ><Trash2 size={12} /> {t('modals.deleteWorkout')}</button>
+                  className={`w-full min-h-[44px] flex items-center justify-center gap-2 text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
+                ><Trash size={14} /> {t('modals.deleteWorkout')}</button>
               ) : (
-                <div className={`p-4 rounded-2xl border ${isDark ? 'bg-rose-950/20 border-rose-900/30' : 'bg-rose-50 border-rose-200'}`}>
-                  <p className={`text-xs font-bold text-center mb-3 ${isDark ? 'text-rose-400' : 'text-rose-600'}`}>{t('modals.deleteConfirm')}</p>
-                  <div className="flex gap-3">
+                <div className={`p-4 rounded-lg border border-dashed ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`}>
+                  <p className="text-[13.5px] text-center mb-3">{t('modals.deleteConfirm')}</p>
+                  <div className="flex gap-4">
                     <button
                       onClick={() => {
                         const newHistory = history.filter((_, idx) => idx !== editingEntry.index);
@@ -1299,11 +1397,11 @@ const App = () => {
                         showToast(t('toast.workoutDeleted'), 'success');
                         saveToDriveQuietly({ ...getAppState(), history: newHistory });
                       }}
-                      className="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black uppercase text-xs active:scale-95"
+                      className={`flex-1 h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
                     >{t('modals.delete')}</button>
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className={`flex-1 py-3 rounded-xl font-black uppercase text-xs ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'} active:scale-95`}
+                      className={`flex-1 h-[46px] flex items-center justify-center text-[14px] active:scale-95 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}
                     >{t('modals.cancel')}</button>
                   </div>
                 </div>
@@ -1317,61 +1415,54 @@ const App = () => {
       {completionSummary && (() => {
         const totalTime = formatClock(completionSummary.workout.duration);
         return (
-        <div role="dialog" aria-modal="true" aria-label="Workout complete" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-5 rounded-full bg-emerald-500/10 text-emerald-500"><Trophy size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('completion.complete', { name: t(`workout.type${completionSummary.workout.type}`) })}</h3>
+        <div role="dialog" aria-modal="true" aria-label="Workout complete" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-4">{t('completion.kicker')}</p>
             {totalTime && (
-              <div className={`flex items-center justify-between px-5 py-3 rounded-2xl mb-6 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-100 border border-slate-200'}`}>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{t('completion.totalTime')}</span>
-                <span className={`text-lg font-black font-mono tabular-nums leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{totalTime}</span>
+              <div className={`flex items-center justify-between px-4 py-2.5 rounded-lg mb-5 ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+                <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('completion.totalTime')}</span>
+                <span className="text-[15px] tabular-nums">{totalTime}</span>
               </div>
             )}
-            <div className="space-y-3 mb-8">
+            <div className="space-y-3 mb-6">
               {completionSummary.workout.exercises.map(ex => {
                 const passed = isExercisePassed(ex);
                 const progressed = completionSummary.progressions.includes(ex.id);
-                const needsDeload = completionSummary.pendingDeloads?.some(d => d.id === ex.id);
-                const StatusIcon = passed ? CheckCircle2 : needsDeload ? TrendingDown : MinusCircle;
-                const statusColor = passed ? 'text-emerald-500' : needsDeload ? 'text-blue-500' : 'text-amber-500';
-                const mutedColor = isDark ? 'text-slate-500' : 'text-slate-400';
+                const nextWeight = completionSummary.nextWeights?.[ex.id];
+                const mutedColor = isDark ? 'text-ink/45' : 'text-ink-lt/45';
                 const setDurations = ex.setDurations ?? [];
                 const logged = setDurations.filter(d => typeof d === 'number');
                 const hasSplits = logged.length > 0;
                 const exerciseTime = hasSplits ? formatClock(logged.reduce((sum, d) => sum + d, 0)) : null;
                 return (
-                  <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                  <div key={ex.id} className={`p-3 rounded-lg border ${isDark ? 'bg-surface-deep border-ink/8' : 'bg-surface-deep-lt border-ink-lt/8'}`}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <StatusIcon size={18} className={statusColor} />
-                        <span className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('exercises.' + ex.id)}</span>
-                      </div>
-                      <span className="font-black text-sm">{ex.weight}kg</span>
+                      <span className="text-[15px] font-medium">{t('exercises.' + ex.id)}</span>
+                      {progressed ? (
+                        <span className="flex items-center gap-1 text-[13.5px] text-accent"><TrendUp size={14} />{t('completion.progressedTo', { from: ex.weight, to: nextWeight })}</span>
+                      ) : (
+                        <span className={`flex items-center gap-1 text-[13.5px] ${mutedColor}`}><ArrowRight size={14} />{t('completion.staysAt', { weight: ex.weight })}</span>
+                      )}
                     </div>
-                    <div className="flex justify-center gap-1.5 mt-3">
+                    <div className="flex justify-center gap-1.5 mt-2.5">
                       {ex.setsCompleted.map((r, i) => {
                         const val = r ?? 0;
                         const failed = val < targetReps(ex);
                         const split = formatClock(setDurations[i]);
                         return (
-                          <div key={i} className={`flex-1 basis-0 max-w-[3.5rem] rounded-lg py-1.5 ${isDark ? 'bg-slate-900/70' : 'bg-white'}`}>
-                            <div className={`text-xs font-black leading-none ${failed && !passed ? statusColor : (isDark ? 'text-slate-300' : 'text-slate-600')}`}>{val}</div>
-                            {hasSplits && <div className={`text-[9px] font-bold tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
+                          <div key={i} className={`flex-1 basis-0 max-w-[3.5rem] rounded-lg py-1.5 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
+                            <div className={`text-[13.5px] leading-none ${failed && !passed ? 'text-ink' : (isDark ? 'text-ink/70' : 'text-ink-lt/70')}`}>{val}</div>
+                            {hasSplits && <div className={`text-[12px] tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
                           </div>
                         );
                       })}
                     </div>
-                    <div className="flex items-center justify-between mt-3 min-h-[14px]">
-                      <span className={`text-[10px] font-bold tabular-nums ${mutedColor}`}>{exerciseTime ? t('completion.exerciseTime', { time: exerciseTime }) : ''}</span>
-                      {progressed && <span className="text-emerald-500 text-[10px] font-black">{t('completion.progressNext', { increment: ex.increment })}</span>}
-                      {needsDeload && <span className="text-blue-500 text-[10px] font-black">{t('completion.deloadTo')}</span>}
-                      {!passed && !progressed && !needsDeload && <span className="text-amber-500 text-[10px] font-black">{t('completion.sameWeight')}</span>}
-                    </div>
+                    {exerciseTime && <p className={`text-[12px] tabular-nums mt-2 ${mutedColor}`}>{t('completion.exerciseTime', { time: exerciseTime })}</p>}
                   </div>
                 );
               })}
             </div>
-            <button onClick={() => setCompletionSummary(null)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl active:scale-95">{t('completion.done')}</button>
+            <button onClick={() => setCompletionSummary(null)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95">{t('completion.done')}</button>
           </div>
         </div>
         );
@@ -1383,21 +1474,20 @@ const App = () => {
           newWeight: deloadWeightByPercent(d.currentWeight, deloadPercent, d.id),
         }));
         return (
-        <div role="dialog" aria-modal="true" aria-label="Failure deload" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-blue-500/10 text-blue-500"><TrendingDown size={48} /></div></div>
-            <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.failureDeloadTitle')}</h3>
-            <p className="text-slate-400 text-xs font-bold leading-relaxed mb-6">{t('modals.failureDeloadMessage')}</p>
+        <div role="dialog" aria-modal="true" aria-label="Failure deload" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.failureDeloadTitle')}</h3>
+            <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.failureDeloadMessage')}</p>
             <div className="mb-4">
-              <p className={`text-2xl font-black mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.deloadPercent', { percent: deloadPercent })}</p>
-              <p className={`text-[10px] font-bold ${deloadPercent === 10 ? 'text-emerald-500' : 'text-slate-500'}`}>{t('modals.deloadRecommended', { percent: 10 })}</p>
+              <p className="text-[24px] font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+              <p className={`text-[12px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.deloadRecommended', { percent: 10 })}</p>
             </div>
-            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-blue-500" />
-            <div className="space-y-2 mb-8">
+            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-accent" />
+            <div className="space-y-2 mb-6">
               {previewDeloads.map(d => (
-                <div key={d.id} className={`flex justify-between items-center px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-950/50' : 'bg-slate-50'}`}>
-                  <span className="text-[10px] font-black uppercase text-slate-500">{t('exercises.' + d.id)}</span>
-                  <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{d.currentWeight}kg <span className="text-slate-500 mx-1">&rarr;</span> {d.newWeight}kg</span>
+                <div key={d.id} className={`flex justify-between items-center px-4 py-3 rounded-lg ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+                  <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('exercises.' + d.id)}</span>
+                  <span className="text-[15px] tabular-nums">{d.currentWeight}kg <span className="text-accent mx-1">&rarr;</span> {d.newWeight}kg</span>
                 </div>
               ))}
             </div>
@@ -1407,87 +1497,70 @@ const App = () => {
               setWeights(updatedWeights);
               setPendingFailureDeloads(null);
               initializeWorkout(updatedWeights);
-            }} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.confirmDeload')}</button>
+            }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.confirmDeload')}</button>
             <button onClick={() => {
               setPendingFailureDeloads(null);
               initializeWorkout(weights);
-            }} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.skipDeload')}</button>
+            }} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.skipDeload')}</button>
           </div>
         </div>
         );
       })()}
 
       {showHelp && (
-        <div role="dialog" aria-modal="true" aria-label="How it works" onClick={() => setShowHelp(false)} className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div onClick={e => e.stopPropagation()} className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('help.title')}</h3>
-            <div className="max-h-[60vh] overflow-y-auto space-y-5 mb-8 text-left">
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Dumbbell size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.programTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.programBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-emerald-950/40 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}><TrendingUp size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.progressionTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.progressionBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-amber-950/40 text-amber-400' : 'bg-amber-50 text-amber-600'}`}><MinusCircle size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.stallTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.stallBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><TrendingDown size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.deloadTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.deloadBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-indigo-950/40 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}><Clock size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.restTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.restBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><AlertCircle size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.longBreaksTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.longBreaksBody')}</p></div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl shrink-0 ${isDark ? 'bg-blue-950/40 text-blue-400' : 'bg-blue-50 text-blue-600'}`}><Cloud size={18} /></div>
-                <div><p className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('help.backupsTitle')}</p><p className={`text-xs font-bold leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('help.backupsBody')}</p></div>
-              </div>
+        <div role="dialog" aria-modal="true" aria-label="How it works" onClick={() => setShowHelp(false)} className="fixed inset-0 z-[500] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
+            <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
+            <div className="max-h-[60vh] overflow-y-auto space-y-5 mb-6 text-left">
+              {[
+                { Icon: Barbell, title: t('help.programTitle'), body: t('help.programBody') },
+                { Icon: TrendUp, title: t('help.progressionTitle'), body: t('help.progressionBody') },
+                { Icon: Pause, title: t('help.stallTitle'), body: t('help.stallBody') },
+                { Icon: TrendDown, title: t('help.deloadTitle'), body: t('help.deloadBody') },
+                { Icon: Timer, title: t('help.restTitle'), body: t('help.restBody') },
+                { Icon: Moon, title: t('help.longBreaksTitle'), body: t('help.longBreaksBody') },
+                { Icon: Cloud, title: t('help.backupsTitle'), body: t('help.backupsBody') },
+              ].map(({ Icon, title, body }) => (
+                <div key={title} className="flex items-start gap-3">
+                  <div className={`w-[30px] h-[30px] rounded-lg border border-accent text-accent flex items-center justify-center shrink-0`}><Icon size={18} /></div>
+                  <div><p className="text-[15px] font-medium">{title}</p><p className={`text-[13.5px] leading-relaxed ${isDark ? 'text-ink/55' : 'text-ink-lt/55'}`}>{body}</p></div>
+                </div>
+              ))}
             </div>
-            <button autoFocus onClick={() => setShowHelp(false)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl active:scale-95">{t('help.gotIt')}</button>
+            <button autoFocus onClick={() => setShowHelp(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('help.gotIt')}</button>
           </div>
         </div>
       )}
 
       {pendingDriveRestore && (
-        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
-            <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
-            <button onClick={() => setPendingDriveRestore(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
+            <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
+            <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
+            <button onClick={() => setPendingDriveRestore(null)} className={`text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
 
       {pendingLocalImport && (
-        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.olderBackupTitle')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
-            <button onClick={() => applyLocalImport(pendingLocalImport.data)} className="w-full py-5 bg-amber-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 mb-4">{t('modals.restoreAnyway')}</button>
-            <button onClick={() => setPendingLocalImport(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
+            <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
+            <button onClick={() => applyLocalImport(pendingLocalImport.data)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
+            <button onClick={() => setPendingLocalImport(null)} className={`text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
 
       {connectSyncPrompt && (
-        <div role="dialog" aria-modal="true" aria-label="Data conflict" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-4 rounded-3xl bg-amber-500/10 text-amber-500"><AlertCircle size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <div role="dialog" aria-modal="true" aria-label="Data conflict" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">
               {t('modals.dataConflictTitle')}
             </h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-8">
+            <p className={`text-[15px] leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>
               {t('modals.dataConflictBody', {
                 driveCount: connectSyncPrompt.driveCount,
                 cloudDate: connectSyncPrompt.cloudDate,
@@ -1505,7 +1578,7 @@ const App = () => {
                   setConnectSyncPrompt(null);
                 }}
                 disabled={!connectSyncPrompt.driveData}
-                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 disabled:opacity-50"
+                className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 disabled:opacity-35"
               >
                 {t('modals.useDriveData')}
               </button>
@@ -1515,12 +1588,12 @@ const App = () => {
                   if (result.success) showToast(t('toast.savedToDrive'), 'success');
                   setConnectSyncPrompt(null);
                 }}
-                className={`w-full py-5 rounded-2xl font-black uppercase text-sm tracking-widest active:scale-95 border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-100 border-slate-200 text-slate-900'}`}
+                className={`w-full h-[46px] flex items-center justify-center rounded-lg font-medium text-[14px] active:scale-95 border ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
               >
                 {t('modals.useLocalData')}
               </button>
             </div>
-            <button onClick={() => setConnectSyncPrompt(null)} className="text-[10px] font-black uppercase text-slate-500 tracking-widest hover:text-slate-300 active:scale-90">{t('modals.cancel')}</button>
+            <button onClick={() => setConnectSyncPrompt(null)} className={`text-[15px] active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}

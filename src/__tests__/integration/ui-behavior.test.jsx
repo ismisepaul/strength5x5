@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
@@ -28,7 +28,7 @@ describe('Skip button behavior', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -36,13 +36,13 @@ describe('Skip button behavior', () => {
     });
     await user.click(setButtons[0]);
 
-    expect(screen.getByText('Recovery Phase')).toBeInTheDocument();
-    expect(screen.getByText('Skip')).toBeInTheDocument();
+    expect(screen.getByText('Rest')).toBeInTheDocument();
+    expect(screen.getByLabelText('Skip rest')).toBeInTheDocument();
 
-    await user.click(screen.getByText('Skip'));
+    await user.click(screen.getByLabelText('Skip rest'));
 
     expect(screen.getByText('Lifting')).toBeInTheDocument();
-    expect(screen.queryByText('Recovery Phase')).not.toBeInTheDocument();
+    expect(screen.queryByText('Rest')).not.toBeInTheDocument();
   });
 
   it('Got it on exercise complete fully dismisses the timer bar', async () => {
@@ -50,7 +50,7 @@ describe('Skip button behavior', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -61,87 +61,55 @@ describe('Skip button behavior', () => {
       await user.click(setButtons[i]);
     }
 
-    expect(screen.getByText('Movement Finished')).toBeInTheDocument();
-    await user.click(screen.getByText('Got it'));
+    expect(screen.getByText('Movement finished')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Dismiss'));
 
-    expect(screen.queryByText('Movement Finished')).not.toBeInTheDocument();
+    expect(screen.queryByText('Movement finished')).not.toBeInTheDocument();
     expect(screen.queryByText('Lifting')).not.toBeInTheDocument();
-    expect(screen.queryByText('Recovery Phase')).not.toBeInTheDocument();
+    expect(screen.getByText('In session')).toBeInTheDocument();
   });
 });
 
-describe('Nav collapse during workout', () => {
-  it('shows collapsed nav (menu icon) during an active workout on workout tab', async () => {
+describe('Tab bar during an active workout', () => {
+  it('keeps all five tabs visible during an active workout on the workout tab', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
-    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Train')).not.toBeInTheDocument();
-  });
-
-  it('expands full nav when menu icon is clicked, showing a close button in place of Train', async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByText('Start Workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
-
-    expect(screen.getByLabelText('Close')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Train')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Train')).toBeInTheDocument();
+    expect(screen.getByLabelText('Program')).toBeInTheDocument();
     expect(screen.getByLabelText('Log')).toBeInTheDocument();
     expect(screen.getByLabelText('Stats')).toBeInTheDocument();
     expect(screen.getByLabelText('Options')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Show navigation')).not.toBeInTheDocument();
   });
 
-  it('collapses the drawer back to the menu icon when the close button is clicked', async () => {
+  it('returns to the live workout when returning to the Train tab from another tab', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
-    expect(screen.getByLabelText('Close')).toBeInTheDocument();
-
-    await user.click(screen.getByLabelText('Close'));
-
-    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Close')).not.toBeInTheDocument();
-    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
-  });
-
-  it('collapses nav when returning to workout tab from another tab', async () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByText('Start Workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Log'));
 
-    expect(screen.getByText('Workout Log')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Log' })).toBeInTheDocument();
     expect(screen.getByLabelText('Train')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Train'));
 
-    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Log')).not.toBeInTheDocument();
-    expect(screen.queryByText('Start Workout')).not.toBeInTheDocument();
-    expect(screen.getByText('Finish Workout')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Log' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Start workout')).not.toBeInTheDocument();
+    expect(screen.getByText('Finish workout')).toBeInTheDocument();
   });
 
-  it('collapses nav when toggling a set during workout', async () => {
+  it('keeps the tab bar visible while toggling a set during a workout', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
-
-    expect(screen.getByLabelText('Close')).toBeInTheDocument();
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -149,7 +117,8 @@ describe('Nav collapse during workout', () => {
     });
     await user.click(setButtons[0]);
 
-    expect(screen.getByLabelText('Show navigation')).toBeInTheDocument();
+    expect(screen.getByLabelText('Train')).toBeInTheDocument();
+    expect(screen.getByLabelText('Log')).toBeInTheDocument();
   });
 
   it('shows full nav before workout starts', () => {
@@ -168,11 +137,10 @@ describe('Live Workout bar', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Log'));
 
-    expect(screen.getByText('Live Workout')).toBeInTheDocument();
+    expect(screen.getByText('Workout in progress')).toBeInTheDocument();
     expect(screen.getByText('Return')).toBeInTheDocument();
   });
 
@@ -181,21 +149,20 @@ describe('Live Workout bar', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
-    await user.click(screen.getByLabelText('Show navigation'));
+    await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Log'));
 
     await user.click(screen.getByText('Return'));
 
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
-    expect(screen.queryByText('Workout Log')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Log' })).not.toBeInTheDocument();
   });
 });
 
 describe('System dark mode preference', () => {
   it('defaults to system preference when no saved isDark', () => {
     const { container } = render(<App />);
-    expect(container.firstChild).toHaveClass('bg-slate-950');
+    expect(container.firstChild).toHaveClass('bg-ground');
   });
 
   it('respects saved light mode preference over system default', () => {
@@ -204,7 +171,7 @@ describe('System dark mode preference', () => {
       isDark: false,
     }));
     const { container } = render(<App />);
-    expect(container.firstChild).toHaveClass('bg-slate-50');
+    expect(container.firstChild).toHaveClass('bg-ground-lt');
   });
 });
 
@@ -254,7 +221,7 @@ describe('Stats charts', () => {
     await user.click(screen.getByText('Back Squat'));
     await user.click(screen.getByLabelText('Back to stats'));
 
-    expect(screen.getByText('Peak Stats')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Stats' })).toBeInTheDocument();
   });
 
   it('tapping Big 3 Total shows chart view', async () => {
@@ -263,21 +230,24 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Peak Stats'));
+    await user.click(screen.getByText('Big-3 total'));
 
-    expect(screen.getByText('Big 3 Total')).toBeInTheDocument();
+    expect(screen.getByText('Big-3 total')).toBeInTheDocument();
     expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
   });
 
   it('shows trend arrows on exercise cards', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
     const user = userEvent.setup();
-    const { container } = render(<App />);
+    render(<App />);
 
     await user.click(screen.getByText('Stats'));
 
-    const chevrons = container.querySelectorAll('.lucide-chevron-right');
-    expect(chevrons.length).toBeGreaterThanOrEqual(5);
+    const exerciseNames = ['Back Squat', 'Bench Press', 'Barbell Row', 'Overhead Press', 'Deadlift'];
+    for (const name of exerciseNames) {
+      const row = screen.getByText(name).closest('button');
+      expect(row.querySelector('svg')).toBeTruthy();
+    }
   });
 
   it('Weight toggle is on by default and Est. 1RM can be toggled on independently', async () => {
@@ -291,12 +261,14 @@ describe('Stats charts', () => {
     const weightBtn = screen.getByText('Weight').closest('button');
     const e1rmBtn = screen.getByText('Est. 1RM').closest('button');
 
-    expect(weightBtn.className).toContain('bg-indigo-600');
-    expect(e1rmBtn.className).not.toContain('bg-emerald-600');
+    expect(weightBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(e1rmBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(weightBtn.className).toContain('border-accent');
 
     await user.click(e1rmBtn);
-    expect(e1rmBtn.className).toContain('bg-emerald-600');
-    expect(weightBtn.className).toContain('bg-indigo-600');
+    expect(e1rmBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(e1rmBtn.className).toContain('border-accent');
+    expect(weightBtn).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('time range pills are present in chart view', async () => {
@@ -349,7 +321,7 @@ describe('Log entry editing', () => {
     await user.click(cards[0].closest('button'));
 
     expect(screen.getByLabelText('Edit workout')).toBeInTheDocument();
-    expect(screen.getByText('Edit Workout')).toBeInTheDocument();
+    expect(screen.getByText('Edit workout')).toBeInTheDocument();
     expect(screen.getByText('Save Changes')).toBeInTheDocument();
   });
 
@@ -438,7 +410,7 @@ describe('Manual log entry', () => {
 
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
-    expect(screen.getByText('Add Workout', { selector: 'h3' })).toBeInTheDocument();
+    expect(screen.getByText('Add workout', { selector: 'h3' })).toBeInTheDocument();
     const toggleButtons = dialog.querySelectorAll('button');
     const toggleLabels = Array.from(toggleButtons).map(b => b.textContent);
     expect(toggleLabels).toContain('Workout A');
@@ -452,14 +424,15 @@ describe('Manual log entry', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    const cardsBefore = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-3xl"]'));
+    const cardsBefore = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-[10px]"]'));
     expect(cardsBefore).toHaveLength(1);
 
     await user.click(screen.getByLabelText('Add workout'));
-    await user.click(screen.getByRole('button', { name: 'Add Workout' }));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Add workout' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    const cardsAfter = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-3xl"]'));
+    const cardsAfter = screen.getAllByText(/Workout [AB]/).filter(el => el.closest('button[class*="rounded-[10px]"]'));
     expect(cardsAfter).toHaveLength(2);
   });
 });
@@ -497,18 +470,18 @@ describe('Same-day workout prevention', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithToday));
     render(<App />);
 
-    const btn = screen.getByText('Start Workout').closest('button');
+    const btn = screen.getByText('Trained today').closest('button');
     expect(btn).toBeDisabled();
-    expect(screen.getByText('Already trained today')).toBeInTheDocument();
+    expect(screen.getByText('Already trained today — rest up.')).toBeInTheDocument();
   });
 
   it('enables Start Workout when no workout exists for today', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithYesterday));
     render(<App />);
 
-    const btn = screen.getByText('Start Workout').closest('button');
+    const btn = screen.getByText('Start workout').closest('button');
     expect(btn).not.toBeDisabled();
-    expect(screen.queryByText('Already trained today')).not.toBeInTheDocument();
+    expect(screen.queryByText('Already trained today — rest up.')).not.toBeInTheDocument();
   });
 
   it('shows date conflict warning when edit date collides with existing session', async () => {
@@ -524,7 +497,7 @@ describe('Same-day workout prevention', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[1]);
 
     const dialog = screen.getByRole('dialog');
@@ -542,7 +515,7 @@ describe('Same-day workout prevention', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[0]);
 
     const dialog = screen.getByRole('dialog');
@@ -561,7 +534,7 @@ describe('Same-day workout prevention', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Log'));
-    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-3xl"]')).filter(Boolean);
+    const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[0]);
 
     expect(screen.queryByText('A workout already exists on this date')).not.toBeInTheDocument();

@@ -93,7 +93,7 @@ describe('Workout completion summary', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -103,7 +103,7 @@ describe('Workout completion summary', () => {
       await user.click(btn);
     }
 
-    await user.click(screen.getByText('Finish Workout'));
+    await user.click(screen.getByText('Finish workout'));
 
     await waitFor(() => {
       expect(screen.getByText(/Complete/i)).toBeInTheDocument();
@@ -121,7 +121,7 @@ describe('Workout completion summary', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -131,7 +131,7 @@ describe('Workout completion summary', () => {
       await user.click(btn);
     }
 
-    await user.click(screen.getByText('Finish Workout'));
+    await user.click(screen.getByText('Finish workout'));
 
     const dialog = await screen.findByRole('dialog', { name: 'Workout complete' });
     expect(dialog).toHaveTextContent('Total Time');
@@ -148,7 +148,7 @@ describe('Workout completion summary', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start Workout'));
+    await user.click(screen.getByText('Start workout'));
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
       return label && label.startsWith('Set ');
@@ -156,7 +156,7 @@ describe('Workout completion summary', () => {
     for (const btn of setButtons) {
       await user.click(btn);
     }
-    await user.click(screen.getByText('Finish Workout'));
+    await user.click(screen.getByText('Finish workout'));
 
     await waitFor(() => expect(screen.getByText('Done')).toBeInTheDocument());
     await user.click(screen.getByText('Done'));
@@ -230,7 +230,7 @@ describe('Workout recovery', () => {
 
     await waitFor(() => {
       expect(screen.queryByText('Resume Workout?')).not.toBeInTheDocument();
-      expect(screen.getByText('Finish Workout')).toBeInTheDocument();
+      expect(screen.getByText('Finish workout')).toBeInTheDocument();
     });
   });
 
