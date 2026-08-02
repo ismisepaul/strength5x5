@@ -120,7 +120,7 @@ describe('Program tab', () => {
 
     await user.click(screen.getByLabelText('Program'));
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
-    await user.click(screen.getByText('Reset'));
+    await user.click(screen.getByText('Reset to 5×5'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.program.bench.sets).toBe(5);

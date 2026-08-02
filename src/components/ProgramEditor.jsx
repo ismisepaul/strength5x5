@@ -23,11 +23,11 @@ const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
         <button
           onClick={() => onChange(() => JSON.parse(JSON.stringify(DEFAULT_PROGRAM)))}
           className={`flex items-center gap-1.5 text-[12px] uppercase px-3 py-2 rounded-lg border active:scale-95 transition-transform ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'}`}
-        ><ArrowCounterClockwise size={14} /> {t('program.resetDefaults')}</button>
+        ><ArrowCounterClockwise size={14} /> {t('program.resetToDefault')}</button>
       </div>
-      <p className={`text-[13.5px] leading-relaxed -mt-1 ${mutedClass}`}>{t('program.subtitle')}</p>
+      <p className={`text-[13.5px] leading-relaxed -mt-1 ${mutedClass}`}>{t('program.standard.customiseNote')}</p>
       {isWorkoutActive && (
-        <p className={`text-[13.5px] leading-relaxed ${mutedClass}`}>{t('program.activeWorkoutNote')}</p>
+        <p className={`text-[13.5px] leading-relaxed ${mutedClass}`}>{t('program.standard.note')}</p>
       )}
 
       {EXPECTED_WEIGHT_KEYS.map(id => {
