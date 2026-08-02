@@ -195,6 +195,12 @@ const App = () => {
     setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, e.weight + diff) })) }) : null);
   }, []);
 
+  // Idle-screen steppers adjust `weights` directly (there's no active workout yet),
+  // floored at the empty 20kg bar rather than active-session's 0.
+  const handleUpdateIdleWeight = useCallback((id, diff) => {
+    setWeights(prev => ({ ...prev, [id]: Math.max(20, (prev[id] ?? 0) + diff) }));
+  }, []);
+
   // Shared by the short-press cycle and the long-press rep picker: given the current
   // logged value, resolveNext computes the next one, then this stamps setTimes and
   // drives the rest timer identically either way.
@@ -666,7 +672,11 @@ const App = () => {
                       <p className="text-[16px] font-medium">{t('exercises.' + ex.id)}</p>
                       <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
                     </div>
-                    <span className="text-[19px] text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => handleUpdateIdleWeight(ex.id, -ex.increment)} aria-label={`Decrease ${t('exercises.' + ex.id)} weight`} className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Minus size={16} /></button>
+                      <span className="text-[19px] text-accent-300 tabular-nums min-w-[70px] text-center">{weights[ex.id]}kg</span>
+                      <button onClick={() => handleUpdateIdleWeight(ex.id, ex.increment)} aria-label={`Increase ${t('exercises.' + ex.id)} weight`} className={`w-9 h-9 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}><Plus size={16} /></button>
+                    </div>
                   </div>
                 ))}</div>
                 <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>

@@ -33,7 +33,7 @@ describe('Workout Flow', () => {
     expect(screen.getByText('Barbell Row')).toBeInTheDocument();
   });
 
-  it('shows static weights before starting workout', () => {
+  it('allows adjusting weights on the idle screen, persisted into the started workout', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
@@ -46,13 +46,39 @@ describe('Workout Flow', () => {
       vibrationEnabled: false,
     }));
 
+    const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.queryByLabelText(/Decrease .* weight/)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/Increase .* weight/)).not.toBeInTheDocument();
     expect(screen.getByText('60kg')).toBeInTheDocument();
-    expect(screen.getByText('45kg')).toBeInTheDocument();
-    expect(screen.getByText('50kg')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Increase Back Squat weight'));
+    expect(screen.getByText('62.5kg')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(62.5);
+
+    await user.click(screen.getByText('Start workout'));
+    expect(screen.getByLabelText('Decrease Back Squat weight')).toBeInTheDocument();
+    expect(screen.getByText('62.5kg')).toBeInTheDocument();
+  });
+
+  it('floors idle-screen weight adjustments at the empty 20kg bar', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 1,
+      weights: { squat: 20, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+      history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
+      nextType: 'A',
+      isDark: true,
+      autoSave: false,
+      preferredRest: 90,
+      soundEnabled: false,
+      vibrationEnabled: false,
+    }));
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Decrease Back Squat weight'));
+    expect(screen.getByText('20kg')).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(20);
   });
 
   it('completes all sets and finishes workout with weight increment', async () => {

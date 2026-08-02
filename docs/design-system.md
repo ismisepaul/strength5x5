@@ -174,6 +174,12 @@ with a colour dot; at least one series is always on.
 - During an active workout on the Train tab, the **timer strip replaces the header** at
   the top of the screen — it is not docked at the bottom. Header everywhere else.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
+- The **idle screen's exercise rows are editable**: the same − / + weight steppers as
+  `ExerciseCard` (36px buttons) sit beside each weight, adjusting in the exercise's
+  program increment (2.5 kg, 5 kg for deadlift) with a floor at the empty 20 kg bar.
+  They write to `weights` state directly — there's no active workout yet to hold a
+  per-session override — so the change persists into the started workout, Stats, and
+  everywhere else `weights` is read, the same as adjusting mid-session.
 
 ## 5. Interaction rules
 
