@@ -18,6 +18,7 @@ const workoutData = {
 
 beforeEach(() => {
   localStorage.clear();
+  document.documentElement.style.removeProperty('--app-page-bg');
   URL.createObjectURL = vi.fn(() => 'blob:test');
   URL.revokeObjectURL = vi.fn();
 });
@@ -163,6 +164,7 @@ describe('System dark mode preference', () => {
   it('defaults to system preference when no saved isDark', () => {
     const { container } = render(<App />);
     expect(container.firstChild).toHaveClass('bg-ground');
+    expect(document.documentElement.style.getPropertyValue('--app-page-bg')).toBe('#161826');
   });
 
   it('respects saved light mode preference over system default', () => {
@@ -172,6 +174,7 @@ describe('System dark mode preference', () => {
     }));
     const { container } = render(<App />);
     expect(container.firstChild).toHaveClass('bg-ground-lt');
+    expect(document.documentElement.style.getPropertyValue('--app-page-bg')).toBe('#f5f5f8');
   });
 });
 

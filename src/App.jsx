@@ -150,6 +150,10 @@ const App = () => {
   });
 
   useEffect(() => {
+    document.documentElement.style.setProperty('--app-page-bg', isDark ? '#161826' : '#f5f5f8');
+  }, [isDark]);
+
+  useEffect(() => {
     if (!currentWorkout || !isWorkoutActive) return;
     const data = { session: currentWorkout, restTimerEndTime: timer.isActive ? (Date.now() + timer.seconds * 1000) : null };
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
