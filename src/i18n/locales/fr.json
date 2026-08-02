@@ -161,7 +161,6 @@
     "olderBackupBody": "Cette sauvegarde contient {{backupCount}} séances (dernière : {{backupDate}}). Vous avez {{localCount}} séances. Vous perdrez {{lossCount}} séances.",
     "restoreFromDrive": "Restaurer depuis Google Drive",
     "restoreAnyway": "Restaurer quand même",
-    "repPickerSet": "Série {{set}}",
     "repPickerTitle": "{{name}} · Série {{set}}",
     "repPickerQuestion": "Combien de répétitions ?",
     "repPickerNote": "{{count}} = réussi · moins signifie que le poids est maintenu",

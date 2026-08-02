@@ -125,6 +125,25 @@ describe('ExerciseCard', () => {
     vi.useRealTimers();
   });
 
+  it('long-pressing a set with a mouse also opens the rep picker', async () => {
+    vi.useFakeTimers();
+    const onOpenRepPicker = vi.fn();
+    render(<ExerciseCard {...defaultProps} onOpenRepPicker={onOpenRepPicker} />);
+    const firstSet = screen.getByLabelText('Set 1');
+    firstSet.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+    vi.advanceTimersByTime(500);
+    expect(onOpenRepPicker).toHaveBeenCalledWith(0, 0);
+    vi.useRealTimers();
+  });
+
+  it('suppresses the context menu on set buttons', () => {
+    render(<ExerciseCard {...defaultProps} />);
+    const firstSet = screen.getByLabelText('Set 1');
+    const event = new Event('contextmenu', { bubbles: true, cancelable: true });
+    firstSet.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
   it('shows the customized rep target, not the set number, on unlogged sets', () => {
     const customEx = { ...baseEx, reps: 8, setsCompleted: [null, null, null, null, null] };
     render(<ExerciseCard {...defaultProps} ex={customEx} />);

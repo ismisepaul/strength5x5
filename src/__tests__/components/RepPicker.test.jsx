@@ -13,14 +13,12 @@ describe('RepPicker', () => {
     }
   });
 
-  it('colors the target indigo, mid values red, and 0 neutral grey', () => {
+  it('gives the target a stronger accent border and leaves other values ink-outlined', () => {
     render(<RepPicker ex={ex} setIdx={0} isDark={true} onSelect={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByLabelText('5 reps').className).toContain('bg-indigo-600');
-    expect(screen.getByLabelText('3 reps').className).toContain('bg-rose-500/10');
-    expect(screen.getByLabelText('1 reps').className).toContain('bg-rose-500/10');
-    const zeroClass = screen.getByLabelText('0 reps').className;
-    expect(zeroClass).not.toContain('bg-rose-500/10');
-    expect(zeroClass).toContain('bg-slate-800');
+    expect(screen.getByLabelText('5 reps').className).toContain('border-accent');
+    expect(screen.getByLabelText('3 reps').className).toContain('border-ink/18');
+    expect(screen.getByLabelText('1 reps').className).toContain('border-ink/18');
+    expect(screen.getByLabelText('0 reps').className).toContain('border-ink/18');
   });
 
   it('clicking 0 selects 0 reps done', async () => {
@@ -37,5 +35,21 @@ describe('RepPicker', () => {
     render(<RepPicker ex={ex} setIdx={2} isDark={true} onSelect={onSelect} onClose={vi.fn()} />);
     await user.click(screen.getByLabelText('5 reps'));
     expect(onSelect).toHaveBeenCalledWith(5);
+  });
+
+  it('clicking Clear set calls onSelect with null', async () => {
+    const onSelect = vi.fn();
+    const user = userEvent.setup();
+    render(<RepPicker ex={ex} setIdx={0} isDark={true} onSelect={onSelect} onClose={vi.fn()} />);
+    await user.click(screen.getByText('Clear set'));
+    expect(onSelect).toHaveBeenCalledWith(null);
+  });
+
+  it('clicking Cancel calls onClose', async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(<RepPicker ex={ex} setIdx={0} isDark={true} onSelect={vi.fn()} onClose={onClose} />);
+    await user.click(screen.getByText('Cancel'));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
