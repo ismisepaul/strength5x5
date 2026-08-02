@@ -24,7 +24,10 @@ function seedHistory() {
   }));
 }
 
-const benchCard = () => within(screen.getByText('Bench Press').closest('.border'));
+// After opening the customise disclosure, "Bench Press" appears twice: once in the
+// preview card above, once as the customiser's own bordered exercise card.
+const benchCard = () => within(screen.getAllByText('Bench Press').at(-1).closest('.border'));
+const openCustomise = (user) => user.click(screen.getByText('Customise sets and reps'));
 
 describe('Program tab', () => {
   it('reduces the number of live set buttons for an exercise set below 5', async () => {
@@ -33,6 +36,7 @@ describe('Program tab', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
 
@@ -52,6 +56,7 @@ describe('Program tab', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     await user.click(benchCard().getByLabelText('Decrease bench reps'));
     await user.click(benchCard().getByLabelText('Decrease bench reps'));
 
@@ -84,11 +89,13 @@ describe('Program tab', () => {
     const { unmount } = render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
     unmount();
 
     render(<App />);
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     const benchSets = benchCard().getByText('4');
     expect(benchSets).toBeInTheDocument();
   });
@@ -99,6 +106,7 @@ describe('Program tab', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
 
     expect(benchCard().queryByText('Lie on the bench with your eyes under the bar.')).not.toBeInTheDocument();
 
@@ -106,7 +114,7 @@ describe('Program tab', () => {
     expect(benchCard().getByText('Lie on the bench with your eyes under the bar.')).toBeInTheDocument();
     expect(benchCard().getByText('Rack the bar securely after the final rep.')).toBeInTheDocument();
 
-    const squatCard = () => within(screen.getByText('Back Squat').closest('.border'));
+    const squatCard = () => within(screen.getAllByText('Back Squat').at(-1).closest('.border'));
     expect(squatCard().queryByText('Set the bar on your upper back and unrack it.')).not.toBeInTheDocument();
 
     await user.click(benchCard().getByText('How to perform'));
@@ -119,6 +127,7 @@ describe('Program tab', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
     await user.click(screen.getByText('Reset to 5×5'));
 

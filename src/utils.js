@@ -34,6 +34,27 @@ export function getProgramExercises(type, program) {
   }));
 }
 
+// Total projected kg for a preview of an exercise list: per-set weight x reps when a
+// ramp (setWeights/setReps) is present, else the Standard uniform weight x reps x sets.
+export function computeProjectedVolume(exercises) {
+  return Math.round(exercises.reduce((total, ex) => {
+    if (Array.isArray(ex.setWeights) && Array.isArray(ex.setReps)) {
+      return total + ex.setWeights.reduce((sum, w, i) => sum + w * (ex.setReps[i] ?? 0), 0);
+    }
+    return total + ex.weight * ex.reps * ex.sets;
+  }, 0));
+}
+
+// Did this lift's working weight increase the last time it was logged? Used for the
+// Standard Program tab's "went up last time" note.
+export function wentUpLastTime(history, exerciseId, currentWeight) {
+  for (const session of history) {
+    const ex = session.exercises?.find(e => e.id === exerciseId);
+    if (ex) return currentWeight > ex.weight;
+  }
+  return false;
+}
+
 // The rep target a given exercise entry was performed against. Read off the entry
 // itself (never the live program) so past history keeps the target it was set for.
 // Madcow's ramp days vary the target per set (a triple, a back-off eight) via

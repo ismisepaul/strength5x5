@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Minus, ArrowCounterClockwise, CaretUp, CaretDown } from '@phosphor-icons/react';
-import { EXPECTED_WEIGHT_KEYS, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, DEFAULT_PROGRAM } from '../constants';
+import { Plus, Minus, CaretUp, CaretDown } from '@phosphor-icons/react';
+import { EXPECTED_WEIGHT_KEYS, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS } from '../constants';
 import StepperButton from './StepperButton';
 
-const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
+// The per-exercise sets/reps customiser, embedded in ProgramTab's "Customise sets
+// and reps" disclosure. Standard-only -- Madcow derives everything from top sets.
+const ProgramEditor = ({ program, onChange, isDark }) => {
   const { t } = useTranslation();
   const [openHowTo, setOpenHowTo] = useState({});
   const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
@@ -17,19 +19,7 @@ const ProgramEditor = ({ program, onChange, isDark, isWorkoutActive }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-[24px] font-medium">{t('program.title')}</h2>
-        <button
-          onClick={() => onChange(() => JSON.parse(JSON.stringify(DEFAULT_PROGRAM)))}
-          className={`flex items-center gap-1.5 text-[12px] uppercase px-3 py-2 rounded-lg border active:scale-95 transition-transform ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'}`}
-        ><ArrowCounterClockwise size={14} /> {t('program.resetToDefault')}</button>
-      </div>
-      <p className={`text-[13.5px] leading-relaxed -mt-1 ${mutedClass}`}>{t('program.standard.customiseNote')}</p>
-      {isWorkoutActive && (
-        <p className={`text-[13.5px] leading-relaxed ${mutedClass}`}>{t('program.standard.note')}</p>
-      )}
-
+    <div className="space-y-4">
       {EXPECTED_WEIGHT_KEYS.map(id => {
         const { sets, reps } = program[id];
         return (

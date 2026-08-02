@@ -25,6 +25,7 @@
   "workout": {
     "typeA": "Workout A",
     "typeB": "Workout B",
+    "typeC": "Workout C",
     "nextUp": "Next up",
     "switchTo": "Switch to {{type}}",
     "startWorkout": "Start workout",

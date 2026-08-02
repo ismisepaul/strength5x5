@@ -11,6 +11,8 @@ import {
   evaluateMadcowOutcome,
   madcowRestSeconds,
   roundWeight,
+  computeProjectedVolume,
+  wentUpLastTime,
 } from '../../utils';
 import { MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from '../../constants';
 
@@ -218,6 +220,47 @@ describe('madcowRestSeconds', () => {
 
   it('falls back to the preferred rest when there is no day top', () => {
     expect(madcowRestSeconds(50, 0, 120)).toBe(120);
+  });
+});
+
+describe('computeProjectedVolume', () => {
+  const mcTop = { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 };
+
+  it('matches the verified Workout A total (4,513 kg)', () => {
+    const exercises = getMadcowDayExercises('A', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline');
+    expect(computeProjectedVolume(exercises)).toBe(4513);
+  });
+
+  it('matches the verified Workout B total (4,125 kg)', () => {
+    const exercises = getMadcowDayExercises('B', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline');
+    expect(computeProjectedVolume(exercises)).toBe(4125);
+  });
+
+  it('matches the verified Workout C total (5,478 kg)', () => {
+    const exercises = getMadcowDayExercises('C', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline');
+    expect(computeProjectedVolume(exercises)).toBe(5478);
+  });
+
+  it('handles Standard-shaped uniform exercises (weight x reps x sets)', () => {
+    const exercises = [
+      { weight: 115, reps: 5, sets: 5 },
+      { weight: 67.5, reps: 5, sets: 5 },
+      { weight: 72.5, reps: 5, sets: 5 },
+    ];
+    expect(computeProjectedVolume(exercises)).toBe(6375);
+  });
+});
+
+describe('wentUpLastTime', () => {
+  it('is true when the current weight exceeds the most recent logged weight', () => {
+    const history = [{ exercises: [{ id: 'squat', weight: 110 }] }];
+    expect(wentUpLastTime(history, 'squat', 112.5)).toBe(true);
+  });
+
+  it('is false when the weight held or the lift has no history', () => {
+    const history = [{ exercises: [{ id: 'squat', weight: 115 }] }];
+    expect(wentUpLastTime(history, 'squat', 115)).toBe(false);
+    expect(wentUpLastTime([], 'squat', 115)).toBe(false);
   });
 });
 

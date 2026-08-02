@@ -21,7 +21,7 @@ import RestTimer from './components/RestTimer';
 import ExerciseCard from './components/ExerciseCard';
 import BarSetupDiagram from './components/BarSetupDiagram';
 import RepPicker from './components/RepPicker';
-import ProgramEditor from './components/ProgramEditor';
+import ProgramTab from './components/ProgramTab';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
 import WeightEditBar from './components/WeightEditBar';
@@ -1044,7 +1044,15 @@ const App = () => {
         })()}
 
         {activeTab === 'program' && (
-          <ProgramEditor program={program} onChange={setProgram} isDark={isDark} isWorkoutActive={isWorkoutActive} />
+          <ProgramTab
+            isDark={isDark} isWorkoutActive={isWorkoutActive} preset={preset}
+            program={program} onChangeProgram={setProgram} weights={weights} history={history}
+            mcTop={mcTop} mcWeek={mcWeek} mcInterval={mcInterval} mcPress={mcPress}
+            onUpdateMcTop={updateMcTop} onChangeMcInterval={setMcInterval} onChangeMcPress={setMcPress}
+            onRecalculate={() => setMcInterval(MADCOW_DEFAULT_INTERVAL)}
+            currentWorkoutType={currentWorkoutType} mcNextDay={mcNextDay}
+            programSheet={programSheet} setProgramSheet={setProgramSheet} onSwitchProgram={switchProgram}
+          />
         )}
 
         {activeTab === 'settings' && (() => {

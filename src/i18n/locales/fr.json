@@ -25,6 +25,7 @@
   "workout": {
     "typeA": "Séance A",
     "typeB": "Séance B",
+    "typeC": "Séance C",
     "nextUp": "À suivre",
     "switchTo": "Basculer vers {{type}}",
     "startWorkout": "Commencer",
