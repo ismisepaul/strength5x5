@@ -10,8 +10,8 @@ import {
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, DEFAULT_PROGRAM, MAX_SETS } from './constants';
-import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed } from './utils';
+import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, DEFAULT_PROGRAM, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
+import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, getMadcowDayExercises, evaluateMadcowOutcome } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -39,6 +39,12 @@ const App = () => {
   const [program, setProgram] = useState(() => normalizeProgram(saved.program));
   const [history, setHistory] = useState(Array.isArray(saved.history) ? saved.history : []);
   const [currentWorkoutType, setCurrentWorkoutType] = useState(saved.nextType ?? 'A');
+  const [preset, setPreset] = useState(() => normalizePreset(saved.preset));
+  const [mcTop, setMcTop] = useState(() => normalizeMcTop(saved.mcTop, saved.weights ?? INITIAL_WEIGHTS));
+  const [mcWeek, setMcWeek] = useState(() => normalizeMcWeek(saved.mcWeek));
+  const [mcInterval, setMcInterval] = useState(() => normalizeMcInterval(saved.mcInterval));
+  const [mcPress, setMcPress] = useState(() => normalizeMcPress(saved.mcPress));
+  const [mcNextDay, setMcNextDay] = useState(() => normalizeMcNextDay(saved.mcNextDay));
   const [isDark, setIsDark] = useState(saved.isDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [localBackup, setLocalBackup] = useState(saved.autoSave ?? false);
   const [preferredRest, setPreferredRest] = useState(saved.preferredRest ?? 90);
@@ -70,6 +76,8 @@ const App = () => {
   const [connectSyncPrompt, setConnectSyncPrompt] = useState(null);
   const [longBreakDeloadForDate, setLongBreakDeloadForDate] = useState(() => localStorage.getItem(LONG_BREAK_DELOAD_KEY));
   const [repPicker, setRepPicker] = useState(null);
+  const [programSheet, setProgramSheet] = useState(null); // { step: 'pick' | 'confirm', target }
+  const [workoutPicker, setWorkoutPicker] = useState(false);
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -140,6 +148,7 @@ const App = () => {
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,
     isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay,
   });
 
   useStorageSync(STORAGE_KEY, (updated) => {
@@ -147,6 +156,12 @@ const App = () => {
     if (updated.program) setProgram(normalizeProgram(updated.program));
     if (Array.isArray(updated.history)) setHistory(updated.history);
     if (updated.isDark !== undefined) setIsDark(updated.isDark);
+    if (updated.preset) setPreset(normalizePreset(updated.preset));
+    if (updated.mcTop) setMcTop(normalizeMcTop(updated.mcTop, updated.weights ?? weights));
+    if (updated.mcWeek) setMcWeek(normalizeMcWeek(updated.mcWeek));
+    if (updated.mcInterval) setMcInterval(normalizeMcInterval(updated.mcInterval));
+    if (updated.mcPress) setMcPress(normalizeMcPress(updated.mcPress));
+    if (updated.mcNextDay) setMcNextDay(normalizeMcNextDay(updated.mcNextDay));
   });
 
   useEffect(() => {
@@ -174,7 +189,8 @@ const App = () => {
 
   const getAppState = useCallback(() => ({
     weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
-  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping]);
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay,
+  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay]);
 
   const exportData = useCallback((targetHistory) => {
     const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState(), history: targetHistory || history };
@@ -251,7 +267,7 @@ const App = () => {
       if (!prev) return prev;
       const ex = prev.exercises[exIdx];
       const currVal = ex.setsCompleted[setIdx];
-      const target = targetReps(ex);
+      const target = targetReps(ex, setIdx);
       const nextVal = resolveNext(currVal, target);
       const isLastSet = setIdx === ex.setsCompleted.length - 1;
       // Stamp on first completion, clear when the set is cycled back to unlogged.
@@ -362,16 +378,20 @@ const App = () => {
       return { type: 'longBreak', daysOff, recommended };
     }
 
+    // Madcow's stall is "the top set holds" -- no forced-deload prompt, only the
+    // long-break safety check above applies to it.
+    if (preset !== 'standard') return null;
+
     const pendingDeloads = getPendingFailureDeloadsForStart(historyToCheck, workoutWeights);
     if (pendingDeloads.length > 0) {
       return { type: 'failure', pendingDeloads };
     }
 
     return null;
-  }, [getPendingFailureDeloadsForStart, longBreakDeloadForDate]);
+  }, [getPendingFailureDeloadsForStart, longBreakDeloadForDate, preset]);
 
   const finishWorkout = useCallback(() => {
-    const { nextWeights, progressions, pendingDeloads } = evaluateWorkoutOutcome(currentWorkout, history, weights);
+    const isMadcow = preset === 'madcow';
     const savedWorkout = {
       ...currentWorkout,
       duration: Date.now() - (currentWorkout.startedAt || Date.now()),
@@ -379,20 +399,47 @@ const App = () => {
     };
     delete savedWorkout.startedAt;
     const newHistory = [savedWorkout, ...history];
-    setWeights(nextWeights); setHistory(newHistory);
-    setCurrentWorkoutType(prev => prev === 'A' ? 'B' : 'A');
+
+    let nextWeights = weights;
+    let nextType = currentWorkoutType;
+    let nextMcTop = mcTop;
+    let nextMcWeek = mcWeek;
+    let nextMcNextDay = mcNextDay;
+    let progressions, pendingDeloads, summaryNextValues;
+
+    if (isMadcow) {
+      const outcome = evaluateMadcowOutcome(currentWorkout.type, currentWorkout.exercises, mcTop, mcWeek, MADCOW_ONRAMP_WEEKS);
+      nextMcTop = outcome.nextTop;
+      nextMcWeek = outcome.nextWeek;
+      nextWeights = applyMcTopToWeights(weights, nextMcTop);
+      nextMcNextDay = MADCOW_DAYS[(MADCOW_DAYS.indexOf(currentWorkout.type) + 1) % MADCOW_DAYS.length];
+      progressions = outcome.progressions;
+      pendingDeloads = [];
+      summaryNextValues = nextMcTop;
+      setMcTop(nextMcTop); setMcWeek(nextMcWeek); setMcNextDay(nextMcNextDay); setWeights(nextWeights);
+    } else {
+      const outcome = evaluateWorkoutOutcome(currentWorkout, history, weights);
+      nextWeights = outcome.nextWeights;
+      nextType = currentWorkoutType === 'A' ? 'B' : 'A';
+      progressions = outcome.progressions;
+      pendingDeloads = outcome.pendingDeloads;
+      summaryNextValues = nextWeights;
+      setWeights(nextWeights); setCurrentWorkoutType(nextType);
+    }
+
+    setHistory(newHistory);
     setIsWorkoutActive(false); setCurrentWorkout(null);
     timer.reset(); setIsExerciseComplete(false);
-    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads, nextWeights });
+    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads, nextWeights: summaryNextValues });
     localStorage.removeItem(ACTIVE_WORKOUT_KEY);
     if (localBackup) exportData(newHistory);
 
-    const nextType = currentWorkoutType === 'A' ? 'B' : 'A';
     saveToDriveQuietly({
       weights: nextWeights, program, history: newHistory, nextType,
       isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
+      preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay,
     });
-  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome]);
+  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -401,9 +448,16 @@ const App = () => {
   }, [timer]);
 
   const initializeWorkout = useCallback((workoutWeights) => {
-    setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: getProgramExercises(currentWorkoutType, program).map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
+    if (preset === 'madcow') {
+      const exercises = getMadcowDayExercises(mcNextDay, mcTop, mcInterval, mcPress).map(ex => ({
+        ...ex, setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null),
+      }));
+      setCurrentWorkout({ date: new Date().toISOString(), type: mcNextDay, startedAt: Date.now(), exercises });
+    } else {
+      setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: getProgramExercises(currentWorkoutType, program).map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
+    }
     setIsWorkoutActive(true); setActiveTab('workout'); setShowRestorePrompt(false); setIsExerciseComplete(false);
-  }, [currentWorkoutType, program]);
+  }, [currentWorkoutType, program, preset, mcNextDay, mcTop, mcInterval, mcPress]);
 
   const startWorkout = useCallback((force = false) => {
     if (history.length === 0 && !force) { setShowRestorePrompt(true); return; }
@@ -421,6 +475,31 @@ const App = () => {
     initializeWorkout(weights);
   }, [history, weights, initializeWorkout, getStartDeloadPrompt, t]);
 
+  // Switches the active program, converting weights each direction so Stats and the
+  // Program tab always agree with whatever's actually being trained.
+  const switchProgram = useCallback((target) => {
+    if (isWorkoutActive) cancelWorkout();
+    if (target === 'madcow') {
+      const seeded = seedMadcowTops(weights);
+      setMcTop(seeded);
+      setMcWeek(1);
+      setMcNextDay('A');
+      setWeights(prev => applyMcTopToWeights(prev, seeded));
+    } else {
+      setWeights(prev => madcowTopsToWeights(prev, mcTop, mcPress));
+    }
+    setPreset(target);
+    setProgramSheet(null);
+  }, [weights, mcTop, mcPress, isWorkoutActive, cancelWorkout]);
+
+  const updateMcTop = useCallback((id, diff) => {
+    setMcTop(prev => {
+      const next = { ...prev, [id]: Math.max(INITIAL_WEIGHTS[id] ?? 20, prev[id] + diff) };
+      setWeights(w => applyMcTopToWeights(w, next));
+      return next;
+    });
+  }, []);
+
   const applyLocalImport = useCallback((d) => {
     setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
     if (d.nextType) setCurrentWorkoutType(d.nextType);
@@ -430,6 +509,12 @@ const App = () => {
     if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
     if (d.logGrouping) setLogGrouping(d.logGrouping);
     if (d.language) i18n.changeLanguage(d.language);
+    setPreset(normalizePreset(d.preset));
+    setMcTop(normalizeMcTop(d.mcTop, d.weights));
+    setMcWeek(normalizeMcWeek(d.mcWeek));
+    setMcInterval(normalizeMcInterval(d.mcInterval));
+    setMcPress(normalizeMcPress(d.mcPress));
+    setMcNextDay(normalizeMcNextDay(d.mcNextDay));
     setActiveTab('workout'); setShowRestorePrompt(false);
     setPendingLocalImport(null);
     showToast(t('toast.backupRestored'), 'success');
@@ -441,6 +526,8 @@ const App = () => {
       vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
       logGrouping: d.logGrouping || logGrouping,
       language: d.language || i18n.language,
+      preset: normalizePreset(d.preset), mcTop: normalizeMcTop(d.mcTop, d.weights), mcWeek: normalizeMcWeek(d.mcWeek),
+      mcInterval: normalizeMcInterval(d.mcInterval), mcPress: normalizeMcPress(d.mcPress), mcNextDay: normalizeMcNextDay(d.mcNextDay),
     });
   }, [currentWorkoutType, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, showToast, t]);
 
@@ -545,6 +632,12 @@ const App = () => {
     if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
     if (d.logGrouping) setLogGrouping(d.logGrouping);
     if (d.language) i18n.changeLanguage(d.language);
+    setPreset(normalizePreset(d.preset));
+    setMcTop(normalizeMcTop(d.mcTop, d.weights));
+    setMcWeek(normalizeMcWeek(d.mcWeek));
+    setMcInterval(normalizeMcInterval(d.mcInterval));
+    setMcPress(normalizeMcPress(d.mcPress));
+    setMcNextDay(normalizeMcNextDay(d.mcNextDay));
     setActiveTab('workout');
     showToast(t('toast.restoredFromDrive'), 'success');
   }, [showToast, t]);
@@ -813,7 +906,7 @@ const App = () => {
                   <div className="flex items-center gap-3">
                     <span className="tabular-nums">{ex.weight}kg</span>
                     <div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (
-                      <div key={ri} className={r === targetReps(ex) ? 'w-1.5 h-1.5 rounded-full bg-accent' : `w-1.5 h-1.5 rounded-full border ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`} />
+                      <div key={ri} className={r === targetReps(ex, ri) ? 'w-1.5 h-1.5 rounded-full bg-accent' : `w-1.5 h-1.5 rounded-full border ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`} />
                     ))}</div>
                   </div>
                 </div>
@@ -1341,7 +1434,7 @@ const App = () => {
                     <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.setsLabel')}</span>
                     <div className="flex gap-2">
                       {ex.setsCompleted.map((reps, setIdx) => {
-                        const target = targetReps(ex);
+                        const target = targetReps(ex, setIdx);
                         const stateClass = reps === null
                           ? (isDark ? 'border border-ink/18 text-ink/40' : 'border border-ink-lt/18 text-ink-lt/40')
                           : reps === target
@@ -1469,7 +1562,7 @@ const App = () => {
                     <div className="flex justify-start gap-1.5 mt-2.5">
                       {ex.setsCompleted.map((r, i) => {
                         const val = r ?? 0;
-                        const failed = val < targetReps(ex);
+                        const failed = val < targetReps(ex, i);
                         const split = formatClock(setDurations[i]);
                         return (
                           <div

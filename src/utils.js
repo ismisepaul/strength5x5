@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL } from './constants';
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL } from './constants';
 
 export function migrate(data, fromVersion) {
   let current = { ...data };
@@ -61,6 +61,17 @@ export function normalizeMcInterval(raw) {
 
 export function normalizeMcWeek(raw) {
   return Number.isFinite(raw) && raw >= 1 ? Math.round(raw) : 1;
+}
+
+export function normalizeMcNextDay(raw) {
+  return MADCOW_DAYS.includes(raw) ? raw : 'A';
+}
+
+// Mirrors every Madcow top set into `weights` too, so Stats and any Standard-shaped
+// view of "the current weight" agree with Madcow's ramp -- see madcowTopsToWeights
+// for the reverse direction (Madcow -> Standard).
+export function applyMcTopToWeights(weights, mcTop) {
+  return { ...weights, ...mcTop };
 }
 
 // ---- Madcow 5x5 programming engine ----
@@ -276,6 +287,7 @@ export function validateImportData(d) {
     mcWeek: normalizeMcWeek(d.mcWeek),
     mcInterval: normalizeMcInterval(d.mcInterval),
     mcPress: normalizeMcPress(d.mcPress),
+    mcNextDay: normalizeMcNextDay(d.mcNextDay),
   };
 }
 
