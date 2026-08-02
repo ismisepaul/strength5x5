@@ -167,15 +167,11 @@
     "clearSet": "Clear set"
   },
   "completion": {
-    "complete": "{{name}} Complete",
     "kicker": "Workout complete",
     "totalTime": "Total Time",
     "exerciseTime": "{{time}} total",
-    "progressNext": "+{{increment}}kg next",
     "progressedTo": "{{from}}kg → {{to}}kg",
     "staysAt": "stays at {{weight}}kg",
-    "deloadTo": "Deload needed",
-    "sameWeight": "Same weight next",
     "done": "Done"
   },
   "help": {

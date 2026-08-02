@@ -167,15 +167,11 @@
     "clearSet": "Effacer la série"
   },
   "completion": {
-    "complete": "{{name}} terminée",
     "kicker": "Séance terminée",
     "totalTime": "Durée totale",
     "exerciseTime": "{{time}} au total",
-    "progressNext": "+{{increment}}kg prochaine",
     "progressedTo": "{{from}}kg → {{to}}kg",
     "staysAt": "reste à {{weight}}kg",
-    "deloadTo": "Deload nécessaire",
-    "sameWeight": "Même poids prochain",
     "done": "Terminé"
   },
   "help": {

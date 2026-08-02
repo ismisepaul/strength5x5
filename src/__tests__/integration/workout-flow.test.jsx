@@ -221,7 +221,7 @@ describe('Workout Flow', () => {
 
     await user.click(screen.getByText('Finish workout'));
 
-    expect(screen.getByText(/Deload needed/)).toBeInTheDocument();
+    expect(screen.getByText(/stays at 60kg/)).toBeInTheDocument();
 
     let stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.weights.squat).toBe(60);

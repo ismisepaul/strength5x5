@@ -4,7 +4,7 @@ import {
   Plus, Minus, ArrowsClockwise, Moon, X, DownloadSimple, UploadSimple,
   ToggleRight, ToggleLeft, WarningCircle, Question, Lightning, TrendDown,
   Vibrate, Trash, Bell, CaretRight, Timer,
-  FileCsv, ArrowRight, Flame, CaretDown, CheckCircle, MinusCircle, Trophy,
+  FileCsv, ArrowRight, Flame, CaretDown, MinusCircle,
   GlobeSimple, Cloud, SlidersHorizontal, ChartLineUp
 } from '@phosphor-icons/react';
 
@@ -336,7 +336,7 @@ const App = () => {
     setCurrentWorkoutType(prev => prev === 'A' ? 'B' : 'A');
     setIsWorkoutActive(false); setCurrentWorkout(null);
     timer.reset(); setIsExerciseComplete(false);
-    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads });
+    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads, nextWeights });
     localStorage.removeItem(ACTIVE_WORKOUT_KEY);
     if (localBackup) exportData(newHistory);
 
@@ -682,9 +682,16 @@ const App = () => {
                   ));
                 })()}
                 <div className="pt-4 flex flex-col items-center">
-                  <button onClick={finishWorkout} disabled={!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null))} className={`w-full py-5 rounded-[1.5rem] font-black text-lg shadow-xl ${currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) ? 'bg-emerald-600 text-white active:scale-95 shadow-emerald-900/20' : 'bg-slate-800 text-slate-600 opacity-40 cursor-not-allowed'}`}>{t('workout.finishWorkout')}</button>
-                  {!currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null)) && <p className="text-slate-500 text-[10px] font-black uppercase text-center mt-3 tracking-widest animate-pulse">{t('workout.completeAllSets')}</p>}
-                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-600 border-slate-900' : 'text-slate-400 border-slate-100'} px-6 py-3 border rounded-xl active:text-rose-500 transition-colors`}><Trash size={12} /> {t('workout.discardWorkout')}</button>
+                  {(() => {
+                    const allDone = currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null));
+                    return (
+                      <>
+                        <button onClick={finishWorkout} disabled={!allDone} className={`w-full h-12 rounded-lg border font-medium text-lg ${allDone ? 'border-accent text-accent active:scale-[0.98]' : (isDark ? 'border-ink/12 text-ink/30' : 'border-ink-lt/12 text-ink-lt/30')}`}>{t('workout.finishWorkout')}</button>
+                        {!allDone && <p className={`text-[10px] text-center mt-3 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('workout.completeAllSets')}</p>}
+                      </>
+                    );
+                  })()}
+                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 text-sm ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('workout.discardWorkout')}</button>
                 </div>
               </div>
             )}
@@ -992,13 +999,12 @@ const App = () => {
       </nav>
 
       {showCancelModal && (
-        <div role="dialog" aria-modal="true" aria-label="Discard workout" className={`fixed inset-0 z-[500] flex items-center justify-center p-8 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-xs flex flex-col items-center p-8 rounded-[2.5rem] border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="p-5 rounded-full bg-rose-500/10 text-rose-500 mb-6"><Trash size={48} /></div>
-            <h3 className={`text-2xl font-black uppercase mb-4 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('modals.discardTitle')}</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10">{t('modals.discardBody')}</p>
-            <button onClick={() => setShowCancelModal(false)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl shadow-indigo-900/40 mb-6 active:scale-95">{t('modals.keepLifting')}</button>
-            <button onClick={cancelWorkout} className="text-rose-500 text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 active:scale-90">{t('modals.yesDiscard')}</button>
+        <div role="dialog" aria-modal="true" aria-label="Discard workout" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-xs flex flex-col items-center p-6 rounded-xl border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <h3 className="text-lg font-semibold mb-3">{t('modals.discardTitle')}</h3>
+            <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-ink/60' : 'text-ink-lt/60'}`}>{t('modals.discardBody')}</p>
+            <button onClick={() => setShowCancelModal(false)} className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95 mb-3">{t('modals.keepLifting')}</button>
+            <button onClick={cancelWorkout} className={`text-sm active:scale-90 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.yesDiscard')}</button>
           </div>
         </div>
       )}
@@ -1315,61 +1321,54 @@ const App = () => {
       {completionSummary && (() => {
         const totalTime = formatClock(completionSummary.workout.duration);
         return (
-        <div role="dialog" aria-modal="true" aria-label="Workout complete" className={`fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-xl ${isDark ? 'bg-slate-950/95' : 'bg-slate-500/50'}`}>
-          <div className={`w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-center mb-6"><div className="p-5 rounded-full bg-emerald-500/10 text-emerald-500"><Trophy size={48} /></div></div>
-            <h3 className={`text-2xl font-black uppercase tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('completion.complete', { name: t(`workout.type${completionSummary.workout.type}`) })}</h3>
+        <div role="dialog" aria-modal="true" aria-label="Workout complete" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+            <p className="text-[9.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-4">{t('completion.kicker')}</p>
             {totalTime && (
-              <div className={`flex items-center justify-between px-5 py-3 rounded-2xl mb-6 ${isDark ? 'bg-slate-950/50 border border-slate-800' : 'bg-slate-100 border border-slate-200'}`}>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{t('completion.totalTime')}</span>
-                <span className={`text-lg font-black font-mono tabular-nums leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{totalTime}</span>
+              <div className={`flex items-center justify-between px-4 py-2.5 rounded-lg mb-5 ${isDark ? 'bg-surface-deep' : 'bg-surface-deep-lt'}`}>
+                <span className={`text-[10px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('completion.totalTime')}</span>
+                <span className="text-sm tabular-nums">{totalTime}</span>
               </div>
             )}
-            <div className="space-y-3 mb-8">
+            <div className="space-y-3 mb-6">
               {completionSummary.workout.exercises.map(ex => {
                 const passed = isExercisePassed(ex);
                 const progressed = completionSummary.progressions.includes(ex.id);
-                const needsDeload = completionSummary.pendingDeloads?.some(d => d.id === ex.id);
-                const StatusIcon = passed ? CheckCircle : needsDeload ? TrendDown : MinusCircle;
-                const statusColor = passed ? 'text-emerald-500' : needsDeload ? 'text-blue-500' : 'text-amber-500';
-                const mutedColor = isDark ? 'text-slate-500' : 'text-slate-400';
+                const nextWeight = completionSummary.nextWeights?.[ex.id];
+                const mutedColor = isDark ? 'text-ink/45' : 'text-ink-lt/45';
                 const setDurations = ex.setDurations ?? [];
                 const logged = setDurations.filter(d => typeof d === 'number');
                 const hasSplits = logged.length > 0;
                 const exerciseTime = hasSplits ? formatClock(logged.reduce((sum, d) => sum + d, 0)) : null;
                 return (
-                  <div key={ex.id} className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-950/50 border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                  <div key={ex.id} className={`p-3 rounded-lg border ${isDark ? 'bg-surface-deep border-ink/8' : 'bg-surface-deep-lt border-ink-lt/8'}`}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <StatusIcon size={18} className={statusColor} />
-                        <span className={`text-sm font-black uppercase ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{t('exercises.' + ex.id)}</span>
-                      </div>
-                      <span className="font-black text-sm">{ex.weight}kg</span>
+                      <span className="text-sm font-medium">{t('exercises.' + ex.id)}</span>
+                      {progressed ? (
+                        <span className="flex items-center gap-1 text-xs text-accent"><TrendUp size={12} />{t('completion.progressedTo', { from: ex.weight, to: nextWeight })}</span>
+                      ) : (
+                        <span className={`flex items-center gap-1 text-xs ${mutedColor}`}><ArrowRight size={12} />{t('completion.staysAt', { weight: ex.weight })}</span>
+                      )}
                     </div>
-                    <div className="flex justify-center gap-1.5 mt-3">
+                    <div className="flex justify-center gap-1.5 mt-2.5">
                       {ex.setsCompleted.map((r, i) => {
                         const val = r ?? 0;
                         const failed = val < targetReps(ex);
                         const split = formatClock(setDurations[i]);
                         return (
-                          <div key={i} className={`flex-1 basis-0 max-w-[3.5rem] rounded-lg py-1.5 ${isDark ? 'bg-slate-900/70' : 'bg-white'}`}>
-                            <div className={`text-xs font-black leading-none ${failed && !passed ? statusColor : (isDark ? 'text-slate-300' : 'text-slate-600')}`}>{val}</div>
-                            {hasSplits && <div className={`text-[9px] font-bold tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
+                          <div key={i} className={`flex-1 basis-0 max-w-[3.5rem] rounded-lg py-1.5 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
+                            <div className={`text-xs leading-none ${failed && !passed ? 'text-ink' : (isDark ? 'text-ink/70' : 'text-ink-lt/70')}`}>{val}</div>
+                            {hasSplits && <div className={`text-[9px] tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
                           </div>
                         );
                       })}
                     </div>
-                    <div className="flex items-center justify-between mt-3 min-h-[14px]">
-                      <span className={`text-[10px] font-bold tabular-nums ${mutedColor}`}>{exerciseTime ? t('completion.exerciseTime', { time: exerciseTime }) : ''}</span>
-                      {progressed && <span className="text-emerald-500 text-[10px] font-black">{t('completion.progressNext', { increment: ex.increment })}</span>}
-                      {needsDeload && <span className="text-blue-500 text-[10px] font-black">{t('completion.deloadTo')}</span>}
-                      {!passed && !progressed && !needsDeload && <span className="text-amber-500 text-[10px] font-black">{t('completion.sameWeight')}</span>}
-                    </div>
+                    {exerciseTime && <p className={`text-[10px] tabular-nums mt-2 ${mutedColor}`}>{t('completion.exerciseTime', { time: exerciseTime })}</p>}
                   </div>
                 );
               })}
             </div>
-            <button onClick={() => setCompletionSummary(null)} className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase text-sm tracking-widest shadow-xl active:scale-95">{t('completion.done')}</button>
+            <button onClick={() => setCompletionSummary(null)} className="w-full py-3.5 rounded-lg border border-accent text-accent font-medium text-sm active:scale-95">{t('completion.done')}</button>
           </div>
         </div>
         );
