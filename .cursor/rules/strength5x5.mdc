@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## Stack
 
-React 18, Vite, Tailwind CSS v3, Vitest + React Testing Library, Lucide icons, Recharts, react-i18next.
+React 18, Vite, Tailwind CSS v4 (CSS-based config — tokens in the `@theme` block of `src/index.css`, no `tailwind.config.js`), Vitest + React Testing Library, Recharts, react-i18next. Icons: Lucide today, migrating to Phosphor (`@phosphor-icons/react`) with the Nocturne redesign.
 
 ## Architecture
 
@@ -37,9 +37,20 @@ localStorage persistence via `useLoadSaved()` (single memoized parse on mount) a
 - Pass `isDark` prop for theme-aware styling
 - Modals use `role="dialog"` with `aria-modal="true"` and `aria-label`
 
-## Styling
+## Styling — Nocturne design system
 
-Tailwind utility classes only, no CSS modules. Dark/light mode via conditional class strings keyed on `isDark`. No explicit color styling in components — use Tailwind's color palette.
+Tailwind utility classes only, no CSS modules. Dark/light mode via conditional class strings keyed on `isDark` — a dark-only change is unfinished. Colours come from design tokens declared in `@theme`, not from Tailwind's stock palette.
+
+Read `docs/design-system.md` before any UI change. Hard rules:
+
+- **One accent, `#9184d9`.** No emerald, rose, amber, indigo, blue or raw slate. Never encode status in hue alone — pair it with a shape (dashed ring, hollow dot, corner badge).
+- **Inter, weight ≤ 600.** No `font-black`; uppercase only on kickers (9.5–10px, .12–.14em letter-spacing, accent).
+- **One radius scale:** 8–10px cards/buttons, 12px modals, `14px 14px 0 0` bottom sheets; set targets and adherence dots are the only circles.
+- **Primary buttons are a 1px accent outline on transparent** — never filled, no shadows.
+- Surfaces: ground `#161826`, cards `#232532`, borders `ink/8–18`; muted text is the ink token at 55/45/38% alpha.
+- Tab bar never collapses, including mid-workout. Nothing dead on screen. Gestures get a visible caption or a help-sheet entry.
+
+The codebase has not been migrated yet (it still uses the old slate/indigo styling); the redesign is tracked separately with the spec in `docs/design/nocturne-implementation-plan.md`. Write new UI to these rules regardless.
 
 ## Testing
 

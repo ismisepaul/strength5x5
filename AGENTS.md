@@ -16,7 +16,7 @@ Strength 5x5 is a client-side React web app for tracking 5x5 barbell strength tr
 - **Vitest** + React Testing Library for tests
 - **react-i18next** for i18n (English and French)
 - **Recharts** for progress charts
-- **Lucide React** for icons
+- **Lucide React** for icons (being replaced by **Phosphor** — see Design System below)
 - **vite-plugin-pwa** for offline/PWA support
 
 ## Commands
@@ -70,6 +70,35 @@ src/
 - All user-facing strings must use i18n translation keys via `t('key')`
 - No `.eslintrc` or `.prettierrc` — follow existing code style
 
+## Design System (Nocturne)
+
+**Read [docs/design-system.md](docs/design-system.md) before any UI change.** It is the
+authority on colour, type, radii, components, navigation and interaction. Summary of the
+rules you cannot break:
+
+- **One accent — `#9184d9`.** No emerald, rose, amber, indigo, blue or raw slate. Status
+  is never carried by hue alone; pair it with a shape (dashed ring, hollow dot, badge).
+- **Inter, weight ≤ 600.** No `font-black`. Uppercase only on kickers.
+- **One radius scale:** 8–10px cards/buttons, 12px modals, `14px 14px 0 0` bottom sheets.
+  Set targets and adherence dots are the only circles.
+- **Primary buttons are a 1px accent outline on transparent** — never filled, never a
+  drop shadow.
+- **Surfaces:** ground `#161826`, cards `#232532`, 1px `ink/8–18` borders. Muted text is
+  the ink token at reduced alpha, never a separate grey.
+- **Tab bar never collapses**, including mid-workout; Train always routes to a live
+  workout when one is active.
+- **Nothing dead on screen** (no placeholder slots for unprogrammed sets) and **gestures
+  are taught** (long-press and tap cycles need a caption or a help entry).
+- **Both themes.** Light mode is a shipped feature — a dark-only change is unfinished.
+
+Tokens are declared in the `@theme` block of `src/index.css` (Tailwind v4 — there is no
+`tailwind.config.js`) and become utilities automatically.
+
+The codebase has **not** been migrated to Nocturne yet; the redesign is tracked as its
+own issue with the spec in [docs/design/nocturne-implementation-plan.md](docs/design/nocturne-implementation-plan.md)
+and the prototype in `docs/design/nocturne-prototype.dc.html`. Until it lands, write new
+UI to these rules and do not deepen the old styling.
+
 ## Testing
 
 - **Framework:** Vitest with jsdom environment, globals enabled
@@ -112,3 +141,7 @@ describe('Component', () => {
 - Do not add dependencies without good reason — keep the bundle light
 - Do not break offline functionality — the app must work without network
 - Do not store sensitive data; this is a client-side app with no secrets
+- Do not introduce a second accent colour, `font-black`, filled primary buttons, or a
+  radius outside the Nocturne scale (see Design System above)
+- Do not change training logic while changing presentation — a redesign task touches
+  how things look, never how progression, deload, timing or sync behave

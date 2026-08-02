@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/nocturne-9db38213-b03b-402e-a728-9202e1bb088e/styles.css">
+<script src="_ds/nocturne-9db38213-b03b-402e-a728-9202e1bb088e/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0f1019;font-family:"Inter",system-ui,sans-serif;color:#e9e9ed}
+a{color:#9184d9;text-decoration:none}a:hover{color:#b5abfc}
+.dv-turn{padding:40px 44px 36px;scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 22px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#9184d9;color:#161826;border-radius:4px}
+.dv-tname{font:500 13px/1.2 "Inter",sans-serif;color:#e9e9ed}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:#2b2741;color:#d2cefd;border-radius:5px}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.3 "Inter",sans-serif;color:rgba(233,233,237,.55)}
+.dv-opt:target .dv-oid{background:#9184d9;color:#161826}
+.dv-next{margin:26px 0 0;font:12px/1.6 "Inter",sans-serif;color:rgba(233,233,237,.5)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1" data-screen-label="Turn 1 — review + redesign">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Strength 5×5 — design review &amp; Nocturne redesign</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="review" style="width:392px" data-screen-label="Design review">
+<div class="dv-olabel"><span class="dv-oid">review</span>What I'd change, and why</div>
+<div style="background:#232532;border:1px solid rgba(233,233,237,.07);border-radius:10px;padding:22px 24px;display:flex;flex-direction:column;gap:14px">
+  <p style="margin:0;font-size:12.5px;line-height:1.65;color:rgba(233,233,237,.72)">The current app is functionally excellent — smart deload logic, wall-clock timers, recovery flows. The UI works against it. Six findings, each applied in <a href="#1a">1a</a>:</p>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:12px"><span style="flex:none;width:20px;height:20px;border:1px solid #9184d9;border-radius:6px;display:grid;place-items:center;font-size:10.5px;color:#d2cefd">1</span><p style="margin:0;font-size:12px;line-height:1.55;color:rgba(233,233,237,.72)"><strong style="color:#e9e9ed;font-weight:600">Everything shouts.</strong> Nearly all text is 10px black-weight uppercase, so nothing has priority. Fix: hierarchy from size and space — one calm 500 weight, kickers only for section labels.</p></div>
+    <div style="display:flex;gap:12px"><span style="flex:none;width:20px;height:20px;border:1px solid #9184d9;border-radius:6px;display:grid;place-items:center;font-size:10.5px;color:#d2cefd">2</span><p style="margin:0;font-size:12px;line-height:1.55;color:rgba(233,233,237,.72)"><strong style="color:#e9e9ed;font-weight:600">Five hues, unstable meanings.</strong> Indigo, emerald, rose, amber and blue share screens; rose means both "failed set" and "discard". Fix: one accent. A missed set is a number, not an alarm.</p></div>
+    <div style="display:flex;gap:12px"><span style="flex:none;width:20px;height:20px;border:1px solid #9184d9;border-radius:6px;display:grid;place-items:center;font-size:10.5px;color:#d2cefd">3</span><p style="margin:0;font-size:12px;line-height:1.55;color:rgba(233,233,237,.72)"><strong style="color:#e9e9ed;font-weight:600">Radius roulette.</strong> 2.5rem cards, 2rem panels, 1.5rem buttons, xl chips, full circles — all at once. Fix: one 8–10px radius everywhere; set targets stay circular because they're a distinct control.</p></div>
+    <div style="display:flex;gap:12px"><span style="flex:none;width:20px;height:20px;border:1px solid #9184d9;border-radius:6px;display:grid;place-items:center;font-size:10.5px;color:#d2cefd">4</span><p style="margin:0;font-size:12px;line-height:1.55;color:rgba(233,233,237,.72)"><strong style="color:#e9e9ed;font-weight:600">Nav hides mid-workout.</strong> The tab bar collapses to a hamburger during a session — the one time you may want the timer settings or program. Fix: nav stays; the rest timer docks above it, and a slim "live" bar follows you to other tabs.</p></div>
+    <div style="display:flex;gap:12px"><span style="flex:none;width:20px;height:20px;border:1px solid #9184d9;border-radius:6px;display:grid;place-items:center;font-size:10.5px;color:#d2cefd">5</span><p style="margin:0;font-size:12px;line-height:1.55;color:rgba(233,233,237,.72)"><strong style="color:#e9e9ed;font-weight:600">Dead-slot noise.</strong> Unused set slots render as dashed ✕ boxes; adherence stats live only in the Log. Fix: render only real sets; surface streak + this-week right on the start screen where the decision happens.</p></div>
+    <div style="display:flex;gap:12px"><span style="flex:none;width:20px;height:20px;border:1px solid #9184d9;border-radius:6px;display:grid;place-items:center;font-size:10.5px;color:#d2cefd">6</span><p style="margin:0;font-size:12px;line-height:1.55;color:rgba(233,233,237,.72)"><strong style="color:#e9e9ed;font-weight:600">Invisible gestures.</strong> Long-press-for-reps is undiscoverable and the tap-to-decrement cycle is unexplained. Fix: a one-line caption under the first exercise teaches both; the caption disappears after the first logged set.</p></div>
+  </div>
+  <p style="margin:2px 0 0;font-size:11.5px;line-height:1.6;color:rgba(233,233,237,.5);border-top:1px solid rgba(233,233,237,.08);padding-top:12px">Also worth doing (not shown): fold Program into Options to get a 4-tab bar; replace 8 full-screen modals with bottom sheets; keep FR/EN and Drive sync exactly as they are — they're good.</p>
+</div>
+</div>
+
+<div class="dv-opt" id="1a" data-screen-label="1a interactive prototype">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Interactive prototype — tap sets, timer runs, all five tabs work</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="428,908">
+<div style="position:relative;height:100%;display:flex;flex-direction:column;background:#161826;color:#e9e9ed;font-family:'Inter',system-ui,sans-serif">
+
+  <sc-if value="{{ headerVisible }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <i class="ph-fill ph-barbell" style="font-size:19px;color:#9184d9"></i>
+        <span style="font-size:14px;font-weight:600;letter-spacing:.01em">Strength 5×5</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(233,233,237,.55)"><i class="ph ph-flame" style="font-size:13px;color:#9184d9"></i>{{ streakTxt }}</span>
+        <button onClick="{{ openHelp }}" aria-label="How it works" style="width:28px;height:28px;border:1px solid rgba(233,233,237,.15);background:transparent;color:rgba(233,233,237,.55);border-radius:8px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph ph-question" style="font-size:15px"></i></button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ topTimerVisible }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;background:#1c1e2c">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 10px">
+        <div style="display:flex;align-items:flex-end;gap:12px">
+          <div><p style="margin:0 0 3px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:{{ ttColor }};font-weight:600">{{ ttKicker }}</p><p style="margin:0;font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1">{{ ttTime }}</p></div>
+          <sc-if value="{{ ttSkip }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ skip }}" aria-label="Skip rest" style="width:24px;height:24px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.6);border-radius:7px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph-fill ph-skip-forward" style="font-size:12px"></i></button>
+          </sc-if>
+        </div>
+        <div style="text-align:right">
+          <p style="margin:0 0 3px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#9184d9;font-weight:600">{{ typeName }}</p>
+          <p style="margin:0;font-size:14px;font-variant-numeric:tabular-nums;color:rgba(233,233,237,.6);line-height:1.2">{{ elapsedTxt }}</p>
+        </div>
+      </div>
+      <div style="height:2px;background:rgba(233,233,237,.08)"><div style="height:2px;width:{{ timerPct }};background:linear-gradient(to right,transparent,#9184d9 24px,#9184d9);transition:width 1s linear"></div></div>
+    </div>
+  </sc-if>
+
+  <div style="flex:1;overflow-y:auto;padding:6px 20px 16px;display:flex;flex-direction:column;gap:14px">
+
+    <sc-if value="{{ showTrainIdle }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Train — fresh start">
+        <p style="margin:14px 0 4px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9184d9;font-weight:600">Next up</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <h1 style="margin:0;font-size:30px;font-weight:500;letter-spacing:-.01em">{{ typeName }}</h1>
+          <button onClick="{{ swapType }}" aria-label="Swap workout" style="border:1px solid rgba(233,233,237,.15);background:transparent;color:rgba(233,233,237,.6);border-radius:8px;width:30px;height:30px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph ph-arrows-clockwise" style="font-size:14px"></i></button>
+        </div>
+        <p style="margin:0 0 18px;font-size:12px;color:rgba(233,233,237,.5)">{{ idleSub }}</p>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ previewRows }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;padding:13px 2px;background:linear-gradient(to right,transparent,rgba(233,233,237,.09) 48px,rgba(233,233,237,.09) calc(100% - 48px),transparent) no-repeat bottom / 100% 1px">
+              <div><p style="margin:0;font-size:14px;font-weight:500">{{ r.name }}</p><p style="margin:2px 0 0;font-size:11px;color:rgba(233,233,237,.45)">{{ r.meta }}</p></div>
+              <span style="font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;color:#d2cefd">{{ r.w }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ start }}" style="margin-top:22px;width:100%;height:48px;border:1px solid #9184d9;background:transparent;color:#d2cefd;border-radius:9px;font-family:inherit;font-size:14px;font-weight:600;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer;opacity:{{ startOpacity }}" style-hover="background:rgba(145,132,217,.12)" style-active="background:rgba(145,132,217,.22)"><i class="ph-fill ph-play" style="font-size:14px"></i>{{ startLabel }}</button>
+        <p style="margin:12px 0 0;text-align:center;font-size:11px;color:rgba(233,233,237,.4)">{{ startNote }}</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showTrainActive }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Train — active workout" style="display:flex;flex-direction:column;gap:14px;padding-top:8px">
+        <sc-for list="{{ cards }}" as="c" hint-placeholder-count="3">
+          <div style="background:#232532;border-radius:10px;padding:16px 16px 14px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+              <div>
+                <p style="margin:0;font-size:15px;font-weight:600">{{ c.name }}</p>
+                <div style="display:flex;gap:12px;margin-top:5px">
+                  <button onClick="{{ c.toggleWarm }}" style="border:none;background:transparent;padding:0;font-family:inherit;font-size:11px;color:#9184d9;cursor:pointer;display:flex;align-items:center;gap:3px"><i class="ph ph-caret-down" style="font-size:10px"></i>Warm-up</button>
+                  <button onClick="{{ c.plates }}" style="border:none;background:transparent;padding:0;font-family:inherit;font-size:11px;color:rgba(233,233,237,.45);cursor:pointer">Plates</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button onClick="{{ c.dec }}" aria-label="Decrease weight" style="width:28px;height:28px;border:1px solid rgba(233,233,237,.15);background:transparent;color:rgba(233,233,237,.6);border-radius:7px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph ph-minus" style="font-size:12px"></i></button>
+                <span style="font-size:17px;font-weight:500;font-variant-numeric:tabular-nums;color:#d2cefd;min-width:64px;text-align:center">{{ c.w }}</span>
+                <button onClick="{{ c.inc }}" aria-label="Increase weight" style="width:28px;height:28px;border:1px solid rgba(233,233,237,.15);background:transparent;color:rgba(233,233,237,.6);border-radius:7px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph ph-plus" style="font-size:12px"></i></button>
+              </div>
+            </div>
+            <sc-if value="{{ c.warmOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="margin:0 0 12px;padding:10px 12px;background:rgba(22,24,38,.6);border-radius:8px;display:flex;flex-direction:column;gap:5px">
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(233,233,237,.55)"><span>Empty bar</span><span style="font-variant-numeric:tabular-nums">20 kg × 5</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(233,233,237,.55)"><span>Working prep</span><span style="font-variant-numeric:tabular-nums">{{ c.warmPrep }}</span></div>
+              </div>
+            </sc-if>
+            <div style="display:flex;gap:10px;justify-content:space-between">
+              <sc-for list="{{ c.sets }}" as="s" hint-placeholder-count="5">
+                <button onClick="{{ s.tap }}" onPointerDown="{{ s.down }}" onPointerUp="{{ s.up }}" onPointerLeave="{{ s.up }}" onContextMenu="{{ s.ctx }}" aria-label="Log set" style="position:relative;flex:1;max-width:52px;aspect-ratio:1;border-radius:{{ setRadius }};border:{{ s.bd }};background:{{ s.bg }};color:{{ s.fg }};font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;transition:all .12s;user-select:none;-webkit-user-select:none;touch-action:manipulation" style-active="transform:scale(.92)">{{ s.txt }}<sc-if value="{{ s.missed }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:-5px;right:-3px;width:16px;height:16px;border-radius:50%;background:#3f424d;border:1px solid rgba(233,233,237,.35);display:grid;place-items:center;color:#e9e9ed"><i class="ph-bold ph-x" style="font-size:8px"></i></span></sc-if></button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ c.missedNote }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:10px 0 0;display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(233,233,237,.55)"><i class="ph ph-arrow-bend-down-right" style="font-size:11px;color:#9184d9"></i>{{ c.missedTxt }}</p>
+            </sc-if>
+            <sc-if value="{{ c.hint }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:10px 0 0;font-size:10.5px;color:rgba(233,233,237,.38)">Tap to log all {{ c.reps }} reps · hold a set to pick an exact count</p>
+            </sc-if>
+          </div>
+        </sc-for>
+        <button onClick="{{ finish }}" style="width:100%;height:48px;border:1px solid {{ finishBd }};background:transparent;color:{{ finishFg }};border-radius:9px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:rgba(145,132,217,.1)">Finish workout</button>
+        <button onClick="{{ openDiscard }}" style="margin:0 auto 6px;border:none;background:transparent;font-family:inherit;font-size:11px;color:rgba(233,233,237,.35);cursor:pointer;display:flex;align-items:center;gap:5px" style-hover="color:#e9e9ed"><i class="ph ph-trash" style="font-size:11px"></i>Discard workout</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showLog }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Log" style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <h1 style="margin:0;font-size:22px;font-weight:500">Log</h1>
+          <button onClick="{{ addManual }}" aria-label="Add workout" style="width:32px;height:32px;border:1px solid rgba(233,233,237,.15);background:transparent;color:#9184d9;border-radius:8px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9"><i class="ph ph-plus" style="font-size:15px"></i></button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:11.5px;color:rgba(233,233,237,.55)">
+          <span style="display:flex;gap:4px">
+            <sc-for list="{{ weekDots }}" as="d" hint-placeholder-count="3"><span style="width:8px;height:8px;border-radius:50%;background:{{ d.bg }};border:1px solid {{ d.bd }}"></span></sc-for>
+          </span>
+          <span>{{ statusTxt }}</span><span style="opacity:.4">·</span><span>{{ streakTxt }}</span><span style="opacity:.4">·</span><span>{{ totalTxt }}</span>
+        </div>
+        <div style="display:flex;border:1px solid rgba(233,233,237,.13);border-radius:8px;overflow:hidden">
+          <sc-for list="{{ groupBtns }}" as="g" hint-placeholder-count="4">
+            <button onClick="{{ g.tap }}" style="flex:1;height:32px;border:none;border-left:{{ g.bl }};background:{{ g.bg }};color:{{ g.fg }};font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;box-shadow:{{ g.sh }}">{{ g.label }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ flatMode }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ entries }}" as="e" hint-placeholder-count="4">
+              <div style="background:#232532;border-radius:10px;padding:14px 16px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><span style="font-size:12.5px;font-weight:600;color:#d2cefd">{{ e.type }}</span><span style="font-size:11px;color:rgba(233,233,237,.45);font-variant-numeric:tabular-nums">{{ e.meta }}</span></div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <sc-for list="{{ e.rows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                      <span style="font-size:12px;color:rgba(233,233,237,.6)">{{ r.name }}</span>
+                      <span style="display:flex;align-items:center;gap:10px"><span style="font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums">{{ r.w }}</span><span style="display:flex;gap:3px"><sc-for list="{{ r.dots }}" as="d" hint-placeholder-count="5"><span style="width:6px;height:6px;border-radius:50%;background:{{ d.bg }};border:1px solid {{ d.bd }}"></span></sc-for></span></span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ groupedMode }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+              <div>
+                <button onClick="{{ g.toggle }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:rgba(35,37,50,.6);border:1px solid rgba(233,233,237,.07);border-radius:9px;color:#e9e9ed;font-family:inherit;cursor:pointer" style-hover="background:#232532">
+                  <span style="display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:500"><i class="{{ g.chev }}" style="font-size:11px;color:rgba(233,233,237,.4)"></i>{{ g.key }}</span>
+                  <span style="font-size:10.5px;color:rgba(233,233,237,.45);background:rgba(233,233,237,.07);padding:2px 8px;border-radius:6px">{{ g.count }}</span>
+                </button>
+                <sc-if value="{{ g.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:10px;margin:10px 0 4px 10px">
+                    <sc-for list="{{ g.entries }}" as="e" hint-placeholder-count="2">
+                      <div style="background:#232532;border-radius:10px;padding:14px 16px">
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><span style="font-size:12.5px;font-weight:600;color:#d2cefd">{{ e.type }}</span><span style="font-size:11px;color:rgba(233,233,237,.45);font-variant-numeric:tabular-nums">{{ e.meta }}</span></div>
+                        <div style="display:flex;flex-direction:column;gap:7px">
+                          <sc-for list="{{ e.rows }}" as="r" hint-placeholder-count="3">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                              <span style="font-size:12px;color:rgba(233,233,237,.6)">{{ r.name }}</span>
+                              <span style="display:flex;align-items:center;gap:10px"><span style="font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums">{{ r.w }}</span><span style="display:flex;gap:3px"><sc-for list="{{ r.dots }}" as="d" hint-placeholder-count="5"><span style="width:6px;height:6px;border-radius:50%;background:{{ d.bg }};border:1px solid {{ d.bd }}"></span></sc-for></span></span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showStatsList }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Stats overview" style="display:flex;flex-direction:column;gap:14px">
+        <h1 style="margin:8px 0 0;font-size:22px;font-weight:500">Stats</h1>
+        <button onClick="{{ openBig3 }}" style="width:100%;text-align:left;background:#232532;border:none;border-radius:10px;padding:16px;display:flex;justify-content:space-between;align-items:center;color:#e9e9ed;font-family:inherit;cursor:pointer" style-hover="background:#272939">
+          <div><p style="margin:0;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9184d9;font-weight:600">Big-3 total</p><p style="margin:4px 0 0;font-size:24px;font-weight:500;font-variant-numeric:tabular-nums">{{ big3Total }}</p></div>
+          <span style="display:flex;align-items:center;gap:8px"><i class="{{ big3Icon }}" style="font-size:15px;color:{{ big3Color }}"></i><i class="ph ph-caret-right" style="font-size:13px;color:rgba(233,233,237,.35)"></i></span>
+        </button>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ statRows }}" as="s" hint-placeholder-count="5">
+            <button onClick="{{ s.tap }}" style="width:100%;text-align:left;background:#232532;border:none;border-radius:10px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;color:#e9e9ed;font-family:inherit;cursor:pointer" style-hover="background:#272939">
+              <div><p style="margin:0;font-size:13.5px;font-weight:500">{{ s.name }}</p><p style="margin:3px 0 0;font-size:11px;color:rgba(233,233,237,.45)">{{ s.e1 }}</p></div>
+              <span style="display:flex;align-items:center;gap:10px"><i class="{{ s.icon }}" style="font-size:14px;color:{{ s.color }}"></i><span style="font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;color:#d2cefd">{{ s.w }}</span><i class="ph ph-caret-right" style="font-size:12px;color:rgba(233,233,237,.35)"></i></span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showChart }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Stats chart" style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+          <button onClick="{{ back }}" aria-label="Back" style="width:32px;height:32px;border:1px solid rgba(233,233,237,.15);background:transparent;color:rgba(233,233,237,.6);border-radius:8px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph ph-arrow-left" style="font-size:14px"></i></button>
+          <div><h1 style="margin:0;font-size:19px;font-weight:500">{{ chartTitle }}</h1><p style="margin:2px 0 0;font-size:12px;font-variant-numeric:tabular-nums"><span style="color:#d2cefd">{{ chartW }}</span><span style="color:rgba(233,233,237,.35)"> · </span><span style="color:rgba(233,233,237,.55)">{{ chartE1 }}</span></p></div>
+        </div>
+        <div style="display:flex;border:1px solid rgba(233,233,237,.13);border-radius:8px;overflow:hidden">
+          <sc-for list="{{ rangeBtns }}" as="g" hint-placeholder-count="5">
+            <button onClick="{{ g.tap }}" style="flex:1;height:30px;border:none;border-left:{{ g.bl }};background:{{ g.bg }};color:{{ g.fg }};font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;box-shadow:{{ g.sh }}">{{ g.label }}</button>
+          </sc-for>
+        </div>
+        <div style="background:#232532;border-radius:10px;padding:16px 12px 10px">
+          <svg viewBox="0 0 340 170" style="width:100%;display:block">
+            <sc-for list="{{ yTicks }}" as="t" hint-placeholder-count="4">
+              <g><line x1="34" x2="332" y1="{{ t.y }}" y2="{{ t.y }}" stroke="rgba(233,233,237,.07)" stroke-width="1"></line><text x="28" y="{{ t.ty }}" text-anchor="end" fill="rgba(233,233,237,.4)" font-size="9" font-family="Inter">{{ t.label }}</text></g>
+            </sc-for>
+            <sc-if value="{{ showE1 }}" hint-placeholder-val="{{ false }}"><polyline points="{{ e1Pts }}" fill="none" stroke="rgba(210,206,253,.55)" stroke-width="1.5" stroke-dasharray="4 4"></polyline></sc-if>
+            <sc-if value="{{ showW }}" hint-placeholder-val="{{ true }}"><polyline points="{{ linePts }}" fill="none" stroke="#9184d9" stroke-width="2"></polyline></sc-if>
+            <sc-for list="{{ chartDots }}" as="d" hint-placeholder-count="6"><circle cx="{{ d.cx }}" cy="{{ d.cy }}" r="2.4" fill="#9184d9"></circle></sc-for>
+            <sc-for list="{{ xTicks }}" as="t" hint-placeholder-count="2"><text x="{{ t.x }}" y="166" text-anchor="{{ t.anchor }}" fill="rgba(233,233,237,.4)" font-size="9" font-family="Inter">{{ t.label }}</text></sc-for>
+          </svg>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button onClick="{{ togW }}" style="flex:1;height:30px;border:1px solid {{ wBtnBd }};background:transparent;color:{{ wBtnFg }};border-radius:7px;font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#9184d9"></span>Weight</button>
+            <button onClick="{{ togE }}" style="flex:1;height:30px;border:1px solid {{ eBtnBd }};background:transparent;color:{{ eBtnFg }};border-radius:7px;font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#d2cefd"></span>Est. 1RM</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showProgram }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Program" style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+          <h1 style="margin:0;font-size:22px;font-weight:500">Program</h1>
+          <button onClick="{{ resetProg }}" style="border:1px solid rgba(233,233,237,.15);background:transparent;color:rgba(233,233,237,.55);border-radius:8px;padding:7px 12px;font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph ph-arrow-counter-clockwise" style="font-size:12px"></i>Reset</button>
+        </div>
+        <p style="margin:-6px 0 0;font-size:12px;line-height:1.5;color:rgba(233,233,237,.5)">Sets and reps per exercise. Weights keep progressing automatically.</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ progRows }}" as="p" hint-placeholder-count="5">
+            <div style="background:#232532;border-radius:10px;padding:16px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px">
+                <p style="margin:0;font-size:14px;font-weight:600">{{ p.name }}</p>
+                <span style="font-size:11.5px;color:rgba(233,233,237,.5);font-variant-numeric:tabular-nums">{{ p.summary }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:14px">
+                  <span style="flex:none;width:36px;font-size:12px;font-weight:500;color:rgba(233,233,237,.6)">Sets</span>
+                  <div style="flex:1;display:flex;gap:4px">
+                    <sc-for list="{{ p.bars }}" as="b" hint-placeholder-count="5"><span style="flex:1;height:6px;border-radius:3px;background:{{ b.bg }}"></span></sc-for>
+                  </div>
+                  <div style="flex:none;display:flex;align-items:center;gap:8px">
+                    <button onClick="{{ p.decS }}" aria-label="Fewer sets" style="width:40px;height:40px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.7);border-radius:9px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd" style-active="background:rgba(145,132,217,.15)"><i class="ph ph-minus" style="font-size:15px"></i></button>
+                    <span style="font-size:17px;font-weight:500;font-variant-numeric:tabular-nums;min-width:26px;text-align:center">{{ p.setsTxt }}</span>
+                    <button onClick="{{ p.incS }}" aria-label="More sets" style="width:40px;height:40px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.7);border-radius:9px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd" style-active="background:rgba(145,132,217,.15)"><i class="ph ph-plus" style="font-size:15px"></i></button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px">
+                  <span style="flex:none;width:36px;font-size:12px;font-weight:500;color:rgba(233,233,237,.6)">Reps</span>
+                  <div style="flex:1;display:flex;gap:4px;align-items:center">
+                    <sc-for list="{{ p.repDots }}" as="b" hint-placeholder-count="10"><span style="width:6px;height:6px;border-radius:50%;background:{{ b.bg }}"></span></sc-for>
+                  </div>
+                  <div style="flex:none;display:flex;align-items:center;gap:8px">
+                    <button onClick="{{ p.decR }}" aria-label="Fewer reps" style="width:40px;height:40px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.7);border-radius:9px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd" style-active="background:rgba(145,132,217,.15)"><i class="ph ph-minus" style="font-size:15px"></i></button>
+                    <span style="font-size:17px;font-weight:500;font-variant-numeric:tabular-nums;min-width:26px;text-align:center">{{ p.repsTxt }}</span>
+                    <button onClick="{{ p.incR }}" aria-label="More reps" style="width:40px;height:40px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.7);border-radius:9px;display:grid;place-items:center;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd" style-active="background:rgba(145,132,217,.15)"><i class="ph ph-plus" style="font-size:15px"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showOptions }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Options" style="display:flex;flex-direction:column;gap:14px">
+        <h1 style="margin:8px 0 0;font-size:22px;font-weight:500">Options</h1>
+        <div style="background:#232532;border-radius:10px;padding:14px 16px">
+          <p style="margin:0 0 4px;font-size:13px;font-weight:500">Rest interval</p>
+          <p style="margin:0 0 12px;font-size:11px;color:rgba(233,233,237,.45)">Countdown between sets</p>
+          <div style="display:flex;border:1px solid rgba(233,233,237,.13);border-radius:8px;overflow:hidden">
+            <sc-for list="{{ restBtns }}" as="g" hint-placeholder-count="3">
+              <button onClick="{{ g.tap }}" style="flex:1;height:32px;border:none;border-left:{{ g.bl }};background:{{ g.bg }};color:{{ g.fg }};font-family:inherit;font-size:11.5px;font-weight:500;cursor:pointer;box-shadow:{{ g.sh }};font-variant-numeric:tabular-nums">{{ g.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#232532;border-radius:10px;padding:6px 16px">
+          <sc-for list="{{ toggles }}" as="tg" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;background:linear-gradient(to right,transparent,rgba(233,233,237,.07) 40px,rgba(233,233,237,.07) calc(100% - 40px),transparent) no-repeat bottom / 100% 1px">
+              <div style="display:flex;align-items:center;gap:12px"><i class="{{ tg.icon }}" style="font-size:17px;color:#9184d9"></i><div><p style="margin:0;font-size:13px;font-weight:500">{{ tg.title }}</p><p style="margin:2px 0 0;font-size:11px;color:rgba(233,233,237,.45)">{{ tg.desc }}</p></div></div>
+              <button onClick="{{ tg.tap }}" role="switch" aria-checked="{{ tg.on }}" aria-label="{{ tg.title }}" style="width:38px;height:22px;border-radius:11px;border:1px solid {{ tg.bd }};background:{{ tg.bg }};position:relative;cursor:pointer;padding:0"><span style="position:absolute;top:2px;left:{{ tg.knobLeft }};width:16px;height:16px;border-radius:50%;background:{{ tg.knob }};transition:left .15s"></span></button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#232532;border-radius:10px;padding:14px 16px">
+          <p style="margin:0 0 4px;font-size:13px;font-weight:500">Backup &amp; sync</p>
+          <p style="margin:0 0 12px;font-size:11px;color:rgba(233,233,237,.45)">Your data stays on this device</p>
+          <div style="display:flex;gap:8px">
+            <button onClick="{{ doExport }}" style="flex:1;height:38px;border:1px solid #9184d9;background:transparent;color:#d2cefd;border-radius:8px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px" style-hover="background:rgba(145,132,217,.1)"><i class="ph ph-download-simple" style="font-size:13px"></i>Backup</button>
+            <button onClick="{{ doRestore }}" style="flex:1;height:38px;border:1px solid rgba(233,233,237,.15);background:transparent;color:rgba(233,233,237,.7);border-radius:8px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph ph-upload-simple" style="font-size:13px"></i>Restore</button>
+          </div>
+          <button onClick="{{ doCSV }}" style="margin-top:8px;width:100%;height:38px;border:1px solid rgba(233,233,237,.15);background:transparent;color:rgba(233,233,237,.55);border-radius:8px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px" style-hover="border-color:#9184d9;color:#d2cefd"><i class="ph ph-file-csv" style="font-size:13px"></i>Import from StrongLifts</button>
+        </div>
+        <div style="background:#232532;border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px"><i class="ph ph-globe-simple" style="font-size:17px;color:#9184d9"></i><p style="margin:0;font-size:13px;font-weight:500">Language</p></div>
+          <div style="display:flex;border:1px solid rgba(233,233,237,.13);border-radius:8px;overflow:hidden">
+            <sc-for list="{{ langBtns }}" as="g" hint-placeholder-count="2">
+              <button onClick="{{ g.tap }}" style="width:44px;height:28px;border:none;border-left:{{ g.bl }};background:{{ g.bg }};color:{{ g.fg }};font-family:inherit;font-size:11px;font-weight:500;cursor:pointer;box-shadow:{{ g.sh }}">{{ g.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ liveVisible }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ goTrain }}" style="flex:none;margin:0 12px 8px;height:40px;border:1px solid #9184d9;background:#2b2741;color:#d2cefd;border-radius:9px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+      <span style="display:flex;align-items:center;gap:8px"><i class="ph-fill ph-play" style="font-size:11px"></i>{{ liveTxt }}</span>
+      <span style="display:flex;align-items:center;gap:4px;font-size:10.5px;opacity:.8">Return<i class="ph ph-caret-right" style="font-size:10px"></i></span>
+    </button>
+  </sc-if>
+
+  <div style="flex:none;display:flex;justify-content:space-around;align-items:center;padding:8px 6px 6px;border-top:1px solid rgba(233,233,237,.08);background:#141624">
+    <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+      <button onClick="{{ n.tap }}" aria-label="{{ n.label }}" style="border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;color:{{ n.fg }};font-family:inherit;cursor:pointer;padding:4px 10px">
+        <i class="{{ n.icon }}" style="font-size:21px"></i>
+        <sc-if value="{{ tabLabels }}" hint-placeholder-val="{{ true }}"><span style="font-size:9.5px;font-weight:500;letter-spacing:.02em">{{ n.label }}</span></sc-if>
+      </button>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:24px;right:24px;bottom:88px;background:#2b2741;border:1px solid #9184d9;border-radius:9px;padding:10px 14px;font-size:12px;color:#d2cefd;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.4)">{{ toast }}</div>
+  </sc-if>
+
+  <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(15,16,25,.85);display:flex;align-items:flex-end;z-index:10">
+      <div style="width:100%;max-height:88%;overflow-y:auto;background:#232532;border-radius:14px 14px 0 0;padding:22px 20px 24px;box-shadow:0 -12px 40px rgba(0,0,0,.5)">
+        <p style="margin:0 0 18px;text-align:center;font-size:16px;font-weight:600">How it works</p>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px">
+          <sc-for list="{{ helpItems }}" as="h" hint-placeholder-count="7">
+            <div style="display:flex;gap:12px">
+              <span style="flex:none;width:30px;height:30px;border:1px solid rgba(145,132,217,.5);border-radius:8px;display:grid;place-items:center;color:#9184d9"><i class="{{ h.icon }}" style="font-size:14px"></i></span>
+              <div><p style="margin:0;font-size:12.5px;font-weight:600">{{ h.title }}</p><p style="margin:3px 0 0;font-size:11.5px;line-height:1.55;color:rgba(233,233,237,.6)">{{ h.body }}</p></div>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ closeHelp }}" style="width:100%;height:44px;border:1px solid #9184d9;background:transparent;color:#d2cefd;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:rgba(145,132,217,.1)">Got it</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(15,16,25,.75);display:flex;align-items:flex-end;z-index:10">
+      <div style="width:100%;background:#232532;border-radius:14px 14px 0 0;padding:22px 20px 24px;box-shadow:0 -12px 40px rgba(0,0,0,.5)">
+        <p style="margin:0;text-align:center;font-size:16px;font-weight:600">{{ pickerTitle }}</p>
+        <p style="margin:4px 0 18px;text-align:center;font-size:11.5px;color:rgba(233,233,237,.5)">How many reps did you get?</p>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <sc-for list="{{ pickerBtns }}" as="p" hint-placeholder-count="6">
+            <button onClick="{{ p.tap }}" style="width:44px;height:44px;border-radius:{{ setRadius }};border:{{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};font-family:inherit;font-size:15px;font-weight:600;cursor:pointer" style-active="transform:scale(.92)">{{ p.v }}</button>
+          </sc-for>
+        </div>
+        <p style="margin:0 0 16px;text-align:center;font-size:10.5px;color:rgba(233,233,237,.4)">{{ pickerNote }} = passed · fewer means the weight holds next session</p>
+        <div style="display:flex;gap:8px">
+          <button onClick="{{ pickerClear }}" style="flex:1;height:40px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.6);border-radius:9px;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd">Clear set</button>
+          <button onClick="{{ pickerClose }}" style="flex:1;height:40px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.75);border-radius:9px;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ plateOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(15,16,25,.75);display:flex;align-items:flex-end;z-index:10">
+      <div style="width:100%;background:#232532;border-radius:14px 14px 0 0;padding:22px 20px 26px;box-shadow:0 -12px 40px rgba(0,0,0,.5)">
+        <p style="margin:0;text-align:center;font-size:22px;font-weight:500;font-variant-numeric:tabular-nums">{{ plateW }}</p>
+        <p style="margin:4px 0 18px;text-align:center;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(233,233,237,.45)">Plates per side · 20 kg bar</p>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+          <sc-for list="{{ plateList }}" as="p" hint-placeholder-count="3">
+            <span style="width:48px;height:48px;border-radius:50%;border:{{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};display:grid;place-items:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">{{ p.v }}</span>
+          </sc-for>
+        </div>
+        <button onClick="{{ closePlate }}" style="width:100%;height:42px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.75);border-radius:9px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer" style-hover="border-color:#9184d9;color:#d2cefd">Close</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ discardOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(15,16,25,.8);display:flex;align-items:center;justify-content:center;padding:28px;z-index:10">
+      <div style="width:100%;background:#232532;border-radius:12px;padding:24px;text-align:center;box-shadow:0 16px 48px rgba(0,0,0,.5)">
+        <p style="margin:0 0 6px;font-size:16px;font-weight:600">Discard this workout?</p>
+        <p style="margin:0 0 20px;font-size:12px;line-height:1.5;color:rgba(233,233,237,.55)">Logged sets won't be saved and weights won't change.</p>
+        <button onClick="{{ closeDiscard }}" style="width:100%;height:44px;border:1px solid #9184d9;background:transparent;color:#d2cefd;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px" style-hover="background:rgba(145,132,217,.1)">Keep lifting</button>
+        <button onClick="{{ confirmDiscard }}" style="border:none;background:transparent;color:rgba(233,233,237,.45);font-family:inherit;font-size:11.5px;cursor:pointer" style-hover="color:#e9e9ed">Yes, discard</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ sumOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(15,16,25,.8);display:flex;align-items:center;justify-content:center;padding:28px;z-index:10">
+      <div style="width:100%;background:#232532;border-radius:12px;padding:24px;box-shadow:0 16px 48px rgba(0,0,0,.5)">
+        <p style="margin:0;text-align:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9184d9;font-weight:600">Workout complete</p>
+        <p style="margin:6px 0 2px;text-align:center;font-size:20px;font-weight:500">{{ sumTitle }}</p>
+        <p style="margin:0 0 18px;text-align:center;font-size:11.5px;color:rgba(233,233,237,.5)">{{ sumDur }}</p>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+          <sc-for list="{{ sumLines }}" as="l" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:rgba(22,24,38,.6);border-radius:8px">
+              <span style="font-size:12px;color:rgba(233,233,237,.7)">{{ l.name }}</span>
+              <span style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums;color:{{ l.color }}"><i class="{{ l.icon }}" style="font-size:12px"></i>{{ l.txt }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ closeSum }}" style="width:100%;height:44px;border:1px solid #9184d9;background:transparent;color:#d2cefd;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:rgba(145,132,217,.1)">Done</button>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1b" data-screen-label="1b focus mode">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Alt: focus mode — one lift at a time (static)</div>
+<div style="width:372px;height:760px;background:#161826;border:1px solid rgba(233,233,237,.1);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;color:#e9e9ed;font-family:'Inter',system-ui,sans-serif">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 0">
+    <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#9184d9;font-weight:600">Workout A</span>
+    <span style="font-size:11px;color:rgba(233,233,237,.45);font-variant-numeric:tabular-nums">14:32</span>
+  </div>
+  <div style="display:flex;gap:6px;padding:14px 22px 0">
+    <span style="flex:1;height:4px;border-radius:2px;background:#9184d9"></span>
+    <span style="flex:1;height:4px;border-radius:2px;background:#9184d9;opacity:.55"></span>
+    <span style="flex:1;height:4px;border-radius:2px;background:rgba(233,233,237,.12)"></span>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 22px">
+    <p style="margin:0;font-size:12px;color:rgba(233,233,237,.5)">Exercise 2 of 3</p>
+    <h2 style="margin:0;font-size:26px;font-weight:500">Bench Press</h2>
+    <p style="margin:0 0 18px;font-size:15px;color:#d2cefd;font-variant-numeric:tabular-nums">62.5 kg · set 3 of 5</p>
+    <div style="position:relative;width:190px;height:190px">
+      <svg viewBox="0 0 190 190" style="position:absolute;inset:0">
+        <circle cx="95" cy="95" r="86" fill="none" stroke="rgba(233,233,237,.09)" stroke-width="5"></circle>
+        <circle cx="95" cy="95" r="86" fill="none" stroke="#9184d9" stroke-width="5" stroke-linecap="round" stroke-dasharray="540" stroke-dashoffset="176" transform="rotate(-90 95 95)"></circle>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+        <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(233,233,237,.45)">Rest</span>
+        <span style="font-size:38px;font-weight:500;font-variant-numeric:tabular-nums">1:12</span>
+        <span style="font-size:11px;color:rgba(233,233,237,.4)">of 1:30</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <span style="width:12px;height:12px;border-radius:50%;background:#2b2741;border:1px solid #9184d9"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#2b2741;border:1px solid #9184d9"></span>
+      <span style="width:12px;height:12px;border-radius:50%;border:1px solid rgba(233,233,237,.25)"></span>
+      <span style="width:12px;height:12px;border-radius:50%;border:1px solid rgba(233,233,237,.15)"></span>
+      <span style="width:12px;height:12px;border-radius:50%;border:1px solid rgba(233,233,237,.15)"></span>
+    </div>
+  </div>
+  <div style="padding:0 22px 22px;display:flex;flex-direction:column;gap:10px">
+    <button style="width:100%;height:52px;border:1px solid #9184d9;background:transparent;color:#d2cefd;border-radius:10px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">Log set · 5 reps</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:rgba(233,233,237,.45)">
+      <span>Fewer reps — hold</span><span>Next: Barbell Row · 57.5 kg</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c" data-screen-label="1c dense checklist">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Alt: dense checklist — whole session, zero scroll (static)</div>
+<div style="width:372px;height:760px;background:#161826;border:1px solid rgba(233,233,237,.1);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;color:#e9e9ed;font-family:'Inter',system-ui,sans-serif">
+  <div style="flex:none;background:#1c1e2c;padding:14px 22px 12px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><p style="margin:0;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(233,233,237,.45);font-weight:600">Rest</p><p style="margin:2px 0 0;font-size:24px;font-weight:500;font-variant-numeric:tabular-nums">1:24</p></div>
+      <span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9184d9;font-weight:600">Workout A · 14:32</span>
+    </div>
+    <div style="height:2px;background:rgba(233,233,237,.08);margin-top:10px"><div style="height:2px;width:62%;background:#9184d9"></div></div>
+  </div>
+  <div style="flex:1;padding:8px 22px;display:flex;flex-direction:column;justify-content:space-evenly">
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font-size:14px;font-weight:600">Back Squat</span><span style="font-size:13px;color:#d2cefd;font-variant-numeric:tabular-nums">82.5 kg</span></div>
+      <div style="display:flex;gap:8px"><span style="flex:1;height:40px;border-radius:9px;background:#2b2741;border:1px solid #9184d9;color:#d2cefd;display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;background:#2b2741;border:1px solid #9184d9;color:#d2cefd;display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;background:#2b2741;border:1px solid #9184d9;color:#d2cefd;display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;background:#2b2741;border:1px solid #9184d9;color:#d2cefd;display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.35);color:#e9e9ed;display:grid;place-items:center;font-size:14px;font-weight:600">4</span></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font-size:14px;font-weight:600">Bench Press</span><span style="font-size:13px;color:#d2cefd;font-variant-numeric:tabular-nums">62.5 kg</span></div>
+      <div style="display:flex;gap:8px"><span style="flex:1;height:40px;border-radius:9px;background:#2b2741;border:1px solid #9184d9;color:#d2cefd;display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;background:#2b2741;border:1px solid #9184d9;color:#d2cefd;display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.2);color:rgba(233,233,237,.4);display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.2);color:rgba(233,233,237,.4);display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.2);color:rgba(233,233,237,.4);display:grid;place-items:center;font-size:14px;font-weight:600">5</span></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><span style="font-size:14px;font-weight:600">Barbell Row</span><span style="font-size:13px;color:rgba(233,233,237,.5);font-variant-numeric:tabular-nums">57.5 kg</span></div>
+      <div style="display:flex;gap:8px"><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.2);color:rgba(233,233,237,.4);display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.2);color:rgba(233,233,237,.4);display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.2);color:rgba(233,233,237,.4);display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.2);color:rgba(233,233,237,.4);display:grid;place-items:center;font-size:14px;font-weight:600">5</span><span style="flex:1;height:40px;border-radius:9px;border:1px solid rgba(233,233,237,.2);color:rgba(233,233,237,.4);display:grid;place-items:center;font-size:14px;font-weight:600">5</span></div>
+    </div>
+  </div>
+  <div style="flex:none;padding:0 22px 20px;display:flex;flex-direction:column;gap:8px">
+    <button style="width:100%;height:46px;border:1px solid rgba(233,233,237,.18);background:transparent;color:rgba(233,233,237,.4);border-radius:9px;font-family:inherit;font-size:13px;font-weight:600">Finish workout</button>
+    <p style="margin:0;text-align:center;font-size:10.5px;color:rgba(233,233,237,.35)">8 sets to go</p>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "make <a class="dv-oid" href="#1b">1b</a> the real Train screen in <a class="dv-oid" href="#1a">1a</a>" · "show the light theme" · "fold Program into Options — 4 tabs"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tabLabels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Navigation&quot;},&quot;setShape&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;circle&quot;,&quot;square&quot;],&quot;default&quot;:&quot;circle&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Workout&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.NAMES = { squat: 'Back Squat', bench: 'Bench Press', row: 'Barbell Row', press: 'Overhead Press', deadlift: 'Deadlift' };
+    this.IDS = ['squat', 'bench', 'row', 'press', 'deadlift'];
+    const gen = this.buildHistory();
+    this.state = {
+      tab: 'train', active: false, ex: null, startedAt: 0,
+      weights: gen.weights, history: gen.history, nextType: 'A',
+      program: { squat: { sets: 5, reps: 5 }, bench: { sets: 5, reps: 5 }, row: { sets: 5, reps: 5 }, press: { sets: 5, reps: 5 }, deadlift: { sets: 1, reps: 5 } },
+      timer: { on: false, total: 90, left: 0, expired: false, elapsed: 0 },
+      rest: 90, sound: false, vib: true, lang: 'en',
+      grouping: 'all', openGroups: {}, warm: {}, hinted: false,
+      statsView: null, range: '6M', showW: true, showE1: false,
+      plate: null, discard: false, summary: null, toast: null, tick: 0, picker: null, help: false,
+    };
+  }
+  buildHistory() {
+    const w = { squat: 50, bench: 40, row: 40, press: 30, deadlift: 60 };
+    const hist = []; const n = 26; const now = Date.now();
+    for (let i = 0; i < n; i++) {
+      const type = i % 2 === 0 ? 'A' : 'B';
+      const daysAgo = Math.round((n - 1 - i) * 2.34) + 1;
+      const ids = type === 'A' ? ['squat', 'bench', 'row'] : ['squat', 'press', 'deadlift'];
+      const fail = i % 7 === 3;
+      const exercises = ids.map((id, k) => {
+        const sets = id === 'deadlift' ? 1 : 5;
+        const done = Array.from({ length: sets }, (_, si) => (fail && k === 1 && si === sets - 1) ? 4 : 5);
+        const rec = { id, name: this.NAMES[id], weight: w[id], reps: 5, done };
+        if (done.every(r => r === 5)) w[id] += id === 'deadlift' ? 5 : 2.5;
+        return rec;
+      });
+      hist.push({ date: new Date(now - daysAgo * 864e5).toISOString(), type, dur: 38 + (i * 7) % 16, exercises });
+    }
+    return { history: hist.reverse(), weights: w };
+  }
+  componentDidMount() {
+    this.int = setInterval(() => {
+      const t = this.state.timer;
+      if (!this.state.active) return;
+      if (t.on && !t.expired) {
+        if (t.left <= 1) this.setState({ timer: { ...t, left: 0, expired: true, elapsed: 0 } });
+        else this.setState({ timer: { ...t, left: t.left - 1 } });
+      } else if (t.on && t.expired) {
+        this.setState({ timer: { ...t, elapsed: t.elapsed + 1 } });
+      } else {
+        this.setState({ tick: this.state.tick + 1 });
+      }
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.int); }
+  fmtW(v) { return (v % 1 ? v.toFixed(1) : String(v)) + ' kg'; }
+  fmtT(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  e1(w) { return Math.round(w * 1.1667 / 2.5) * 2.5; }
+  toastMsg(m) {
+    this.setState({ toast: m });
+    clearTimeout(this._tt);
+    this._tt = setTimeout(() => this.setState({ toast: null }), 2200);
+  }
+  progIds(type) { return type === 'A' ? ['squat', 'bench', 'row'] : ['squat', 'press', 'deadlift']; }
+  startWorkout() {
+    const ex = this.progIds(this.state.nextType).map(id => ({
+      id, name: this.NAMES[id], weight: this.state.weights[id],
+      inc: id === 'deadlift' ? 5 : 2.5,
+      reps: this.state.program[id].reps,
+      done: new Array(this.state.program[id].sets).fill(null),
+    }));
+    this.setState({ active: true, ex, startedAt: Date.now(), tab: 'train', timer: { on: false, total: this.state.rest, left: 0, expired: false, elapsed: 0 }, hinted: false });
+  }
+  pressStart(ei, si) {
+    this._lpFired = false;
+    clearTimeout(this._lp);
+    this._lp = setTimeout(() => { this._lpFired = true; this.setState({ picker: { ei, si } }); }, 450);
+  }
+  pressEnd() { clearTimeout(this._lp); }
+  applySet(ei, si, val) {
+    const ex = this.state.ex.map(e => ({ ...e, done: [...e.done] }));
+    const e = ex[ei]; const cur = e.done[si];
+    e.done[si] = val;
+    const isLast = si === e.done.length - 1;
+    let timer = this.state.timer;
+    if (val !== null && cur === null && !isLast) timer = { on: true, total: this.state.rest, left: this.state.rest, expired: false, elapsed: 0 };
+    else if (val === null || (isLast && cur === null)) timer = { on: false, total: this.state.rest, left: 0, expired: false, elapsed: 0 };
+    this.setState({ ex, timer, hinted: true, picker: null });
+  }
+  tapSet(ei, si) {
+    if (this._lpFired) { this._lpFired = false; return; }
+    const ex = this.state.ex.map(e => ({ ...e, done: [...e.done] }));
+    const e = ex[ei]; const cur = e.done[si];
+    const next = cur === null ? e.reps : cur > 0 ? cur - 1 : null;
+    e.done[si] = next;
+    const isLast = si === e.done.length - 1;
+    let timer = this.state.timer;
+    if (next !== null && cur === null && !isLast) timer = { on: true, total: this.state.rest, left: this.state.rest, expired: false, elapsed: 0 };
+    else if (next === null || (isLast && cur === null)) timer = { on: false, total: this.state.rest, left: 0, expired: false, elapsed: 0 };
+    this.setState({ ex, timer, hinted: true });
+  }
+  finish() {
+    const s = this.state;
+    const sess = { date: new Date().toISOString(), type: s.nextType, dur: Math.max(1, Math.round((Date.now() - s.startedAt) / 60000)), exercises: s.ex.map(e => ({ id: e.id, name: e.name, weight: e.weight, reps: e.reps, done: [...e.done] })) };
+    const weights = { ...s.weights }; const lines = [];
+    sess.exercises.forEach(e => {
+      const pass = e.done.every(r => r === e.reps);
+      if (pass) { weights[e.id] = e.weight + (e.id === 'deadlift' ? 5 : 2.5); lines.push({ name: e.name, txt: this.fmtW(e.weight) + ' → ' + this.fmtW(weights[e.id]), up: true }); }
+      else lines.push({ name: e.name, txt: 'stays at ' + this.fmtW(e.weight), up: false });
+    });
+    this.setState({ history: [sess, ...s.history], weights, active: false, ex: null, nextType: s.nextType === 'A' ? 'B' : 'A', summary: { type: 'Workout ' + sess.type, dur: sess.dur, lines }, timer: { on: false, total: s.rest, left: 0, expired: false, elapsed: 0 } });
+  }
+  calcPlates(w) {
+    let per = Math.max(0, (w - 20) / 2); const out = [];
+    [20, 15, 10, 5, 2.5, 1.25].forEach(p => { while (per >= p - 1e-9) { out.push(p); per -= p; } });
+    return out.length ? out : [0];
+  }
+  timeline(id) {
+    return this.state.history.slice().reverse().filter(s => s.exercises.some(e => e.id === id))
+      .map(s => { const e = s.exercises.find(x => x.id === id); return { t: new Date(s.date).getTime(), w: e.weight, e1: this.e1(e.weight) }; });
+  }
+  big3Timeline() {
+    const last = {}; const out = [];
+    this.state.history.slice().reverse().forEach(s => {
+      s.exercises.forEach(e => { if (['squat', 'bench', 'deadlift'].includes(e.id)) last[e.id] = e.weight; });
+      if (last.squat != null && last.bench != null && last.deadlift != null) {
+        const sum = last.squat + last.bench + last.deadlift;
+        out.push({ t: new Date(s.date).getTime(), w: sum, e1: this.e1(last.squat) + this.e1(last.bench) + this.e1(last.deadlift) });
+      }
+    });
+    return out;
+  }
+  trend(id) {
+    const tl = id === 'big3' ? this.big3Timeline() : this.timeline(id);
+    if (tl.length < 2) return 'flat';
+    const a = tl[tl.length - 2].w, b = tl[tl.length - 1].w;
+    return b > a ? 'up' : b < a ? 'down' : 'flat';
+  }
+  seg(items, activeVal, onPick) {
+    return items.map((it, i) => {
+      const on = it.val === activeVal;
+      return {
+        label: it.label,
+        bl: i === 0 ? 'none' : '1px solid rgba(233,233,237,.1)',
+        bg: on ? '#2b2741' : 'transparent',
+        fg: on ? '#d2cefd' : 'rgba(233,233,237,.5)',
+        sh: on ? 'inset 0 0 0 1px #9184d9' : 'none',
+        tap: () => onPick(it.val),
+      };
+    });
+  }
+  groupKey(dateStr, mode) {
+    const d = new Date(dateStr);
+    if (mode === 'year') return String(d.getFullYear());
+    if (mode === 'month') return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    const m = new Date(d); m.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return 'Week of ' + m.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+  entryVM(s) {
+    return {
+      type: 'Workout ' + s.type,
+      meta: (s.dur ? s.dur + ' min · ' : '') + new Date(s.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+      rows: s.exercises.map(e => ({
+        name: e.name, w: this.fmtW(e.weight),
+        dots: e.done.map(r => r === e.reps
+          ? { bg: '#9184d9', bd: '#9184d9' }
+          : { bg: 'transparent', bd: 'rgba(233,233,237,.4)' }),
+      })),
+    };
+  }
+  chartVM() {
+    const s = this.state;
+    const id = s.statsView;
+    const days = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365, 'All': null }[s.range];
+    let pts = id === 'big3' ? this.big3Timeline() : this.timeline(id);
+    if (days) { const cut = Date.now() - days * 864e5; pts = pts.filter(p => p.t >= cut); }
+    const L = 34, R = 8, T = 8, B = 26, W = 340, H = 170;
+    if (pts.length === 0) return { linePts: '', e1Pts: '', yTicks: [], xTicks: [], dots: [] };
+    const vals = [];
+    pts.forEach(p => { if (s.showW) vals.push(p.w); if (s.showE1) vals.push(p.e1); });
+    if (!vals.length) pts.forEach(p => vals.push(p.w));
+    let min = Math.min(...vals), max = Math.max(...vals);
+    if (min === max) { min -= 5; max += 5; }
+    const pad = (max - min) * 0.1; min -= pad; max += pad;
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1;
+    const x = t => t1 === t0 ? (L + W - R) / 2 : L + (t - t0) / (t1 - t0) * (W - L - R);
+    const y = v => T + (1 - (v - min) / (max - min)) * (H - T - B);
+    const fmt = p => x(p.t).toFixed(1) + ',' + y(p.w).toFixed(1);
+    const fmtE = p => x(p.t).toFixed(1) + ',' + y(p.e1).toFixed(1);
+    const yTicks = [0, 1, 2, 3].map(i => {
+      const v = min + (max - min) * i / 3; const yy = y(v);
+      return { y: yy.toFixed(1), ty: (yy + 3).toFixed(1), label: Math.round(v) };
+    });
+    const dfmt = t => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const xTicks = [{ x: L, anchor: 'start', label: dfmt(t0) }, { x: W - R, anchor: 'end', label: dfmt(t1) }];
+    const step = Math.max(1, Math.floor(pts.length / 24));
+    const dots = pts.filter((_, i) => i % step === 0 || i === pts.length - 1).map(p => ({ cx: x(p.t).toFixed(1), cy: y(p.w).toFixed(1) }));
+    return {
+      linePts: pts.map(fmt).join(' '),
+      e1Pts: pts.map(fmtE).join(' '),
+      yTicks, xTicks, dots,
+    };
+  }
+  renderVals() {
+    const s = this.state;
+    const setShape = this.props.setShape ?? 'circle';
+    const trainedToday = s.history.length > 0 && s.history[0].date.slice(0, 10) === new Date().toISOString().slice(0, 10);
+    const NAV = [
+      { id: 'train', label: 'Train', icon: 'ph-barbell' },
+      { id: 'program', label: 'Program', icon: 'ph-sliders-horizontal' },
+      { id: 'log', label: 'Log', icon: 'ph-list-checks' },
+      { id: 'stats', label: 'Stats', icon: 'ph-chart-line-up' },
+      { id: 'options', label: 'Options', icon: 'ph-gear' },
+    ];
+    const trendIcon = t => t === 'up' ? 'ph ph-trend-up' : t === 'down' ? 'ph ph-trend-down' : 'ph ph-arrow-right';
+    const trendColor = t => t === 'up' ? '#9184d9' : t === 'down' ? '#75798c' : 'rgba(233,233,237,.4)';
+
+    // Log stats
+    const now = new Date(); const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7)); mon.setHours(0, 0, 0, 0);
+    const thisWeek = s.history.filter(h => new Date(h.date) >= mon).length;
+
+    // Active workout VM
+    let cards = [], allDone = false, elapsedTxt = '0:00';
+    if (s.active && s.ex) {
+      allDone = s.ex.every(e => e.done.every(r => r !== null));
+      elapsedTxt = this.fmtT(Math.floor((Date.now() - s.startedAt) / 1000));
+      cards = s.ex.map((e, ei) => ({
+        name: e.name, w: this.fmtW(e.weight), reps: e.reps,
+        dec: () => { const ex = s.ex.map((x, i) => i === ei ? { ...x, weight: Math.max(0, x.weight - x.inc) } : x); this.setState({ ex }); },
+        inc: () => { const ex = s.ex.map((x, i) => i === ei ? { ...x, weight: x.weight + x.inc } : x); this.setState({ ex }); },
+        plates: () => this.setState({ plate: e.weight }),
+        warmOpen: !!s.warm[e.id],
+        toggleWarm: () => this.setState({ warm: { ...s.warm, [e.id]: !s.warm[e.id] } }),
+        warmPrep: this.fmtW(Math.round((20 + (e.weight - 20) * 0.6) / 2.5) * 2.5) + ' × 3',
+        hint: ei === 0 && !s.hinted,
+        missedNote: e.done.some(r => r !== null && r !== e.reps),
+        missedTxt: 'Missed reps — ' + this.fmtW(e.weight) + ' holds next session',
+        sets: e.done.map((r, si) => {
+          const full = r === e.reps, partial = r !== null && r !== e.reps;
+          return {
+            txt: r === null ? String(e.reps) : String(r),
+            missed: partial,
+            bd: full ? '1px solid #9184d9' : partial ? '1.5px dashed rgba(233,233,237,.5)' : '1px solid rgba(233,233,237,.18)',
+            bg: full ? '#2b2741' : partial ? 'rgba(63,66,77,.35)' : 'transparent',
+            fg: full ? '#d2cefd' : partial ? '#e9e9ed' : 'rgba(233,233,237,.4)',
+            tap: () => this.tapSet(ei, si),
+            down: () => this.pressStart(ei, si),
+            up: () => this.pressEnd(),
+            ctx: (ev) => ev.preventDefault(),
+          };
+        }),
+      }));
+    }
+
+    // Log VM
+    const entries = s.history.map(h => this.entryVM(h));
+    let groups = [];
+    if (s.grouping !== 'all') {
+      const map = new Map();
+      s.history.forEach(h => {
+        const k = this.groupKey(h.date, s.grouping);
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(h);
+      });
+      const keys = [...map.keys()];
+      groups = keys.map((k, i) => {
+        const open = s.openGroups[k] ?? i === 0;
+        return {
+          key: k, count: map.get(k).length + '×', open,
+          chev: open ? 'ph ph-caret-down' : 'ph ph-caret-right',
+          toggle: () => this.setState({ openGroups: { ...s.openGroups, [k]: !open } }),
+          entries: map.get(k).map(h => this.entryVM(h)),
+        };
+      });
+    }
+
+    // Stats VM
+    const b3 = s.weights.squat + s.weights.bench + s.weights.deadlift;
+    const statRows = this.IDS.map(id => {
+      const t = this.trend(id);
+      return {
+        name: this.NAMES[id], w: this.fmtW(s.weights[id]),
+        e1: 'est. 1RM ' + this.fmtW(this.e1(s.weights[id])),
+        icon: trendIcon(t), color: trendColor(t),
+        tap: () => this.setState({ statsView: id, tab: 'stats' }),
+      };
+    });
+    const cv = s.statsView ? this.chartVM() : { linePts: '', e1Pts: '', yTicks: [], xTicks: [], dots: [] };
+    const chartCurW = s.statsView === 'big3' ? b3 : s.weights[s.statsView];
+
+    // Timer strip VM (top, replaces the header mid-session)
+    const t = s.timer;
+    const inSession = s.active && s.tab === 'train';
+    let ttKicker = 'In session', ttTime = elapsedTxt, ttColor = 'rgba(233,233,237,.45)', ttMeta = 'Workout ' + s.nextType, skipLabel = 'Skip', timerPct = '0%', ttSkip = false;
+    if (allDone) { ttKicker = 'Workout complete'; ttColor = '#9184d9'; ttTime = elapsedTxt; timerPct = '100%'; }
+    else if (t.on && t.expired) { ttKicker = 'Lifting'; ttColor = '#9184d9'; ttTime = this.fmtT(t.elapsed); skipLabel = 'Done'; timerPct = '100%'; ttSkip = true; ttMeta = 'Workout ' + s.nextType + ' · ' + elapsedTxt; }
+    else if (t.on) { ttKicker = 'Rest'; ttTime = this.fmtT(t.left); timerPct = Math.round((1 - t.left / t.total) * 100) + '%'; ttSkip = true; ttMeta = 'Workout ' + s.nextType + ' · ' + elapsedTxt; }
+
+    const idle = { on: false, total: s.rest, left: 0, expired: false, elapsed: 0 };
+
+    return {
+      setRadius: setShape === 'circle' ? '50%' : '12px',
+      tabLabels: this.props.tabLabels ?? true,
+      navItems: NAV.map(n => ({
+        label: n.label,
+        icon: (s.tab === n.id ? 'ph-fill ' : 'ph ') + n.icon,
+        fg: s.tab === n.id ? '#d2cefd' : 'rgba(233,233,237,.35)',
+        tap: () => this.setState({ tab: n.id, statsView: null }),
+      })),
+      streakTxt: '8-week streak',
+      // Train idle
+      showTrainIdle: s.tab === 'train' && !s.active,
+      typeName: 'Workout ' + s.nextType,
+      idleSub: s.nextType === 'A' ? 'Squat · Bench Press · Barbell Row' : 'Squat · Overhead Press · Deadlift',
+      swapType: () => this.setState({ nextType: s.nextType === 'A' ? 'B' : 'A' }),
+      previewRows: this.progIds(s.nextType).map(id => ({
+        name: this.NAMES[id],
+        meta: s.program[id].sets + ' × ' + s.program[id].reps + (this.trend(id) === 'up' ? ' · +' + (id === 'deadlift' ? '5' : '2.5') + ' kg last time' : ''),
+        w: this.fmtW(s.weights[id]),
+      })),
+      start: () => { if (!trainedToday) this.startWorkout(); },
+      startOpacity: trainedToday ? '.35' : '1',
+      startLabel: trainedToday ? 'Trained today' : 'Start workout',
+      startNote: trainedToday ? 'Already trained today — rest up.' : thisWeek + ' of 3 workouts this week',
+      // Train active
+      showTrainActive: s.tab === 'train' && s.active,
+      elapsedTxt, cards, allDone,
+      finish: () => { if (allDone) this.finish(); },
+      finishBd: allDone ? '#9184d9' : 'rgba(233,233,237,.12)',
+      finishFg: allDone ? '#d2cefd' : 'rgba(233,233,237,.3)',
+      openDiscard: () => this.setState({ discard: true }),
+      // Header / timer strip
+      headerVisible: !inSession,
+      topTimerVisible: inSession,
+      ttKicker, ttColor, ttTime, ttMeta, ttSkip, timerPct, skipLabel,
+      skip: () => this.setState({ timer: idle }),
+      openHelp: () => this.setState({ help: true }),
+      closeHelp: () => this.setState({ help: false }),
+      helpOpen: s.help,
+      helpItems: [
+        { icon: 'ph ph-barbell', title: 'Program', body: 'Alternate Workout A and B, three times a week. Each lift defaults to 5×5 (deadlift 1×5) — adjust in Program.' },
+        { icon: 'ph ph-trend-up', title: 'Progression', body: 'Hit every rep and the weight goes up 2.5 kg next time (5 kg for deadlift).' },
+        { icon: 'ph ph-pause', title: 'Stall', body: 'Miss reps and the weight holds at the same load next session.' },
+        { icon: 'ph ph-trend-down', title: 'Deload', body: 'Three straight misses at one weight and a 10% deload is suggested.' },
+        { icon: 'ph ph-timer', title: 'Rest', body: 'Rest between sets — heavy sets may need 3–5 minutes. Set the default in Options.' },
+        { icon: 'ph ph-moon', title: 'Long breaks', body: 'After 14+ days off, a safety deload is recommended — bigger for longer breaks.' },
+        { icon: 'ph ph-cloud', title: 'Backups', body: 'Drive sync is automatic but hidden; use "Backup" in Options for a file you keep.' },
+      ],
+      liveVisible: s.active && s.tab !== 'train',
+      liveTxt: t.on && !t.expired ? 'Resting · ' + this.fmtT(t.left) : 'Workout ' + (s.ex ? s.ex[0] && s.nextType : '') ? 'Workout in progress' : 'Workout in progress',
+      goTrain: () => this.setState({ tab: 'train' }),
+      // Log
+      showLog: s.tab === 'log',
+      addManual: () => this.toastMsg('Manual entry — not wired in this prototype'),
+      weekDots: [0, 1, 2].map(i => i < thisWeek ? { bg: '#9184d9', bd: '#9184d9' } : { bg: 'transparent', bd: 'rgba(233,233,237,.3)' }),
+      statusTxt: thisWeek >= 3 ? 'Week done' : (3 - thisWeek) + ' to go this week',
+      totalTxt: s.history.length + ' total',
+      groupBtns: this.seg([{ label: 'All', val: 'all' }, { label: 'Week', val: 'week' }, { label: 'Month', val: 'month' }, { label: 'Year', val: 'year' }], s.grouping, v => this.setState({ grouping: v, openGroups: {} })),
+      flatMode: s.tab === 'log' && s.grouping === 'all',
+      groupedMode: s.tab === 'log' && s.grouping !== 'all',
+      entries, groups,
+      // Stats
+      showStatsList: s.tab === 'stats' && !s.statsView,
+      big3Total: this.fmtW(b3),
+      big3Icon: trendIcon(this.trend('big3')),
+      big3Color: trendColor(this.trend('big3')),
+      openBig3: () => this.setState({ statsView: 'big3' }),
+      statRows,
+      // Chart
+      showChart: s.tab === 'stats' && !!s.statsView,
+      chartTitle: s.statsView === 'big3' ? 'Big-3 total' : (this.NAMES[s.statsView] || ''),
+      chartW: s.statsView ? this.fmtW(chartCurW) : '',
+      chartE1: s.statsView ? 'est. 1RM ' + this.fmtW(s.statsView === 'big3' ? this.e1(s.weights.squat) + this.e1(s.weights.bench) + this.e1(s.weights.deadlift) : this.e1(chartCurW)) : '',
+      back: () => this.setState({ statsView: null }),
+      rangeBtns: this.seg(['1M', '3M', '6M', '1Y', 'All'].map(r => ({ label: r, val: r })), s.range, v => this.setState({ range: v })),
+      linePts: cv.linePts, e1Pts: cv.e1Pts, yTicks: cv.yTicks, xTicks: cv.xTicks, chartDots: cv.dots,
+      showW: s.showW, showE1: s.showE1,
+      togW: () => { if (!(s.showW && !s.showE1)) this.setState({ showW: !s.showW }); },
+      togE: () => { if (!(s.showE1 && !s.showW)) this.setState({ showE1: !s.showE1 }); },
+      wBtnBd: s.showW ? '#9184d9' : 'rgba(233,233,237,.15)',
+      wBtnFg: s.showW ? '#d2cefd' : 'rgba(233,233,237,.45)',
+      eBtnBd: s.showE1 ? '#9184d9' : 'rgba(233,233,237,.15)',
+      eBtnFg: s.showE1 ? '#d2cefd' : 'rgba(233,233,237,.45)',
+      // Program
+      showProgram: s.tab === 'program',
+      resetProg: () => this.setState({ program: { squat: { sets: 5, reps: 5 }, bench: { sets: 5, reps: 5 }, row: { sets: 5, reps: 5 }, press: { sets: 5, reps: 5 }, deadlift: { sets: 1, reps: 5 } } }),
+      progRows: this.IDS.map(id => {
+        const p = s.program[id];
+        const upd = (f, d, min, max) => () => this.setState({ program: { ...s.program, [id]: { ...p, [f]: Math.min(max, Math.max(min, p[f] + d)) } } });
+        return {
+          name: this.NAMES[id],
+          summary: p.sets + ' set' + (p.sets > 1 ? 's' : '') + ' of ' + p.reps + ' rep' + (p.reps > 1 ? 's' : ''),
+          setsTxt: String(p.sets), repsTxt: String(p.reps),
+          decS: upd('sets', -1, 1, 5), incS: upd('sets', 1, 1, 5),
+          decR: upd('reps', -1, 1, 10), incR: upd('reps', 1, 1, 10),
+          bars: [0, 1, 2, 3, 4].map(i => ({ bg: i < p.sets ? '#9184d9' : 'rgba(233,233,237,.12)' })),
+          repDots: Array.from({ length: 10 }, (_, i) => ({ bg: i < p.reps ? '#9184d9' : 'rgba(233,233,237,.12)' })),
+        };
+      }),
+      // Options
+      showOptions: s.tab === 'options',
+      restBtns: this.seg([{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }], s.rest, v => this.setState({ rest: v })),
+      toggles: [
+        { icon: 'ph ph-bell', title: 'Sound alert', desc: 'Chime when rest ends', key: 'sound', on: s.sound },
+        { icon: 'ph ph-vibrate', title: 'Vibration', desc: 'Buzz when rest ends', key: 'vib', on: s.vib },
+      ].map(tg => ({
+        ...tg,
+        bd: tg.on ? '#9184d9' : 'rgba(233,233,237,.2)',
+        bg: tg.on ? '#2b2741' : 'transparent',
+        knob: tg.on ? '#9184d9' : 'rgba(233,233,237,.35)',
+        knobLeft: tg.on ? '18px' : '2px',
+        tap: () => this.setState({ [tg.key]: !tg.on }),
+      })),
+      langBtns: this.seg([{ label: 'EN', val: 'en' }, { label: 'FR', val: 'fr' }], s.lang, v => this.setState({ lang: v })),
+      doExport: () => this.toastMsg('Backup saved — strength5x5_2026-08-01.json'),
+      doRestore: () => this.toastMsg('Restore — pick a backup file'),
+      doCSV: () => this.toastMsg('StrongLifts CSV import — pick a file'),
+      // Rep picker
+      pickerOpen: !!s.picker,
+      pickerTitle: s.picker && s.ex ? s.ex[s.picker.ei].name + ' · Set ' + (s.picker.si + 1) : '',
+      pickerNote: s.picker && s.ex ? String(s.ex[s.picker.ei].reps) : '5',
+      pickerBtns: s.picker && s.ex ? (() => {
+        const e = s.ex[s.picker.ei]; const cur = e.done[s.picker.si];
+        return Array.from({ length: e.reps + 1 }, (_, v) => {
+          const on = cur === v;
+          return {
+            v: String(v),
+            bd: on ? '1px solid #9184d9' : v === e.reps ? '1px solid rgba(233,233,237,.35)' : '1px solid rgba(233,233,237,.18)',
+            bg: on ? '#2b2741' : 'transparent',
+            fg: on ? '#d2cefd' : 'rgba(233,233,237,.7)',
+            tap: () => this.applySet(s.picker.ei, s.picker.si, v),
+          };
+        });
+      })() : [],
+      pickerClear: () => { if (s.picker) this.applySet(s.picker.ei, s.picker.si, null); },
+      pickerClose: () => this.setState({ picker: null }),
+      // Toast + modals
+      toast: s.toast, hasToast: !!s.toast,
+      plateOpen: s.plate !== null,
+      plateW: s.plate !== null ? this.fmtW(s.plate) : '',
+      plateList: s.plate !== null ? this.calcPlates(s.plate).map(p => ({
+        v: p % 1 ? p.toFixed(2).replace(/0$/, '') : String(p),
+        bd: p >= 15 ? '1px solid #9184d9' : '1px solid rgba(233,233,237,.25)',
+        bg: p >= 15 ? '#2b2741' : 'transparent',
+        fg: p >= 15 ? '#d2cefd' : 'rgba(233,233,237,.7)',
+      })) : [],
+      closePlate: () => this.setState({ plate: null }),
+      discardOpen: s.discard,
+      closeDiscard: () => this.setState({ discard: false }),
+      confirmDiscard: () => this.setState({ discard: false, active: false, ex: null, timer: idle }),
+      sumOpen: !!s.summary,
+      sumTitle: s.summary ? s.summary.type : '',
+      sumDur: s.summary ? s.summary.dur + ' min · ' + s.summary.lines.filter(l => l.up).length + ' lifts progressing' : '',
+      sumLines: s.summary ? s.summary.lines.map(l => ({
+        name: l.name, txt: l.txt,
+        icon: l.up ? 'ph ph-trend-up' : 'ph ph-arrow-right',
+        color: l.up ? '#d2cefd' : 'rgba(233,233,237,.5)',
+      })) : [],
+      closeSum: () => this.setState({ summary: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>

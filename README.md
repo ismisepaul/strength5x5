@@ -78,7 +78,7 @@ Data lives in your browser and optionally backs up to your own Google Drive. Wor
 
 **Frontend**
 - React 18
-- Tailwind CSS v3
+- Tailwind CSS v4 (CSS-based config)
 - Lucide Icons
 - Recharts (stats charts)
 - react-i18next / i18next (internationalization)
@@ -259,6 +259,7 @@ For the full guide including Google Drive setup, environment variables, and cust
 
 Detailed architecture and implementation docs are in the [`docs/`](docs/) folder:
 
+- [**Design System**](docs/design-system.md) -- the Nocturne design language: tokens, type scale, component and interaction rules (read this before any UI change)
 - [**Architecture**](docs/architecture.md) -- project structure, state management, component hierarchy, data flow, i18n, and testing strategy
 - [**Data Model**](docs/data-model.md) -- storage schemas, import/export format, migration strategy, and validation rules
 - [**Deployment**](docs/deployment.md) -- Vercel setup, Google Cloud OAuth configuration, environment variables, and custom domains
