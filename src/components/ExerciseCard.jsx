@@ -73,8 +73,10 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
           const missed = r !== null && r < target;
           let stateClass;
           if (passed) stateClass = 'border border-accent bg-accent-900 text-accent-300';
-          else if (missed) stateClass = 'border-[1.5px] border-dashed border-ink/50 bg-neutral-tint text-ink';
+          else if (missed) stateClass = 'border-[1.5px] border-transparent bg-neutral-tint text-ink';
           else stateClass = isDark ? 'border border-ink/18 text-ink/40' : 'border border-ink-lt/18 text-ink-lt/40';
+          const missedFraction = missed ? r / target : 0;
+          const missedDasharray = r === 0 ? '0.5 24' : `${(2 + 8 * missedFraction).toFixed(1)} ${(2 + 14 * (1 - missedFraction)).toFixed(1)}`;
           return (
             <button
               key={ri}
@@ -89,9 +91,29 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
             >
               <span className="text-[20px] font-semibold">{r !== null ? r : target}</span>
               {missed && (
-                <span className="absolute -top-1 -right-1 w-[19px] h-[19px] rounded-full bg-neutral-tint flex items-center justify-center">
-                  <X size={9} weight="bold" />
-                </span>
+                <>
+                  <svg
+                    viewBox="0 0 100 100"
+                    className="absolute pointer-events-none"
+                    style={{ inset: '-1.5px', width: 'calc(100% + 3px)', height: 'calc(100% + 3px)' }}
+                  >
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="48"
+                      fill="none"
+                      stroke="rgba(233,233,237,.55)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      pathLength="100"
+                      transform="rotate(-90 50 50)"
+                      strokeDasharray={missedDasharray}
+                    />
+                  </svg>
+                  <span className="absolute -top-1 -right-1 w-[19px] h-[19px] rounded-full bg-neutral-tint flex items-center justify-center">
+                    <X size={9} weight="bold" />
+                  </span>
+                </>
               )}
             </button>
           );

@@ -141,9 +141,18 @@ for lists (exercise lists, options, program editor).
 | --- | --- |
 | Unlogged | 1px `ink/18` border, `ink/40` number, shows the target |
 | Passed | 1px accent border, `accent-900` fill, `accent-300` number |
-| Missed (0 ≤ reps < target) | 1.5px **dashed** `ink/50` border, neutral tint fill, shows reps achieved, plus a 19px corner badge (`neutral-tint` circle, bold 9px ✕) |
+| Missed (0 ≤ reps < target) | 1.5px **transparent** border (same width as the other states, so the circle doesn't resize) with a graded dashed ring drawn over it, neutral tint fill, shows reps achieved, plus a 19px corner badge (`neutral-tint` circle, bold 9px ✕) |
 
 Never render a slot for a set the program doesn't include.
+
+**Missed-set ring.** An SVG circle overlaid on the button (`inset: -1.5px`, `pathLength="100"`,
+`rotate(-90 50 50)` so it starts at 12 o'clock), stroke `rgba(233,233,237,.55)` — fixed, not
+theme-swapped, matching the rest of this state's ink-token styling — at 3px width. The
+dash/gap encodes completion fraction `f = reps/target`: `stroke-dasharray = "{(2+8f).toFixed(1)}
+{(2+14(1-f)).toFixed(1)}"` — denser dashes closer to the target, wider gaps further off; 0
+reps is a hardcoded `"0.5 24"` (faint specks) rather than the formula's result, so a
+fully-missed set doesn't read as "half done". Fraction-based, so it holds for any Program-tab
+rep target (1–10). Never becomes red — status here is shape/density, not hue.
 
 **Modals and sheets.** `surface` background, 12px radius centred / `14px 14px 0 0` when
 bottom-anchored, outlined primary action, plain-text secondary. Rep picker and help are

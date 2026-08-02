@@ -145,10 +145,10 @@ describe('ExerciseCard', () => {
 
   it('renders exactly 1 set target for a single-set exercise and no placeholder slots', () => {
     const deadliftEx = { ...baseEx, id: 'deadlift', name: 'Deadlift', sets: 1, setsCompleted: [null] };
-    const { container } = render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
+    render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
     const setButtons = screen.getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
     expect(setButtons).toHaveLength(1);
-    expect(container.querySelector('.border-dashed')).not.toBeInTheDocument();
+    expect(setButtons[0].querySelector('svg')).not.toBeInTheDocument();
   });
 
   it('shows a missed-set badge and "holds next session" note when a set is under target', () => {
@@ -157,6 +157,41 @@ describe('ExerciseCard', () => {
     const missedSet = screen.getByLabelText('Set 2, 3 reps');
     expect(missedSet.querySelector('svg')).toBeTruthy();
     expect(screen.getByText(/holds next session/)).toBeInTheDocument();
+  });
+
+  it('gives the missed-set ring a transparent border, keeping the same border width', () => {
+    const missedEx = { ...baseEx, setsCompleted: [5, 3, null, null, null] };
+    render(<ExerciseCard {...defaultProps} ex={missedEx} />);
+    const missedSet = screen.getByLabelText('Set 2, 3 reps');
+    expect(missedSet.className).toContain('border-[1.5px]');
+    expect(missedSet.className).toContain('border-transparent');
+    expect(missedSet.className).not.toContain('border-dashed');
+  });
+
+  it('encodes the completion fraction as a dash/gap pair on the missed-set ring', () => {
+    const missedEx = { ...baseEx, setsCompleted: [3, null, null, null, null] }; // 3 of 5 reps
+    render(<ExerciseCard {...defaultProps} ex={missedEx} />);
+    const missedSet = screen.getByLabelText('Set 1, 3 reps');
+    const circle = missedSet.querySelector('circle');
+    expect(circle).toBeTruthy();
+    expect(circle.getAttribute('stroke-dasharray')).toBe('6.8 7.6'); // f=0.6: 2+8*.6, 2+14*.4
+    expect(circle.getAttribute('stroke')).toBe('rgba(233,233,237,.55)');
+  });
+
+  it('varies the dash/gap ratio with a different rep target', () => {
+    const customEx = { ...baseEx, reps: 8, setsCompleted: [2, null, null, null, null] }; // 2 of 8 reps
+    render(<ExerciseCard {...defaultProps} ex={customEx} />);
+    const missedSet = screen.getByLabelText('Set 1, 2 reps');
+    const circle = missedSet.querySelector('circle');
+    expect(circle.getAttribute('stroke-dasharray')).toBe('4.0 12.5'); // f=0.25: 2+8*.25, 2+14*.75
+  });
+
+  it('uses faint specks for a fully missed (0-rep) set regardless of the formula', () => {
+    const missedEx = { ...baseEx, setsCompleted: [0, null, null, null, null] };
+    render(<ExerciseCard {...defaultProps} ex={missedEx} />);
+    const missedSet = screen.getByLabelText('Set 1, 0 reps');
+    const circle = missedSet.querySelector('circle');
+    expect(circle.getAttribute('stroke-dasharray')).toBe('0.5 24');
   });
 
   it('shows the teaching caption on the first exercise until a set is logged', () => {
