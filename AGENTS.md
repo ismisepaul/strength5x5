@@ -16,7 +16,7 @@ Strength 5x5 is a client-side React web app for tracking 5x5 barbell strength tr
 - **Vitest** + React Testing Library for tests
 - **react-i18next** for i18n (English and French)
 - **Recharts** for progress charts
-- **Lucide React** for icons (being replaced by **Phosphor** — see Design System below)
+- **Phosphor Icons** (`@phosphor-icons/react`) — see Design System below
 - **vite-plugin-pwa** for offline/PWA support
 
 ## Commands
@@ -94,10 +94,10 @@ rules you cannot break:
 Tokens are declared in the `@theme` block of `src/index.css` (Tailwind v4 — there is no
 `tailwind.config.js`) and become utilities automatically.
 
-The codebase has **not** been migrated to Nocturne yet; the redesign is tracked as its
-own issue with the spec in [docs/design/nocturne-implementation-plan.md](docs/design/nocturne-implementation-plan.md)
-and the prototype in `docs/design/nocturne-prototype.dc.html`. Until it lands, write new
-UI to these rules and do not deepen the old styling.
+The Nocturne migration has landed (issue #18). `docs/design/nocturne-implementation-plan.md`
+and the prototype in `docs/design/nocturne-prototype.dc.html` are kept for history; the
+current rules live in `docs/design-system.md`, including the interim light palette (§7).
+`ErrorBoundary.jsx`'s crash screen was out of scope and still uses the pre-Nocturne palette.
 
 ## Testing
 

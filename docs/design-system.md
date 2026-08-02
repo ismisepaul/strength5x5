@@ -2,12 +2,13 @@
 
 The design language for Strength 5x5. **Every UI change must follow this document.**
 
-Status: **approved, not yet implemented.** The codebase still uses the pre-Nocturne
-styling (slate/indigo/emerald/rose/amber, `font-black`, mixed radii). The migration is
-tracked as a single redesign issue. Until it lands, follow these rules for *new* UI and
-do not add anything that deepens the old system.
+Status: **implemented** (issue #18). The dark palette is live across the app; the light
+palette below is an interim pass, not the final light-mode redesign (that's a follow-up
+issue). Follow these rules for all UI work, including `ErrorBoundary.jsx`'s crash screen,
+which was out of scope for the migration and still carries the pre-Nocturne palette.
 
-Source of truth for the migration:
+Source of truth for the migration (retained for history; the plan and prototype describe
+the dark theme this document now reflects):
 
 - [docs/design/nocturne-implementation-plan.md](design/nocturne-implementation-plan.md) — screen-by-screen spec
 - [docs/design/nocturne-prototype.dc.html](design/nocturne-prototype.dc.html) — interactive prototype
@@ -201,25 +202,38 @@ with a colour dot; at least one series is always on.
 
 ## 7. Light mode
 
-**Light mode stays.** The toggle in Options is a shipped feature and is not being removed.
+**Light mode stays.** The toggle in Options is a shipped feature and was not removed.
 
-The Nocturne spec defines the **dark** theme only. The light theme is derived from the
-same structure — invert ground/surface, keep the single accent, keep every rule in §3–§5 —
-in a follow-up pass after dark ships. The `isDark` prop and its ternary class strings stay
-in place throughout; the redesign changes what each branch resolves to, it does not delete
-the branch.
+The Nocturne spec defines the **dark** theme; light is an interim derivation of the same
+structure (invert ground/surface, keep the single accent, keep every rule in §3–§5), not
+yet a from-scratch light redesign. The `isDark` prop and its ternary class strings stay in
+place everywhere — every dark token has a `-lt` counterpart and both branches ship in the
+same commit.
 
-Two consequences for anyone working during the migration:
+Interim light palette, declared in the `@theme` block of `src/index.css` alongside the dark
+tokens:
 
-- A change that styles only the dark branch is **unfinished**. Give the light branch a
-  reasonable structural equivalent even before the light palette is finalised.
-- Light mode is expected to look transitional until the follow-up pass lands. It must
-  stay legible and usable — never broken, unstyled, or dark-on-dark.
+| Token | Value | Dark equivalent |
+| --- | --- | --- |
+| `--color-ground-lt` | `#f5f5f8` | `ground` |
+| `--color-surface-lt` | `#ffffff` | `surface` |
+| `--color-surface-deep-lt` | `#ececf2` | `surface-deep` |
+| `--color-surface-nav-lt` | `#ffffff` | `surface-nav` |
+| `--color-ink-lt` | `#1b1c28` | `ink` (same 55/45/38/18/8 alpha steps) |
+| `--color-accent-ink-lt` | `#5b4fb0` | `accent-300` for text — `#d2cefd` is unreadable on white |
+| `--color-accent-tint-lt` | `#efedfa` | `accent-900`/`accent-800` fills |
+
+`accent` itself (`#9184d9`) is used as-is in both themes for borders and icons. The fading
+rule has a light counterpart, `.rule-fade-lt`, at 10% ink-lt alpha instead of 9% ink alpha.
+
+Light mode is expected to look transitional — legible and usable on every screen, never
+dark-on-dark or unstyled, but not a polished light-specific design. That polish is a
+follow-up issue.
 
 ## 8. Checking your work
 
 ```bash
-# no stray hues (expect zero once the migration lands)
+# no stray hues (empty except ErrorBoundary.jsx, which predates and is outside the migration)
 grep -roE "(bg|text|border|ring|from|to|fill|stroke)-(emerald|rose|amber|indigo|blue|slate)-[0-9]+" src
 
 # no shouting type
