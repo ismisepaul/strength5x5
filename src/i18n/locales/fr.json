@@ -204,7 +204,6 @@
     "backupsBody": "La synchronisation Drive est automatique mais invisible ; utilisez « Sauvegarder » dans Options pour un fichier à vous."
   },
   "liveWorkout": {
-    "title": "Séance en cours",
     "lifting": "En cours · {{time}}",
     "resting": "Repos · {{time}}",
     "activeWorkout": "Séance en cours",

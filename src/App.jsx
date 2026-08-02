@@ -942,23 +942,17 @@ const App = () => {
           ? t('liveWorkout.lifting', { time: formatTime(timer.elapsed) })
           : timer.isActive
             ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
-            : t(`workout.type${currentWorkout?.type}`) || t('liveWorkout.activeWorkout');
-        const liveIcon = timer.isExpired
-          ? <Barbell size={14} className="text-white" />
-          : timer.isActive
-            ? <Timer size={14} className="text-white" />
-            : <Play size={14} weight="fill" className="text-white" />;
+            : t('liveWorkout.activeWorkout');
         return (
-          <div className={`flex-none shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.3)] transition-all duration-300 ${isDark ? 'bg-indigo-900' : 'bg-indigo-600'}`}>
-            <button onClick={() => handleTabClick('workout')} className="w-full px-6 py-4 flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-white/20">{liveIcon}</div>
-                <div className="text-left">
-                  <p className="text-[10px] font-black uppercase text-white/60 leading-none mb-0.5">{t('liveWorkout.title')}</p>
-                  <p className={`text-xs font-black uppercase text-white tracking-tight ${timer.isActive || timer.isExpired ? 'font-mono' : ''}`}>{liveDetail}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-[10px] font-black uppercase text-white/90 bg-black/10 px-3 py-1.5 rounded-lg">{t('liveWorkout.return')} <CaretRight size={12} /></div>
+          <div className="flex-none px-3 py-1.5">
+            <button onClick={() => handleTabClick('workout')} className="w-full h-10 px-4 rounded-[9px] border border-accent bg-accent-900 text-accent-300 flex items-center justify-between">
+              <span className="flex items-center gap-2 text-[12px] tabular-nums">
+                <Play size={11} weight="fill" />
+                {liveDetail}
+              </span>
+              <span className="flex items-center gap-1 text-[12px]">
+                {t('liveWorkout.return')} <CaretRight size={10} />
+              </span>
             </button>
           </div>
         );

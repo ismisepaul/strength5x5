@@ -204,7 +204,6 @@
     "backupsBody": "Drive sync is automatic but hidden; use \"Backup\" in Options for a file you keep."
   },
   "liveWorkout": {
-    "title": "Live Workout",
     "lifting": "Lifting · {{time}}",
     "resting": "Resting · {{time}}",
     "activeWorkout": "Workout in progress",

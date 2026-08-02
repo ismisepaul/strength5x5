@@ -140,7 +140,7 @@ describe('Live Workout bar', () => {
     await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByLabelText('Log'));
 
-    expect(screen.getByText('Live Workout')).toBeInTheDocument();
+    expect(screen.getByText('Workout in progress')).toBeInTheDocument();
     expect(screen.getByText('Return')).toBeInTheDocument();
   });
 
