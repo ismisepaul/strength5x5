@@ -25,6 +25,7 @@
     "typeA": "Workout A",
     "typeB": "Workout B",
     "nextUp": "Next up",
+    "switchTo": "Switch to {{type}}",
     "startWorkout": "Start workout",
     "finishWorkout": "Finish workout",
     "completeAllSets": "Complete all sets to finish",

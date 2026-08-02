@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Barbell, ListChecks, Gear, Play, TrendUp,
-  Plus, Minus, ArrowsClockwise, X, DownloadSimple, UploadSimple,
+  Plus, Minus, ArrowsLeftRight, X, DownloadSimple, UploadSimple,
   Question, TrendDown, Moon, Pause,
   Trash, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown,
@@ -654,17 +654,18 @@ const App = () => {
           <div className="space-y-4">
             {!isWorkoutActive ? (
               <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('workout.nextUp')}</p>
+                <div className="mb-4">
+                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('workout.nextUp')}</p>
+                  <div className="flex items-center gap-[10px]">
                     <h2 className="text-[32px] font-medium leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2>
-                    <p className={`text-[13.5px] mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{getProgramExercises(currentWorkoutType, program).map(ex => t('exercises.' + ex.id)).join(' · ')}</p>
+                    <button
+                      onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')}
+                      aria-label={t('workout.switchTo', { type: t(`workout.type${currentWorkoutType === 'A' ? 'B' : 'A'}`) })}
+                      title={t('workout.switchTo', { type: t(`workout.type${currentWorkoutType === 'A' ? 'B' : 'A'}`) })}
+                      className={`w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
+                    ><ArrowsLeftRight size={16} /></button>
                   </div>
-                  <button
-                    onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')}
-                    aria-label="Swap workout"
-                    className={`w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
-                  ><ArrowsClockwise size={18} /></button>
+                  <p className={`text-[13.5px] mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{getProgramExercises(currentWorkoutType, program).map(ex => t('exercises.' + ex.id)).join(' · ')}</p>
                 </div>
                 <div className="mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => (
                   <div key={ex.id} className={`flex justify-between items-center py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>

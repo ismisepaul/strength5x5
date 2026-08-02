@@ -25,6 +25,7 @@
     "typeA": "Séance A",
     "typeB": "Séance B",
     "nextUp": "À suivre",
+    "switchTo": "Basculer vers {{type}}",
     "startWorkout": "Commencer",
     "finishWorkout": "Terminer",
     "completeAllSets": "Complétez toutes les séries",
