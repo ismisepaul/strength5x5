@@ -4,8 +4,8 @@
   "description": "Lightweight 5x5 strength training tracker",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#4f46e5",
+  "background_color": "#161826",
+  "theme_color": "#9184d9",
   "icons": [
     {
       "src": "/icon-192.png",
