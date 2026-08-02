@@ -10,12 +10,20 @@ const LONG_PRESS_MS = 450;
 
 const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPicker, showHint, isEditingWeight, draftWeight, onDraftWeightChange, onStartEditWeight, onStepWeight, onCommitWeight, onCancelEditWeight }) => {
   const { t } = useTranslation();
-  const target = targetReps(ex);
+  const isRamped = Array.isArray(ex.setWeights);
+  // A ramp's "top set" is its heaviest -- the last rung, except on a back-off day
+  // (identified by an 8-rep set) where the triple just before it is the real top.
+  const hasBackoff = isRamped && ex.setReps.includes(8);
+  const topIndex = isRamped ? (hasBackoff ? ex.setWeights.length - 2 : ex.setWeights.length - 1) : -1;
+  const backoffIndex = hasBackoff ? ex.setWeights.length - 1 : -1;
+  const topWeight = isRamped ? ex.setWeights[topIndex] : ex.weight;
+  const bottomWeight = isRamped ? Math.min(...ex.setWeights) : ex.weight;
+
   const pressTimerRef = useRef(null);
   const longPressFiredRef = useRef(false);
-  const hasMissed = ex.setsCompleted.some(r => r !== null && r < target);
+  const hasMissed = ex.setsCompleted.some((r, i) => r !== null && r < targetReps(ex, i));
   const [panel, setPanel] = useState(null);
-  const prepWeight = Math.round((20 + (ex.weight - 20) * 0.6) / 2.5) * 2.5;
+  const prepWeight = Math.round((20 + (topWeight - 20) * 0.6) / 2.5) * 2.5;
 
   const clearPressTimer = () => {
     if (pressTimerRef.current) { clearTimeout(pressTimerRef.current); pressTimerRef.current = null; }
@@ -43,17 +51,26 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
     <div className={`p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
       <div className="mb-5">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-[17px] truncate flex-1 min-w-0 pr-4">{t('exercises.' + ex.id)}</h3>
-          <button
-            onClick={onStartEditWeight}
-            aria-label={t('workout.editWeightAria', { name: t('exercises.' + ex.id) })}
-            className="flex items-center gap-1.5 min-h-[44px] shrink-0"
-          >
-            <span className="text-[20px] text-accent-300 tabular-nums leading-none">{ex.weight}kg</span>
-            <PencilSimple size={13} className={isDark ? 'text-ink/35' : 'text-ink-lt/35'} />
-          </button>
+          <div className="flex-1 min-w-0 pr-4">
+            <h3 className="font-semibold text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
+            {isRamped && (
+              <p className={`text-[12.5px] tabular-nums ${mutedClass}`}>{t('workout.rampSetsMeta', { sets: ex.sets, from: bottomWeight, to: topWeight })}</p>
+            )}
+          </div>
+          {isRamped ? (
+            <span className="text-[20px] text-accent-300 tabular-nums leading-none shrink-0">{topWeight}kg</span>
+          ) : (
+            <button
+              onClick={onStartEditWeight}
+              aria-label={t('workout.editWeightAria', { name: t('exercises.' + ex.id) })}
+              className="flex items-center gap-1.5 min-h-[44px] shrink-0"
+            >
+              <span className="text-[20px] text-accent-300 tabular-nums leading-none">{ex.weight}kg</span>
+              <PencilSimple size={13} className={isDark ? 'text-ink/35' : 'text-ink-lt/35'} />
+            </button>
+          )}
         </div>
-        {isEditingWeight && (
+        {!isRamped && isEditingWeight && (
           <WeightEditBar
             value={draftWeight}
             onChange={onDraftWeightChange}
@@ -69,6 +86,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
       </div>
       <div className="flex justify-start gap-2 items-center">
         {ex.setsCompleted.map((r, ri) => {
+          const target = targetReps(ex, ri);
           const passed = r !== null && r === target;
           const missed = r !== null && r < target;
           let stateClass;
@@ -77,56 +95,59 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
           else stateClass = isDark ? 'border border-ink/18 text-ink/40' : 'border border-ink-lt/18 text-ink-lt/40';
           const missedDasharray = r === 0 ? '0.5 24' : `3 ${Math.min(24, 3 * (target - r))}`;
           return (
-            <button
-              key={ri}
-              onClick={() => handleClick(ri)}
-              onPointerDown={() => handlePointerDown(ri)}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              onContextMenu={(e) => e.preventDefault()}
-              aria-label={`Set ${ri + 1}${r !== null ? `, ${r} reps` : ''}`}
-              style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
-              className={`relative shrink-0 aspect-square max-w-[62px] rounded-full flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
-            >
-              <span className="text-[20px] font-semibold">{r !== null ? r : target}</span>
-              {missed && (
-                <>
-                  <svg
-                    viewBox="0 0 100 100"
-                    className="absolute pointer-events-none"
-                    style={{ inset: '-1.5px', width: 'calc(100% + 3px)', height: 'calc(100% + 3px)' }}
-                  >
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="48"
-                      fill="none"
-                      stroke="rgba(233,233,237,.55)"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      pathLength="100"
-                      transform="rotate(-90 50 50)"
-                      strokeDasharray={missedDasharray}
-                    />
-                  </svg>
-                  <span className="absolute -top-1 -right-1 w-[19px] h-[19px] rounded-full bg-neutral-tint flex items-center justify-center">
-                    <X size={9} weight="bold" />
-                  </span>
-                </>
-              )}
-            </button>
+            <div key={ri} className="flex flex-col items-center gap-1" style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}>
+              <button
+                onClick={() => handleClick(ri)}
+                onPointerDown={() => handlePointerDown(ri)}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                onContextMenu={(e) => e.preventDefault()}
+                aria-label={`Set ${ri + 1}${r !== null ? `, ${r} reps` : ''}`}
+                className={`relative shrink-0 w-full aspect-square max-w-[62px] rounded-full flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
+              >
+                <span className="text-[20px] font-semibold">{r !== null ? r : target}</span>
+                {missed && (
+                  <>
+                    <svg
+                      viewBox="0 0 100 100"
+                      className="absolute pointer-events-none"
+                      style={{ inset: '-1.5px', width: 'calc(100% + 3px)', height: 'calc(100% + 3px)' }}
+                    >
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="48"
+                        fill="none"
+                        stroke="rgba(233,233,237,.55)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        pathLength="100"
+                        transform="rotate(-90 50 50)"
+                        strokeDasharray={missedDasharray}
+                      />
+                    </svg>
+                    <span className="absolute -top-1 -right-1 w-[19px] h-[19px] rounded-full bg-neutral-tint flex items-center justify-center">
+                      <X size={9} weight="bold" />
+                    </span>
+                  </>
+                )}
+              </button>
+              {isRamped && <span className={`text-[10.5px] tabular-nums ${ri === topIndex ? 'font-semibold text-accent-300' : mutedClass}`}>{ex.setWeights[ri]}</span>}
+            </div>
           );
         })}
       </div>
       {hasMissed && (
         <p className="flex items-center gap-1 text-[12.5px] mt-3">
           <ArrowBendDownRight size={13} className="text-accent shrink-0" />
-          <span className={isDark ? 'text-ink/55' : 'text-ink-lt/55'}>{t('workout.missedNote', { weight: ex.weight })}</span>
+          <span className={isDark ? 'text-ink/55' : 'text-ink-lt/55'}>
+            {isRamped ? t('workout.missedNoteTopSet') : t('workout.missedNote', { weight: ex.weight })}
+          </span>
         </p>
       )}
       {showHint && (
-        <p className={`text-[12px] mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{t('workout.setHint', { count: target })}</p>
+        <p className={`text-[12px] mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{t('workout.setHint', { count: targetReps(ex, 0) })}</p>
       )}
       <div className={`mt-4 pt-3 flex items-center justify-between ${isDark ? 'rule-fade-top' : 'rule-fade-top-lt'}`}>
         <button
@@ -135,7 +156,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
           className={`flex items-center gap-1 min-h-9 text-[12.5px] font-medium ${panel === 'warm' ? 'text-accent-300' : mutedClass}`}
         >
           {panel === 'warm' ? <CaretUp size={11} /> : <CaretDown size={11} />}
-          {t('warmup.warmup')}
+          {t(isRamped ? 'workout.rampDisclosure' : 'warmup.warmup')}
         </button>
         <button
           onClick={() => setPanel(p => p === 'bar' ? null : 'bar')}
@@ -148,20 +169,33 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
       </div>
       {panel === 'warm' && (
         <div className={`mt-2 rounded-[9px] p-3.5 space-y-2 ${isDark ? 'bg-ground/60' : 'bg-ground-lt/60'}`}>
-          <div className={`flex justify-between text-[13px] tabular-nums ${mutedClass}`}>
-            <span>{t('warmup.emptyBar')}</span><span>20 kg × 5</span>
-          </div>
-          <div className={`flex justify-between text-[13px] tabular-nums ${mutedClass}`}>
-            <span>{t('warmup.prep')}</span><span>{prepWeight} kg × 3</span>
-          </div>
-          <div className="flex justify-between text-[13px] tabular-nums text-accent-300">
-            <span>{t('warmup.workingWeight')}</span><span>{ex.weight} kg × {target}</span>
-          </div>
+          {isRamped ? ex.setWeights.map((w, i) => {
+            const isTop = i === topIndex;
+            const isBackoff = i === backoffIndex;
+            const label = isTop ? t('workout.rampTopSetLabel', { n: i + 1 }) : isBackoff ? t('workout.rampBackoffLabel', { n: i + 1 }) : t('workout.rampSetLabel', { n: i + 1 });
+            return (
+              <div key={i} className={`flex justify-between text-[13px] tabular-nums ${isTop ? 'text-accent-300' : mutedClass}`}>
+                <span>{label}</span><span>{w} kg × {ex.setReps[i]}</span>
+              </div>
+            );
+          }) : (
+            <>
+              <div className={`flex justify-between text-[13px] tabular-nums ${mutedClass}`}>
+                <span>{t('warmup.emptyBar')}</span><span>20 kg × 5</span>
+              </div>
+              <div className={`flex justify-between text-[13px] tabular-nums ${mutedClass}`}>
+                <span>{t('warmup.prep')}</span><span>{prepWeight} kg × 3</span>
+              </div>
+              <div className="flex justify-between text-[13px] tabular-nums text-accent-300">
+                <span>{t('warmup.workingWeight')}</span><span>{ex.weight} kg × {targetReps(ex, 0)}</span>
+              </div>
+            </>
+          )}
         </div>
       )}
       {panel === 'bar' && (
         <div className={`mt-2 rounded-[9px] p-3.5 ${isDark ? 'bg-ground/60' : 'bg-ground-lt/60'}`}>
-          <BarSetupDiagram weight={ex.weight} isDark={isDark} />
+          <BarSetupDiagram weight={topWeight} isDark={isDark} />
         </div>
       )}
     </div>

@@ -4,7 +4,7 @@ import { targetReps } from '../utils';
 
 const RepPicker = ({ ex, setIdx, isDark, onSelect, onClose }) => {
   const { t } = useTranslation();
-  const target = targetReps(ex);
+  const target = targetReps(ex, setIdx);
   const options = Array.from({ length: target + 1 }, (_, i) => i);
 
   return (
