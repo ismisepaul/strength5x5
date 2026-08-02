@@ -10,7 +10,7 @@ import {
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, DEFAULT_PROGRAM } from './constants';
+import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, DEFAULT_PROGRAM, MAX_SETS } from './constants';
 import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
@@ -1466,13 +1466,17 @@ const App = () => {
                         <span className={`flex items-center gap-1 text-[13.5px] ${mutedColor}`}><ArrowRight size={14} />{t('completion.staysAt', { weight: ex.weight })}</span>
                       )}
                     </div>
-                    <div className="flex justify-center gap-1.5 mt-2.5">
+                    <div className="flex justify-start gap-1.5 mt-2.5">
                       {ex.setsCompleted.map((r, i) => {
                         const val = r ?? 0;
                         const failed = val < targetReps(ex);
                         const split = formatClock(setDurations[i]);
                         return (
-                          <div key={i} className={`flex-1 basis-0 max-w-[3.5rem] rounded-lg py-1.5 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
+                          <div
+                            key={i}
+                            style={{ width: `calc((100% - ${6 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
+                            className={`shrink-0 max-w-[3.5rem] rounded-lg py-1.5 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}
+                          >
                             <div className={`text-[13.5px] leading-none ${failed && !passed ? 'text-ink' : (isDark ? 'text-ink/70' : 'text-ink-lt/70')}`}>{val}</div>
                             {hasSplits && <div className={`text-[12px] tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
                           </div>
