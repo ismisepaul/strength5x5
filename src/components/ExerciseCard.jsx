@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CaretUp, CaretDown, ArrowBendDownRight, X, PencilSimple } from '@phosphor-icons/react';
 import { targetReps } from '../utils';
+import { MAX_SETS } from '../constants';
 import WeightEditBar from './WeightEditBar';
 import BarSetupDiagram from './BarSetupDiagram';
 
@@ -66,7 +67,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
           />
         )}
       </div>
-      <div className="flex justify-between gap-2 items-center">
+      <div className="flex justify-start gap-2 items-center">
         {ex.setsCompleted.map((r, ri) => {
           const passed = r !== null && r === target;
           const missed = r !== null && r < target;
@@ -85,7 +86,8 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
               onPointerCancel={handlePointerUp}
               onContextMenu={(e) => e.preventDefault()}
               aria-label={`Set ${ri + 1}${r !== null ? `, ${r} reps` : ''}`}
-              className={`relative flex-1 aspect-square max-w-[62px] rounded-full flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
+              style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
+              className={`relative shrink-0 aspect-square max-w-[62px] rounded-full flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
             >
               <span className="text-[20px] font-semibold">{r !== null ? r : target}</span>
               {missed && (
