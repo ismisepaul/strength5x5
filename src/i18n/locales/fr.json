@@ -109,6 +109,7 @@
     "standard": {
       "badge": "Séries fixes",
       "note": "Même poids pour les 5 séries. Validez toutes les répétitions pour ajouter du poids la séance suivante. En cas de répétition manquée, le poids reste identique.",
+      "deadliftNote": "Le deadlift ne compte qu'une série de 5. Vos jambes sont déjà sollicitées par le squat.",
       "kgLifted": "{{value}} kg soulevés",
       "setsRepsShort": "{{sets}}×{{reps}}",
       "wentUpLastTime": "a augmenté la dernière fois",

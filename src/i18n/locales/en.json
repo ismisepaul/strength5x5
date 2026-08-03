@@ -109,6 +109,7 @@
     "standard": {
       "badge": "Straight sets",
       "note": "Same weight for all 5 sets. Complete all reps to add weight next session. If any reps are missed, weight remains the same.",
+      "deadliftNote": "Deadlift is one set of 5. Your legs are already worked from squats.",
       "kgLifted": "{{value}} kg lifted",
       "setsRepsShort": "{{sets}}×{{reps}}",
       "wentUpLastTime": "went up last time",

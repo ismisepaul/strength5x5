@@ -231,6 +231,9 @@ const ProgramTab = ({
                 <span className={`text-[12.5px] shrink-0 ${mutedClass}`}>{t('program.standard.kgLifted', { value: volume })}</span>
               </div>
               <p className={`text-[13.5px] leading-relaxed mb-1 ${mutedClass}`}>{t('program.standard.note')}</p>
+              {selectedWorkout === 'B' && (
+                <p className={`text-[13.5px] leading-relaxed mb-1 ${mutedClass}`}>{t('program.standard.deadliftNote')}</p>
+              )}
               <p className={`text-[12px] leading-relaxed mb-4 ${mutedClass}`}>{t('technique.hint')}</p>
               {exercises.map((ex, i) => {
                 const target = targetReps(ex);
