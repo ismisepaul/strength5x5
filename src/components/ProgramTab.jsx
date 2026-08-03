@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise, Minus, Plus } from '@phosphor-icons/react';
-import { DEFAULT_PROGRAM, MADCOW_DAYS, MADCOW_DAY_MOOD, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, MADCOW_WEEKLY_INCREMENTS, EXERCISE_INCREMENTS } from '../constants';
-import { getProgramExercises, getMadcowDayExercises, getMadcowDayLiftIds, computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops } from '../utils';
+import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS } from '../constants';
+import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops } from '../utils';
+import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
 import ProgramEditor from './ProgramEditor';
 import StepperButton from './StepperButton';
 
@@ -86,9 +87,15 @@ const ProgramTab = ({
   const [customiseOpen, setCustomiseOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
 
-  const isMadcow = preset === 'madcow';
+  const prog = getProgram(preset);
+  const isMadcow = prog.ramped;
+  const programState = { program, weights, mcTop, mcInterval, mcPress };
   const programChanged = JSON.stringify(program) !== JSON.stringify(DEFAULT_PROGRAM);
   const showReset = isMadcow || programChanged;
+  const moodBadge = (day) => {
+    const mood = prog.dayMood(day);
+    return mood ? t('program.madcow.mood' + mood.charAt(0).toUpperCase() + mood.slice(1)) : '';
+  };
 
   const openPicker = () => setProgramSheet({ step: 'pick' });
   const selectProgram = (target) => {
@@ -115,8 +122,8 @@ const ProgramTab = ({
       >
         <Barbell weight="fill" size={20} className="text-accent-300 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[16px] truncate">{t(`program.strip.${preset}Name`)}</p>
-          <p className={`text-[12.5px] ${isDark ? 'text-ink/55' : 'text-ink-lt/55'}`}>{t(`program.strip.${preset}Sub`)}</p>
+          <p className="font-semibold text-[16px] truncate">{t(prog.nameKey)}</p>
+          <p className={`text-[12.5px] ${isDark ? 'text-ink/55' : 'text-ink-lt/55'}`}>{t(prog.subKey)}</p>
         </div>
         <span className="flex items-center gap-1 text-[13.5px] text-accent-300 shrink-0">{t('program.strip.change')} <CaretRight size={14} /></span>
       </button>
@@ -125,8 +132,8 @@ const ProgramTab = ({
 
       {isMadcow ? (() => {
         const phase = madcowPhase(mcWeek, MADCOW_ONRAMP_WEEKS);
-        const dayExercises = getMadcowDayExercises(selectedDay, mcTop, mcInterval, mcPress);
-        const liftIds = getMadcowDayLiftIds(selectedDay, mcPress);
+        const dayExercises = prog.dayExercises(selectedDay, programState);
+        const liftIds = prog.liftIds(selectedDay, programState);
         const volume = computeProjectedVolume(dayExercises).toLocaleString();
         const onrampDots = Array.from({ length: MADCOW_ONRAMP_WEEKS }, (_, i) => i + 1);
         return (
@@ -150,17 +157,17 @@ const ProgramTab = ({
                 {t(`program.madcow.${phase === 'onramp' ? 'onrampNote' : phase === 'matching' ? 'matchingNote' : 'recordNote'}`)}
               </p>
               <p className="text-[13px] mt-3 text-accent-300">
-                {t('program.madcow.nextSession', { workout: t(`workout.type${mcNextDay}`), mood: t(`program.madcow.mood${MADCOW_DAY_MOOD[mcNextDay].charAt(0).toUpperCase()}${MADCOW_DAY_MOOD[mcNextDay].slice(1)}`) })}
+                {t('program.madcow.nextSession', { workout: t(`workout.type${mcNextDay}`), mood: moodBadge(mcNextDay) })}
               </p>
             </div>
 
-            <Segmented isDark={isDark} value={selectedDay} onChange={setSelectedDay} options={MADCOW_DAYS.map(d => ({ val: d, label: t(`workout.type${d}`) }))} />
+            <Segmented isDark={isDark} value={selectedDay} onChange={setSelectedDay} options={prog.days.map(d => ({ val: d, label: t(`workout.type${d}`) }))} />
 
             <div className={cardClass}>
               <div className="flex justify-between items-center mb-3 gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <p className="font-semibold text-[16px] truncate">{t(`workout.type${selectedDay}`)}</p>
-                  <Badge>{t(`program.madcow.mood${MADCOW_DAY_MOOD[selectedDay].charAt(0).toUpperCase()}${MADCOW_DAY_MOOD[selectedDay].slice(1)}`)}</Badge>
+                  <Badge>{moodBadge(selectedDay)}</Badge>
                 </div>
                 <span className={`text-[12.5px] shrink-0 ${mutedClass}`}>{t('program.madcow.kgLifted', { value: volume })}</span>
               </div>
@@ -201,11 +208,11 @@ const ProgramTab = ({
           </>
         );
       })() : (() => {
-        const exercises = getProgramExercises(selectedWorkout, program).map(ex => ({ ...ex, weight: weights[ex.id] }));
+        const exercises = prog.dayExercises(selectedWorkout, programState);
         const volume = computeProjectedVolume(exercises).toLocaleString();
         return (
           <>
-            <Segmented isDark={isDark} value={selectedWorkout} onChange={setSelectedWorkout} options={['A', 'B'].map(w => ({ val: w, label: t(`workout.type${w}`) }))} />
+            <Segmented isDark={isDark} value={selectedWorkout} onChange={setSelectedWorkout} options={prog.days.map(w => ({ val: w, label: t(`workout.type${w}`) }))} />
             <div className={cardClass}>
               <div className="flex justify-between items-center mb-3 gap-3">
                 <div className="flex items-center gap-2 min-w-0">
@@ -269,9 +276,9 @@ const ProgramTab = ({
           <div className={cardClass}>
             <p className="font-semibold text-[15px] mb-1">{t('program.madcow.topSets')}</p>
             <p className={`text-[13px] leading-relaxed mb-4 ${mutedClass}`}>{t('program.madcow.topSetsNote')}</p>
-            {getMadcowDayLiftIds('A', mcPress).concat(getMadcowDayLiftIds('B', mcPress).filter(id => id !== 'squat')).map((id, i, arr) => {
-              const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
-              const fractional = increment !== EXERCISE_INCREMENTS[id] || increment < 2;
+            {programAllLiftIds('madcow', programState).map((id, i) => {
+              const increment = prog.increments[id] ?? 2.5;
+              const fractional = increment !== (getProgram('standard').increments[id] ?? increment) || increment < 2;
               return (
                 <div key={id} className={`flex justify-between items-center gap-3 py-3 ${i > 0 ? (isDark ? 'rule-fade' : 'rule-fade-lt') : ''}`}>
                   <div>
@@ -327,7 +334,7 @@ const ProgramTab = ({
             <h3 className="text-lg font-semibold mb-1">{t('program.picker.title')}</h3>
             <p className={`text-[13.5px] mb-5 ${mutedClass}`}>{t('program.picker.subtitle')}</p>
             <div className="space-y-3 mb-4">
-              {['standard', 'madcow'].map(id => {
+              {PROGRAM_IDS.map(id => {
                 const active = id === preset;
                 return (
                   <button
@@ -339,7 +346,7 @@ const ProgramTab = ({
                       <span className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 ${active ? 'border-accent' : (isDark ? 'border-ink/30' : 'border-ink-lt/30')}`}>
                         {active && <span className="w-2 h-2 rounded-full bg-accent" />}
                       </span>
-                      <p className="font-semibold text-[15.5px] flex-1">{t(`program.strip.${id}Name`)}</p>
+                      <p className="font-semibold text-[15.5px] flex-1">{t(getProgram(id).nameKey)}</p>
                       {active && <span className="text-[11px] uppercase tracking-wide text-accent-300 shrink-0">{t('program.picker.active')}</span>}
                     </div>
                     <p className={`text-[13px] leading-relaxed mb-3 ${mutedClass}`}>{t(`program.picker.${id}Body`)}</p>
