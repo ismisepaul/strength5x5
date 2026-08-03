@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise, Minus, Plus } from '@phosphor-icons/react';
-import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS } from '../constants';
+import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
 import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
 import ProgramEditor from './ProgramEditor';
-import StepperButton from './StepperButton';
+import WeightInput from './WeightInput';
 
 const Kicker = ({ children, isDark }) => (
   <div className="flex items-center gap-3">
@@ -285,11 +285,15 @@ const ProgramTab = ({
                     <p className="text-[14px] font-medium">{t('exercises.' + id)}</p>
                     <p className={`text-[12px] ${mutedClass}`}>{t(fractional ? 'program.madcow.incrementFractional' : 'program.madcow.incrementFull', { value: increment })}</p>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <StepperButton onClick={() => onUpdateMcTop(id, -increment)} ariaLabel={`Decrease ${id} top set`} icon={Minus} isDark={isDark} />
-                    <span className="w-14 text-center text-[18px] font-semibold tabular-nums">{mcTop[id]}</span>
-                    <StepperButton onClick={() => onUpdateMcTop(id, increment)} ariaLabel={`Increase ${id} top set`} icon={Plus} isDark={isDark} />
-                  </div>
+                  <WeightInput
+                    value={mcTop[id]}
+                    increment={increment}
+                    min={INITIAL_WEIGHTS[id] ?? 20}
+                    onChange={(next) => onUpdateMcTop(id, next)}
+                    label={t('exercises.' + id)}
+                    isDark={isDark}
+                    variant="compact"
+                  />
                 </div>
               );
             })}

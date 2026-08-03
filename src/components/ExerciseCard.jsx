@@ -1,14 +1,14 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CaretUp, CaretDown, ArrowBendDownRight, X, PencilSimple } from '@phosphor-icons/react';
+import { CaretUp, CaretDown, ArrowBendDownRight, X } from '@phosphor-icons/react';
 import { targetReps } from '../utils';
 import { MAX_SETS } from '../constants';
-import WeightEditBar from './WeightEditBar';
+import WeightInput from './WeightInput';
 import BarSetupDiagram from './BarSetupDiagram';
 
 const LONG_PRESS_MS = 450;
 
-const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPicker, showHint, isEditingWeight, draftWeight, onDraftWeightChange, onStartEditWeight, onStepWeight, onCommitWeight, onCancelEditWeight }) => {
+const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPicker, showHint, onWeightChange, topSetValue, topSetMin, onTopSetChange }) => {
   const { t } = useTranslation();
   const isRamped = Array.isArray(ex.setWeights);
   // A ramp's "top set" is its heaviest -- the last rung, except on a back-off day
@@ -58,31 +58,27 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
             )}
           </div>
           {isRamped ? (
-            <span className="text-[20px] text-accent-300 tabular-nums leading-none shrink-0">{topWeight}kg</span>
+            <WeightInput
+              value={topSetValue}
+              increment={ex.increment}
+              min={topSetMin}
+              onChange={onTopSetChange}
+              label={t('exercises.' + ex.id)}
+              isDark={isDark}
+              variant="prominent"
+            />
           ) : (
-            <button
-              onClick={onStartEditWeight}
-              aria-label={t('workout.editWeightAria', { name: t('exercises.' + ex.id) })}
-              className="flex items-center gap-1.5 min-h-[44px] shrink-0"
-            >
-              <span className="text-[20px] text-accent-300 tabular-nums leading-none">{ex.weight}kg</span>
-              <PencilSimple size={13} className={isDark ? 'text-ink/35' : 'text-ink-lt/35'} />
-            </button>
+            <WeightInput
+              value={ex.weight}
+              increment={ex.increment}
+              min={0}
+              onChange={onWeightChange}
+              label={t('exercises.' + ex.id)}
+              isDark={isDark}
+              variant="prominent"
+            />
           )}
         </div>
-        {!isRamped && isEditingWeight && (
-          <WeightEditBar
-            value={draftWeight}
-            onChange={onDraftWeightChange}
-            onDecrement={() => onStepWeight(-ex.increment)}
-            onIncrement={() => onStepWeight(ex.increment)}
-            onCommit={onCommitWeight}
-            onCancel={onCancelEditWeight}
-            isDark={isDark}
-            variant="card"
-            exerciseName={t('exercises.' + ex.id)}
-          />
-        )}
       </div>
       <div className="flex justify-start gap-2 items-center">
         {ex.setsCompleted.map((r, ri) => {

@@ -19,52 +19,47 @@ describe('ExerciseCard', () => {
     exIdx: 0,
     isDark: true,
     onToggleSet: vi.fn(),
-    isEditingWeight: false,
-    draftWeight: '60',
-    onDraftWeightChange: vi.fn(),
-    onStartEditWeight: vi.fn(),
-    onStepWeight: vi.fn(),
-    onCommitWeight: vi.fn(),
-    onCancelEditWeight: vi.fn(),
+    onWeightChange: vi.fn(),
   };
 
-  it('renders exercise name and weight', () => {
+  it('renders exercise name and weight, always typeable', () => {
     render(<ExerciseCard {...defaultProps} />);
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
-    expect(screen.getByText('60kg')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument();
+    expect(screen.getByLabelText('Increase Back Squat weight')).toBeInTheDocument();
+    expect(screen.getByLabelText('Decrease Back Squat weight')).toBeInTheDocument();
   });
 
-  it('shows an edit button by default and calls onStartEditWeight when tapped', async () => {
-    const onStartEditWeight = vi.fn();
+  it('commits a typed weight on blur, snapped to the increment', async () => {
+    const onWeightChange = vi.fn();
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} onStartEditWeight={onStartEditWeight} />);
-    expect(screen.queryByLabelText('Increase Back Squat weight')).not.toBeInTheDocument();
-    await user.click(screen.getByLabelText('Edit Back Squat weight'));
-    expect(onStartEditWeight).toHaveBeenCalled();
+    render(<ExerciseCard {...defaultProps} onWeightChange={onWeightChange} />);
+    const input = screen.getByDisplayValue('60');
+    await user.clear(input);
+    await user.type(input, '63');
+    await user.tab();
+    expect(onWeightChange).toHaveBeenCalledWith(62.5);
   });
 
-  it('calls onCommitWeight when the check button is tapped', async () => {
-    const onCommitWeight = vi.fn();
+  it('commits a typed weight on Enter', async () => {
+    const onWeightChange = vi.fn();
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onCommitWeight={onCommitWeight} />);
-    await user.click(screen.getByLabelText('Done'));
-    expect(onCommitWeight).toHaveBeenCalled();
+    render(<ExerciseCard {...defaultProps} onWeightChange={onWeightChange} />);
+    const input = screen.getByDisplayValue('60');
+    await user.clear(input);
+    await user.type(input, '65{Enter}');
+    expect(onWeightChange).toHaveBeenCalledWith(65);
   });
 
-  it('calls onCancelEditWeight when the cancel button is tapped', async () => {
-    const onCancelEditWeight = vi.fn();
+  it('reverts a typed weight on Escape without committing', async () => {
+    const onWeightChange = vi.fn();
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onCancelEditWeight={onCancelEditWeight} />);
-    await user.click(screen.getByLabelText('Cancel'));
-    expect(onCancelEditWeight).toHaveBeenCalled();
-  });
-
-  it('calls onDraftWeightChange when typing in the weight input', async () => {
-    const onDraftWeightChange = vi.fn();
-    const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} isEditingWeight={true} draftWeight="60" onDraftWeightChange={onDraftWeightChange} />);
-    await user.type(screen.getByDisplayValue('60'), '5');
-    expect(onDraftWeightChange).toHaveBeenCalled();
+    render(<ExerciseCard {...defaultProps} onWeightChange={onWeightChange} />);
+    const input = screen.getByDisplayValue('60');
+    await user.clear(input);
+    await user.type(input, '65{Escape}');
+    expect(onWeightChange).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument();
   });
 
   it('renders 5 set buttons, each showing the goal rep count while unlogged', () => {
@@ -83,20 +78,20 @@ describe('ExerciseCard', () => {
     expect(onToggleSet).toHaveBeenCalledWith(0, 0);
   });
 
-  it('calls onStepWeight with the positive increment when + is tapped', async () => {
-    const onStepWeight = vi.fn();
+  it('calls onWeightChange with the weight plus increment when + is tapped', async () => {
+    const onWeightChange = vi.fn();
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onStepWeight={onStepWeight} />);
+    render(<ExerciseCard {...defaultProps} onWeightChange={onWeightChange} />);
     await user.click(screen.getByLabelText('Increase Back Squat weight'));
-    expect(onStepWeight).toHaveBeenCalledWith(2.5);
+    expect(onWeightChange).toHaveBeenCalledWith(62.5);
   });
 
-  it('calls onStepWeight with the negative increment when - is tapped', async () => {
-    const onStepWeight = vi.fn();
+  it('calls onWeightChange with the weight minus increment when - is tapped', async () => {
+    const onWeightChange = vi.fn();
     const user = userEvent.setup();
-    render(<ExerciseCard {...defaultProps} isEditingWeight={true} onStepWeight={onStepWeight} />);
+    render(<ExerciseCard {...defaultProps} onWeightChange={onWeightChange} />);
     await user.click(screen.getByLabelText('Decrease Back Squat weight'));
-    expect(onStepWeight).toHaveBeenCalledWith(-2.5);
+    expect(onWeightChange).toHaveBeenCalledWith(57.5);
   });
 
   it('keeps the warm-up and bar-setup panels closed by default', () => {
@@ -156,7 +151,7 @@ describe('ExerciseCard', () => {
     render(<ExerciseCard {...defaultProps} ex={missedEx} />);
     const missedSet = screen.getByLabelText('Set 2, 3 reps');
     expect(missedSet.querySelector('svg')).toBeTruthy();
-    expect(screen.getByText(/holds next session/)).toBeInTheDocument();
+    expect(screen.getByText(/keep weight at .* next session/)).toBeInTheDocument();
   });
 
   it('gives the missed-set ring a transparent border, keeping the same border width', () => {
@@ -212,10 +207,10 @@ describe('ExerciseCard', () => {
 
   it('shows the teaching caption on the first exercise until a set is logged', () => {
     const { rerender } = render(<ExerciseCard {...defaultProps} showHint={true} />);
-    expect(screen.getByText(/hold a set to pick an exact count/)).toBeInTheDocument();
+    expect(screen.getByText(/Long-press to set exact count/)).toBeInTheDocument();
 
     rerender(<ExerciseCard {...defaultProps} showHint={false} />);
-    expect(screen.queryByText(/hold a set to pick an exact count/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Long-press to set exact count/)).not.toBeInTheDocument();
   });
 
   it('long-pressing a set opens the rep picker via onOpenRepPicker', async () => {

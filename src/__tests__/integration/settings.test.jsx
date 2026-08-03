@@ -143,7 +143,7 @@ describe('Deload', () => {
     await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByText('Skip Deload'));
 
-    expect(screen.getByText('60kg')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument();
   });
 
   it('can accept deload with default percentage', async () => {

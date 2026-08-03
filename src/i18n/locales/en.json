@@ -31,16 +31,16 @@
     "startWorkout": "Start workout",
     "finishWorkout": "Finish workout",
     "completeAllSets": "Complete all sets to finish",
-    "alreadyTrained": "Already trained today — rest up.",
+    "alreadyTrained": "Already trained today. Rest until next session.",
     "trainedToday": "Trained today",
     "weekProgress": "{{count}} of 3 workouts this week",
     "weekProgress_other": "{{count}} of 3 workouts this week",
-    "setHint": "Tap to log all {{count}} reps · hold a set to pick an exact count",
-    "missedNote": "Missed reps — {{weight}}kg holds next session",
+    "setHint": "Tap to log {{count}} reps. Long-press to set exact count.",
+    "missedNote": "Missed reps: keep weight at {{weight}}kg next session",
     "discardWorkout": "Discard workout",
-    "editWeightAria": "Edit {{name}} weight",
-    "doneEditingWeight": "Done",
-    "cancelEditWeight": "Cancel",
+    "decreaseWeightAria": "Decrease {{name}} weight",
+    "increaseWeightAria": "Increase {{name}} weight",
+    "weightInputAria": "{{name}} weight in kilograms",
     "standardKicker": "Standard 5×5",
     "madcowKicker": "Madcow 5×5 · week {{week}}",
     "madcowSubtitle": "{{mood}} day · {{lifts}}",
@@ -55,7 +55,7 @@
     "rampSetLabel": "Set {{n}}",
     "rampTopSetLabel": "Set {{n}} · top set",
     "rampBackoffLabel": "Set {{n}} · back-off",
-    "missedNoteTopSet": "Missed reps — top set holds next week"
+    "missedNoteTopSet": "Missed reps: top set stays at current weight next week"
   },
   "program": {
     "title": "Program",
@@ -83,8 +83,8 @@
       "subtitle": "Your weights and history carry over either way.",
       "active": "Active",
       "cancel": "Cancel",
-      "standardBody": "Squat, bench and row on A; squat, press and deadlift on B. Five sets of five at one weight — clear every rep and the weight goes up next session.",
-      "madcowBody": "Ramped sets up to one top set, on a heavy–light–medium week. Squats every session, incline bench on the light day, and weight up once a week.",
+      "standardBody": "Workout A: Squat, Bench Press, Barbell Row. Workout B: Squat, Overhead Press, Deadlift. 5 sets of 5 reps at fixed weight. Complete all reps to increase weight next session.",
+      "madcowBody": "Ramped sets up to 1 top set per lift on a Heavy-Light-Medium schedule. Squat 3x/week, Incline Bench on light day. Progress weight weekly.",
       "chipFrequency": "3 × week",
       "chipStandardDays": "A / B",
       "chipMadcowDays": "A / B / C",
@@ -104,7 +104,7 @@
     },
     "standard": {
       "badge": "Straight sets",
-      "note": "The same weight for all five sets. Clear all five and it goes up next session — miss any rep and it stays where it is.",
+      "note": "Same weight for all 5 sets. Complete all reps to add weight next session. If any reps are missed, weight remains the same.",
       "kgLifted": "{{value}} kg lifted",
       "setsRepsShort": "{{sets}}×{{reps}}",
       "wentUpLastTime": "went up last time",
@@ -116,7 +116,7 @@
       "threeMisses": "Three misses in a row",
       "threeMissesValue": "deload 10% and work back up",
       "customise": "Customise sets and reps",
-      "customiseNote": "5×5 is the program. Change it and you're running your own variation — progression stays the same."
+      "customiseNote": "Modifying sets or reps creates a custom variation. Automatic progression rules still apply."
     },
     "madcow": {
       "subtitle": "Sets and weights are calculated from each lift's top set. Adjust the top sets, not the ramp.",
@@ -134,15 +134,15 @@
       "kgLifted": "{{value}} kg lifted",
       "rampLabel": "{{sets}}×5 ramp",
       "dayCLabel": "4×5 · 1×3 · 1×8",
-      "dayANote": "Five ramp sets of five. You repeat the weight you tripled last Friday — for five reps this time.",
-      "dayBNote": "Squat sets one to three, then set three again. The second press and the deadlift do their own progression here.",
-      "dayCNote": "Four ramp sets, then a heavier triple, then a back-off eight at your third-set weight.",
+      "dayANote": "5 ramped sets of 5 reps. Top set weight equals Friday's triple from last week.",
+      "dayBNote": "Light day. Squat: 4 sets of 5 reps (sets 1-3 ramp, set 4 repeats set 3). Incline Bench and Deadlift progress independently.",
+      "dayCNote": "Medium day. 4 ramped sets of 5, 1 top set of 3 (+2.5% heavier), 1 back-off set of 8 at set 3 weight.",
       "howTitle": "How the weight goes up",
       "howSteps": [
-        "Workout C is the feeler: you lift a heavier weight for three reps.",
-        "The next Monday, workout A repeats that same weight — but for five reps.",
-        "Hit it, and Friday goes up again. Miss it, and the top set stays put.",
-        "Press and deadlift live in the light day and progress on their own each week."
+        "Workout C (Friday): Lift heavier top set for 3 reps.",
+        "Workout A (Monday): Perform 5 reps at Friday's top triple weight.",
+        "Successful 5 reps increases Friday's top set. Missed reps hold top set weight.",
+        "Press and Deadlift progress weekly on Workout B."
       ],
       "secondPress": "Second press",
       "secondPressNote": "Madcow's light day uses the incline bench, set to about 30°. Swap it for the overhead press if you'd rather keep pressing overhead.",
@@ -151,59 +151,59 @@
       "incrementFull": "+{{value}} kg a week",
       "incrementFractional": "+{{value}} kg a week · fractional plates",
       "setInterval": "Set interval",
-      "setIntervalNote": "The gap between ramp sets. 12.5% is Madcow's default — a wider interval makes the early sets lighter."
+      "setIntervalNote": "Percentage step between ramped sets. Default is 12.5%."
     },
     "howTo": "How to perform",
     "howToSteps": {
       "squat": [
-        "Set the bar on your upper back and unrack it.",
-        "Step back and stand with feet about shoulder-width apart.",
-        "Brace your core and keep your chest up.",
-        "Bend your hips and knees to squat down.",
-        "Lower until your hips are at or just below knee level.",
-        "Drive through your feet to stand back up.",
-        "Fully extend your hips and knees at the top.",
-        "After the final rep, walk forward and rack the bar."
+        "Place bar on upper back (traps) and unrack.",
+        "Step back and set feet shoulder-width apart, toes turned 30° out.",
+        "Brace core and look at a spot on the floor 6 feet ahead.",
+        "Squat down by pushing knees out and bowing at hips.",
+        "Lower until hip joint is below top of knees (below parallel).",
+        "Drive hips straight up to stand, keeping knees pushed out.",
+        "Lock hips and knees at top. Rack bar safely."
       ],
       "bench": [
-        "Lie on the bench with your eyes under the bar.",
-        "Plant your feet and grip the bar slightly wider than shoulder width.",
-        "Retract your shoulder blades and unrack the bar.",
-        "Lower the bar under control to your mid-chest.",
-        "Lightly touch your chest without bouncing.",
-        "Press the bar back up until your arms are straight.",
-        "Repeat for the required repetitions.",
-        "Rack the bar securely after the final rep."
+        "Lie on bench with eyes directly under bar.",
+        "Grip bar slightly wider than shoulder width with feet flat on floor.",
+        "Pinch shoulder blades together, drive into bench, and unrack bar over shoulders.",
+        "Lower bar under control to lower chest/sternum, keeping elbows tucked at ~75°.",
+        "Touch chest lightly without bouncing.",
+        "Press bar up in a slight diagonal arc toward shoulders to lockout.",
+        "Rack bar securely after final rep."
       ],
       "row": [
-        "Stand with feet hip-width apart and grip the bar just outside your legs.",
-        "Hinge at your hips until your torso is about 30–45° above horizontal.",
-        "Brace your core and keep your back flat.",
-        "Let the bar hang below your shoulders.",
-        "Pull the bar toward your lower chest or upper abdomen.",
-        "Squeeze your shoulder blades together at the top.",
-        "Lower the bar under control to full arm extension.",
-        "After the final rep, stand up and lower the bar safely."
+        "Stand with bar over mid-foot, feet hip-width apart.",
+        "Bend at hips with knees slightly bent until torso is parallel to floor.",
+        "Grip bar wider than deadlift grip with flat back and tight core.",
+        "Pull bar from floor to lower chest/sternum.",
+        "Touch chest at top without swinging torso.",
+        "Return bar completely to floor under control between every rep."
       ],
       "press": [
-        "Grip the bar just outside shoulder width and unrack it onto your shoulders.",
-        "Stand with feet shoulder-width apart and brace your core.",
-        "Press the bar straight overhead.",
-        "Move your head slightly forward as the bar passes your forehead.",
-        "Lock your elbows with the bar over your shoulders and mid-foot.",
-        "Lower the bar under control back to your shoulders.",
-        "Repeat for the required repetitions.",
-        "Rack the bar after the final rep."
+        "Stand with bar resting on front shoulders, grip just outside shoulder width.",
+        "Keep forearms vertical under bar, feet shoulder-width apart, and squeeze glutes.",
+        "Press bar straight up, tilting head back slightly to clear chin.",
+        "Move head and torso forward under bar once cleared, locking out over shoulders and mid-foot.",
+        "Lower bar under control back to front shoulders."
       ],
       "deadlift": [
-        "Stand with the bar over the middle of your feet.",
-        "Bend at your hips and knees to grip the bar just outside your legs.",
-        "Flatten your back, brace your core, and pull the slack from the bar.",
-        "Push through your feet and stand up with the bar close to your body.",
-        "Finish standing tall without leaning backward.",
-        "Push your hips back and lower the bar past your knees.",
-        "Bend your knees and return the bar to the floor under control.",
-        "Reset your position before each repetition."
+        "Stand with bar over mid-foot (1 inch from shins), feet hip-width apart.",
+        "Hinge at hips and grip bar shoulder-width without moving bar.",
+        "Bend knees until shins touch bar.",
+        "Lift chest to flatten back and pull slack out of bar.",
+        "Drive through feet and drag bar up shins and thighs to lockout.",
+        "Stand tall without leaning backward at top.",
+        "Lower bar by hinging hips back first, then bending knees once bar clears knees to return to floor."
+      ],
+      "incline": [
+        "Set bench to 30° angle and lie down with eyes under bar.",
+        "Grip bar slightly wider than shoulder width with feet flat on floor.",
+        "Pinch shoulder blades together and unrack bar over upper chest.",
+        "Lower bar under control to upper chest (below collarbone).",
+        "Press straight up to full arm extension over shoulders.",
+        "Rack bar securely after final rep."
       ]
     }
   },
@@ -336,11 +336,11 @@
     "title": "How it works",
     "gotIt": "Got it",
     "restTitle": "Rest",
-    "restBody": "Rest between sets — heavy sets may need 3–5 minutes. Set the default in Options.",
+    "restBody": "Rest 90 seconds after easy sets, 3 minutes after hard sets, and 5 minutes after failed sets.",
     "longBreaksTitle": "Long breaks",
-    "longBreaksBody": "After 14+ days off, a safety deload is recommended — bigger for longer breaks.",
+    "longBreaksBody": "After 14 or more days off, apply a safety deload (10% to 50%) based on break duration.",
     "backupsTitle": "Backups",
-    "backupsBody": "Drive sync is automatic but hidden; use \"Backup\" in Options for a file you keep.",
+    "backupsBody": "Automatic Google Drive sync. Use Local Backup in Options to export a JSON file.",
     "programLink": "Sets, reps and progression"
   },
   "liveWorkout": {

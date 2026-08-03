@@ -108,17 +108,17 @@ describe('Program tab', () => {
     await user.click(screen.getByLabelText('Program'));
     await openCustomise(user);
 
-    expect(benchCard().queryByText('Lie on the bench with your eyes under the bar.')).not.toBeInTheDocument();
+    expect(benchCard().queryByText('Lie on bench with eyes directly under bar.')).not.toBeInTheDocument();
 
     await user.click(benchCard().getByText('How to perform'));
-    expect(benchCard().getByText('Lie on the bench with your eyes under the bar.')).toBeInTheDocument();
-    expect(benchCard().getByText('Rack the bar securely after the final rep.')).toBeInTheDocument();
+    expect(benchCard().getByText('Lie on bench with eyes directly under bar.')).toBeInTheDocument();
+    expect(benchCard().getByText('Rack bar securely after final rep.')).toBeInTheDocument();
 
     const squatCard = () => within(screen.getAllByText('Back Squat').at(-1).closest('.border'));
-    expect(squatCard().queryByText('Set the bar on your upper back and unrack it.')).not.toBeInTheDocument();
+    expect(squatCard().queryByText('Place bar on upper back (traps) and unrack.')).not.toBeInTheDocument();
 
     await user.click(benchCard().getByText('How to perform'));
-    expect(benchCard().queryByText('Lie on the bench with your eyes under the bar.')).not.toBeInTheDocument();
+    expect(benchCard().queryByText('Lie on bench with eyes directly under bar.')).not.toBeInTheDocument();
   });
 
   it('resets to defaults', async () => {

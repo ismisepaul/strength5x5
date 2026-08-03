@@ -74,11 +74,27 @@ describe('Switching to Madcow', () => {
     render(<App />);
 
     await switchToMadcow(user);
-    await user.click(screen.getByLabelText('Increase squat top set'));
+    await user.click(screen.getByLabelText('Increase Back Squat weight'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.mcTop.squat).toBe(110);
     expect(stored.weights.squat).toBe(110);
+  });
+
+  it('typing a top set directly writes through to weights too', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await switchToMadcow(user);
+    const squatInput = screen.getByDisplayValue('107.5');
+    await user.clear(squatInput);
+    await user.type(squatInput, '120');
+    await user.tab();
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.mcTop.squat).toBe(120);
+    expect(stored.weights.squat).toBe(120);
   });
 
   it('builds a ramped session when starting a Madcow workout', async () => {

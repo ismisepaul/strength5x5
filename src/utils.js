@@ -176,7 +176,7 @@ export function computeRampWeights(top, intervalPercent, increment, floor, count
   return weights;
 }
 
-function buildMadcowLiftPlan(day, liftId, mcTop, intervalPercent) {
+export function buildMadcowLiftPlan(day, liftId, mcTop, intervalPercent) {
   const increment = MADCOW_WEEKLY_INCREMENTS[liftId] ?? 2.5;
   const floor = INITIAL_WEIGHTS[liftId] ?? 20;
   const top = mcTop[liftId];

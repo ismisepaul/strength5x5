@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Barbell, ListChecks, Gear, Play, TrendUp,
-  Plus, Minus, Check, X, DownloadSimple, UploadSimple,
+  Plus, Check, X, DownloadSimple, UploadSimple,
   Question, TrendDown, Moon,
   Trash, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown,
-  Cloud, SlidersHorizontal, ChartLineUp, PencilSimple
+  Cloud, SlidersHorizontal, ChartLineUp
 } from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
 import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
+import { updateMadcowTopSet } from './madcow';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from './programs';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
@@ -25,7 +26,7 @@ import RepPicker from './components/RepPicker';
 import ProgramTab from './components/ProgramTab';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
-import WeightEditBar from './components/WeightEditBar';
+import WeightInput from './components/WeightInput';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
 
@@ -61,7 +62,6 @@ const App = () => {
   const [deloadAlert, setDeloadAlert] = useState(null);
   const [deloadPercent, setDeloadPercent] = useState(10);
   const [pendingFailureDeloads, setPendingFailureDeloads] = useState(null);
-  const [editingWeightId, setEditingWeightId] = useState(null);
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
@@ -212,52 +212,15 @@ const App = () => {
   }, [gdrive, showToast, t]);
 
 
-  const handleUpdateActiveWeight = useCallback((exIdx, diff) => {
-    setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, e.weight + diff) })) }) : null);
+  const handleUpdateActiveWeight = useCallback((exIdx, nextWeight) => {
+    setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, nextWeight) })) }) : null);
   }, []);
 
-  // Idle-screen steppers adjust `weights` directly (there's no active workout yet),
+  // Idle-screen input adjusts `weights` directly (there's no active workout yet),
   // floored at the empty 20kg bar rather than active-session's 0.
-  const handleUpdateIdleWeight = useCallback((id, diff) => {
-    setWeights(prev => ({ ...prev, [id]: Math.max(20, (prev[id] ?? 0) + diff) }));
+  const handleUpdateIdleWeight = useCallback((id, nextWeight) => {
+    setWeights(prev => ({ ...prev, [id]: Math.max(20, nextWeight) }));
   }, []);
-
-  const [draftWeight, setDraftWeight] = useState('');
-
-  const parseWeightInput = (str) => {
-    const n = parseFloat(String(str).replace(',', '.'));
-    return Number.isFinite(n) ? n : null;
-  };
-
-  // A single draft lives alongside editingWeightId: opening another editor
-  // overwrites it, discarding whatever was being typed for the previous one.
-  const handleStartEditWeight = useCallback((id, currentWeight) => {
-    setEditingWeightId(id);
-    setDraftWeight(String(currentWeight));
-  }, []);
-
-  const handleCancelEditWeight = useCallback(() => {
-    setEditingWeightId(null);
-    setDraftWeight('');
-  }, []);
-
-  const stepDraftWeight = useCallback((diff, fallback) => {
-    setDraftWeight(prev => {
-      const parsed = parseWeightInput(prev);
-      const base = parsed !== null ? parsed : fallback;
-      return String(Math.max(20, base + diff));
-    });
-  }, []);
-
-  // Commits by computing a diff against the current weight and handing it to the
-  // existing per-screen update fn, so the real write path (and its own floor) is untouched.
-  const commitEditWeight = useCallback((currentWeight, applyDiff) => {
-    const parsed = parseWeightInput(draftWeight);
-    const final = parsed !== null ? Math.max(20, Math.round(parsed / 2.5) * 2.5) : currentWeight;
-    if (final !== currentWeight) applyDiff(final - currentWeight);
-    setEditingWeightId(null);
-    setDraftWeight('');
-  }, [draftWeight]);
 
   // Shared by the short-press cycle and the long-press rep picker: given the current
   // logged value, resolveNext computes the next one, then this stamps setTimes and
@@ -493,13 +456,15 @@ const App = () => {
     setProgramSheet(null);
   }, [weights, mcTop, mcPress, isWorkoutActive, cancelWorkout]);
 
-  const updateMcTop = useCallback((id, diff) => {
-    setMcTop(prev => {
-      const next = { ...prev, [id]: Math.max(INITIAL_WEIGHTS[id] ?? 20, prev[id] + diff) };
-      setWeights(w => applyMcTopToWeights(w, next));
-      return next;
-    });
-  }, []);
+  // The one path every Madcow top-set edit goes through -- Program tab, Train's idle
+  // row, and Train's active-workout card -- so mcTop, the mirrored `weights`, and (if
+  // that lift is mid-session) its live ramp never drift apart. See madcow.js.
+  const updateMcTop = useCallback((liftId, nextTop) => {
+    const result = updateMadcowTopSet({ liftId, nextTop, mcTop, weights, mcInterval, currentWorkout });
+    setMcTop(result.mcTop);
+    setWeights(result.weights);
+    if (result.currentWorkout !== currentWorkout) setCurrentWorkout(result.currentWorkout);
+  }, [mcTop, weights, mcInterval, currentWorkout]);
 
   const applyLocalImport = useCallback((d) => {
     setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
@@ -843,32 +808,16 @@ const App = () => {
                                 {isMadcow ? (day === 'C' ? t('workout.dayCMeta') : t('workout.rampSetsMeta', { sets: ex.sets, from: Math.min(...ex.setWeights), to: topWeight })) : `${ex.sets} × ${ex.reps}`}
                               </p>
                             </button>
-                            {isMadcow ? (
-                              <span className="text-[19px] text-accent-300 tabular-nums shrink-0 min-h-[44px] flex items-center">{topWeight}kg</span>
-                            ) : (
-                              <button
-                                onClick={() => handleStartEditWeight(liftId, weights[liftId])}
-                                aria-label={t('workout.editWeightAria', { name: exName })}
-                                className="flex items-center gap-1.5 min-h-[44px] shrink-0"
-                              >
-                                <span className="text-[19px] text-accent-300 tabular-nums">{weights[liftId]}kg</span>
-                                <PencilSimple size={13} className={isDark ? 'text-ink/35' : 'text-ink-lt/35'} />
-                              </button>
-                            )}
-                          </div>
-                          {!isMadcow && editingWeightId === liftId && (
-                            <WeightEditBar
-                              value={draftWeight}
-                              onChange={setDraftWeight}
-                              onDecrement={() => stepDraftWeight(-ex.increment, weights[liftId])}
-                              onIncrement={() => stepDraftWeight(ex.increment, weights[liftId])}
-                              onCommit={() => commitEditWeight(weights[liftId], (diff) => handleUpdateIdleWeight(liftId, diff))}
-                              onCancel={handleCancelEditWeight}
+                            <WeightInput
+                              value={isMadcow ? mcTop[liftId] : weights[liftId]}
+                              increment={ex.increment}
+                              min={isMadcow ? (INITIAL_WEIGHTS[liftId] ?? 20) : 20}
+                              onChange={(next) => isMadcow ? updateMcTop(liftId, next) : handleUpdateIdleWeight(liftId, next)}
+                              label={exName}
                               isDark={isDark}
-                              variant="row"
-                              exerciseName={exName}
+                              variant="prominent"
                             />
-                          )}
+                          </div>
                           {isBarSetupOpen && (
                             <div className={`mt-3 rounded-[9px] p-3.5 ${isDark ? 'bg-surface/70' : 'bg-surface-lt/70'}`}>
                               <BarSetupDiagram weight={topWeight} isDark={isDark} />
@@ -897,13 +846,10 @@ const App = () => {
                       onToggleSet={handleToggleSet}
                       onOpenRepPicker={handleOpenRepPicker}
                       showHint={exIdx === 0 && !anySetLogged}
-                      isEditingWeight={editingWeightId === ex.id}
-                      draftWeight={draftWeight}
-                      onDraftWeightChange={setDraftWeight}
-                      onStartEditWeight={() => handleStartEditWeight(ex.id, ex.weight)}
-                      onStepWeight={(diff) => stepDraftWeight(diff, ex.weight)}
-                      onCommitWeight={() => commitEditWeight(ex.weight, (diff) => handleUpdateActiveWeight(exIdx, diff))}
-                      onCancelEditWeight={handleCancelEditWeight}
+                      onWeightChange={(next) => handleUpdateActiveWeight(exIdx, next)}
+                      topSetValue={mcTop[ex.id]}
+                      topSetMin={INITIAL_WEIGHTS[ex.id] ?? 20}
+                      onTopSetChange={(next) => updateMcTop(ex.id, next)}
                     />
                   ));
                 })()}
@@ -1518,27 +1464,19 @@ const App = () => {
                     {entryProg.ramped ? (
                       <span className="text-[15px] tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setEditingEntry(prev => {
-                            const s = JSON.parse(JSON.stringify(prev.session));
-                            s.exercises[exIdx].weight = Math.max(0, s.exercises[exIdx].weight - 2.5);
-                            return { ...prev, session: s };
-                          })}
-                          aria-label={`Decrease ${ex.name} weight`}
-                          className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
-                        ><Minus size={16} /></button>
-                        <span className="w-14 text-center text-[15px] tabular-nums">{ex.weight}kg</span>
-                        <button
-                          onClick={() => setEditingEntry(prev => {
-                            const s = JSON.parse(JSON.stringify(prev.session));
-                            s.exercises[exIdx].weight += 2.5;
-                            return { ...prev, session: s };
-                          })}
-                          aria-label={`Increase ${ex.name} weight`}
-                          className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
-                        ><Plus size={16} /></button>
-                      </div>
+                      <WeightInput
+                        value={ex.weight}
+                        increment={entryProg.increments[ex.id] ?? 2.5}
+                        min={0}
+                        onChange={(next) => setEditingEntry(prev => {
+                          const s = JSON.parse(JSON.stringify(prev.session));
+                          s.exercises[exIdx].weight = next;
+                          return { ...prev, session: s };
+                        })}
+                        label={t('exercises.' + ex.id)}
+                        isDark={isDark}
+                        variant="compact"
+                      />
                     )}
                   </div>
                   <div className="flex justify-between items-center">

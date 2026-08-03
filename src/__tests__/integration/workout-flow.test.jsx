@@ -49,20 +49,14 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    expect(screen.getByText('60kg')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Increase Back Squat weight')).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText('Edit Back Squat weight'));
     await user.click(screen.getByLabelText('Increase Back Squat weight'));
     expect(screen.getByDisplayValue('62.5')).toBeInTheDocument();
-
-    await user.click(screen.getByLabelText('Done'));
-    expect(screen.getAllByText('62.5kg').length).toBeGreaterThan(0);
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(62.5);
 
     await user.click(screen.getByText('Start workout'));
-    expect(screen.queryByLabelText('Increase Back Squat weight')).not.toBeInTheDocument();
-    expect(screen.getAllByText('62.5kg').length).toBeGreaterThan(0);
+    expect(screen.getByDisplayValue('62.5')).toBeInTheDocument();
   });
 
   it('floors idle-screen weight adjustments at the empty 20kg bar', async () => {
@@ -81,12 +75,8 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByLabelText('Edit Back Squat weight'));
     await user.click(screen.getByLabelText('Decrease Back Squat weight'));
     expect(screen.getByDisplayValue('20')).toBeInTheDocument();
-
-    await user.click(screen.getByLabelText('Done'));
-    expect(screen.getAllByText('20kg').length).toBeGreaterThan(0);
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(20);
   });
 
@@ -120,7 +110,7 @@ describe('Workout Flow', () => {
     expect(screen.getByText('Empty bar · 20 kg')).toBeInTheDocument();
   });
 
-  it('keeps the idle-screen bar-setup toggle independent of the weight editor', async () => {
+  it('keeps the idle-screen bar-setup toggle independent of the weight input', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
@@ -139,12 +129,9 @@ describe('Workout Flow', () => {
     await user.click(screen.getByText('Back Squat'));
     expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText('Edit Back Squat weight'));
-    expect(screen.getByLabelText('Increase Back Squat weight')).toBeInTheDocument();
-    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
-
-    await user.click(screen.getByLabelText('Done'));
-    expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Increase Back Squat weight'));
+    expect(screen.getByDisplayValue('62.5')).toBeInTheDocument();
+    expect(screen.getByText('Per side · 20 kg bar · 62.5 total')).toBeInTheDocument();
   });
 
   it('accepts comma decimals and snaps the committed weight to the nearest 2.5kg', async () => {
@@ -163,13 +150,12 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByLabelText('Edit Back Squat weight'));
     const input = screen.getByDisplayValue('60');
     await user.clear(input);
     await user.type(input, '72,3');
-    await user.click(screen.getByLabelText('Done'));
+    await user.tab();
 
-    expect(screen.getAllByText('72.5kg').length).toBeGreaterThan(0);
+    expect(screen.getByDisplayValue('72.5')).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(72.5);
   });
 
@@ -189,17 +175,16 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByLabelText('Edit Back Squat weight'));
     const input = screen.getByDisplayValue('60');
     await user.clear(input);
     await user.type(input, 'abc');
-    await user.click(screen.getByLabelText('Done'));
+    await user.tab();
 
-    expect(screen.getAllByText('60kg').length).toBeGreaterThan(0);
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(60);
   });
 
-  it('discards the draft and leaves the weight unchanged when cancelled', async () => {
+  it('reverts an in-progress typed draft on Escape, leaving the weight unchanged', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
@@ -215,17 +200,15 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByLabelText('Edit Back Squat weight'));
-    await user.click(screen.getByLabelText('Increase Back Squat weight'));
-    expect(screen.getByDisplayValue('62.5')).toBeInTheDocument();
+    const input = screen.getByDisplayValue('60');
+    await user.clear(input);
+    await user.type(input, '99{Escape}');
 
-    await user.click(screen.getByLabelText('Cancel'));
-    expect(screen.queryByLabelText('Increase Back Squat weight')).not.toBeInTheDocument();
-    expect(screen.getByText('60kg')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(60);
   });
 
-  it('opening a different exercise\'s weight editor discards the previous, unsaved draft', async () => {
+  it('moving focus to another exercise\'s weight input commits the first, rather than discarding it', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,
       weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
@@ -241,14 +224,20 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByLabelText('Edit Back Squat weight'));
-    await user.click(screen.getByLabelText('Increase Back Squat weight'));
-    expect(screen.getByDisplayValue('62.5')).toBeInTheDocument();
+    const squatInput = screen.getByDisplayValue('60');
+    await user.clear(squatInput);
+    await user.type(squatInput, '99');
 
-    await user.click(screen.getByLabelText('Edit Bench Press weight'));
-    expect(screen.queryByLabelText('Increase Back Squat weight')).not.toBeInTheDocument();
-    expect(screen.getByDisplayValue('45')).toBeInTheDocument();
-    expect(screen.getByText('60kg')).toBeInTheDocument();
+    // Focusing bench blurs squat, which commits (snapped to the nearest 2.5kg) --
+    // each field has its own independent draft, so this no longer discards it.
+    const benchInput = screen.getByDisplayValue('45');
+    await user.clear(benchInput);
+    await user.type(benchInput, '50');
+    await user.tab();
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.weights.squat).toBe(100);
+    expect(stored.weights.bench).toBe(50);
   });
 
   it('completes all sets and finishes workout with weight increment', async () => {
@@ -428,7 +417,7 @@ describe('Workout Flow', () => {
     await user.click(screen.getByText('Done'));
 
     expect(screen.queryByText('Deload Needed')).not.toBeInTheDocument();
-    expect(screen.getByText('Already trained today — rest up.')).toBeInTheDocument();
+    expect(screen.getByText('Already trained today. Rest until next session.')).toBeInTheDocument();
   });
 
   it('shows failure deload on start and applies deloaded weights', async () => {

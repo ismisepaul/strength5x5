@@ -34,15 +34,22 @@ function seedMadcow(overrides = {}) {
 const squatCard = () => within(screen.getByText('Back Squat').closest('.border'));
 
 describe('Train tab under Madcow', () => {
-  it('shows the ramp meta and a read-only top weight before starting', async () => {
+  it('shows the ramp meta and an editable top-set weight before starting', async () => {
     seedMadcow();
+    const user = userEvent.setup();
     render(<App />);
 
     expect(screen.getByText('Madcow 5×5 · week 5')).toBeInTheDocument();
     expect(screen.getByText('5 ramp sets · 55 → 107.5 kg')).toBeInTheDocument();
-    expect(screen.getByText('107.5kg')).toBeInTheDocument();
-    // No pencil-edit affordance for a Madcow lift.
-    expect(screen.queryByLabelText('Edit Back Squat weight')).not.toBeInTheDocument();
+    // The top-set weight is editable, same as the Program tab.
+    expect(screen.getByDisplayValue('107.5')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Increase Back Squat weight'));
+    expect(screen.getByDisplayValue('110')).toBeInTheDocument();
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.mcTop.squat).toBe(110);
+    expect(stored.weights.squat).toBe(110);
   });
 
   it('logs a ramped session with per-set weights and progresses the top set once past the on-ramp', async () => {
@@ -70,6 +77,26 @@ describe('Train tab under Madcow', () => {
     expect(stored.history[0].preset).toBe('madcow');
   });
 
+  it('editing the top set mid-workout persists it and re-derives the remaining ramp', async () => {
+    seedMadcow();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Start workout'));
+    expect(squatCard().getByText('107.5')).toBeInTheDocument();
+
+    await user.click(squatCard().getByLabelText('Increase Back Squat weight'));
+
+    // The active session's top-of-ramp set reflects the edit immediately.
+    expect(squatCard().getByDisplayValue('110')).toBeInTheDocument();
+    expect(squatCard().getByText('110')).toBeInTheDocument();
+
+    // And it's persisted the same as a Program-tab edit -- not just a session override.
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.mcTop.squat).toBe(110);
+    expect(stored.weights.squat).toBe(110);
+  });
+
   it('shows the Madcow-specific missed-reps note instead of the Standard one', async () => {
     seedMadcow();
     const user = userEvent.setup();
@@ -82,7 +109,7 @@ describe('Train tab under Madcow', () => {
     await user.click(firstSquatSet);
     await user.click(firstSquatSet);
 
-    expect(squatCard().getByText('Missed reps — top set holds next week')).toBeInTheDocument();
+    expect(squatCard().getByText('Missed reps: top set stays at current weight next week')).toBeInTheDocument();
   });
 
   it('lets the workout picker sheet switch which day is next', async () => {
