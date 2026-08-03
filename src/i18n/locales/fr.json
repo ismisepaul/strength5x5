@@ -238,7 +238,8 @@
     "weight": "Poids",
     "noDataForRange": "Aucune donnée pour cette période",
     "minTwoWorkouts": "Complétez au moins 2 séances pour voir les tendances",
-    "noSessionsForLift": "Aucune séance enregistrée pour cet exercice pour l'instant."
+    "noSessionsForLift": "Aucune séance enregistrée pour cet exercice pour l'instant.",
+    "fromProgram": "Depuis {{program}}"
   },
   "options": {
     "title": "Options",

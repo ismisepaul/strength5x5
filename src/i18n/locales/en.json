@@ -238,7 +238,8 @@
     "weight": "Weight",
     "noDataForRange": "No data for this range",
     "minTwoWorkouts": "Complete at least 2 workouts to see trends",
-    "noSessionsForLift": "No sessions logged for this lift yet."
+    "noSessionsForLift": "No sessions logged for this lift yet.",
+    "fromProgram": "From {{program}}"
   },
   "options": {
     "title": "Options",

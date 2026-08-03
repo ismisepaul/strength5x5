@@ -1049,28 +1049,41 @@ const App = () => {
                     </button>
                   );
                 })()}
-                <div className="grid gap-3">{(preset === 'madcow' ? ['squat', 'bench', 'row', 'deadlift', mcPress] : EXPECTED_WEIGHT_KEYS).map(id => {
-                  const trend = getExerciseTrend(history, id);
-                  const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
-                  const hasData = history.some(s => s.exercises?.some(e => e.id === id));
-                  return (
-                    <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
-                      <div className="min-w-0 pr-2 text-left">
-                        <p className="text-[15px] font-medium truncate">{t('exercises.' + id)}</p>
-                        {hasData ? (
-                          <p className={`text-[12px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
-                        ) : (
-                          <p className={`text-[12px] leading-snug mt-1 ${mutedClass}`}>{t('stats.noSessionsForLift')}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {trend && <TrendIcon size={18} className={trendClass} />}
-                        <span className="text-accent-300 tabular-nums">{weights[id]}kg</span>
-                        <CaretRight size={18} className={mutedClass} />
-                      </div>
-                    </button>
+                <div className="grid gap-3">{(() => {
+                  const activeIds = preset === 'madcow' ? ['squat', 'bench', 'row', 'deadlift', mcPress] : EXPECTED_WEIGHT_KEYS;
+                  // Lifts trained under the other program stay visible here too, instead of
+                  // vanishing from Stats the moment you switch programs.
+                  const extraIds = [...EXPECTED_WEIGHT_KEYS, 'incline'].filter(id =>
+                    !activeIds.includes(id) && history.some(s => s.exercises?.some(e => e.id === id))
                   );
-                })}
+                  const otherProgramName = t('program.strip.' + (preset === 'madcow' ? 'standard' : 'madcow') + 'Name');
+                  return [...activeIds, ...extraIds].map(id => {
+                    const trend = getExerciseTrend(history, id);
+                    const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
+                    const hasData = history.some(s => s.exercises?.some(e => e.id === id));
+                    const isExtra = extraIds.includes(id);
+                    return (
+                      <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
+                        <div className="min-w-0 pr-2 text-left">
+                          <p className="text-[15px] font-medium truncate">{t('exercises.' + id)}</p>
+                          {hasData ? (
+                            <p className={`text-[12px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
+                          ) : (
+                            <p className={`text-[12px] leading-snug mt-1 ${mutedClass}`}>{t('stats.noSessionsForLift')}</p>
+                          )}
+                          {isExtra && (
+                            <p className={`text-[11px] uppercase tracking-wide mt-0.5 ${mutedClass}`}>{t('stats.fromProgram', { program: otherProgramName })}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {trend && <TrendIcon size={18} className={trendClass} />}
+                          <span className="text-accent-300 tabular-nums">{weights[id]}kg</span>
+                          <CaretRight size={18} className={mutedClass} />
+                        </div>
+                      </button>
+                    );
+                  });
+                })()}
                 </div>
               </>
             )}

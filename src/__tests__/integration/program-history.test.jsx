@@ -54,3 +54,49 @@ describe('Log entries show which program they belong to', () => {
     expect(screen.getByText('Standard 5×5')).toBeInTheDocument();
   });
 });
+
+describe('Stats surfaces lifts trained under the other program', () => {
+  it('keeps Incline Bench visible under Standard, noting it came from Madcow', async () => {
+    seed(); // preset defaults to standard; history has a Madcow-tagged incline session
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Stats'));
+
+    const inclineCard = screen.getByText('Incline Bench').closest('button');
+    expect(within(inclineCard).getByText('From Madcow 5×5')).toBeInTheDocument();
+  });
+
+  it('keeps Overhead Press visible under Madcow (incline press), noting it came from Standard', async () => {
+    seed({
+      preset: 'madcow',
+      mcPress: 'incline',
+      mcTop: { squat: 115, bench: 67.5, row: 72.5, deadlift: 125, incline: 50 },
+      history: [
+        { date: new Date(Date.now() - 86400000).toISOString(), type: 'A', preset: 'standard', exercises: [{ id: 'press', weight: 55, sets: 5, reps: 5, setsCompleted: [5, 5, 5, 5, 5] }] },
+      ],
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Stats'));
+
+    const pressCard = screen.getByText('Overhead Press').closest('button');
+    expect(within(pressCard).getByText('From Standard 5×5')).toBeInTheDocument();
+  });
+
+  it('does not tag the active program lifts with a from-program note', async () => {
+    seed({
+      history: [
+        { date: new Date(Date.now() - 86400000).toISOString(), type: 'A', preset: 'standard', exercises: [{ id: 'squat', weight: 115, sets: 5, reps: 5, setsCompleted: [5, 5, 5, 5, 5] }] },
+      ],
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Stats'));
+
+    const squatCard = screen.getByText('Back Squat').closest('button');
+    expect(within(squatCard).queryByText(/^From /)).not.toBeInTheDocument();
+  });
+});
