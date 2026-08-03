@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise, Info } from '@phosphor-icons/react';
+import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
 import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
@@ -37,35 +37,36 @@ const Segmented = ({ options, value, onChange, isDark }) => {
   );
 };
 
-// Every Madcow/Standard preview bar chart shares this: bars scale 40-100% of the
-// day's top, the top (or C-day's triple) is solid, C-day's back-off is dashed, and
-// everything else -- including all of a Standard exercise's equal bars -- is muted.
+// A read-only readout, not a control: thin flat bars, height proportional to
+// weight, role (top / back-off / plain) carried by the border only -- never by
+// fill colour. Deliberately not styled like the Train tab's tappable set circles.
 const RampBars = ({ ex, day, isDark }) => {
   const n = ex.setWeights.length;
   const hasTop = day === 'A' || day === 'B' || day === 'C';
   const topIndex = day === 'C' ? n - 2 : n - 1;
   const backoffIndex = day === 'C' ? n - 1 : -1;
-  const referenceTop = hasTop ? ex.setWeights[topIndex] : Math.max(...ex.setWeights);
+  const min = Math.min(...ex.setWeights);
+  const max = Math.max(...ex.setWeights);
 
   return (
-    <div className="flex items-end gap-2 h-24 mt-3">
+    <div className="flex items-end gap-1.5 mt-[9px]">
       {ex.setWeights.map((w, i) => {
         const reps = ex.setReps[i];
         const isTop = hasTop && i === topIndex;
         const isBackoff = hasTop && i === backoffIndex;
-        const heightPct = Math.max(40, Math.min(100, 40 + 60 * (w / referenceTop)));
+        const height = max === min ? 52 : 26 + 28 * (w - min) / (max - min);
         return (
-          <div key={i} className="flex-1 flex flex-col items-center justify-end h-full min-w-0">
-            <span className="text-[10.5px] font-semibold text-accent-300 mb-1 h-3.5 leading-none">{reps !== 5 ? `×${reps}` : ''}</span>
+          <div key={i} className="flex-1 flex flex-col items-center min-w-0">
+            <span className="text-[10.5px] font-semibold text-accent-300 tabular-nums h-[13px] leading-[13px]">{reps !== 5 ? `×${reps}` : ''}</span>
             <div
-              style={{ height: `${heightPct}%` }}
-              className={`w-full rounded-t-[8px] ${
-                isTop ? 'bg-accent'
-                  : isBackoff ? 'border-2 border-dashed border-accent/60 bg-transparent'
-                    : 'bg-accent/25'
+              style={{ height: `${height}px` }}
+              className={`w-full rounded-t-[4px] rounded-b-[2px] bg-accent/40 ${
+                isTop ? 'border border-accent'
+                  : isBackoff ? 'border border-dashed border-accent/45'
+                    : 'border border-accent/35'
               }`}
             />
-            <span className={`text-[11px] tabular-nums mt-1.5 leading-none ${isTop ? 'font-semibold' : (isDark ? 'text-ink/55' : 'text-ink-lt/55')}`}>{w}</span>
+            <span className={`text-[11px] tabular-nums mt-1.5 leading-none ${isTop ? 'text-accent-300' : (isDark ? 'text-ink/50' : 'text-ink-lt/50')}`}>{w}</span>
           </div>
         );
       })}
@@ -176,20 +177,19 @@ const ProgramTab = ({
               <p className={`text-[12px] leading-relaxed mb-4 ${mutedClass}`}>{t('technique.hint')}</p>
               {dayExercises.map((ex, i) => (
                 <div key={ex.id} className={i > 0 ? `mt-4 pt-4 ${isDark ? 'rule-fade-top' : 'rule-fade-top-lt'}` : ''}>
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={() => onOpenGuide(liftIds[i])}
-                      aria-label={t('technique.openAria', { exercise: t('exercises.' + liftIds[i]) })}
-                      className="flex items-center gap-1 min-h-9 -ml-0.5"
-                    >
-                      <Info size={13} className={mutedClass} />
-                      <span className="font-semibold text-[15px]">{t('exercises.' + liftIds[i])}</span>
-                    </button>
-                    <span className={`text-[12px] uppercase ${mutedClass}`}>
-                      {selectedDay === 'C' ? t('program.madcow.dayCLabel') : t('program.madcow.rampLabel', { sets: ex.sets })}
-                    </span>
-                  </div>
-                  <RampBars ex={ex} day={selectedDay} isDark={isDark} />
+                  <button
+                    onClick={() => onOpenGuide(liftIds[i])}
+                    aria-label={t('technique.openAria', { exercise: t('exercises.' + liftIds[i]) })}
+                    className="w-full text-left"
+                  >
+                    <div className="flex justify-between items-baseline gap-3">
+                      <span className="text-[13.5px] font-medium">{t('exercises.' + liftIds[i])}</span>
+                      <span className={`text-[11.5px] shrink-0 ${isDark ? 'text-ink/40' : 'text-ink-lt/40'}`}>
+                        {selectedDay === 'C' ? t('program.madcow.dayCLabel') : t('program.madcow.rampLabel', { sets: ex.sets })}
+                      </span>
+                    </div>
+                    <RampBars ex={ex} day={selectedDay} isDark={isDark} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -241,21 +241,20 @@ const ProgramTab = ({
                 const synthetic = { setWeights: new Array(ex.sets).fill(ex.weight), setReps: new Array(ex.sets).fill(target) };
                 return (
                   <div key={ex.id} className={i > 0 ? `mt-4 pt-4 ${isDark ? 'rule-fade-top' : 'rule-fade-top-lt'}` : ''}>
-                    <div className="flex justify-between items-center">
-                      <button
-                        onClick={() => onOpenGuide(ex.id)}
-                        aria-label={t('technique.openAria', { exercise: t('exercises.' + ex.id) })}
-                        className="flex items-center gap-1 min-h-9 -ml-0.5"
-                      >
-                        <Info size={13} className={mutedClass} />
-                        <span className="font-semibold text-[15px]">{t('exercises.' + ex.id)}</span>
-                      </button>
-                      <span className={`text-[12px] uppercase ${mutedClass}`}>
-                        {t('program.standard.setsRepsShort', { sets: ex.sets, reps: target })}
-                        {wentUp ? ` · ${t('program.standard.wentUpLastTime')}` : ''}
-                      </span>
-                    </div>
-                    <RampBars ex={synthetic} isDark={isDark} />
+                    <button
+                      onClick={() => onOpenGuide(ex.id)}
+                      aria-label={t('technique.openAria', { exercise: t('exercises.' + ex.id) })}
+                      className="w-full text-left"
+                    >
+                      <div className="flex justify-between items-baseline gap-3">
+                        <span className="text-[13.5px] font-medium">{t('exercises.' + ex.id)}</span>
+                        <span className={`text-[11.5px] shrink-0 ${isDark ? 'text-ink/40' : 'text-ink-lt/40'}`}>
+                          {t('program.standard.setsRepsShort', { sets: ex.sets, reps: target })}
+                          {wentUp ? ` · ${t('program.standard.wentUpLastTime')}` : ''}
+                        </span>
+                      </div>
+                      <RampBars ex={synthetic} isDark={isDark} />
+                    </button>
                   </div>
                 );
               })}
