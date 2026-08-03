@@ -139,15 +139,16 @@
       "kgLifted": "{{value}} kg lifted",
       "rampLabel": "{{sets}}×5 ramp",
       "dayCLabel": "4×5 · 1×3 · 1×8",
-      "dayANote": "5 ramped sets of 5 reps. Top set weight equals Friday's triple from last week.",
-      "dayBNote": "Light day. Squat: 4 sets of 5 reps (sets 1-3 ramp, set 4 repeats set 3). Incline Bench and Deadlift progress independently.",
+      "dayANote": "5 ramped sets (adding weight each set) of 5 reps, ending at this week's target top weight for Squat, Bench, and Row.",
+      "dayBNote": "Light day. Squat: 4 sets of 5 reps (sets 1-3 ramp, set 4 repeats set 3). Press and Deadlift progress independently on this day.",
       "dayCNote": "Medium day. 4 ramped sets of 5, then a heavier triple, then a back-off set of 8 at set 3 weight.",
       "howTitle": "How the weight goes up",
       "howSteps": [
-        "Workout C (Friday): Lift heavier top set for 3 reps.",
-        "Workout A (Monday): Perform 5 reps at Friday's top triple weight.",
-        "Successful 5 reps increases Friday's top set. Missed reps hold top set weight.",
-        "Press and Deadlift progress weekly on Workout B."
+        "Workouts run in order: A, B, C. When starting Madcow, always begin on Workout A.",
+        "Workout A (Monday): 5 ramped sets (adding weight each set) of 5 reps for Squat, Bench, and Row. Set 5 is your target top weight for the week.",
+        "Workout B (Wednesday): Light squats, plus heavy top sets for Press and Deadlift. Press and Deadlift progress weekly on this workout.",
+        "Workout C (Friday): 4 ramped sets of 5, then a triple (3 reps) one increment above this week's top weight, ending with a back-off set of 8 reps.",
+        "Weekly progression: Hit all 5 reps on Monday's top set to increase your top weight by one increment next week. If you miss reps, repeat the same weight."
       ],
       "secondPress": "Second press",
       "secondPressNote": "Madcow's light day uses the incline bench, set to about 30°. Swap it for the overhead press if you'd rather keep pressing overhead.",

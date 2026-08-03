@@ -23,16 +23,18 @@ describe('useTimer', () => {
     const { result } = renderHook(() => useTimer());
     act(() => result.current.start(90));
     expect(result.current.seconds).toBe(90);
+    expect(result.current.duration).toBe(90);
     expect(result.current.isActive).toBe(true);
     expect(result.current.isExpired).toBe(false);
   });
 
-  it('counts down over time', () => {
+  it('counts down over time while duration holds steady at the original length', () => {
     const { result } = renderHook(() => useTimer());
     act(() => result.current.start(10));
 
     act(() => vi.advanceTimersByTime(5000));
     expect(result.current.seconds).toBeLessThanOrEqual(5);
+    expect(result.current.duration).toBe(10);
     expect(result.current.isActive).toBe(true);
   });
 
@@ -106,6 +108,7 @@ describe('useTimer', () => {
 
     act(() => result.current.stop());
     expect(result.current.seconds).toBe(0);
+    expect(result.current.duration).toBe(0);
     expect(result.current.isActive).toBe(false);
     expect(result.current.isExpired).toBe(false);
     expect(result.current.elapsed).toBe(0);

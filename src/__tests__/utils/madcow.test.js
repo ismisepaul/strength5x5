@@ -9,7 +9,6 @@ import {
   getMadcowDayExercises,
   getMadcowDayLiftIds,
   evaluateMadcowOutcome,
-  madcowRestSeconds,
   roundWeight,
   computeProjectedVolume,
   wentUpLastTime,
@@ -272,15 +271,28 @@ describe('evaluateMadcowOutcome', () => {
   });
 });
 
-describe('madcowRestSeconds', () => {
-  it('gives long rest near the top, short rest for light ramp sets', () => {
-    expect(madcowRestSeconds(107.5, 107.5, 90)).toBe(300);
-    expect(madcowRestSeconds(95, 107.5, 90)).toBe(180);
-    expect(madcowRestSeconds(55, 107.5, 90)).toBe(90);
+describe('restSeconds', () => {
+  const mcTop = { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 };
+
+  it('ramps Workout A rest from short to long, ending long before the top set', () => {
+    const [squat] = getMadcowDayExercises('A', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline');
+    expect(squat.restSeconds).toEqual([0, 90, 180, 180, 300]);
   });
 
-  it('falls back to the preferred rest when there is no day top', () => {
-    expect(madcowRestSeconds(50, 0, 120)).toBe(120);
+  it('gives Workout C\'s 8-rep back-off set the normal (3min) rest, not the short tier its lighter weight would otherwise suggest', () => {
+    const [squat] = getMadcowDayExercises('C', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline');
+    expect(squat.restSeconds).toEqual([0, 90, 180, 180, 300, 180]);
+  });
+
+  it('caps Workout B\'s squat at the normal tier, since it\'s recovery volume and never a true top set', () => {
+    const [squat] = getMadcowDayExercises('B', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline');
+    expect(squat.restSeconds).toEqual([0, 90, 180, 180]);
+  });
+
+  it('gives Workout B\'s press/deadlift long rest before their top set, normal before the two sets building to it', () => {
+    const [, incline, deadlift] = getMadcowDayExercises('B', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline');
+    expect(incline.restSeconds).toEqual([0, 180, 180, 300]);
+    expect(deadlift.restSeconds).toEqual([0, 180, 180, 300]);
   });
 });
 

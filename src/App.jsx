@@ -11,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
+import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from './programs';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
@@ -255,8 +255,8 @@ const App = () => {
           setIsExerciseComplete(allDone ? 'workout' : true);
         } else {
           setIsExerciseComplete(false);
-          const req = Array.isArray(ex.setWeights)
-            ? madcowRestSeconds(ex.setWeights[setIdx + 1], Math.max(...ex.setWeights), preferredRest)
+          const req = Array.isArray(ex.restSeconds)
+            ? (ex.restSeconds[setIdx + 1] ?? preferredRest)
             : (nextVal === target ? preferredRest : 300);
           timer.start(req);
         }
@@ -762,7 +762,7 @@ const App = () => {
 
       {timerVisible && (
         <RestTimer
-          seconds={timer.seconds} total={preferredRest}
+          seconds={timer.seconds} total={timer.duration}
           isDark={isDark} isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired} isActive={timer.isActive}
           onSkip={handleTimerSkip} elapsed={timer.elapsed}
           startedAt={currentWorkout?.startedAt} workoutType={currentWorkout?.type}

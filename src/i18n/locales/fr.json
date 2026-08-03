@@ -139,15 +139,16 @@
       "kgLifted": "{{value}} kg soulevés",
       "rampLabel": "{{sets}}×5 en rampe",
       "dayCLabel": "4×5 · 1×3 · 1×8",
-      "dayANote": "5 séries en rampe de 5 répétitions. Le poids maximal égale le triplet du vendredi précédent.",
-      "dayBNote": "Jour léger. Squat : 4 séries de 5 (séries 1-3 en rampe, série 4 répète la série 3). Développé incliné et Deadlift progressent indépendamment.",
+      "dayANote": "5 séries en rampe (poids augmenté à chaque série) de 5 répétitions, se terminant au poids cible de la semaine pour le Squat, le Développé et le Rowing.",
+      "dayBNote": "Jour léger. Squat : 4 séries de 5 (séries 1-3 en rampe, série 4 répète la série 3). Le Développé et le Deadlift progressent indépendamment lors de ce jour.",
       "dayCNote": "Jour moyen. 4 séries en rampe de 5, puis un triplet plus lourd, puis une série dégressive de 8 au poids de la série 3.",
       "howTitle": "Comment le poids augmente",
       "howSteps": [
-        "Séance C (Vendredi) : Réalisez une série maximale de 3 répétitions plus lourde.",
-        "Séance A (Lundi) : Effectuez 5 répétitions au poids du triplet de vendredi.",
-        "5 répétitions réussies augmentent le sommet de vendredi. Répétitions manquées maintiennent le poids.",
-        "Le développé et le deadlift progressent chaque semaine lors de la séance B."
+        "Les séances s'enchaînent dans l'ordre : A, B, C. Lorsque vous commencez Madcow, démarrez toujours par la séance A.",
+        "Séance A (Lundi) : 5 séries en rampe (poids augmenté à chaque série) de 5 répétitions pour le Squat, le Développé et le Rowing. La 5e série est votre série maximale cible de la semaine.",
+        "Séance B (Mercredi) : Squat léger, plus séries maximales pour le Développé et le Deadlift. Le Développé et le Deadlift progressent chaque semaine lors de cette séance.",
+        "Séance C (Vendredi) : 4 séries en rampe de 5, puis un triplet (3 répétitions) un incrément au-dessus du poids maximal de cette semaine, et une série dégressive de 8 répétitions.",
+        "Progression hebdomadaire : Réussissez les 5 répétitions de la série maximale du lundi pour ajouter un incrément la semaine suivante. En cas d'échec, répétez le même poids."
       ],
       "secondPress": "Second développé",
       "secondPressNote": "Le jour léger de Madcow utilise le développé incliné, à environ 30°. Remplacez-le par le développé militaire si vous préférez continuer au-dessus de la tête.",

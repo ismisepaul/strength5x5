@@ -184,14 +184,25 @@ export function computeRampWeights(top, intervalPercent, increment, floor, count
   return weights;
 }
 
+// Rest before a set, per Stronglifts' Madcow guide: short for the first light ramp
+// set, normal as sets build toward the top -- also the fixed rest before Workout C's
+// 8-rep back-off set, regardless of its lighter weight -- and long only before the
+// day's genuine top-effort set. Day B's squat is recovery volume and is capped at
+// `build`, never reaching `top` even on its heaviest (repeated) set.
+const MADCOW_REST = { ramp: 90, build: 180, top: 300 };
+
 export function buildMadcowLiftPlan(day, liftId, mcTop, intervalPercent) {
   const increment = MADCOW_WEEKLY_INCREMENTS[liftId] ?? 2.5;
   const floor = INITIAL_WEIGHTS[liftId] ?? 20;
   const top = mcTop[liftId];
   const ramp = computeRampWeights(top, intervalPercent, increment, floor);
+  const { ramp: RAMP, build: BUILD, top: TOP } = MADCOW_REST;
 
   if (day === 'A') {
-    return { id: liftId, sets: 5, setWeights: ramp, setReps: [5, 5, 5, 5, 5], weight: ramp[4], increment };
+    return {
+      id: liftId, sets: 5, setWeights: ramp, setReps: [5, 5, 5, 5, 5], weight: ramp[4], increment,
+      restSeconds: [0, RAMP, BUILD, BUILD, TOP],
+    };
   }
 
   if (day === 'C') {
@@ -202,6 +213,7 @@ export function buildMadcowLiftPlan(day, liftId, mcTop, intervalPercent) {
       setWeights: [...ramp.slice(0, 4), attempt, backoff],
       setReps: [5, 5, 5, 5, 3, 8],
       weight: attempt, increment,
+      restSeconds: [0, RAMP, BUILD, BUILD, TOP, BUILD],
     };
   }
 
@@ -213,6 +225,7 @@ export function buildMadcowLiftPlan(day, liftId, mcTop, intervalPercent) {
       setWeights: [ramp[0], ramp[1], ramp[2], ramp[2]],
       setReps: [5, 5, 5, 5],
       weight: ramp[2], increment,
+      restSeconds: [0, RAMP, BUILD, BUILD],
     };
   }
   return {
@@ -220,6 +233,7 @@ export function buildMadcowLiftPlan(day, liftId, mcTop, intervalPercent) {
     setWeights: ramp.slice(1),
     setReps: [5, 5, 5, 5],
     weight: ramp[4], increment,
+    restSeconds: [0, BUILD, BUILD, TOP],
   };
 }
 
@@ -301,15 +315,6 @@ export function evaluateMadcowOutcome(day, exercises, mcTop, week, mcPending, on
   }
 
   return { nextTop, nextPending: [...nextPending], progressions, projectedTop, nextWeek };
-}
-
-// Short rest for a light ramp set, longer as the next set approaches the day's top.
-export function madcowRestSeconds(nextSetWeight, dayTopWeight, preferredRest) {
-  if (!dayTopWeight) return preferredRest;
-  const share = nextSetWeight / dayTopWeight;
-  if (share >= 0.95) return 300;
-  if (share >= 0.75) return 180;
-  return 90;
 }
 
 export function validateImportData(d) {
