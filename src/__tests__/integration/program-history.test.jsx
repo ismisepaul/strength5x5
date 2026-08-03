@@ -53,6 +53,20 @@ describe('Log entries show which program they belong to', () => {
 
     expect(screen.getByText('Standard 5×5')).toBeInTheDocument();
   });
+
+  it('leads with the program, then the workout -- Program > Workout > Sets/Reps', async () => {
+    seed();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+
+    const programKicker = screen.getByText('Standard 5×5');
+    const workoutHeading = screen.getAllByText('Workout A')[0];
+    // The kicker (program) must come before the heading (workout) in DOM order, i.e.
+    // program is the outer/leading element of the hierarchy, not a footnote under it.
+    expect(programKicker.compareDocumentPosition(workoutHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
 
 describe('Stats surfaces lifts trained under the other program', () => {

@@ -929,10 +929,10 @@ const App = () => {
           const renderEntry = (s, key, onClick) => (
             <button key={key} onClick={onClick} className={`w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[14px] font-semibold text-accent-300">{t(`workout.type${s.type}`)}</span>
+                <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent">{t(getProgram(s.preset).nameKey)}</span>
                 <span className={`text-[13.5px] ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
               </div>
-              <p className={`text-[11px] uppercase tracking-wide mb-3 ${mutedClass}`}>{t('program.strip.' + normalizePreset(s.preset) + 'Name')}</p>
+              <p className="text-[15px] font-semibold mb-3">{t(`workout.type${s.type}`)}</p>
               <div className="space-y-2">{s.exercises.map(ex => (
                 <div key={ex.id} className="flex justify-between text-[15px] items-center">
                   <span className={`text-[12px] uppercase ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
