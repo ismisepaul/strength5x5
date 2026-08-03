@@ -1,34 +1,33 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  Barbell, ListChecks, Gear, Play, TrendUp,
-  Plus, DownloadSimple, UploadSimple,
-  Question, TrendDown,
+  Barbell, ListChecks, Gear, Play,
+  Question,
   CaretRight,
-  FileCsv, ArrowRight, Flame, CaretDown,
-  SlidersHorizontal, ChartLineUp, Info
+  Flame,
+  SlidersHorizontal, ChartLineUp
 } from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { calculateBest1RM, formatDuration, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
 import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
-import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from './programs';
-import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
+import { getProgram } from './programs';
+import { getWorkoutStats } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useTimer } from './hooks/useTimer';
 import { useWakeLock } from './hooks/useWakeLock';
 import RestTimer from './components/RestTimer';
-import ExerciseCard from './components/ExerciseCard';
-import BarSetupDiagram from './components/BarSetupDiagram';
 import RepPicker from './components/RepPicker';
-import ProgramTab from './components/ProgramTab';
+import ProgramScreen from './screens/ProgramScreen';
 import ExerciseGuideSheet from './components/ExerciseGuideSheet';
-import StatsChart from './components/StatsChart';
+import StatsScreen from './screens/StatsScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import LogScreen from './screens/LogScreen';
+import TrainScreen from './screens/TrainScreen';
 import Toast from './components/Toast';
-import WeightInput from './components/WeightInput';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
 import { createChime } from './audio/chime';
@@ -613,294 +612,37 @@ const App = () => {
 
       <main className="flex-1 min-h-0 px-4 py-4 overflow-y-auto overscroll-contain">
         {activeTab === 'workout' && (
-          <div className="space-y-4">
-            {!isWorkoutActive ? (
-              <div>
-                {(() => {
-                  const prog = getProgram(preset);
-                  const isMadcow = prog.ramped;
-                  const day = getCurrentDay(prog.id);
-                  const programState = { program, weights, mcTop, mcInterval, mcPress };
-                  const liftIds = prog.liftIds(day, programState);
-                  const dayExercises = prog.dayExercises(day, programState);
-                  return (
-                    <>
-                      <div className="mb-4">
-                        <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-1">{isMadcow ? t('workout.madcowKicker', { week: mcWeek }) : t('workout.standardKicker')}</p>
-                        <div className="flex items-center gap-[10px]">
-                          <h2 className="text-hero font-medium leading-tight">{t(`workout.type${day}`)}</h2>
-                          <button
-                            onClick={() => setWorkoutPicker(true)}
-                            aria-label={t('workout.chooseWorkoutAria')}
-                            className={`w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 border-ink/18 text-ink`}
-                          ><CaretDown size={16} /></button>
-                        </div>
-                        <p className={`text-body mt-1 text-ink/45`}>
-                          {isMadcow
-                            ? t('workout.madcowSubtitle', { mood: moodLabel(day), lifts: liftIds.map(id => t('exercises.' + id)).join(' · ') })
-                            : liftIds.map(id => t('exercises.' + id)).join(' · ')}
-                        </p>
-                      </div>
-                      <div className="mb-8">{dayExercises.map((ex, i) => {
-                        const liftId = liftIds[i];
-                        const exName = t('exercises.' + liftId);
-                        const isBarSetupOpen = !!expandedBarSetup[liftId];
-                        const topWeight = topWeightOf(ex);
-                        return (
-                        <div key={liftId} className={`py-[15px] rule-fade`}>
-                          <div className={`flex justify-between ${isMadcow ? 'items-start' : 'items-center'}`}>
-                            <button
-                              onClick={() => setExpandedBarSetup(prev => ({ ...prev, [liftId]: !prev[liftId] }))}
-                              aria-expanded={isBarSetupOpen}
-                              className="flex flex-col items-start min-h-[44px] text-left flex-1 min-w-0 pr-3"
-                            >
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <p className="text-[16px] font-medium truncate">{exName}</p>
-                                <CaretDown size={12} weight="bold" className={`shrink-0 opacity-35 transition-transform ${isBarSetupOpen ? 'rotate-180' : ''}`} />
-                              </div>
-                              <p className={`text-[12.5px] text-ink/45`}>
-                                {isMadcow ? (day === 'C' ? t('workout.dayCMeta') : t('workout.rampSetsMeta', { sets: ex.sets, from: Math.min(...ex.setWeights), to: topWeight })) : `${ex.sets} × ${ex.reps}`}
-                              </p>
-                            </button>
-                            <WeightInput
-                              value={isMadcow ? mcTop[liftId] : weights[liftId]}
-                              increment={ex.increment}
-                              min={isMadcow ? (INITIAL_WEIGHTS[liftId] ?? 20) : 20}
-                              onChange={(next) => isMadcow ? updateMcTop(liftId, next) : handleUpdateIdleWeight(liftId, next)}
-                              label={exName}
-                              variant="prominent"
-                              topSet={isMadcow}
-                            />
-                          </div>
-                          {isBarSetupOpen && (
-                            <div className={`mt-3 rounded-[9px] p-3.5 bg-surface/70`}>
-                              <BarSetupDiagram weight={topWeight} />
-                              <button
-                                onClick={() => setGuideLift(liftId)}
-                                aria-label={t('technique.openAria', { exercise: exName })}
-                                className="flex items-center gap-1 min-h-9 mt-3 text-[12.5px] font-medium text-accent-300"
-                              ><Info size={13} /> {t('technique.open')}</button>
-                            </div>
-                          )}
-                        </div>
-                        );
-                      })}</div>
-                    </>
-                  );
-                })()}
-                <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
-                <p className={`text-meta text-center mt-3 text-ink/38`}>{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex justify-center mb-2"><h2 className={`text-kicker font-semibold uppercase tracking-[0.14em] text-ink/45`}>{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
-                {(() => {
-                  const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
-                  return currentWorkout?.exercises.map((ex, exIdx) => (
-                    <ExerciseCard
-                      key={ex.id}
-                      ex={ex}
-                      exIdx={exIdx}
-                      onToggleSet={handleToggleSet}
-                      onOpenRepPicker={handleOpenRepPicker}
-                      showHint={exIdx === 0 && !anySetLogged}
-                      onWeightChange={(next) => handleUpdateActiveWeight(exIdx, next)}
-                      topSetValue={mcTop[ex.id]}
-                      topSetMin={INITIAL_WEIGHTS[ex.id] ?? 20}
-                      onTopSetChange={(next) => updateMcTop(ex.id, next)}
-                      onOpenGuide={() => setGuideLift(ex.id)}
-                    />
-                  ));
-                })()}
-                <div className="pt-4 flex flex-col items-center">
-                  {(() => {
-                    const allDone = currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null));
-                    return (
-                      <>
-                        <button onClick={finishWorkout} disabled={!allDone} className={`w-full h-[52px] rounded-lg border font-medium text-[15.5px] ${allDone ? 'border-accent text-accent active:scale-[0.98]' : ('border-ink/12 text-ink/30')}`}>{t('workout.finishWorkout')}</button>
-                        {!allDone && <p className={`text-meta text-center mt-3 text-ink/45`}>{t('workout.completeAllSets')}</p>}
-                      </>
-                    );
-                  })()}
-                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 w-full min-h-[44px] flex items-center justify-center text-card text-ink/45`}>{t('workout.discardWorkout')}</button>
-                </div>
-              </div>
-            )}
-          </div>
+          <TrainScreen
+            isWorkoutActive={isWorkoutActive} preset={preset} getCurrentDay={getCurrentDay}
+            program={program} weights={weights} mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress} mcWeek={mcWeek}
+            moodLabel={moodLabel} expandedBarSetup={expandedBarSetup} setExpandedBarSetup={setExpandedBarSetup}
+            setWorkoutPicker={setWorkoutPicker} updateMcTop={updateMcTop} handleUpdateIdleWeight={handleUpdateIdleWeight}
+            setGuideLift={setGuideLift} startWorkout={startWorkout} trainedToday={trainedToday} workoutStats={workoutStats}
+            currentWorkout={currentWorkout} handleToggleSet={handleToggleSet} handleOpenRepPicker={handleOpenRepPicker}
+            handleUpdateActiveWeight={handleUpdateActiveWeight} finishWorkout={finishWorkout} setShowCancelModal={setShowCancelModal}
+          />
         )}
 
-        {activeTab === 'history' && (() => {
-          const mutedClass = 'text-ink/45';
-          const renderEntry = (s, key, onClick) => (
-            <button key={key} onClick={onClick} className={`w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/8`}>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent">{t(getProgram(s.preset).nameKey)}</span>
-                <span className={`text-body ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
-              </div>
-              <p className="text-card font-semibold mb-3">{t(`workout.type${s.type}`)}</p>
-              <div className="space-y-2">{s.exercises.map(ex => (
-                <div key={ex.id} className="flex justify-between text-card items-center">
-                  <span className={`text-meta uppercase ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="tabular-nums">{ex.weight}kg</span>
-                    <div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (
-                      <div key={ri} className={r === targetReps(ex, ri) ? 'w-1.5 h-1.5 rounded-full bg-accent' : `w-1.5 h-1.5 rounded-full border border-ink/30`} />
-                    ))}</div>
-                  </div>
-                </div>
-              ))}</div>
-            </button>
-          );
-          const stats = getWorkoutStats(history);
-          return (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-title font-medium">{t('log.title')}</h2>
-              <button
-                onClick={() => {
-                  // Defaults to whatever program/day you're actually on -- the modal lets
-                  // you pick a different program and day before saving.
-                  const prog = getProgram(preset);
-                  const day = getCurrentDay(prog.id);
-                  const exercises = prog.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
-                    .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
-                  setEditingEntry({ index: -1, session: { date: new Date().toISOString(), type: day, preset: prog.id, exercises } });
-                }}
-                aria-label="Add workout"
-                className={`w-10 h-10 rounded-lg border flex items-center justify-center active:scale-90 transition-transform border-ink/18 text-ink`}
-              ><Plus size={18} /></button>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap mb-4">
-              <div className="flex gap-1">
-                {[0, 1, 2].map(i => (
-                  <div key={i} className={i < stats.thisWeek ? 'w-2 h-2 rounded-full bg-accent' : `w-2 h-2 rounded-full border border-ink/30`} />
-                ))}
-              </div>
-              <span className={`text-body ${mutedClass}`}>{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</span>
-              <span className={mutedClass}>·</span>
-              <span className={`text-body ${mutedClass}`}>{t('header.streak', { count: stats.streak })}</span>
-              <span className={mutedClass}>·</span>
-              <span className={`text-body ${mutedClass}`}>{stats.total} {t('log.total')}</span>
-            </div>
+        {activeTab === 'history' && (
+          <LogScreen
+            history={history} preset={preset} program={program} weights={weights}
+            mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress}
+            getCurrentDay={getCurrentDay} setEditingEntry={setEditingEntry}
+            logGrouping={logGrouping} setLogGrouping={setLogGrouping}
+            expandedGroups={expandedGroups} setExpandedGroups={setExpandedGroups}
+          />
+        )}
 
-            {history.length > 0 && (
-              <div className={`flex rounded-lg border overflow-hidden mb-2 border-ink/10`}>
-                {[{ label: t('log.all'), val: 'all' }, { label: t('log.week'), val: 'week' }, { label: t('log.month'), val: 'month' }, { label: t('log.year'), val: 'year' }].map((opt, i) => (
-                  <button
-                    key={opt.val}
-                    onClick={() => { setLogGrouping(opt.val); if (opt.val !== 'all') { const groups = groupHistory(history, opt.val, 0); setExpandedGroups(groups.length > 0 ? { [groups[0].key]: true } : {}); } else { setExpandedGroups({}); } }}
-                    className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? ('border-l border-ink/10') : ''} ${logGrouping === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
-                  >{opt.label}</button>
-                ))}
-              </div>
-            )}
-
-            {history.length === 0 ? (
-              <p className={`py-20 text-center ${mutedClass}`}>{t('log.noHistory')}</p>
-            ) : logGrouping === 'all' ? (
-              history.map((s, i) => renderEntry(s, i, () => setEditingEntry({ index: i, session: JSON.parse(JSON.stringify(s)) })))
-            ) : (
-              groupHistory(history, logGrouping, 0).map((group) => (
-                <div key={group.key}>
-                  <button
-                    onClick={() => setExpandedGroups(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
-                    aria-label={`Toggle ${group.key}`}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-[10px] border transition-all active:scale-[0.99] bg-surface border-ink/8`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {expandedGroups[group.key] ? <CaretDown size={18} className={mutedClass} /> : <CaretRight size={18} className={mutedClass} />}
-                      <span className="text-card font-medium">{group.key}</span>
-                    </div>
-                    <span className={`text-body px-2.5 py-1 rounded-lg bg-surface-deep text-ink/60`}>{group.entries.length}</span>
-                  </button>
-                  {expandedGroups[group.key] && (
-                    <div className="space-y-3 mt-3 ml-2">
-                      {group.entries.map(({ session: s, originalIndex }) => renderEntry(s, originalIndex, () => setEditingEntry({ index: originalIndex, session: JSON.parse(JSON.stringify(s)) })))}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-          );
-        })()}
-
-        {activeTab === 'progress' && (() => {
-          const mutedClass = 'text-ink/45';
-          const cardClass = `w-full p-4 rounded-[10px] border flex justify-between items-center active:scale-[0.98] transition-transform bg-surface border-ink/8`;
-          const trendIconFor = (trend) => trend === 'up' ? { Icon: TrendUp, className: 'text-accent' } : trend === 'down' ? { Icon: TrendDown, className: mutedClass } : { Icon: ArrowRight, className: 'text-ink/40' };
-          return (
-          <div className="space-y-6">
-            {history.length === 0 ? (
-              <div className="py-20 text-center px-10">
-                <h2 className="text-lg font-semibold mb-2">{t('stats.noStats')}</h2>
-                <p className={`text-card leading-relaxed ${mutedClass}`}>{t('stats.noStatsBody')}</p>
-              </div>
-            ) : statsView ? (
-              <StatsChart exerciseId={statsView} history={history} onBack={() => setStatsView(null)} weights={weights} best1RMs={best1RMs} />
-            ) : (
-              <>
-                <h2 className="text-title font-medium mb-4">{t('stats.title')}</h2>
-                {(() => {
-                  const big3Trend = getBig3Trend(history);
-                  const { Icon: TrendIcon, className: trendClass } = trendIconFor(big3Trend);
-                  return (
-                    <button onClick={() => setStatsView('big3')} className={cardClass}>
-                      <div className="text-left">
-                        <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('stats.big3Total')}</p>
-                        <p className="text-title font-medium tabular-nums">{big3Total}kg</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {big3Trend && <TrendIcon size={18} className={trendClass} />}
-                        <CaretRight size={18} className={mutedClass} />
-                      </div>
-                    </button>
-                  );
-                })()}
-                <div className="grid gap-3">{(() => {
-                  const activeIds = programAllLiftIds(preset, { program, weights, mcTop, mcInterval, mcPress });
-                  // Lifts trained under the other program stay visible here too, instead of
-                  // vanishing from Stats the moment you switch programs.
-                  const extraIds = [...EXPECTED_WEIGHT_KEYS, 'incline'].filter(id =>
-                    !activeIds.includes(id) && history.some(s => s.exercises?.some(e => e.id === id))
-                  );
-                  const otherProgramName = t(getProgram(PROGRAM_IDS.find(id => id !== normalizePreset(preset))).nameKey);
-                  return [...activeIds, ...extraIds].map(id => {
-                    const trend = getExerciseTrend(history, id);
-                    const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
-                    const hasData = history.some(s => s.exercises?.some(e => e.id === id));
-                    const isExtra = extraIds.includes(id);
-                    return (
-                      <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
-                        <div className="min-w-0 pr-2 text-left">
-                          <p className="text-card font-medium truncate">{t('exercises.' + id)}</p>
-                          {hasData ? (
-                            <p className={`text-meta uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
-                          ) : (
-                            <p className={`text-meta leading-snug mt-1 ${mutedClass}`}>{t('stats.noSessionsForLift')}</p>
-                          )}
-                          {isExtra && (
-                            <p className={`text-tab uppercase tracking-wide mt-0.5 ${mutedClass}`}>{t('stats.fromProgram', { program: otherProgramName })}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {trend && <TrendIcon size={18} className={trendClass} />}
-                          <span className="text-accent-300 tabular-nums">{weights[id]}kg</span>
-                          <CaretRight size={18} className={mutedClass} />
-                        </div>
-                      </button>
-                    );
-                  });
-                })()}
-                </div>
-              </>
-            )}
-          </div>
-          );
-        })()}
+        {activeTab === 'progress' && (
+          <StatsScreen
+            history={history} statsView={statsView} setStatsView={setStatsView}
+            weights={weights} best1RMs={best1RMs} big3Total={big3Total}
+            preset={preset} program={program} mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress}
+          />
+        )}
 
         {activeTab === 'program' && (
-          <ProgramTab
+          <ProgramScreen
             isWorkoutActive={isWorkoutActive} preset={preset}
             program={program} onChangeProgram={setProgram} weights={weights} history={history}
             mcTop={mcTop} mcWeek={mcWeek} mcInterval={mcInterval} mcPress={mcPress}
@@ -912,134 +654,19 @@ const App = () => {
           />
         )}
 
-        {activeTab === 'settings' && (() => {
-          const mutedClass = 'text-ink/45';
-          const cardClass = `p-4 rounded-[10px] border bg-surface border-ink/8`;
-          const innerRowClass = 'rule-fade';
-          const Switch = ({ checked, onChange, ariaLabel }) => (
-            <button
-              onClick={onChange}
-              role="switch"
-              aria-checked={checked}
-              aria-label={ariaLabel}
-              className={`w-[46px] h-[26px] rounded-full border relative shrink-0 transition-colors ${checked ? 'border-accent bg-accent-900' : ('border-ink/18')}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full transition-transform ${checked ? `translate-x-[21px] bg-accent` : `translate-x-0 bg-ink/45`}`} />
-            </button>
-          );
-          const Segmented = ({ options, value, onChange }) => (
-            <div className={`flex rounded-lg border overflow-hidden border-ink/10`}>
-              {options.map((opt, i) => (
-                <button
-                  key={opt.val}
-                  onClick={() => onChange(opt.val)}
-                  className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? ('border-l border-ink/10') : ''} ${value === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
-                >{opt.label}</button>
-              ))}
-            </div>
-          );
-          return (
-          <div className="space-y-6">
-            <h2 className="text-title font-medium mb-6">{t('options.title')}</h2>
-            <div className={cardClass}>
-              <div className="mb-4">
-                <p className="text-card font-semibold">{t('options.restInterval')}</p>
-                <p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
-              </div>
-              <Segmented
-                options={[{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }]}
-                value={preferredRest}
-                onChange={setPreferredRest}
-              />
-            </div>
-
-            <div className={cardClass}>
-              <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
-                <div><p className="text-card font-semibold">{t('options.soundAlert')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
-                <Switch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} ariaLabel="Sound alert" />
-              </div>
-              <div className="flex items-center justify-between">
-                <div><p className="text-card font-semibold">{t('options.vibration')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>
-                <Switch checked={vibrationEnabled} onChange={() => setVibrationEnabled(!vibrationEnabled)} ariaLabel="Vibration" />
-              </div>
-            </div>
-
-            <div className={cardClass}>
-              <div className="flex items-center justify-between">
-                <div><p className="text-card font-semibold">{t('options.darkMode')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.darkModeDesc')}</p></div>
-                <Switch checked={isDark} onChange={() => setIsDark(!isDark)} ariaLabel="Dark mode" />
-              </div>
-            </div>
-
-            {/* Backup & Sync */}
-            <div className={cardClass}>
-              <div className={`pb-4 mb-4 ${innerRowClass}`}>
-                <p className="text-card font-semibold">{t('options.backupSync')}</p>
-                <p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.backupSyncDesc')}</p>
-              </div>
-
-              {/* Local Backup toggle */}
-              <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
-                <div><p className="text-body font-medium">{t('options.localBackup')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.localBackupDesc')}</p></div>
-                <Switch checked={localBackup} onChange={() => setLocalBackup(!localBackup)} ariaLabel="Local backup" />
-              </div>
-
-              {/* Google Drive section */}
-              {driveConfigured && (
-                <div className={`pb-4 mb-4 ${innerRowClass}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div><p className="text-body font-medium">{t('options.googleDrive')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.googleDriveDesc')}</p></div>
-                    {gdrive.isConnected ? (
-                      <span className={`text-meta uppercase px-2.5 py-1.5 rounded-lg text-accent-300 bg-accent-900`}>{t('options.connectedToDrive')}</span>
-                    ) : (
-                      <button onClick={handleConnect} className={`text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 border-ink/18 text-ink`}>{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
-                    )}
-                  </div>
-                  {(gdrive.isConnected || gdrive.hasEverConnected) && (
-                    <div className="mt-3 space-y-2">
-                      <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.savesAfterWorkout')}</p>
-                      <div className="flex items-center justify-between">
-                        {gdrive.saveFailed ? (
-                          <button onClick={handleDriveSave} className={`text-meta active:scale-95 ${mutedClass}`}>{t('options.saveFailed')}</button>
-                        ) : gdrive.lastSavedAt ? (
-                          <p className="text-meta text-accent">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
-                        ) : <span />}
-                        <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 border-ink/18 text-ink`}>{t('options.syncNow')}</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Backup & Restore buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform">
-                  <DownloadSimple size={20} /> {t('options.backupToDevice')}
-                </button>
-                <button onClick={() => fileInputRef.current?.click()} className={`py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/18 text-ink`}>
-                  <UploadSimple size={20} /> {t('options.restore')}
-                </button>
-              </div>
-              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-3.5 rounded-lg border flex items-center justify-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/18 text-ink`}>
-                <FileCsv size={20} /> {t('options.importStronglifts')}
-              </button>
-            </div>
-
-            <div className={cardClass}>
-              <div className="flex items-center justify-between">
-                <div><p className="text-card font-semibold">{t('options.language')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
-                <div className="w-24">
-                  <Segmented
-                    options={[{ label: 'EN', val: 'en' }, { label: 'FR', val: 'fr' }]}
-                    value={i18n.language?.startsWith('fr') ? 'fr' : 'en'}
-                    onChange={(code) => i18n.changeLanguage(code)}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          );
-        })()}
+        {activeTab === 'settings' && (
+          <SettingsScreen
+            preferredRest={preferredRest} setPreferredRest={setPreferredRest}
+            soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled}
+            vibrationEnabled={vibrationEnabled} setVibrationEnabled={setVibrationEnabled}
+            isDark={isDark} setIsDark={setIsDark}
+            localBackup={localBackup} setLocalBackup={setLocalBackup}
+            driveConfigured={driveConfigured} gdrive={gdrive}
+            handleConnect={handleConnect} handleDriveSave={handleDriveSave}
+            formatLastSaved={formatLastSaved} exportData={exportData}
+            fileInputRef={fileInputRef} csvInputRef={csvInputRef}
+          />
+        )}
       </main>
 
       {liveWorkoutVisible && (() => {

@@ -4,8 +4,9 @@ import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '
 import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
 import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
-import ProgramEditor from './ProgramEditor';
-import WeightInput from './WeightInput';
+import ProgramEditor from '../components/ProgramEditor';
+import WeightInput from '../components/WeightInput';
+import Segmented from '../components/Segmented';
 
 const Kicker = ({ children }) => (
   <div className="flex items-center gap-3">
@@ -21,21 +22,6 @@ const Badge = ({ children }) => (
 const Chip = ({ children }) => (
   <span className={`text-tab px-2.5 py-1 rounded-lg border border-ink/18 text-ink/60`}>{children}</span>
 );
-
-const Segmented = ({ options, value, onChange }) => {
-  const mutedClass = 'text-ink/45';
-  return (
-    <div className={`flex rounded-lg border overflow-hidden border-ink/10`}>
-      {options.map((opt, i) => (
-        <button
-          key={opt.val}
-          onClick={() => onChange(opt.val)}
-          className={`flex-1 py-3 text-[13px] font-medium transition-all ${i > 0 ? ('border-l border-ink/10') : ''} ${value === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
-        >{opt.label}</button>
-      ))}
-    </div>
-  );
-};
 
 // A read-only readout, not a control: thin flat bars, height proportional to
 // weight, role (top / back-off / plain) carried by the border only -- never by
@@ -74,7 +60,7 @@ const RampBars = ({ ex, day }) => {
   );
 };
 
-const ProgramTab = ({
+const ProgramScreen = ({
   isWorkoutActive, preset, program, onChangeProgram, weights, history,
   mcTop, mcWeek, mcInterval, mcPress, onUpdateMcTop, onChangeMcInterval, onChangeMcPress,
   onRecalculate, currentWorkoutType, mcNextDay, programSheet, setProgramSheet, onSwitchProgram,
@@ -163,7 +149,7 @@ const ProgramTab = ({
               </p>
             </div>
 
-            <Segmented value={selectedDay} onChange={setSelectedDay} options={prog.days.map(d => ({ val: d, label: t(`workout.type${d}`) }))} />
+            <Segmented variant="medium" value={selectedDay} onChange={setSelectedDay} options={prog.days.map(d => ({ val: d, label: t(`workout.type${d}`) }))} />
 
             <div className={cardClass}>
               <div className="flex justify-between items-center mb-3 gap-3">
@@ -221,7 +207,7 @@ const ProgramTab = ({
         const volume = computeProjectedVolume(exercises).toLocaleString();
         return (
           <>
-            <Segmented value={selectedWorkout} onChange={setSelectedWorkout} options={prog.days.map(w => ({ val: w, label: t(`workout.type${w}`) }))} />
+            <Segmented variant="medium" value={selectedWorkout} onChange={setSelectedWorkout} options={prog.days.map(w => ({ val: w, label: t(`workout.type${w}`) }))} />
             <div className={cardClass}>
               <div className="flex justify-between items-center mb-3 gap-3">
                 <div className="flex items-center gap-2 min-w-0">
@@ -285,6 +271,7 @@ const ProgramTab = ({
             <p className="font-semibold text-card mb-1">{t('program.madcow.secondPress')}</p>
             <p className={`text-[13px] leading-relaxed mb-4 ${mutedClass}`}>{t('program.madcow.secondPressNote')}</p>
             <Segmented
+              variant="medium"
               value={mcPress}
               onChange={onChangeMcPress}
               options={MADCOW_PRESS_OPTIONS.map(id => ({ val: id, label: t('exercises.' + id) }))}
@@ -321,6 +308,7 @@ const ProgramTab = ({
             <p className="font-semibold text-card mb-1">{t('program.madcow.setInterval')}</p>
             <p className={`text-[13px] leading-relaxed mb-4 ${mutedClass}`}>{t('program.madcow.setIntervalNote')}</p>
             <Segmented
+              variant="medium"
               value={mcInterval}
               onChange={onChangeMcInterval}
               options={MADCOW_INTERVAL_OPTIONS.map(v => ({ val: v, label: `${v}%` }))}
@@ -425,4 +413,4 @@ const ProgramTab = ({
   );
 };
 
-export default ProgramTab;
+export default ProgramScreen;

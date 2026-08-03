@@ -4,8 +4,8 @@ import { Plus, Minus } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS } from '../constants';
 import StepperButton from './StepperButton';
 
-// The per-exercise sets/reps customiser, embedded in ProgramTab's "Customise sets
-// and reps" disclosure. Standard-only -- Madcow derives everything from top sets.
+// The per-exercise sets/reps customiser, embedded in the Program screen's "Customise
+// sets and reps" disclosure. Standard-only -- Madcow derives everything from top sets.
 const ProgramEditor = ({ program, onChange }) => {
   const { t } = useTranslation();
   const mutedClass = 'text-ink/45';
