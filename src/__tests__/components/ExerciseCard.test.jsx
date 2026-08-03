@@ -265,4 +265,12 @@ describe('ExerciseCard', () => {
     await user.click(screen.getByText('Warm-up'));
     expect(screen.getByText('22.5 kg × 3')).toBeInTheDocument();
   });
+
+  it('calls onOpenGuide when the exercise name info button is tapped', async () => {
+    const onOpenGuide = vi.fn();
+    const user = userEvent.setup();
+    render(<ExerciseCard {...defaultProps} onOpenGuide={onOpenGuide} />);
+    await user.click(screen.getByLabelText('How to perform Back Squat'));
+    expect(onOpenGuide).toHaveBeenCalledTimes(1);
+  });
 });

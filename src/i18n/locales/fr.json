@@ -156,9 +156,14 @@
       "incrementFractional": "+{{value}} kg par semaine · plaques fractionnées",
       "setInterval": "Intervalle des séries",
       "setIntervalNote": "Écart en pourcentage entre les séries en rampe. Valeur par défaut : 12.5%."
-    },
-    "howTo": "Comment faire l'exercice",
-    "howToSteps": {
+    }
+  },
+  "technique": {
+    "open": "Comment faire l'exercice",
+    "hint": "Touchez un exercice pour voir comment le réaliser.",
+    "openAria": "Comment faire {{exercise}}",
+    "close": "Fermer",
+    "steps": {
       "squat": [
         "Placez la barre sur le haut du dos (trapèzes) et décrochez-la du rack.",
         "Reculez et placez vos pieds à la largeur des épaules, pointes ouvertes à 30°.",

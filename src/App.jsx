@@ -5,7 +5,7 @@ import {
   Question, TrendDown, Moon,
   Trash, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown,
-  Cloud, SlidersHorizontal, ChartLineUp
+  Cloud, SlidersHorizontal, ChartLineUp, Info
 } from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
@@ -24,6 +24,7 @@ import ExerciseCard from './components/ExerciseCard';
 import BarSetupDiagram from './components/BarSetupDiagram';
 import RepPicker from './components/RepPicker';
 import ProgramTab from './components/ProgramTab';
+import ExerciseGuideSheet from './components/ExerciseGuideSheet';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
 import WeightInput from './components/WeightInput';
@@ -79,6 +80,7 @@ const App = () => {
   const [repPicker, setRepPicker] = useState(null);
   const [programSheet, setProgramSheet] = useState(null); // { step: 'pick' | 'confirm', target }
   const [workoutPicker, setWorkoutPicker] = useState(false);
+  const [guideLift, setGuideLift] = useState(null);
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -824,6 +826,11 @@ const App = () => {
                           {isBarSetupOpen && (
                             <div className={`mt-3 rounded-[9px] p-3.5 ${isDark ? 'bg-surface/70' : 'bg-surface-lt/70'}`}>
                               <BarSetupDiagram weight={topWeight} isDark={isDark} />
+                              <button
+                                onClick={() => setGuideLift(liftId)}
+                                aria-label={t('technique.openAria', { exercise: exName })}
+                                className="flex items-center gap-1 min-h-9 mt-3 text-[12.5px] font-medium text-accent-300"
+                              ><Info size={13} /> {t('technique.open')}</button>
                             </div>
                           )}
                         </div>
@@ -853,6 +860,7 @@ const App = () => {
                       topSetValue={mcTop[ex.id]}
                       topSetMin={INITIAL_WEIGHTS[ex.id] ?? 20}
                       onTopSetChange={(next) => updateMcTop(ex.id, next)}
+                      onOpenGuide={() => setGuideLift(ex.id)}
                     />
                   ));
                 })()}
@@ -1052,6 +1060,7 @@ const App = () => {
             onRecalculate={() => setMcInterval(MADCOW_DEFAULT_INTERVAL)}
             currentWorkoutType={currentWorkoutType} mcNextDay={mcNextDay}
             programSheet={programSheet} setProgramSheet={setProgramSheet} onSwitchProgram={switchProgram}
+            onOpenGuide={setGuideLift}
           />
         )}
 
@@ -1713,6 +1722,10 @@ const App = () => {
             <button autoFocus onClick={() => setShowHelp(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('help.gotIt')}</button>
           </div>
         </div>
+      )}
+
+      {guideLift && (
+        <ExerciseGuideSheet liftId={guideLift} isDark={isDark} onClose={() => setGuideLift(null)} />
       )}
 
       {pendingDriveRestore && (

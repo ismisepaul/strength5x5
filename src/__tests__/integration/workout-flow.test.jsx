@@ -59,6 +59,29 @@ describe('Workout Flow', () => {
     expect(screen.getByDisplayValue('62.5')).toBeInTheDocument();
   });
 
+  it('opens the exercise guide from the idle screen bar-setup panel', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 1,
+      weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+      history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
+      nextType: 'A',
+      isDark: true,
+      autoSave: false,
+      preferredRest: 90,
+      soundEnabled: false,
+      vibrationEnabled: false,
+    }));
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByLabelText('How to perform Back Squat'));
+
+    const dialog = screen.getByRole('dialog', { name: 'How to perform Back Squat' });
+    expect(within(dialog).getByText('Place bar on upper back (traps) and unrack.')).toBeInTheDocument();
+  });
+
   it('floors idle-screen weight adjustments at the empty 20kg bar', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,

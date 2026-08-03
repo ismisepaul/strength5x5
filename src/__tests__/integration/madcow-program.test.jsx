@@ -114,6 +114,21 @@ describe('Switching to Madcow', () => {
   });
 });
 
+describe('Exercise guide under Madcow', () => {
+  it('reaches Incline Bench technique from Workout B, unlike the old Customise-only flow', async () => {
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+    await user.click(screen.getByText('Workout B'));
+    await user.click(screen.getByRole('button', { name: 'How to perform Incline Bench' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'How to perform Incline Bench' });
+    expect(within(dialog).getByText('Set bench to 30° angle and lie down with eyes under bar.')).toBeInTheDocument();
+  });
+});
+
 describe('Stats under Madcow', () => {
   it('lists Incline Bench instead of Overhead Press, and Standard exercises when active', async () => {
     seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });

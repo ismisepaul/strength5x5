@@ -156,9 +156,14 @@
       "incrementFractional": "+{{value}} kg a week · fractional plates",
       "setInterval": "Set interval",
       "setIntervalNote": "Percentage step between ramped sets. Default is 12.5%."
-    },
-    "howTo": "How to perform",
-    "howToSteps": {
+    }
+  },
+  "technique": {
+    "open": "How to perform",
+    "hint": "Tap a lift to see how to perform it.",
+    "openAria": "How to perform {{exercise}}",
+    "close": "Close",
+    "steps": {
       "squat": [
         "Place bar on upper back (traps) and unrack.",
         "Step back and set feet shoulder-width apart, toes turned 30° out.",

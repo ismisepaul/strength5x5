@@ -100,7 +100,29 @@ describe('Program tab', () => {
     expect(benchSets).toBeInTheDocument();
   });
 
-  it('toggles the how-to-perform accordion independently per exercise', async () => {
+  it('opens the exercise guide sheet from the Program tab, keyed to the tapped lift', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+    expect(screen.queryByText('Lie on bench with eyes directly under bar.')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'How to perform Bench Press' }));
+    const benchDialog = screen.getByRole('dialog', { name: 'How to perform Bench Press' });
+    expect(within(benchDialog).getByText('Lie on bench with eyes directly under bar.')).toBeInTheDocument();
+    expect(within(benchDialog).getByText('Rack bar securely after final rep.')).toBeInTheDocument();
+
+    await user.click(within(benchDialog).getByText('Close'));
+    expect(screen.queryByRole('dialog', { name: 'How to perform Bench Press' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'How to perform Back Squat' }));
+    const squatDialog = screen.getByRole('dialog', { name: 'How to perform Back Squat' });
+    expect(within(squatDialog).getByText('Place bar on upper back (traps) and unrack.')).toBeInTheDocument();
+    expect(squatDialog.textContent).not.toContain('Lie on bench with eyes directly under bar.');
+  });
+
+  it('no longer nests a how-to-perform control inside Customise sets and reps', async () => {
     seedHistory();
     const user = userEvent.setup();
     render(<App />);
@@ -108,17 +130,8 @@ describe('Program tab', () => {
     await user.click(screen.getByLabelText('Program'));
     await openCustomise(user);
 
-    expect(benchCard().queryByText('Lie on bench with eyes directly under bar.')).not.toBeInTheDocument();
-
-    await user.click(benchCard().getByText('How to perform'));
-    expect(benchCard().getByText('Lie on bench with eyes directly under bar.')).toBeInTheDocument();
-    expect(benchCard().getByText('Rack bar securely after final rep.')).toBeInTheDocument();
-
-    const squatCard = () => within(screen.getAllByText('Back Squat').at(-1).closest('.border'));
-    expect(squatCard().queryByText('Place bar on upper back (traps) and unrack.')).not.toBeInTheDocument();
-
-    await user.click(benchCard().getByText('How to perform'));
-    expect(benchCard().queryByText('Lie on bench with eyes directly under bar.')).not.toBeInTheDocument();
+    expect(benchCard().queryByText('How to perform')).not.toBeInTheDocument();
+    expect(benchCard().getByLabelText('Decrease bench sets')).toBeInTheDocument();
   });
 
   it('resets to defaults', async () => {

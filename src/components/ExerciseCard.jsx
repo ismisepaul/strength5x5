@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CaretUp, CaretDown, ArrowBendDownRight, X } from '@phosphor-icons/react';
+import { CaretUp, CaretDown, ArrowBendDownRight, Info, X } from '@phosphor-icons/react';
 import { targetReps } from '../utils';
 import { MAX_SETS } from '../constants';
 import WeightInput from './WeightInput';
@@ -8,7 +8,7 @@ import BarSetupDiagram from './BarSetupDiagram';
 
 const LONG_PRESS_MS = 450;
 
-const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPicker, showHint, onWeightChange, topSetValue, topSetMin, onTopSetChange }) => {
+const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPicker, showHint, onWeightChange, topSetValue, topSetMin, onTopSetChange, onOpenGuide }) => {
   const { t } = useTranslation();
   const isRamped = Array.isArray(ex.setWeights);
   // A ramp's "top set" is its heaviest -- the last rung, except on a back-off day
@@ -52,7 +52,14 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
       <div className="mb-5">
         <div className={`flex justify-between ${isRamped ? 'items-start' : 'items-center'}`}>
           <div className="flex-1 min-w-0 pr-4">
-            <h3 className="font-semibold text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="font-semibold text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
+              <button
+                onClick={onOpenGuide}
+                aria-label={t('technique.openAria', { exercise: t('exercises.' + ex.id) })}
+                className={`shrink-0 w-6 h-6 flex items-center justify-center ${mutedClass}`}
+              ><Info size={15} /></button>
+            </div>
             {isRamped && (
               <p className={`text-[12.5px] tabular-nums ${mutedClass}`}>{t('workout.rampSetsMeta', { sets: ex.sets, from: bottomWeight, to: topWeight })}</p>
             )}

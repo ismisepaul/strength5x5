@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
+import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise, Info } from '@phosphor-icons/react';
 import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
 import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
@@ -77,6 +77,7 @@ const ProgramTab = ({
   isDark, isWorkoutActive, preset, program, onChangeProgram, weights, history,
   mcTop, mcWeek, mcInterval, mcPress, onUpdateMcTop, onChangeMcInterval, onChangeMcPress,
   onRecalculate, currentWorkoutType, mcNextDay, programSheet, setProgramSheet, onSwitchProgram,
+  onOpenGuide,
 }) => {
   const { t } = useTranslation();
   const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
@@ -171,11 +172,19 @@ const ProgramTab = ({
                 </div>
                 <span className={`text-[12.5px] shrink-0 ${mutedClass}`}>{t('program.madcow.kgLifted', { value: volume })}</span>
               </div>
-              <p className={`text-[13.5px] leading-relaxed mb-4 ${mutedClass}`}>{t(`program.madcow.day${selectedDay}Note`)}</p>
+              <p className={`text-[13.5px] leading-relaxed mb-1 ${mutedClass}`}>{t(`program.madcow.day${selectedDay}Note`)}</p>
+              <p className={`text-[12px] leading-relaxed mb-4 ${mutedClass}`}>{t('technique.hint')}</p>
               {dayExercises.map((ex, i) => (
                 <div key={ex.id} className={i > 0 ? `mt-4 pt-4 ${isDark ? 'rule-fade-top' : 'rule-fade-top-lt'}` : ''}>
                   <div className="flex justify-between items-center">
-                    <p className="font-semibold text-[15px]">{t('exercises.' + liftIds[i])}</p>
+                    <button
+                      onClick={() => onOpenGuide(liftIds[i])}
+                      aria-label={t('technique.openAria', { exercise: t('exercises.' + liftIds[i]) })}
+                      className="flex items-center gap-1 min-h-9 -ml-0.5"
+                    >
+                      <Info size={13} className={mutedClass} />
+                      <span className="font-semibold text-[15px]">{t('exercises.' + liftIds[i])}</span>
+                    </button>
                     <span className={`text-[12px] uppercase ${mutedClass}`}>
                       {selectedDay === 'C' ? t('program.madcow.dayCLabel') : t('program.madcow.rampLabel', { sets: ex.sets })}
                     </span>
@@ -221,7 +230,8 @@ const ProgramTab = ({
                 </div>
                 <span className={`text-[12.5px] shrink-0 ${mutedClass}`}>{t('program.standard.kgLifted', { value: volume })}</span>
               </div>
-              <p className={`text-[13.5px] leading-relaxed mb-4 ${mutedClass}`}>{t('program.standard.note')}</p>
+              <p className={`text-[13.5px] leading-relaxed mb-1 ${mutedClass}`}>{t('program.standard.note')}</p>
+              <p className={`text-[12px] leading-relaxed mb-4 ${mutedClass}`}>{t('technique.hint')}</p>
               {exercises.map((ex, i) => {
                 const target = targetReps(ex);
                 const wentUp = wentUpLastTime(history, ex.id, ex.weight);
@@ -229,7 +239,14 @@ const ProgramTab = ({
                 return (
                   <div key={ex.id} className={i > 0 ? `mt-4 pt-4 ${isDark ? 'rule-fade-top' : 'rule-fade-top-lt'}` : ''}>
                     <div className="flex justify-between items-center">
-                      <p className="font-semibold text-[15px]">{t('exercises.' + ex.id)}</p>
+                      <button
+                        onClick={() => onOpenGuide(ex.id)}
+                        aria-label={t('technique.openAria', { exercise: t('exercises.' + ex.id) })}
+                        className="flex items-center gap-1 min-h-9 -ml-0.5"
+                      >
+                        <Info size={13} className={mutedClass} />
+                        <span className="font-semibold text-[15px]">{t('exercises.' + ex.id)}</span>
+                      </button>
                       <span className={`text-[12px] uppercase ${mutedClass}`}>
                         {t('program.standard.setsRepsShort', { sets: ex.sets, reps: target })}
                         {wentUp ? ` · ${t('program.standard.wentUpLastTime')}` : ''}
