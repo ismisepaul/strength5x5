@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Barbell, ListChecks, Gear, Play, TrendUp,
-  Plus, Check, X, DownloadSimple, UploadSimple,
-  Question, TrendDown, Moon,
-  Trash, CaretRight, Timer,
+  Plus, DownloadSimple, UploadSimple,
+  Question, TrendDown,
+  CaretRight,
   FileCsv, ArrowRight, Flame, CaretDown,
-  Cloud, SlidersHorizontal, ChartLineUp, Info
+  SlidersHorizontal, ChartLineUp, Info
 } from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { calculateBest1RM, calculateDeload, deloadWeightByPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
+import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
+import { calculateBest1RM, formatDuration, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
 import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
@@ -32,6 +32,18 @@ import WeightInput from './components/WeightInput';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
 import { createChime } from './audio/chime';
+import StaleBackupModal from './components/modals/StaleBackupModal';
+import DiscardWorkoutModal from './components/modals/DiscardWorkoutModal';
+import CSVImportModal from './components/modals/CSVImportModal';
+import RestoreBackupModal from './components/modals/RestoreBackupModal';
+import HelpSheet from './components/modals/HelpSheet';
+import ResumeWorkoutModal from './components/modals/ResumeWorkoutModal';
+import FailureDeloadModal from './components/modals/FailureDeloadModal';
+import LongBreakDeloadModal from './components/modals/LongBreakDeloadModal';
+import SyncConflictModal from './components/modals/SyncConflictModal';
+import WorkoutPickerSheet from './components/modals/WorkoutPickerSheet';
+import CompletionSummaryModal from './components/modals/CompletionSummaryModal';
+import EditEntryModal from './components/modals/EditEntryModal';
 
 const LONG_BREAK_DELOAD_KEY = 'strength5x5_long_break_deload_for_date';
 
@@ -70,7 +82,6 @@ const App = () => {
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [logGrouping, setLogGrouping] = useState(saved.logGrouping ?? 'all');
   const [expandedGroups, setExpandedGroups] = useState({});
   const [expandedBarSetup, setExpandedBarSetup] = useState({});
@@ -1073,105 +1084,65 @@ const App = () => {
       </nav>
 
       {showCancelModal && (
-        <div role="dialog" aria-modal="true" aria-label="Discard workout" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-xs flex flex-col items-center p-6 rounded-modal border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-3">{t('modals.discardTitle')}</h3>
-            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.discardBody')}</p>
-            <button onClick={() => setShowCancelModal(false)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.keepLifting')}</button>
-            <button onClick={cancelWorkout} className={`w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/45`}>{t('modals.yesDiscard')}</button>
-          </div>
-        </div>
+        <DiscardWorkoutModal
+          onKeepLifting={() => setShowCancelModal(false)}
+          onDiscard={cancelWorkout}
+        />
       )}
 
-      {deloadAlert && (() => {
-        const previewWeights = calculateDeload(weights, deloadPercent);
-        return (
-        <div role="dialog" aria-modal="true" aria-label="Deload recommendation" className="fixed inset-0 z-[400] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-3">{t('modals.acceptDeload')}</h3>
-            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{deloadAlert.message}</p>
-            <div className="mb-4">
-              <p className="text-title font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
-              <p className={`text-meta text-ink/45`}>{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
-            </div>
-            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-accent" />
-            <div className="space-y-2 mb-6">
-              {EXPECTED_WEIGHT_KEYS.filter(id => weights[id] > 0).map(id => (
-                <div key={id} className={`flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep`}>
-                  <span className={`text-meta uppercase text-ink/45`}>{t('exercises.' + id)}</span>
-                  <span className="text-card tabular-nums">{weights[id]}kg <span className="text-accent mx-1">&rarr;</span> {previewWeights[id]}kg</span>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => {
-              const newW = calculateDeload(weights, deloadPercent);
-              const lastWorkoutDate = history[0]?.date;
-              if (lastWorkoutDate) {
-                setLongBreakDeloadForDate(lastWorkoutDate);
-                localStorage.setItem(LONG_BREAK_DELOAD_KEY, lastWorkoutDate);
-              }
-              setWeights(newW);
-              initializeWorkout(newW);
-              setDeloadAlert(null);
-            }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.acceptAndLift')}</button>
-            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className={`w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/45`}>{t('modals.skipDeload')}</button>
-          </div>
-        </div>
-        );
-      })()}
+      {deloadAlert && (
+        <LongBreakDeloadModal
+          deloadAlert={deloadAlert}
+          deloadPercent={deloadPercent}
+          onDeloadPercentChange={setDeloadPercent}
+          weights={weights}
+          onAccept={(newW) => {
+            const lastWorkoutDate = history[0]?.date;
+            if (lastWorkoutDate) {
+              setLongBreakDeloadForDate(lastWorkoutDate);
+              localStorage.setItem(LONG_BREAK_DELOAD_KEY, lastWorkoutDate);
+            }
+            setWeights(newW);
+            initializeWorkout(newW);
+            setDeloadAlert(null);
+          }}
+          onSkip={() => { initializeWorkout(weights); setDeloadAlert(null); }}
+        />
+      )}
 
       {showRestorePrompt && (
-        <div role="dialog" aria-modal="true" aria-label="Restore backup" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-2">{t('modals.syncHistory')}</h3>
-            <p className={`text-card leading-relaxed mb-8 text-ink/60`}>{t('modals.syncHistoryBody')}</p>
-            <div className="space-y-3">
-              <button onClick={() => fileInputRef.current?.click()} className="w-full h-12 rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 flex items-center justify-center gap-2"><UploadSimple size={18} /> {t('modals.restoreBackup')}</button>
-              {driveConfigured && (
-                <button onClick={handleConnect} className={`w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/18 text-ink`}><Cloud size={18} /> {t('modals.restoreFromDrive')}</button>
-              )}
-              <button onClick={() => csvInputRef.current?.click()} className={`w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/18 text-ink`}><FileCsv size={18} /> {t('options.importStronglifts')}</button>
-              <button onClick={() => startWorkout(true)} className={`text-card mt-4 block mx-auto text-ink/45`}>{t('modals.skipAndStart')}</button>
-            </div>
-          </div>
-        </div>
+        <RestoreBackupModal
+          driveConfigured={driveConfigured}
+          onRestoreFile={() => fileInputRef.current?.click()}
+          onConnectDrive={handleConnect}
+          onImportCSV={() => csvInputRef.current?.click()}
+          onSkip={() => startWorkout(true)}
+        />
       )}
 
       {showResumePrompt && saved.activeSession && (
-        <div role="dialog" aria-modal="true" aria-label="Resume workout" className="fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-2">{t('modals.resumeWorkout')}</h3>
-            <p className={`text-card leading-relaxed mb-1 text-ink/60`}>{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
-            <p className={`text-body mb-8 text-ink/45`}>
-              {t('modals.setsCompleted', { completed: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.filter(s => s !== null).length, 0), total: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.length, 0) })}
-            </p>
-            <button
-              onClick={() => {
-                const active = saved.activeSession;
-                setCurrentWorkout(active.session);
-                setIsWorkoutActive(true);
-                setActiveTab('workout');
-                if (active.restTimerEndTime) {
-                  const remaining = Math.ceil((active.restTimerEndTime - Date.now()) / 1000);
-                  if (remaining > 0) {
-                    timer.start(remaining);
-                  } else {
-                    timer.skip();
-                  }
-                }
-                setShowResumePrompt(false);
-              }}
-              className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6"
-            >{t('modals.resume')}</button>
-            <button
-              onClick={() => {
-                localStorage.removeItem(ACTIVE_WORKOUT_KEY);
-                setShowResumePrompt(false);
-              }}
-              className={`w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/45`}
-            >{t('modals.discard')}</button>
-          </div>
-        </div>
+        <ResumeWorkoutModal
+          activeSession={saved.activeSession}
+          onResume={() => {
+            const active = saved.activeSession;
+            setCurrentWorkout(active.session);
+            setIsWorkoutActive(true);
+            setActiveTab('workout');
+            if (active.restTimerEndTime) {
+              const remaining = Math.ceil((active.restTimerEndTime - Date.now()) / 1000);
+              if (remaining > 0) {
+                timer.start(remaining);
+              } else {
+                timer.skip();
+              }
+            }
+            setShowResumePrompt(false);
+          }}
+          onDiscard={() => {
+            localStorage.removeItem(ACTIVE_WORKOUT_KEY);
+            setShowResumePrompt(false);
+          }}
+        />
       )}
 
       {repPicker && (
@@ -1183,380 +1154,84 @@ const App = () => {
         />
       )}
 
-      {workoutPicker && (() => {
-        const prog = getProgram(preset);
-        const programState = { program, weights, mcTop, mcInterval, mcPress };
-        const currentValue = getCurrentDay(prog.id);
-        return (
-          <div role="dialog" aria-modal="true" aria-label={t('workout.todaysWorkout')} onClick={() => setWorkoutPicker(false)} className="fixed inset-0 z-[400] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-            <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
-              <h3 className="text-lg font-semibold mb-5">{t('workout.todaysWorkout')}</h3>
-              <div className="space-y-3 mb-5">
-                {prog.days.map(day => {
-                  const isCurrent = day === currentValue;
-                  const liftIds = prog.liftIds(day, programState);
-                  const dayExercises = prog.dayExercises(day, programState);
-                  const dayWeights = dayExercises.map(topWeightOf);
-                  const mood = moodLabel(day);
-                  return (
-                    <button
-                      key={day}
-                      onClick={() => { setCurrentDay(prog.id, day); setWorkoutPicker(false); }}
-                      className={`w-full flex items-center gap-3 p-3.5 rounded-[10px] border text-left active:scale-[0.99] transition-transform ${isCurrent ? 'border-accent bg-accent-900' : ('border-ink/12')}`}
-                    >
-                      <span className={`w-9 h-9 rounded-lg border flex items-center justify-center font-semibold shrink-0 ${isCurrent ? 'border-accent text-accent-300' : ('border-ink/18')}`}>{day}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="font-medium text-[14.5px]">{t(`workout.type${day}`)}</p>
-                          {mood && <span className="text-kicker uppercase tracking-wide px-2 py-0.5 rounded-lg text-accent-300 bg-accent-900">{mood}</span>}
-                        </div>
-                        <p className={`text-[12.5px] truncate text-ink/50`}>{liftIds.map(id => t('exercises.' + id)).join(' · ')}</p>
-                        <p className={`text-meta tabular-nums text-ink/45`}>{dayWeights.join(' · ')} kg</p>
-                      </div>
-                      {isCurrent && <Check size={18} className="text-accent-300 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className={`text-meta text-center mb-5 text-ink/45`}>{t('workout.scheduledNote')}</p>
-              <button onClick={() => setWorkoutPicker(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink`}>{t('modals.cancel')}</button>
-            </div>
-          </div>
-        );
-      })()}
-
-      {pendingCSVImport && (
-        <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-2">{t('modals.importData')}</h3>
-            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
-            <div className="grid grid-cols-2 gap-2 mb-6">
-              {EXPECTED_WEIGHT_KEYS.map(id => (
-                <div key={id} className={`p-3 rounded-lg text-left bg-surface-deep`}>
-                  <p className={`text-meta uppercase leading-none mb-1 text-ink/45`}>{t('exercises.' + id)}</p>
-                  <p className="text-card tabular-nums">{pendingCSVImport.weights[id]}kg</p>
-                </div>
-              ))}
-            </div>
-            <button onClick={applyCSVImport} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.import')}</button>
-            <button onClick={() => setPendingCSVImport(null)} className={`text-card active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
-          </div>
-        </div>
+      {workoutPicker && (
+        <WorkoutPickerSheet
+          preset={preset}
+          program={program}
+          weights={weights}
+          mcTop={mcTop}
+          mcInterval={mcInterval}
+          mcPress={mcPress}
+          currentDay={getCurrentDay(getProgram(preset).id)}
+          moodLabel={moodLabel}
+          onSelectDay={(day) => { setCurrentDay(getProgram(preset).id, day); setWorkoutPicker(false); }}
+          onClose={() => setWorkoutPicker(false)}
+        />
       )}
 
-      {editingEntry && (() => {
-        const isNewEntry = editingEntry.index === -1;
-        const entryProg = getProgram(editingEntry.session.preset);
-        // A logged entry always belongs to whatever program is active -- its exercises,
-        // customisation (e.g. Madcow's second-press choice) and increments all come from
-        // there, so the Log stays consistent with the Program tab. To log a session for
-        // the other program, switch to it first.
-        const rebuildEntryFor = (day) => {
-          const exercises = entryProg.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
-            .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
-          return { type: day, preset: entryProg.id, exercises };
-        };
-        const selectedDate = editingEntry.session.date.slice(0, 10);
-        const originalDate = !isNewEntry ? history[editingEntry.index]?.date.slice(0, 10) : null;
-        const dateConflict = selectedDate !== originalDate && historyDateSet.has(selectedDate);
-        const isFutureDate = selectedDate > new Date().toISOString().slice(0, 10);
-        return (
-        <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className="fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto overscroll-contain backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-md mx-auto my-6 rounded-modal p-6 border bg-surface border-ink/8`}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold">{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
-              <button onClick={() => { setEditingEntry(null); setShowDeleteConfirm(false); }} aria-label="Close edit modal" className={`w-10 h-10 rounded-lg border flex items-center justify-center border-ink/15 text-ink`}><X size={18} /></button>
-            </div>
+      {pendingCSVImport && (
+        <CSVImportModal
+          pendingCSVImport={pendingCSVImport}
+          onImport={applyCSVImport}
+          onCancel={() => setPendingCSVImport(null)}
+        />
+      )}
 
-            {isNewEntry && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <label className={`text-meta uppercase tracking-[0.12em] text-ink/45`}>{t('modals.workoutType')}</label>
-                  <span className={`text-meta text-ink/45`}>{t(entryProg.nameKey)}</span>
-                </div>
-                <div className="flex gap-2">
-                  {entryProg.days.map(wt => (
-                    <button
-                      key={wt}
-                      onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(wt) } }))}
-                      className={`flex-1 py-3 rounded-lg text-card font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : ('border-ink/18 text-ink/60')}`}
-                    >{t(`workout.type${wt}`)}</button>
-                  ))}
-                </div>
-              </div>
-            )}
+      {editingEntry && (
+        <EditEntryModal
+          editingEntry={editingEntry}
+          setEditingEntry={setEditingEntry}
+          history={history}
+          historyDateSet={historyDateSet}
+          preset={preset}
+          currentWorkoutType={currentWorkoutType}
+          weights={weights}
+          program={program}
+          mcTop={mcTop}
+          mcInterval={mcInterval}
+          mcPress={mcPress}
+          setWeights={setWeights}
+          setCurrentWorkoutType={setCurrentWorkoutType}
+          setHistory={setHistory}
+          showToast={showToast}
+          handleManualLogSave={handleManualLogSave}
+          saveToDriveQuietly={saveToDriveQuietly}
+          getAppState={getAppState}
+        />
+      )}
 
-            <div className="mb-6">
-              <label className={`text-meta uppercase tracking-[0.12em] block mb-2 text-ink/45`}>{t('modals.date')}</label>
-              <input
-                type="date"
-                value={editingEntry.session.date.slice(0, 10)}
-                max={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => {
-                  const newDate = new Date(e.target.value);
-                  newDate.setHours(12, 0, 0, 0);
-                  setEditingEntry(prev => ({ ...prev, session: { ...prev.session, date: newDate.toISOString() } }));
-                }}
-                className={`w-full p-3 rounded-lg text-card border ${dateConflict || isFutureDate ? 'border-dashed border-ink/50' : ('border-ink/18')} bg-surface-deep text-ink`}
-              />
-              {dateConflict && <p className={`text-body mt-2 text-ink/60`}>{t('modals.dateConflict')}</p>}
-              {isFutureDate && <p className={`text-body mt-2 text-ink/60`}>{t('modals.futureDate')}</p>}
-            </div>
+      {completionSummary && (
+        <CompletionSummaryModal
+          completionSummary={completionSummary}
+          onDone={() => setCompletionSummary(null)}
+        />
+      )}
 
-            <div className="space-y-3 mb-6">
-              {editingEntry.session.exercises.map((ex, exIdx) => (
-                <div key={ex.id} className={`p-4 rounded-lg border bg-surface-deep border-ink/8`}>
-                  <p className="text-body font-medium mb-3">{t('exercises.' + ex.id)}</p>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className={`text-meta uppercase text-ink/45`}>{t('modals.weightLabel')}</span>
-                    {entryProg.ramped ? (
-                      <span className="text-card tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
-                    ) : (
-                      <WeightInput
-                        value={ex.weight}
-                        increment={entryProg.increments[ex.id] ?? 2.5}
-                        min={20}
-                        onChange={(next) => setEditingEntry(prev => {
-                          const s = JSON.parse(JSON.stringify(prev.session));
-                          s.exercises[exIdx].weight = next;
-                          return { ...prev, session: s };
-                        })}
-                        label={t('exercises.' + ex.id)}
-                        variant="compact"
-                      />
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className={`text-meta uppercase text-ink/45`}>{t('modals.setsLabel')}</span>
-                    <div className="flex gap-2">
-                      {ex.setsCompleted.map((reps, setIdx) => {
-                        const target = targetReps(ex, setIdx);
-                        const stateClass = reps === null
-                          ? ('border border-ink/18 text-ink/40')
-                          : reps === target
-                            ? 'border border-accent bg-accent-900 text-accent-300'
-                            : 'border border-dashed border-ink/50 bg-neutral-tint text-ink';
-                        return (
-                          <button
-                            key={setIdx}
-                            onClick={() => setEditingEntry(prev => {
-                              const s = JSON.parse(JSON.stringify(prev.session));
-                              const cur = s.exercises[exIdx].setsCompleted[setIdx];
-                              s.exercises[exIdx].setsCompleted[setIdx] = cur === null ? target : cur === 0 ? null : cur - 1;
-                              return { ...prev, session: s };
-                            })}
-                            aria-label={`Set ${setIdx + 1}: ${reps === null ? 'not done' : reps + ' reps'}`}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center text-body font-medium active:scale-90 transition-transform ${stateClass}`}
-                          >
-                            {reps === null ? '–' : reps}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button
-              disabled={dateConflict || isFutureDate}
-              onClick={() => {
-                const unsortedHistory = isNewEntry
-                  ? [...history, editingEntry.session]
-                  : history.map((s, i) => i === editingEntry.index ? editingEntry.session : s);
-                const newHistory = [...unsortedHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
-                const savedIndex = newHistory.findIndex(s => s === editingEntry.session);
-                const isLatestEntry = savedIndex === 0;
-                // Progression only runs for a Standard entry that's both the newest session
-                // and the program you're actually on -- a Madcow entry never bumps mcTop/mcWeek
-                // here, since those advance on the weekly rollover and a manually logged (or
-                // backdated) session would otherwise double-advance them.
-                const shouldProgress = isLatestEntry && entryProg.id === 'standard' && preset === 'standard';
-
-                let nextWeights = weights;
-                let nextType = currentWorkoutType;
-
-                if (shouldProgress) {
-                  const priorHistory = newHistory.slice(1);
-                  const { nextWeights: adjustedWeights } = evaluateWorkoutOutcome(editingEntry.session, priorHistory, weights);
-                  nextWeights = adjustedWeights;
-                  nextType = editingEntry.session.type === 'A' ? 'B' : 'A';
-
-                  setWeights(adjustedWeights);
-                  setCurrentWorkoutType(nextType);
-                }
-
-                setHistory(newHistory);
-                showToast(t(isNewEntry ? 'toast.workoutAdded' : 'toast.workoutUpdated'), 'success');
-                setEditingEntry(null);
-                handleManualLogSave({ history: newHistory, weights: nextWeights, nextType });
-              }}
-              className={`w-full h-12 flex items-center justify-center rounded-lg border text-[14.5px] font-medium mb-6 ${dateConflict || isFutureDate ? ('border-ink/12 text-ink/30') : 'border-accent text-accent active:scale-95'}`}
-            >{isNewEntry ? t('modals.addWorkout') : t('modals.saveChanges')}</button>
-
-            {!isNewEntry && (
-              !showDeleteConfirm ? (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className={`w-full min-h-[44px] flex items-center justify-center gap-2 text-card active:scale-90 text-ink/45`}
-                ><Trash size={14} /> {t('modals.deleteWorkout')}</button>
-              ) : (
-                <div className={`p-4 rounded-lg border border-dashed border-ink/30`}>
-                  <p className="text-body text-center mb-3">{t('modals.deleteConfirm')}</p>
-                  <div className="flex gap-4">
-                    <button
-                      onClick={() => {
-                        const newHistory = history.filter((_, idx) => idx !== editingEntry.index);
-                        setHistory(newHistory);
-                        setEditingEntry(null);
-                        setShowDeleteConfirm(false);
-                        showToast(t('toast.workoutDeleted'), 'success');
-                        saveToDriveQuietly({ ...getAppState(), history: newHistory });
-                      }}
-                      className={`flex-1 h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink`}
-                    >{t('modals.delete')}</button>
-                    <button
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className={`flex-1 h-[46px] flex items-center justify-center text-[14px] active:scale-95 text-ink/45`}
-                    >{t('modals.cancel')}</button>
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        </div>
-        );
-      })()}
-
-      {completionSummary && (() => {
-        const totalTime = formatClock(completionSummary.workout.duration);
-        return (
-        <div role="dialog" aria-modal="true" aria-label="Workout complete" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-4">{t('completion.kicker')}</p>
-            {totalTime && (
-              <div className={`flex items-center justify-between px-4 py-2.5 rounded-lg mb-5 bg-surface-deep`}>
-                <span className={`text-meta uppercase text-ink/45`}>{t('completion.totalTime')}</span>
-                <span className="text-card tabular-nums">{totalTime}</span>
-              </div>
-            )}
-            <div className="space-y-3 mb-6">
-              {completionSummary.workout.exercises.map(ex => {
-                const passed = isExercisePassed(ex);
-                const progressed = completionSummary.progressions.includes(ex.id);
-                const nextWeight = completionSummary.nextWeights?.[ex.id];
-                const mutedColor = 'text-ink/45';
-                const setDurations = ex.setDurations ?? [];
-                const logged = setDurations.filter(d => typeof d === 'number');
-                const hasSplits = logged.length > 0;
-                const exerciseTime = hasSplits ? formatClock(logged.reduce((sum, d) => sum + d, 0)) : null;
-                return (
-                  <div key={ex.id} className={`p-3 rounded-lg border bg-surface-deep border-ink/8`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-card font-medium">{t('exercises.' + ex.id)}</span>
-                      {progressed ? (
-                        <span className="flex items-center gap-1 text-body text-accent"><TrendUp size={14} />{t('completion.progressedTo', { from: ex.weight, to: nextWeight })}</span>
-                      ) : (
-                        <span className={`flex items-center gap-1 text-body ${mutedColor}`}><ArrowRight size={14} />{t('completion.staysAt', { weight: ex.weight })}</span>
-                      )}
-                    </div>
-                    <div className="flex justify-start gap-1.5 mt-2.5">
-                      {ex.setsCompleted.map((r, i) => {
-                        const val = r ?? 0;
-                        const failed = val < targetReps(ex, i);
-                        const split = formatClock(setDurations[i]);
-                        return (
-                          <div
-                            key={i}
-                            style={{ width: `calc((100% - ${6 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
-                            className={`shrink-0 max-w-[3.5rem] rounded-lg py-1.5 bg-surface`}
-                          >
-                            <div className={`text-body leading-none ${failed && !passed ? 'text-ink' : ('text-ink/70')}`}>{val}</div>
-                            {hasSplits && <div className={`text-meta tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {exerciseTime && <p className={`text-meta tabular-nums mt-2 ${mutedColor}`}>{t('completion.exerciseTime', { time: exerciseTime })}</p>}
-                  </div>
-                );
-              })}
-            </div>
-            <button onClick={() => setCompletionSummary(null)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95">{t('completion.done')}</button>
-          </div>
-        </div>
-        );
-      })()}
-
-      {pendingFailureDeloads && (() => {
-        const previewDeloads = pendingFailureDeloads.map(d => ({
-          ...d,
-          newWeight: deloadWeightByPercent(d.currentWeight, deloadPercent, d.id),
-        }));
-        return (
-        <div role="dialog" aria-modal="true" aria-label="Failure deload" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-3">{t('modals.failureDeloadTitle')}</h3>
-            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.failureDeloadMessage')}</p>
-            <div className="mb-4">
-              <p className="text-title font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
-              <p className={`text-meta text-ink/45`}>{t('modals.deloadRecommended', { percent: 10 })}</p>
-            </div>
-            <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-accent" />
-            <div className="space-y-2 mb-6">
-              {previewDeloads.map(d => (
-                <div key={d.id} className={`flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep`}>
-                  <span className={`text-meta uppercase text-ink/45`}>{t('exercises.' + d.id)}</span>
-                  <span className="text-card tabular-nums">{d.currentWeight}kg <span className="text-accent mx-1">&rarr;</span> {d.newWeight}kg</span>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => {
-              const updatedWeights = { ...weights };
-              previewDeloads.forEach(d => { updatedWeights[d.id] = d.newWeight; });
-              setWeights(updatedWeights);
-              setPendingFailureDeloads(null);
-              initializeWorkout(updatedWeights);
-            }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.confirmDeload')}</button>
-            <button onClick={() => {
-              setPendingFailureDeloads(null);
-              initializeWorkout(weights);
-            }} className={`w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/45`}>{t('modals.skipDeload')}</button>
-          </div>
-        </div>
-        );
-      })()}
+      {pendingFailureDeloads && (
+        <FailureDeloadModal
+          pendingFailureDeloads={pendingFailureDeloads}
+          deloadPercent={deloadPercent}
+          onDeloadPercentChange={setDeloadPercent}
+          onConfirm={(previewDeloads) => {
+            const updatedWeights = { ...weights };
+            previewDeloads.forEach(d => { updatedWeights[d.id] = d.newWeight; });
+            setWeights(updatedWeights);
+            setPendingFailureDeloads(null);
+            initializeWorkout(updatedWeights);
+          }}
+          onSkip={() => {
+            setPendingFailureDeloads(null);
+            initializeWorkout(weights);
+          }}
+        />
+      )}
 
       {showHelp && (
-        <div role="dialog" aria-modal="true" aria-label="How it works" onClick={() => setShowHelp(false)} className="fixed inset-0 z-[500] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
-            <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
-            <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-5 mb-6 text-left">
-              {[
-                { Icon: Timer, title: t('help.restTitle'), body: t('help.restBody') },
-                { Icon: Moon, title: t('help.longBreaksTitle'), body: t('help.longBreaksBody') },
-                { Icon: Cloud, title: t('help.backupsTitle'), body: t('help.backupsBody') },
-              ].map(({ Icon, title, body }) => (
-                <div key={title} className="flex items-start gap-3">
-                  <div className={`w-[30px] h-[30px] rounded-lg border border-accent text-accent flex items-center justify-center shrink-0`}><Icon size={18} /></div>
-                  <div><p className="text-card font-medium">{title}</p><p className={`text-body leading-relaxed text-ink/55`}>{body}</p></div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => { setShowHelp(false); setActiveTab('program'); }}
-              className={`w-full flex items-center justify-between p-4 rounded-[10px] border mb-3 active:scale-[0.99] transition-transform bg-surface-deep border-ink/8`}
-            >
-              <span className="flex items-center gap-2 text-[14.5px] font-medium">
-                <Barbell weight="fill" size={17} className="text-accent" /> {t('help.programLink')}
-              </span>
-              <span className="flex items-center gap-1 text-body text-accent-300 shrink-0">
-                {t(getProgram(preset).nameKey)} <CaretRight size={14} />
-              </span>
-            </button>
-            <button autoFocus onClick={() => setShowHelp(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink`}>{t('help.gotIt')}</button>
-          </div>
-        </div>
+        <HelpSheet
+          preset={preset}
+          onOpenProgram={() => { setShowHelp(false); setActiveTab('program'); }}
+          onClose={() => setShowHelp(false)}
+        />
       )}
 
       {guideLift && (
@@ -1564,69 +1239,44 @@ const App = () => {
       )}
 
       {pendingDriveRestore && (
-        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
-            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
-            <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
-            <button onClick={() => setPendingDriveRestore(null)} className={`text-card active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
-          </div>
-        </div>
+        <StaleBackupModal
+          backupCount={pendingDriveRestore.backupCount}
+          backupDate={pendingDriveRestore.backupDate}
+          localCount={pendingDriveRestore.localCount}
+          lossCount={pendingDriveRestore.lossCount}
+          onRestoreAnyway={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }}
+          onCancel={() => setPendingDriveRestore(null)}
+        />
       )}
 
       {pendingLocalImport && (
-        <div role="dialog" aria-modal="true" aria-label="Older backup warning" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
-            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
-            <button onClick={() => applyLocalImport(pendingLocalImport.data)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
-            <button onClick={() => setPendingLocalImport(null)} className={`text-card active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
-          </div>
-        </div>
+        <StaleBackupModal
+          backupCount={pendingLocalImport.backupCount}
+          backupDate={pendingLocalImport.backupDate}
+          localCount={pendingLocalImport.localCount}
+          lossCount={pendingLocalImport.lossCount}
+          onRestoreAnyway={() => applyLocalImport(pendingLocalImport.data)}
+          onCancel={() => setPendingLocalImport(null)}
+        />
       )}
 
       {connectSyncPrompt && (
-        <div role="dialog" aria-modal="true" aria-label="Data conflict" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-            <h3 className="text-lg font-semibold mb-3">
-              {t('modals.dataConflictTitle')}
-            </h3>
-            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>
-              {t('modals.dataConflictBody', {
-                driveCount: connectSyncPrompt.driveCount,
-                cloudDate: connectSyncPrompt.cloudDate,
-                localCount: connectSyncPrompt.localCount,
-                localDate: connectSyncPrompt.localDate,
-              })}
-            </p>
-            <div className="space-y-3 mb-4">
-              <button
-                onClick={async () => {
-                  if (connectSyncPrompt.driveData) {
-                    applyDriveRestore(connectSyncPrompt.driveData);
-                    showToast(t('toast.restoredFromDrive'), 'success');
-                  }
-                  setConnectSyncPrompt(null);
-                }}
-                disabled={!connectSyncPrompt.driveData}
-                className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 disabled:opacity-35"
-              >
-                {t('modals.useDriveData')}
-              </button>
-              <button
-                onClick={async () => {
-                  const result = await gdrive.save(getAppState());
-                  if (result.success) showToast(t('toast.savedToDrive'), 'success');
-                  setConnectSyncPrompt(null);
-                }}
-                className={`w-full h-[46px] flex items-center justify-center rounded-lg font-medium text-[14px] active:scale-95 border border-ink/18 text-ink`}
-              >
-                {t('modals.useLocalData')}
-              </button>
-            </div>
-            <button onClick={() => setConnectSyncPrompt(null)} className={`text-card active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
-          </div>
-        </div>
+        <SyncConflictModal
+          connectSyncPrompt={connectSyncPrompt}
+          onUseDriveData={async () => {
+            if (connectSyncPrompt.driveData) {
+              applyDriveRestore(connectSyncPrompt.driveData);
+              showToast(t('toast.restoredFromDrive'), 'success');
+            }
+            setConnectSyncPrompt(null);
+          }}
+          onUseLocalData={async () => {
+            const result = await gdrive.save(getAppState());
+            if (result.success) showToast(t('toast.savedToDrive'), 'success');
+            setConnectSyncPrompt(null);
+          }}
+          onCancel={() => setConnectSyncPrompt(null)}
+        />
       )}
 
       <Toast toasts={toasts} />
