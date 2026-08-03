@@ -14,7 +14,7 @@ const PLATE_STYLES = {
   1.25: { height: 44,  bg: '#7c8090', text: '#e9e9ed' },
 };
 
-const BarSetupDiagram = ({ weight, isDark }) => {
+const BarSetupDiagram = ({ weight }) => {
   const { t } = useTranslation();
   const plates = useMemo(() => calculatePlates(weight), [weight]);
 
@@ -35,7 +35,7 @@ const BarSetupDiagram = ({ weight, isDark }) => {
         })}
         <div className="h-[11px] rounded-r-[3px] bg-neutral-tint flex items-center px-[10px] text-[12px] font-semibold tabular-nums text-ink">20</div>
       </div>
-      <p className={`text-center text-[11px] mt-3 ${isDark ? 'text-ink/40' : 'text-ink-lt/40'}`}>
+      <p className={`text-center text-[11px] mt-3 text-ink/40`}>
         {weight <= 20 ? t('warmup.emptyBarCaption') : t('warmup.perSideCaption', { total: weight })}
       </p>
     </>

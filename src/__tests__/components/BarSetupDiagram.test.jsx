@@ -14,7 +14,7 @@ describe('BarSetupDiagram', () => {
   ];
 
   it.each(cases)('renders the $label kg plate with its scoped colour, height, and label', ({ weight, label, height, bg, color }) => {
-    const { container } = render(<BarSetupDiagram weight={weight} isDark={true} />);
+    const { container } = render(<BarSetupDiagram weight={weight} />);
     const plate = Array.from(container.querySelectorAll('[style]')).find((node) => node.textContent === label);
 
     expect(plate).toBeInTheDocument();
@@ -23,7 +23,7 @@ describe('BarSetupDiagram', () => {
   });
 
   it('prints the weight on every repeated plate', () => {
-    render(<BarSetupDiagram weight={120} isDark={true} />);
+    render(<BarSetupDiagram weight={120} />);
 
     expect(screen.getAllByText('25')).toHaveLength(2);
     expect(screen.getByText('Per side · 20 kg bar · 120 total')).toBeInTheDocument();

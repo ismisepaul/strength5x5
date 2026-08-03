@@ -10,7 +10,6 @@ describe('WeightInput', () => {
     min: 20,
     onChange: vi.fn(),
     label: 'Back Squat',
-    isDark: true,
   };
 
   it('always shows the current value, with steppers immediately tappable', () => {
