@@ -143,7 +143,7 @@ describe('Deload', () => {
     await user.click(screen.getByText('Start workout'));
     await user.click(screen.getByText('Skip Deload'));
 
-    expect(screen.getByText('60kg')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument();
   });
 
   it('can accept deload with default percentage', async () => {
@@ -330,5 +330,20 @@ describe('Help modal', () => {
 
     await user.click(dialog);
     expect(screen.queryByRole('dialog', { name: 'How it works' })).not.toBeInTheDocument();
+  });
+
+  it('no longer covers Program/Progression/Stall/Deload, and links to the Program tab instead', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('How it works'));
+    const dialog = screen.getByRole('dialog', { name: 'How it works' });
+    expect(within(dialog).queryByText('Progression')).not.toBeInTheDocument();
+    expect(within(dialog).queryByText('Deload')).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getByText('Sets, reps and progression'));
+    expect(screen.queryByRole('dialog', { name: 'How it works' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Program' })).toBeInTheDocument();
+    expect(screen.getByText('Standard 5×5')).toBeInTheDocument();
   });
 });

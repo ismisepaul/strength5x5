@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS } from './constants';
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL } from './constants';
 
 export function migrate(data, fromVersion) {
   let current = { ...data };
@@ -34,15 +34,287 @@ export function getProgramExercises(type, program) {
   }));
 }
 
+// Total projected kg for a preview of an exercise list: per-set weight x reps when a
+// ramp (setWeights/setReps) is present, else the Standard uniform weight x reps x sets.
+export function computeProjectedVolume(exercises) {
+  return Math.round(exercises.reduce((total, ex) => {
+    if (Array.isArray(ex.setWeights) && Array.isArray(ex.setReps)) {
+      return total + ex.setWeights.reduce((sum, w, i) => sum + w * (ex.setReps[i] ?? 0), 0);
+    }
+    return total + ex.weight * ex.reps * ex.sets;
+  }, 0));
+}
+
+// Did this lift's working weight increase the last time it was logged? Used for the
+// Standard Program tab's "went up last time" note.
+export function wentUpLastTime(history, exerciseId, currentWeight) {
+  for (const session of history) {
+    const ex = session.exercises?.find(e => e.id === exerciseId);
+    if (ex) return currentWeight > ex.weight;
+  }
+  return false;
+}
+
 // The rep target a given exercise entry was performed against. Read off the entry
 // itself (never the live program) so past history keeps the target it was set for.
-export function targetReps(ex) {
+// Madcow's ramp days vary the target per set (a triple, a back-off eight) via
+// `ex.setReps`; Standard-shaped exercises fall back to the old uniform `ex.reps`.
+export function targetReps(ex, setIdx) {
+  if (Array.isArray(ex?.setReps) && setIdx !== undefined) return ex.setReps[setIdx] ?? 5;
   return ex?.reps ?? 5;
 }
 
 export function isExercisePassed(ex) {
-  const target = targetReps(ex);
-  return ex.setsCompleted.every(r => r === target);
+  return ex.setsCompleted.every((r, i) => r === targetReps(ex, i));
+}
+
+export function normalizePreset(raw) {
+  return raw === 'madcow' ? 'madcow' : 'standard';
+}
+
+export function normalizeMcPress(raw) {
+  return MADCOW_PRESS_OPTIONS.includes(raw) ? raw : MADCOW_DEFAULT_PRESS;
+}
+
+export function normalizeMcInterval(raw) {
+  return MADCOW_INTERVAL_OPTIONS.includes(raw) ? raw : MADCOW_DEFAULT_INTERVAL;
+}
+
+export function normalizeMcWeek(raw) {
+  return Number.isFinite(raw) && raw >= 1 ? Math.round(raw) : 1;
+}
+
+export function normalizeMcNextDay(raw) {
+  return MADCOW_DAYS.includes(raw) ? raw : 'A';
+}
+
+// Lift ids that passed Workout A's top set this week but whose bump is deferred to the
+// Friday rollover (see evaluateMadcowOutcome) -- so anything else is dropped as junk.
+export function normalizeMcPending(raw) {
+  if (!Array.isArray(raw)) return [];
+  const valid = new Set(Object.keys(MADCOW_WEEKLY_INCREMENTS));
+  return [...new Set(raw.filter(id => typeof id === 'string' && valid.has(id)))];
+}
+
+// Mirrors every Madcow top set into `weights` too, so Stats and any Standard-shaped
+// view of "the current weight" agree with Madcow's ramp -- see madcowTopsToWeights
+// for the reverse direction (Madcow -> Standard).
+export function applyMcTopToWeights(weights, mcTop) {
+  return { ...weights, ...mcTop };
+}
+
+// ---- Madcow 5x5 programming engine ----
+// A ramped heavy/light/medium week built around one weekly top set per lift, in
+// contrast to Standard's flat per-session weight.
+
+export function roundWeight(weight, increment = 2.5, floor = 20) {
+  return Math.max(floor, Math.round(weight / increment) * increment);
+}
+
+export function seedInclineWeight(benchWeight) {
+  return roundWeight(benchWeight * 0.8, EXERCISE_INCREMENTS.incline, INITIAL_WEIGHTS.incline);
+}
+
+// "Your current weights become your five-rep max." Carries every Standard working
+// weight over 1:1 as the eventual (week-`onrampWeeks`) top set, then backs each one
+// off by (onrampWeeks - 1) weekly steps so week 1 starts lighter and week `onrampWeeks`
+// matches the lift's pre-switch best exactly.
+export function seedMadcowTops(weights, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
+  const fullTop = {
+    squat: weights.squat,
+    bench: weights.bench,
+    row: weights.row,
+    deadlift: weights.deadlift,
+    press: weights.press,
+    incline: seedInclineWeight(weights.bench),
+  };
+  const seeded = {};
+  for (const id of Object.keys(fullTop)) {
+    const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
+    const floor = INITIAL_WEIGHTS[id] ?? 20;
+    seeded[id] = roundWeight(fullTop[id] - (onrampWeeks - 1) * increment, increment, floor);
+  }
+  return seeded;
+}
+
+// Coerces/fills a persisted mcTop against a fresh seed, the same defend-on-load
+// pattern as normalizeProgram: every expected key ends up a finite number.
+export function normalizeMcTop(raw, weights) {
+  const seeded = seedMadcowTops(weights);
+  const result = {};
+  for (const id of Object.keys(seeded)) {
+    const val = raw?.[id];
+    result[id] = Number.isFinite(val) ? val : seeded[id];
+  }
+  return result;
+}
+
+// "Each lift keeps the top set it reached on Madcow as its working weight, and every
+// set goes back to the same load." Incline has no Standard slot, so it's dropped.
+export function madcowTopsToWeights(weights, mcTop, mcPress) {
+  return {
+    ...weights,
+    squat: mcTop.squat,
+    bench: mcTop.bench,
+    row: mcTop.row,
+    deadlift: mcTop.deadlift,
+    press: mcPress === 'press' ? mcTop.press : weights.press,
+  };
+}
+
+export function madcowPhase(week, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
+  if (week < onrampWeeks) return 'onramp';
+  if (week === onrampWeeks) return 'matching';
+  return 'record';
+}
+
+// The i-th (1-indexed) of `count` ramp sets as a fraction of `top`, the last landing
+// exactly on `top`. count=5, interval=12.5 -> 50/62.5/75/87.5/100%.
+function rampFraction(index, count, intervalPercent) {
+  return 1 - (count - index) * (intervalPercent / 100);
+}
+
+// Every Madcow day's sets are drawn from this same 5-rung ramp toward `top` -- see
+// buildMadcowLiftPlan for how each day slices it differently.
+export function computeRampWeights(top, intervalPercent, increment, floor, count = 5) {
+  const weights = [];
+  for (let i = 1; i <= count; i++) {
+    weights.push(roundWeight(top * rampFraction(i, count, intervalPercent), increment, floor));
+  }
+  return weights;
+}
+
+// Rest before a set, per Stronglifts' Madcow guide: short for the first light ramp
+// set, normal as sets build toward the top -- also the fixed rest before Workout C's
+// 8-rep back-off set, regardless of its lighter weight -- and long only before the
+// day's genuine top-effort set. Day B's squat is recovery volume and is capped at
+// `build`, never reaching `top` even on its heaviest (repeated) set.
+const MADCOW_REST = { ramp: 90, build: 180, top: 300 };
+
+export function buildMadcowLiftPlan(day, liftId, mcTop, intervalPercent) {
+  const increment = MADCOW_WEEKLY_INCREMENTS[liftId] ?? 2.5;
+  const floor = INITIAL_WEIGHTS[liftId] ?? 20;
+  const top = mcTop[liftId];
+  const ramp = computeRampWeights(top, intervalPercent, increment, floor);
+  const { ramp: RAMP, build: BUILD, top: TOP } = MADCOW_REST;
+
+  if (day === 'A') {
+    return {
+      id: liftId, sets: 5, setWeights: ramp, setReps: [5, 5, 5, 5, 5], weight: ramp[4], increment,
+      restSeconds: [0, RAMP, BUILD, BUILD, TOP],
+    };
+  }
+
+  if (day === 'C') {
+    const attempt = roundWeight(top + increment, increment, floor);
+    const backoff = ramp[2];
+    return {
+      id: liftId, sets: 6,
+      setWeights: [...ramp.slice(0, 4), attempt, backoff],
+      setReps: [5, 5, 5, 5, 3, 8],
+      weight: attempt, increment,
+      restSeconds: [0, RAMP, BUILD, BUILD, TOP, BUILD],
+    };
+  }
+
+  // day === 'B': squat repeats its third (lightest-of-the-heavy) rung; the second
+  // press and deadlift ramp up to their full top across four sets instead of five.
+  if (liftId === 'squat') {
+    return {
+      id: liftId, sets: 4,
+      setWeights: [ramp[0], ramp[1], ramp[2], ramp[2]],
+      setReps: [5, 5, 5, 5],
+      weight: ramp[2], increment,
+      restSeconds: [0, RAMP, BUILD, BUILD],
+    };
+  }
+  return {
+    id: liftId, sets: 4,
+    setWeights: ramp.slice(1),
+    setReps: [5, 5, 5, 5],
+    weight: ramp[4], increment,
+    restSeconds: [0, BUILD, BUILD, TOP],
+  };
+}
+
+// Madcow's equivalent of getProgramExercises: the day's lifts with per-set ramp
+// weights and rep targets baked in, ready to seed a workout session.
+export function getMadcowDayExercises(day, mcTop, intervalPercent, pressId) {
+  return MADCOW_DAY_LIFTS[day].map(slot => {
+    const liftId = slot === 'SECOND_PRESS' ? pressId : slot;
+    return buildMadcowLiftPlan(day, liftId, mcTop, intervalPercent);
+  });
+}
+
+// The lift ids that appear on a given Madcow day, with the press slot resolved.
+export function getMadcowDayLiftIds(day, pressId) {
+  return MADCOW_DAY_LIFTS[day].map(slot => (slot === 'SECOND_PRESS' ? pressId : slot));
+}
+
+// Applies one finished Madcow session's outcome: which lifts' top sets advance, and
+// whether the week rolls over. Progression is frozen during the on-ramp (weeks 1..
+// onrampWeeks-1), which instead climbs on schedule at each Friday rollover; day B's
+// squat never gates progression since it's the week's recovery volume, not a top set.
+//
+// `mcTop` always holds *this week's* Monday top set, never next week's -- Wednesday's
+// squat ramp and Friday's `top + increment` attempt both depend on that staying true
+// all week. A passed Workout A therefore can't bump `nextTop` immediately (that would
+// make Wednesday/Friday read a weight nobody actually lifted yet); instead it's queued
+// in `nextPending` and only applied -- alongside the week's own increment during the
+// on-ramp -- at the Friday rollover. Workout B's press/deadlift bump `nextTop` directly
+// since neither lift is read again before next Wednesday, so there's nothing for a
+// same-week Friday to over-read.
+export function evaluateMadcowOutcome(day, exercises, mcTop, week, mcPending, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
+  const nextTop = { ...mcTop };
+  const nextPending = new Set(mcPending);
+  const progressions = [];
+  const gated = week >= onrampWeeks;
+
+  if (gated) {
+    exercises.forEach(ex => {
+      const relevant = day === 'A' || (day === 'B' && ex.id !== 'squat');
+      if (!relevant || !isExercisePassed(ex)) return;
+      progressions.push(ex.id);
+      if (day === 'A') {
+        nextPending.add(ex.id);
+      } else {
+        const increment = MADCOW_WEEKLY_INCREMENTS[ex.id] ?? 2.5;
+        const floor = INITIAL_WEIGHTS[ex.id] ?? 20;
+        nextTop[ex.id] = roundWeight(mcTop[ex.id] + increment, increment, floor);
+      }
+    });
+  }
+
+  let nextWeek = week;
+  if (day === 'C') {
+    nextWeek = week + 1;
+    for (const id of nextPending) {
+      const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
+      const floor = INITIAL_WEIGHTS[id] ?? 20;
+      nextTop[id] = roundWeight(nextTop[id] + increment, increment, floor);
+    }
+    nextPending.clear();
+    if (week < onrampWeeks) {
+      for (const id of Object.keys(nextTop)) {
+        const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
+        const floor = INITIAL_WEIGHTS[id] ?? 20;
+        nextTop[id] = roundWeight(nextTop[id] + increment, increment, floor);
+      }
+    }
+  }
+
+  // The weight to *show* as "progressed to" -- newly-queued lifts haven't actually
+  // moved in nextTop yet (that waits for Friday), so project their eventual value for
+  // display without mutating the real, still-frozen top set.
+  const projectedTop = { ...nextTop };
+  for (const id of nextPending) {
+    if (mcPending.includes(id)) continue;
+    const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
+    const floor = INITIAL_WEIGHTS[id] ?? 20;
+    projectedTop[id] = roundWeight(nextTop[id] + increment, increment, floor);
+  }
+
+  return { nextTop, nextPending: [...nextPending], progressions, projectedTop, nextWeek };
 }
 
 export function validateImportData(d) {
@@ -59,15 +331,32 @@ export function validateImportData(d) {
   for (const key of EXPECTED_WEIGHT_KEYS) {
     normalizedWeights[key] = Math.round(d.weights[key] / 2.5) * 2.5;
   }
+  normalizedWeights.incline = Number.isFinite(d.weights.incline)
+    ? Math.round(d.weights.incline / EXERCISE_INCREMENTS.incline) * EXERCISE_INCREMENTS.incline
+    : seedInclineWeight(normalizedWeights.bench);
 
-  const validHistory = d.history.filter(entry =>
-    entry && typeof entry === 'object' &&
-    typeof entry.date === 'string' &&
-    typeof entry.type === 'string' &&
-    Array.isArray(entry.exercises)
-  );
+  const validHistory = d.history
+    .filter(entry =>
+      entry && typeof entry === 'object' &&
+      typeof entry.date === 'string' &&
+      typeof entry.type === 'string' &&
+      Array.isArray(entry.exercises)
+    )
+    .map(entry => ({ ...entry, preset: normalizePreset(entry.preset) }));
 
-  return { ...d, weights: normalizedWeights, history: validHistory, program: normalizeProgram(d.program) };
+  return {
+    ...d,
+    weights: normalizedWeights,
+    history: validHistory,
+    program: normalizeProgram(d.program),
+    preset: normalizePreset(d.preset),
+    mcTop: normalizeMcTop(d.mcTop, normalizedWeights),
+    mcWeek: normalizeMcWeek(d.mcWeek),
+    mcInterval: normalizeMcInterval(d.mcInterval),
+    mcPress: normalizeMcPress(d.mcPress),
+    mcNextDay: normalizeMcNextDay(d.mcNextDay),
+    mcPending: normalizeMcPending(d.mcPending),
+  };
 }
 
 export function calculate1RM(weight, reps) {

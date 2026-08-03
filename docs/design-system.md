@@ -189,8 +189,8 @@ flips from `CaretDown` to `CaretUp`. State is `null | 'warm' | 'bar'`, local to 
 
 **Steppers.** Every − / + control shares one `StepperButton` component: 8px radius,
 outlined `ink/18` border. `ProgramEditor` sets/reps use the default 40×40px / 16px icon.
-The idle-screen and `ExerciseCard` weight editors use the 44×44px / 15px-icon variant
-(`size={44} iconSize={15}`), matching the 44px-tall commit/cancel buttons in the same bar.
+Weight editing (see below) uses the 44×44px / 15px-icon `prominent` variant on Train,
+and the 40×40px / 16px-icon `compact` variant on the Program tab and in the Log.
 
 **Segmented controls.** Active segment = `accent-900` fill with an inset accent ring;
 inactive = transparent, `ink/45` label.
@@ -219,33 +219,47 @@ with a colour dot; at least one series is always on.
 - During an active workout on the Train tab, the **timer strip replaces the header** at
   the top of the screen — it is not docked at the bottom. Header everywhere else.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
-- The **idle screen's exercise rows and `ExerciseCard` are weight-editable** via a tap-to-edit
-  pattern, not always-visible steppers: the default state shows the weight (accent-300,
-  tabular) plus a 13px `PencilSimple` at 35% alpha, the pair forming one ≥44px-hit button.
-  Tapping it opens `WeightEditBar` — a full-width edit bar *below* the row/card header
-  (not inline): a recessed panel (`bg-ground/60` on cards, `bg-surface/70` on rows), 9px
-  radius, `12px 10px` padding, column layout with a 12px gap.
-  - **Row 1** (`justify-around`): a 44px − stepper, a bare `<input inputMode="decimal">`
-    (22px/500 accent-300, transparent background, only a 1.5px accent bottom border, ~76px
-    wide, a muted "kg" suffix beside it), and a 44px + stepper.
-  - **Row 2** (16px gap): two flex-1 44px buttons — an accent-outlined ✓ (commit) and a
-    neutral-outlined ✕ (cancel).
-  - **Editing is draft-based, not live.** Opening the editor seeds a `draftWeight` string
-    from the current weight. The − / + steppers and typing both only mutate the draft;
-    nothing is written to real state until ✓ is tapped. ✓ parses the draft (comma decimals
-    accepted), snaps to the nearest 2.5 kg, clamps to the 20 kg floor, and — if the draft
-    can't be parsed at all — falls back to the unchanged previous weight. ✕ discards the
-    draft and closes without writing anything.
-  - **One editor at a time.** A single `editingWeightId` + `draftWeight` pair (owned by
-    `App.jsx`, passed to `ExerciseCard`) means opening another editor — even for a
-    different exercise, even on the other screen — overwrites the draft and silently
-    discards whatever was being typed for the previous one. Idle rows and the
-    active-workout card share this state since only one of those screens is ever visible
-    at a time.
-  - On the idle screen a commit writes to `weights` state directly — there's no active
-    workout yet to hold a per-session override — so the change persists into the started
-    workout, Stats, and everywhere else `weights` is read, the same as committing
-    mid-session.
+- **Every editable weight in the app — Train (idle and active), the Program tab's
+  Madcow top sets, and the Log's add/edit-entry modal — uses one `WeightInput`
+  component.** There is no pencil, no disclosure step, and no separate commit/cancel
+  row: a − stepper, the number itself, and a + stepper are all always visible and
+  always usable.
+  - The number is a bare `<input inputMode="decimal">` (19-22px/500 accent-300,
+    transparent background, a 1.5px `ink/18` bottom border that turns accent on
+    focus, ~60-76px wide, a muted "kg" suffix beside it).
+  - Two variants: `prominent` (44px steppers / 15px icons — Train idle rows and
+    `ExerciseCard`) and `compact` (40px steppers / 16px icons — Madcow top sets and
+    the Log modal).
+  - **Editing is draft-based, but local to each field.** Focusing the input seeds a
+    draft from the current value and selects it; typing only mutates that draft.
+    It commits on blur or Enter — parsing the draft (comma decimals accepted),
+    snapping to *that lift's own increment* via `roundWeight(weight, increment, min)`,
+    and clamping to the field's floor — or, if unparseable, reverts to the unchanged
+    previous value. Escape reverts without committing. Because the draft is local
+    `useState` inside `WeightInput` rather than one shared value, editing one
+    exercise's field never discards another's in-progress draft; moving focus away
+    just commits the first instead.
+  - **Steppers commit immediately** — tapping − or + applies that lift's increment
+    to whatever's currently in the field (typed-but-uncommitted or last-committed)
+    and writes straight through, no separate confirm step. They use
+    `onMouseDown={e => e.preventDefault()}` so tapping one doesn't blur/commit the
+    input first.
+  - On Train's idle screen, committing writes to `weights` state directly — there's
+    no active workout yet to hold a per-session override — so the change persists
+    into the started workout, Stats, and everywhere else `weights` is read, the same
+    as committing mid-session.
+  - **A Madcow lift's field always edits its top set (`mcTop[id]`), on Train and the
+    Program tab alike** — never a flat per-session weight, since Madcow displays a
+    computed ramp. This is why, on Workout C ("heavy" day), the big number can differ
+    from the day's actual heaviest working set (`top + increment`, i.e. the day's
+    attempt): that attempt value is still shown under its own set circle and in the
+    ramp meta caption, just not as the header number. Every caller — the idle Train
+    row, `ExerciseCard` mid-workout, and the Program tab — funnels through one
+    `updateMadcowTopSet()` in [madcow.js](../src/madcow.js), so the persisted
+    `mcTop`, the mirrored `weights`, and (if that lift is mid-session) its remaining
+    ramp never drift apart. A future program with its own stateful mutation logic
+    should follow the same pattern: a dedicated `<program>.js`, not inline `App.jsx`
+    handlers.
 
 ## 5. Interaction rules
 

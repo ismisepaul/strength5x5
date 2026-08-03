@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Barbell, ListChecks, Gear, Play, TrendUp,
-  Plus, Minus, ArrowsLeftRight, X, DownloadSimple, UploadSimple,
-  Question, TrendDown, Moon, Pause,
+  Plus, Check, X, DownloadSimple, UploadSimple,
+  Question, TrendDown, Moon,
   Trash, CaretRight, Timer,
   FileCsv, ArrowRight, Flame, CaretDown,
-  Cloud, SlidersHorizontal, ChartLineUp, PencilSimple
+  Cloud, SlidersHorizontal, ChartLineUp, Info
 } from '@phosphor-icons/react';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, DEFAULT_PROGRAM, MAX_SETS } from './constants';
-import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed } from './utils';
+import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
+import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
+import { clampMcTop, reviseWorkoutTopSet } from './madcow';
+import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from './programs';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -21,10 +23,11 @@ import RestTimer from './components/RestTimer';
 import ExerciseCard from './components/ExerciseCard';
 import BarSetupDiagram from './components/BarSetupDiagram';
 import RepPicker from './components/RepPicker';
-import ProgramEditor from './components/ProgramEditor';
+import ProgramTab from './components/ProgramTab';
+import ExerciseGuideSheet from './components/ExerciseGuideSheet';
 import StatsChart from './components/StatsChart';
 import Toast from './components/Toast';
-import WeightEditBar from './components/WeightEditBar';
+import WeightInput from './components/WeightInput';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
 
@@ -39,6 +42,13 @@ const App = () => {
   const [program, setProgram] = useState(() => normalizeProgram(saved.program));
   const [history, setHistory] = useState(Array.isArray(saved.history) ? saved.history : []);
   const [currentWorkoutType, setCurrentWorkoutType] = useState(saved.nextType ?? 'A');
+  const [preset, setPreset] = useState(() => normalizePreset(saved.preset));
+  const [mcTop, setMcTop] = useState(() => normalizeMcTop(saved.mcTop, saved.weights ?? INITIAL_WEIGHTS));
+  const [mcWeek, setMcWeek] = useState(() => normalizeMcWeek(saved.mcWeek));
+  const [mcInterval, setMcInterval] = useState(() => normalizeMcInterval(saved.mcInterval));
+  const [mcPress, setMcPress] = useState(() => normalizeMcPress(saved.mcPress));
+  const [mcNextDay, setMcNextDay] = useState(() => normalizeMcNextDay(saved.mcNextDay));
+  const [mcPending, setMcPending] = useState(() => normalizeMcPending(saved.mcPending));
   const [isDark, setIsDark] = useState(saved.isDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [localBackup, setLocalBackup] = useState(saved.autoSave ?? false);
   const [preferredRest, setPreferredRest] = useState(saved.preferredRest ?? 90);
@@ -54,7 +64,6 @@ const App = () => {
   const [deloadAlert, setDeloadAlert] = useState(null);
   const [deloadPercent, setDeloadPercent] = useState(10);
   const [pendingFailureDeloads, setPendingFailureDeloads] = useState(null);
-  const [editingWeightId, setEditingWeightId] = useState(null);
   const [isExerciseComplete, setIsExerciseComplete] = useState(false);
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
@@ -70,6 +79,9 @@ const App = () => {
   const [connectSyncPrompt, setConnectSyncPrompt] = useState(null);
   const [longBreakDeloadForDate, setLongBreakDeloadForDate] = useState(() => localStorage.getItem(LONG_BREAK_DELOAD_KEY));
   const [repPicker, setRepPicker] = useState(null);
+  const [programSheet, setProgramSheet] = useState(null); // { step: 'pick' | 'confirm', target }
+  const [workoutPicker, setWorkoutPicker] = useState(false);
+  const [guideLift, setGuideLift] = useState(null);
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
@@ -140,6 +152,7 @@ const App = () => {
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,
     isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending,
   });
 
   useStorageSync(STORAGE_KEY, (updated) => {
@@ -147,6 +160,13 @@ const App = () => {
     if (updated.program) setProgram(normalizeProgram(updated.program));
     if (Array.isArray(updated.history)) setHistory(updated.history);
     if (updated.isDark !== undefined) setIsDark(updated.isDark);
+    if (updated.preset) setPreset(normalizePreset(updated.preset));
+    if (updated.mcTop) setMcTop(normalizeMcTop(updated.mcTop, updated.weights ?? weights));
+    if (updated.mcWeek) setMcWeek(normalizeMcWeek(updated.mcWeek));
+    if (updated.mcInterval) setMcInterval(normalizeMcInterval(updated.mcInterval));
+    if (updated.mcPress) setMcPress(normalizeMcPress(updated.mcPress));
+    if (updated.mcNextDay) setMcNextDay(normalizeMcNextDay(updated.mcNextDay));
+    if (updated.mcPending !== undefined) setMcPending(normalizeMcPending(updated.mcPending));
   });
 
   useEffect(() => {
@@ -163,7 +183,7 @@ const App = () => {
 
   const best1RMs = useMemo(() => {
     const result = {};
-    for (const id of EXPECTED_WEIGHT_KEYS) {
+    for (const id of [...EXPECTED_WEIGHT_KEYS, 'incline']) {
       result[id] = calculateBest1RM(history, id);
     }
     return result;
@@ -174,7 +194,8 @@ const App = () => {
 
   const getAppState = useCallback(() => ({
     weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
-  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping]);
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending,
+  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
 
   const exportData = useCallback((targetHistory) => {
     const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState(), history: targetHistory || history };
@@ -195,52 +216,15 @@ const App = () => {
   }, [gdrive, showToast, t]);
 
 
-  const handleUpdateActiveWeight = useCallback((exIdx, diff) => {
-    setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, e.weight + diff) })) }) : null);
+  const handleUpdateActiveWeight = useCallback((exIdx, nextWeight) => {
+    setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, nextWeight) })) }) : null);
   }, []);
 
-  // Idle-screen steppers adjust `weights` directly (there's no active workout yet),
+  // Idle-screen input adjusts `weights` directly (there's no active workout yet),
   // floored at the empty 20kg bar rather than active-session's 0.
-  const handleUpdateIdleWeight = useCallback((id, diff) => {
-    setWeights(prev => ({ ...prev, [id]: Math.max(20, (prev[id] ?? 0) + diff) }));
+  const handleUpdateIdleWeight = useCallback((id, nextWeight) => {
+    setWeights(prev => ({ ...prev, [id]: Math.max(20, nextWeight) }));
   }, []);
-
-  const [draftWeight, setDraftWeight] = useState('');
-
-  const parseWeightInput = (str) => {
-    const n = parseFloat(String(str).replace(',', '.'));
-    return Number.isFinite(n) ? n : null;
-  };
-
-  // A single draft lives alongside editingWeightId: opening another editor
-  // overwrites it, discarding whatever was being typed for the previous one.
-  const handleStartEditWeight = useCallback((id, currentWeight) => {
-    setEditingWeightId(id);
-    setDraftWeight(String(currentWeight));
-  }, []);
-
-  const handleCancelEditWeight = useCallback(() => {
-    setEditingWeightId(null);
-    setDraftWeight('');
-  }, []);
-
-  const stepDraftWeight = useCallback((diff, fallback) => {
-    setDraftWeight(prev => {
-      const parsed = parseWeightInput(prev);
-      const base = parsed !== null ? parsed : fallback;
-      return String(Math.max(20, base + diff));
-    });
-  }, []);
-
-  // Commits by computing a diff against the current weight and handing it to the
-  // existing per-screen update fn, so the real write path (and its own floor) is untouched.
-  const commitEditWeight = useCallback((currentWeight, applyDiff) => {
-    const parsed = parseWeightInput(draftWeight);
-    const final = parsed !== null ? Math.max(20, Math.round(parsed / 2.5) * 2.5) : currentWeight;
-    if (final !== currentWeight) applyDiff(final - currentWeight);
-    setEditingWeightId(null);
-    setDraftWeight('');
-  }, [draftWeight]);
 
   // Shared by the short-press cycle and the long-press rep picker: given the current
   // logged value, resolveNext computes the next one, then this stamps setTimes and
@@ -251,7 +235,7 @@ const App = () => {
       if (!prev) return prev;
       const ex = prev.exercises[exIdx];
       const currVal = ex.setsCompleted[setIdx];
-      const target = targetReps(ex);
+      const target = targetReps(ex, setIdx);
       const nextVal = resolveNext(currVal, target);
       const isLastSet = setIdx === ex.setsCompleted.length - 1;
       // Stamp on first completion, clear when the set is cycled back to unlogged.
@@ -271,7 +255,9 @@ const App = () => {
           setIsExerciseComplete(allDone ? 'workout' : true);
         } else {
           setIsExerciseComplete(false);
-          const req = nextVal === target ? preferredRest : 300;
+          const req = Array.isArray(ex.restSeconds)
+            ? (ex.restSeconds[setIdx + 1] ?? preferredRest)
+            : (nextVal === target ? preferredRest : 300);
           timer.start(req);
         }
       } else { timer.stop(); setIsExerciseComplete(false); }
@@ -362,37 +348,71 @@ const App = () => {
       return { type: 'longBreak', daysOff, recommended };
     }
 
+    // Madcow's stall is "the top set holds" -- no forced-deload prompt, only the
+    // long-break safety check above applies to it.
+    if (!getProgram(preset).usesDeloads) return null;
+
     const pendingDeloads = getPendingFailureDeloadsForStart(historyToCheck, workoutWeights);
     if (pendingDeloads.length > 0) {
       return { type: 'failure', pendingDeloads };
     }
 
     return null;
-  }, [getPendingFailureDeloadsForStart, longBreakDeloadForDate]);
+  }, [getPendingFailureDeloadsForStart, longBreakDeloadForDate, preset]);
 
   const finishWorkout = useCallback(() => {
-    const { nextWeights, progressions, pendingDeloads } = evaluateWorkoutOutcome(currentWorkout, history, weights);
+    const isMadcow = getProgram(preset).ramped;
     const savedWorkout = {
       ...currentWorkout,
+      preset,
       duration: Date.now() - (currentWorkout.startedAt || Date.now()),
       exercises: calculateSetDurations(currentWorkout.exercises, currentWorkout.startedAt),
     };
     delete savedWorkout.startedAt;
     const newHistory = [savedWorkout, ...history];
-    setWeights(nextWeights); setHistory(newHistory);
-    setCurrentWorkoutType(prev => prev === 'A' ? 'B' : 'A');
+
+    let nextWeights = weights;
+    let nextType = currentWorkoutType;
+    let nextMcTop = mcTop;
+    let nextMcWeek = mcWeek;
+    let nextMcNextDay = mcNextDay;
+    let nextMcPending = mcPending;
+    let progressions, pendingDeloads, summaryNextValues;
+
+    if (isMadcow) {
+      const outcome = evaluateMadcowOutcome(currentWorkout.type, currentWorkout.exercises, mcTop, mcWeek, mcPending, MADCOW_ONRAMP_WEEKS);
+      nextMcTop = outcome.nextTop;
+      nextMcWeek = outcome.nextWeek;
+      nextMcPending = outcome.nextPending;
+      nextWeights = applyMcTopToWeights(weights, nextMcTop);
+      nextMcNextDay = MADCOW_DAYS[(MADCOW_DAYS.indexOf(currentWorkout.type) + 1) % MADCOW_DAYS.length];
+      progressions = outcome.progressions;
+      pendingDeloads = [];
+      summaryNextValues = outcome.projectedTop;
+      setMcTop(nextMcTop); setMcWeek(nextMcWeek); setMcNextDay(nextMcNextDay); setMcPending(nextMcPending); setWeights(nextWeights);
+    } else {
+      const outcome = evaluateWorkoutOutcome(currentWorkout, history, weights);
+      nextWeights = outcome.nextWeights;
+      nextType = currentWorkoutType === 'A' ? 'B' : 'A';
+      progressions = outcome.progressions;
+      pendingDeloads = outcome.pendingDeloads;
+      summaryNextValues = nextWeights;
+      setWeights(nextWeights); setCurrentWorkoutType(nextType);
+    }
+
+    setHistory(newHistory);
     setIsWorkoutActive(false); setCurrentWorkout(null);
     timer.reset(); setIsExerciseComplete(false);
-    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads, nextWeights });
+    setCompletionSummary({ workout: savedWorkout, progressions, pendingDeloads, nextWeights: summaryNextValues });
     localStorage.removeItem(ACTIVE_WORKOUT_KEY);
     if (localBackup) exportData(newHistory);
 
-    const nextType = currentWorkoutType === 'A' ? 'B' : 'A';
     saveToDriveQuietly({
       weights: nextWeights, program, history: newHistory, nextType,
       isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
+      preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay, mcPending: nextMcPending,
     });
-  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome]);
+  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -401,9 +421,13 @@ const App = () => {
   }, [timer]);
 
   const initializeWorkout = useCallback((workoutWeights) => {
-    setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: getProgramExercises(currentWorkoutType, program).map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
+    const prog = getProgram(preset);
+    const day = getCurrentDay(prog.id);
+    const exercises = prog.dayExercises(day, { program, weights: workoutWeights, mcTop, mcInterval, mcPress })
+      .map(ex => ({ ...ex, setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) }));
+    setCurrentWorkout({ date: new Date().toISOString(), type: day, startedAt: Date.now(), exercises });
     setIsWorkoutActive(true); setActiveTab('workout'); setShowRestorePrompt(false); setIsExerciseComplete(false);
-  }, [currentWorkoutType, program]);
+  }, [currentWorkoutType, program, preset, mcNextDay, mcTop, mcInterval, mcPress]);
 
   const startWorkout = useCallback((force = false) => {
     if (history.length === 0 && !force) { setShowRestorePrompt(true); return; }
@@ -421,6 +445,36 @@ const App = () => {
     initializeWorkout(weights);
   }, [history, weights, initializeWorkout, getStartDeloadPrompt, t]);
 
+  // Switches the active program, converting weights each direction so Stats and the
+  // Program tab always agree with whatever's actually being trained.
+  const switchProgram = useCallback((target) => {
+    if (isWorkoutActive) cancelWorkout();
+    if (target === 'madcow') {
+      const seeded = seedMadcowTops(weights);
+      setMcTop(seeded);
+      setMcWeek(1);
+      setMcNextDay('A');
+      setMcPending([]);
+      setWeights(prev => applyMcTopToWeights(prev, seeded));
+    } else {
+      setWeights(prev => madcowTopsToWeights(prev, mcTop, mcPress));
+    }
+    setPreset(target);
+    setProgramSheet(null);
+  }, [weights, mcTop, mcPress, isWorkoutActive, cancelWorkout]);
+
+  // The one path every Madcow top-set edit goes through -- Program tab, Train's idle
+  // row, and Train's active-workout card -- so mcTop, the mirrored `weights`, and (if
+  // that lift is mid-session) its live ramp never drift apart. Each setter reads its
+  // own fresh `prev` rather than closing over mcTop/weights/currentWorkout, so this
+  // stays correct even if two taps land before a render lands between them.
+  const updateMcTop = useCallback((liftId, nextTop) => {
+    const clamped = clampMcTop(liftId, nextTop);
+    setMcTop(prev => ({ ...prev, [liftId]: clamped }));
+    setWeights(prev => applyMcTopToWeights(prev, { [liftId]: clamped }));
+    setCurrentWorkout(prev => reviseWorkoutTopSet(prev, liftId, clamped, mcInterval));
+  }, [mcInterval]);
+
   const applyLocalImport = useCallback((d) => {
     setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
     if (d.nextType) setCurrentWorkoutType(d.nextType);
@@ -430,6 +484,13 @@ const App = () => {
     if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
     if (d.logGrouping) setLogGrouping(d.logGrouping);
     if (d.language) i18n.changeLanguage(d.language);
+    setPreset(normalizePreset(d.preset));
+    setMcTop(normalizeMcTop(d.mcTop, d.weights));
+    setMcWeek(normalizeMcWeek(d.mcWeek));
+    setMcInterval(normalizeMcInterval(d.mcInterval));
+    setMcPress(normalizeMcPress(d.mcPress));
+    setMcNextDay(normalizeMcNextDay(d.mcNextDay));
+    setMcPending(normalizeMcPending(d.mcPending));
     setActiveTab('workout'); setShowRestorePrompt(false);
     setPendingLocalImport(null);
     showToast(t('toast.backupRestored'), 'success');
@@ -441,6 +502,9 @@ const App = () => {
       vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
       logGrouping: d.logGrouping || logGrouping,
       language: d.language || i18n.language,
+      preset: normalizePreset(d.preset), mcTop: normalizeMcTop(d.mcTop, d.weights), mcWeek: normalizeMcWeek(d.mcWeek),
+      mcInterval: normalizeMcInterval(d.mcInterval), mcPress: normalizeMcPress(d.mcPress), mcNextDay: normalizeMcNextDay(d.mcNextDay),
+      mcPending: normalizeMcPending(d.mcPending),
     });
   }, [currentWorkoutType, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, showToast, t]);
 
@@ -545,6 +609,13 @@ const App = () => {
     if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
     if (d.logGrouping) setLogGrouping(d.logGrouping);
     if (d.language) i18n.changeLanguage(d.language);
+    setPreset(normalizePreset(d.preset));
+    setMcTop(normalizeMcTop(d.mcTop, d.weights));
+    setMcWeek(normalizeMcWeek(d.mcWeek));
+    setMcInterval(normalizeMcInterval(d.mcInterval));
+    setMcPress(normalizeMcPress(d.mcPress));
+    setMcNextDay(normalizeMcNextDay(d.mcNextDay));
+    setMcPending(normalizeMcPending(d.mcPending));
     setActiveTab('workout');
     showToast(t('toast.restoredFromDrive'), 'success');
   }, [showToast, t]);
@@ -657,6 +728,14 @@ const App = () => {
 
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const workoutStats = getWorkoutStats(history);
+  const moodLabel = (day) => {
+    const mood = getProgram(preset).dayMood(day);
+    return mood ? t('program.madcow.mood' + mood.charAt(0).toUpperCase() + mood.slice(1)) : null;
+  };
+  // Where "today's workout" points for whichever program is active -- each program keeps
+  // its own pointer (Standard flips A/B on finish, Madcow advances mcNextDay weekly).
+  const getCurrentDay = (progId) => (progId === 'madcow' ? mcNextDay : currentWorkoutType);
+  const setCurrentDay = (progId, day) => { if (progId === 'madcow') setMcNextDay(day); else setCurrentWorkoutType(day); };
 
   return (
     <div className={`h-viewport max-w-md mx-auto flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-ground text-ink' : 'bg-ground-lt text-ink-lt'}`}>
@@ -683,7 +762,7 @@ const App = () => {
 
       {timerVisible && (
         <RestTimer
-          seconds={timer.seconds} total={preferredRest}
+          seconds={timer.seconds} total={timer.duration}
           isDark={isDark} isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired} isActive={timer.isActive}
           onSkip={handleTimerSkip} elapsed={timer.elapsed}
           startedAt={currentWorkout?.startedAt} workoutType={currentWorkout?.type}
@@ -695,66 +774,79 @@ const App = () => {
           <div className="space-y-4">
             {!isWorkoutActive ? (
               <div>
-                <div className="mb-4">
-                  <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('workout.nextUp')}</p>
-                  <div className="flex items-center gap-[10px]">
-                    <h2 className="text-[32px] font-medium leading-tight">{t(`workout.type${currentWorkoutType}`)}</h2>
-                    <button
-                      onClick={() => setCurrentWorkoutType(v => v === 'A' ? 'B' : 'A')}
-                      aria-label={t('workout.switchTo', { type: t(`workout.type${currentWorkoutType === 'A' ? 'B' : 'A'}`) })}
-                      title={t('workout.switchTo', { type: t(`workout.type${currentWorkoutType === 'A' ? 'B' : 'A'}`) })}
-                      className={`w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
-                    ><ArrowsLeftRight size={16} /></button>
-                  </div>
-                  <p className={`text-[13.5px] mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{getProgramExercises(currentWorkoutType, program).map(ex => t('exercises.' + ex.id)).join(' · ')}</p>
-                </div>
-                <div className="mb-8">{getProgramExercises(currentWorkoutType, program).map(ex => {
-                  const exName = t('exercises.' + ex.id);
-                  const isBarSetupOpen = !!expandedBarSetup[ex.id];
+                {(() => {
+                  const prog = getProgram(preset);
+                  const isMadcow = prog.ramped;
+                  const day = getCurrentDay(prog.id);
+                  const programState = { program, weights, mcTop, mcInterval, mcPress };
+                  const liftIds = prog.liftIds(day, programState);
+                  const dayExercises = prog.dayExercises(day, programState);
                   return (
-                  <div key={ex.id} className={`py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
-                    <div className="flex justify-between items-center">
-                      <button
-                        onClick={() => setExpandedBarSetup(prev => ({ ...prev, [ex.id]: !prev[ex.id] }))}
-                        aria-expanded={isBarSetupOpen}
-                        className="flex flex-col items-start min-h-[44px] text-left flex-1 min-w-0 pr-3"
-                      >
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <p className="text-[16px] font-medium truncate">{exName}</p>
-                          <CaretDown size={12} weight="bold" className={`shrink-0 opacity-35 transition-transform ${isBarSetupOpen ? 'rotate-180' : ''}`} />
+                    <>
+                      <div className="mb-4">
+                        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{isMadcow ? t('workout.madcowKicker', { week: mcWeek }) : t('workout.standardKicker')}</p>
+                        <div className="flex items-center gap-[10px]">
+                          <h2 className="text-[32px] font-medium leading-tight">{t(`workout.type${day}`)}</h2>
+                          <button
+                            onClick={() => setWorkoutPicker(true)}
+                            aria-label={t('workout.chooseWorkoutAria')}
+                            className={`w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
+                          ><CaretDown size={16} /></button>
                         </div>
-                        <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{ex.sets} × {ex.reps}</p>
-                      </button>
-                      <button
-                        onClick={() => handleStartEditWeight(ex.id, weights[ex.id])}
-                        aria-label={t('workout.editWeightAria', { name: exName })}
-                        className="flex items-center gap-1.5 min-h-[44px] shrink-0"
-                      >
-                        <span className="text-[19px] text-accent-300 tabular-nums">{weights[ex.id]}kg</span>
-                        <PencilSimple size={13} className={isDark ? 'text-ink/35' : 'text-ink-lt/35'} />
-                      </button>
-                    </div>
-                    {editingWeightId === ex.id && (
-                      <WeightEditBar
-                        value={draftWeight}
-                        onChange={setDraftWeight}
-                        onDecrement={() => stepDraftWeight(-ex.increment, weights[ex.id])}
-                        onIncrement={() => stepDraftWeight(ex.increment, weights[ex.id])}
-                        onCommit={() => commitEditWeight(weights[ex.id], (diff) => handleUpdateIdleWeight(ex.id, diff))}
-                        onCancel={handleCancelEditWeight}
-                        isDark={isDark}
-                        variant="row"
-                        exerciseName={exName}
-                      />
-                    )}
-                    {isBarSetupOpen && (
-                      <div className={`mt-3 rounded-[9px] p-3.5 ${isDark ? 'bg-surface/70' : 'bg-surface-lt/70'}`}>
-                        <BarSetupDiagram weight={weights[ex.id]} isDark={isDark} />
+                        <p className={`text-[13.5px] mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>
+                          {isMadcow
+                            ? t('workout.madcowSubtitle', { mood: moodLabel(day), lifts: liftIds.map(id => t('exercises.' + id)).join(' · ') })
+                            : liftIds.map(id => t('exercises.' + id)).join(' · ')}
+                        </p>
                       </div>
-                    )}
-                  </div>
+                      <div className="mb-8">{dayExercises.map((ex, i) => {
+                        const liftId = liftIds[i];
+                        const exName = t('exercises.' + liftId);
+                        const isBarSetupOpen = !!expandedBarSetup[liftId];
+                        const topWeight = topWeightOf(ex);
+                        return (
+                        <div key={liftId} className={`py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
+                          <div className={`flex justify-between ${isMadcow ? 'items-start' : 'items-center'}`}>
+                            <button
+                              onClick={() => setExpandedBarSetup(prev => ({ ...prev, [liftId]: !prev[liftId] }))}
+                              aria-expanded={isBarSetupOpen}
+                              className="flex flex-col items-start min-h-[44px] text-left flex-1 min-w-0 pr-3"
+                            >
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <p className="text-[16px] font-medium truncate">{exName}</p>
+                                <CaretDown size={12} weight="bold" className={`shrink-0 opacity-35 transition-transform ${isBarSetupOpen ? 'rotate-180' : ''}`} />
+                              </div>
+                              <p className={`text-[12.5px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>
+                                {isMadcow ? (day === 'C' ? t('workout.dayCMeta') : t('workout.rampSetsMeta', { sets: ex.sets, from: Math.min(...ex.setWeights), to: topWeight })) : `${ex.sets} × ${ex.reps}`}
+                              </p>
+                            </button>
+                            <WeightInput
+                              value={isMadcow ? mcTop[liftId] : weights[liftId]}
+                              increment={ex.increment}
+                              min={isMadcow ? (INITIAL_WEIGHTS[liftId] ?? 20) : 20}
+                              onChange={(next) => isMadcow ? updateMcTop(liftId, next) : handleUpdateIdleWeight(liftId, next)}
+                              label={exName}
+                              isDark={isDark}
+                              variant="prominent"
+                              topSet={isMadcow}
+                            />
+                          </div>
+                          {isBarSetupOpen && (
+                            <div className={`mt-3 rounded-[9px] p-3.5 ${isDark ? 'bg-surface/70' : 'bg-surface-lt/70'}`}>
+                              <BarSetupDiagram weight={topWeight} isDark={isDark} />
+                              <button
+                                onClick={() => setGuideLift(liftId)}
+                                aria-label={t('technique.openAria', { exercise: exName })}
+                                className="flex items-center gap-1 min-h-9 mt-3 text-[12.5px] font-medium text-accent-300"
+                              ><Info size={13} /> {t('technique.open')}</button>
+                            </div>
+                          )}
+                        </div>
+                        );
+                      })}</div>
+                    </>
                   );
-                })}</div>
+                })()}
                 <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
                 <p className={`text-[12px] text-center mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
               </div>
@@ -772,13 +864,11 @@ const App = () => {
                       onToggleSet={handleToggleSet}
                       onOpenRepPicker={handleOpenRepPicker}
                       showHint={exIdx === 0 && !anySetLogged}
-                      isEditingWeight={editingWeightId === ex.id}
-                      draftWeight={draftWeight}
-                      onDraftWeightChange={setDraftWeight}
-                      onStartEditWeight={() => handleStartEditWeight(ex.id, ex.weight)}
-                      onStepWeight={(diff) => stepDraftWeight(diff, ex.weight)}
-                      onCommitWeight={() => commitEditWeight(ex.weight, (diff) => handleUpdateActiveWeight(exIdx, diff))}
-                      onCancelEditWeight={handleCancelEditWeight}
+                      onWeightChange={(next) => handleUpdateActiveWeight(exIdx, next)}
+                      topSetValue={mcTop[ex.id]}
+                      topSetMin={INITIAL_WEIGHTS[ex.id] ?? 20}
+                      onTopSetChange={(next) => updateMcTop(ex.id, next)}
+                      onOpenGuide={() => setGuideLift(ex.id)}
                     />
                   ));
                 })()}
@@ -803,17 +893,18 @@ const App = () => {
           const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
           const renderEntry = (s, key, onClick) => (
             <button key={key} onClick={onClick} className={`w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-[14px] font-semibold text-accent-300">{t(`workout.type${s.type}`)}</span>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent">{t(getProgram(s.preset).nameKey)}</span>
                 <span className={`text-[13.5px] ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
               </div>
+              <p className="text-[15px] font-semibold mb-3">{t(`workout.type${s.type}`)}</p>
               <div className="space-y-2">{s.exercises.map(ex => (
                 <div key={ex.id} className="flex justify-between text-[15px] items-center">
                   <span className={`text-[12px] uppercase ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
                   <div className="flex items-center gap-3">
                     <span className="tabular-nums">{ex.weight}kg</span>
                     <div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (
-                      <div key={ri} className={r === targetReps(ex) ? 'w-1.5 h-1.5 rounded-full bg-accent' : `w-1.5 h-1.5 rounded-full border ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`} />
+                      <div key={ri} className={r === targetReps(ex, ri) ? 'w-1.5 h-1.5 rounded-full bg-accent' : `w-1.5 h-1.5 rounded-full border ${isDark ? 'border-ink/30' : 'border-ink-lt/30'}`} />
                     ))}</div>
                   </div>
                 </div>
@@ -827,13 +918,13 @@ const App = () => {
               <h2 className="text-[24px] font-medium">{t('log.title')}</h2>
               <button
                 onClick={() => {
-                  const type = currentWorkoutType;
-                  const workout = {
-                    date: new Date().toISOString(),
-                    type,
-                    exercises: getProgramExercises(type, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
-                  };
-                  setEditingEntry({ index: -1, session: workout });
+                  // Defaults to whatever program/day you're actually on -- the modal lets
+                  // you pick a different program and day before saving.
+                  const prog = getProgram(preset);
+                  const day = getCurrentDay(prog.id);
+                  const exercises = prog.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
+                    .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
+                  setEditingEntry({ index: -1, session: { date: new Date().toISOString(), type: day, preset: prog.id, exercises } });
                 }}
                 aria-label="Add workout"
                 className={`w-10 h-10 rounded-lg border flex items-center justify-center active:scale-90 transition-transform ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
@@ -926,23 +1017,41 @@ const App = () => {
                     </button>
                   );
                 })()}
-                <div className="grid gap-3">{EXPECTED_WEIGHT_KEYS.map(id => {
-                  const trend = getExerciseTrend(history, id);
-                  const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
-                  return (
-                    <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
-                      <div className="min-w-0 pr-2 text-left">
-                        <p className="text-[15px] font-medium truncate">{t('exercises.' + id)}</p>
-                        <p className={`text-[12px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {trend && <TrendIcon size={18} className={trendClass} />}
-                        <span className="text-accent-300 tabular-nums">{weights[id]}kg</span>
-                        <CaretRight size={18} className={mutedClass} />
-                      </div>
-                    </button>
+                <div className="grid gap-3">{(() => {
+                  const activeIds = programAllLiftIds(preset, { program, weights, mcTop, mcInterval, mcPress });
+                  // Lifts trained under the other program stay visible here too, instead of
+                  // vanishing from Stats the moment you switch programs.
+                  const extraIds = [...EXPECTED_WEIGHT_KEYS, 'incline'].filter(id =>
+                    !activeIds.includes(id) && history.some(s => s.exercises?.some(e => e.id === id))
                   );
-                })}
+                  const otherProgramName = t(getProgram(PROGRAM_IDS.find(id => id !== normalizePreset(preset))).nameKey);
+                  return [...activeIds, ...extraIds].map(id => {
+                    const trend = getExerciseTrend(history, id);
+                    const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
+                    const hasData = history.some(s => s.exercises?.some(e => e.id === id));
+                    const isExtra = extraIds.includes(id);
+                    return (
+                      <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
+                        <div className="min-w-0 pr-2 text-left">
+                          <p className="text-[15px] font-medium truncate">{t('exercises.' + id)}</p>
+                          {hasData ? (
+                            <p className={`text-[12px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
+                          ) : (
+                            <p className={`text-[12px] leading-snug mt-1 ${mutedClass}`}>{t('stats.noSessionsForLift')}</p>
+                          )}
+                          {isExtra && (
+                            <p className={`text-[11px] uppercase tracking-wide mt-0.5 ${mutedClass}`}>{t('stats.fromProgram', { program: otherProgramName })}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {trend && <TrendIcon size={18} className={trendClass} />}
+                          <span className="text-accent-300 tabular-nums">{weights[id]}kg</span>
+                          <CaretRight size={18} className={mutedClass} />
+                        </div>
+                      </button>
+                    );
+                  });
+                })()}
                 </div>
               </>
             )}
@@ -951,7 +1060,16 @@ const App = () => {
         })()}
 
         {activeTab === 'program' && (
-          <ProgramEditor program={program} onChange={setProgram} isDark={isDark} isWorkoutActive={isWorkoutActive} />
+          <ProgramTab
+            isDark={isDark} isWorkoutActive={isWorkoutActive} preset={preset}
+            program={program} onChangeProgram={setProgram} weights={weights} history={history}
+            mcTop={mcTop} mcWeek={mcWeek} mcInterval={mcInterval} mcPress={mcPress}
+            onUpdateMcTop={updateMcTop} onChangeMcInterval={setMcInterval} onChangeMcPress={setMcPress}
+            onRecalculate={() => setMcInterval(MADCOW_DEFAULT_INTERVAL)}
+            currentWorkoutType={currentWorkoutType} mcNextDay={mcNextDay}
+            programSheet={programSheet} setProgramSheet={setProgramSheet} onSwitchProgram={switchProgram}
+            onOpenGuide={setGuideLift}
+          />
         )}
 
         {activeTab === 'settings' && (() => {
@@ -1237,6 +1355,48 @@ const App = () => {
         />
       )}
 
+      {workoutPicker && (() => {
+        const prog = getProgram(preset);
+        const programState = { program, weights, mcTop, mcInterval, mcPress };
+        const currentValue = getCurrentDay(prog.id);
+        return (
+          <div role="dialog" aria-modal="true" aria-label={t('workout.todaysWorkout')} onClick={() => setWorkoutPicker(false)} className="fixed inset-0 z-[400] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+            <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
+              <h3 className="text-lg font-semibold mb-5">{t('workout.todaysWorkout')}</h3>
+              <div className="space-y-3 mb-5">
+                {prog.days.map(day => {
+                  const isCurrent = day === currentValue;
+                  const liftIds = prog.liftIds(day, programState);
+                  const dayExercises = prog.dayExercises(day, programState);
+                  const dayWeights = dayExercises.map(topWeightOf);
+                  const mood = moodLabel(day);
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => { setCurrentDay(prog.id, day); setWorkoutPicker(false); }}
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-[10px] border text-left active:scale-[0.99] transition-transform ${isCurrent ? 'border-accent bg-accent-900' : (isDark ? 'border-ink/12' : 'border-ink-lt/12')}`}
+                    >
+                      <span className={`w-9 h-9 rounded-lg border flex items-center justify-center font-semibold shrink-0 ${isCurrent ? 'border-accent text-accent-300' : (isDark ? 'border-ink/18' : 'border-ink-lt/18')}`}>{day}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-medium text-[14.5px]">{t(`workout.type${day}`)}</p>
+                          {mood && <span className="text-[10.5px] uppercase tracking-wide px-2 py-0.5 rounded-lg text-accent-300 bg-accent-900">{mood}</span>}
+                        </div>
+                        <p className={`text-[12.5px] truncate ${isDark ? 'text-ink/50' : 'text-ink-lt/50'}`}>{liftIds.map(id => t('exercises.' + id)).join(' · ')}</p>
+                        <p className={`text-[12px] tabular-nums ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{dayWeights.join(' · ')} kg</p>
+                      </div>
+                      {isCurrent && <Check size={18} className="text-accent-300 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className={`text-[12px] text-center mb-5 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('workout.scheduledNote')}</p>
+              <button onClick={() => setWorkoutPicker(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('modals.cancel')}</button>
+            </div>
+          </div>
+        );
+      })()}
+
       {pendingCSVImport && (
         <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
           <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
@@ -1258,6 +1418,16 @@ const App = () => {
 
       {editingEntry && (() => {
         const isNewEntry = editingEntry.index === -1;
+        const entryProg = getProgram(editingEntry.session.preset);
+        // A logged entry always belongs to whatever program is active -- its exercises,
+        // customisation (e.g. Madcow's second-press choice) and increments all come from
+        // there, so the Log stays consistent with the Program tab. To log a session for
+        // the other program, switch to it first.
+        const rebuildEntryFor = (day) => {
+          const exercises = entryProg.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
+            .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
+          return { type: day, preset: entryProg.id, exercises };
+        };
         const selectedDate = editingEntry.session.date.slice(0, 10);
         const originalDate = !isNewEntry ? history[editingEntry.index]?.date.slice(0, 10) : null;
         const dateConflict = selectedDate !== originalDate && historyDateSet.has(selectedDate);
@@ -1272,19 +1442,15 @@ const App = () => {
 
             {isNewEntry && (
               <div className="mb-6">
-                <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.workoutType')}</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className={`text-[12px] uppercase tracking-[0.12em] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.workoutType')}</label>
+                  <span className={`text-[12px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t(entryProg.nameKey)}</span>
+                </div>
                 <div className="flex gap-2">
-                  {['A', 'B'].map(wt => (
+                  {entryProg.days.map(wt => (
                     <button
                       key={wt}
-                      onClick={() => setEditingEntry(prev => ({
-                        ...prev,
-                        session: {
-                          ...prev.session,
-                          type: wt,
-                          exercises: getProgramExercises(wt, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
-                        },
-                      }))}
+                      onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(wt) } }))}
                       className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
                     >{t(`workout.type${wt}`)}</button>
                   ))}
@@ -1315,33 +1481,29 @@ const App = () => {
                   <p className="text-[13.5px] font-medium mb-3">{t('exercises.' + ex.id)}</p>
                   <div className="flex justify-between items-center mb-3">
                     <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.weightLabel')}</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setEditingEntry(prev => {
+                    {entryProg.ramped ? (
+                      <span className="text-[15px] tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
+                    ) : (
+                      <WeightInput
+                        value={ex.weight}
+                        increment={entryProg.increments[ex.id] ?? 2.5}
+                        min={20}
+                        onChange={(next) => setEditingEntry(prev => {
                           const s = JSON.parse(JSON.stringify(prev.session));
-                          s.exercises[exIdx].weight = Math.max(0, s.exercises[exIdx].weight - 2.5);
+                          s.exercises[exIdx].weight = next;
                           return { ...prev, session: s };
                         })}
-                        aria-label={`Decrease ${ex.name} weight`}
-                        className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
-                      ><Minus size={16} /></button>
-                      <span className="w-14 text-center text-[15px] tabular-nums">{ex.weight}kg</span>
-                      <button
-                        onClick={() => setEditingEntry(prev => {
-                          const s = JSON.parse(JSON.stringify(prev.session));
-                          s.exercises[exIdx].weight += 2.5;
-                          return { ...prev, session: s };
-                        })}
-                        aria-label={`Increase ${ex.name} weight`}
-                        className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
-                      ><Plus size={16} /></button>
-                    </div>
+                        label={t('exercises.' + ex.id)}
+                        isDark={isDark}
+                        variant="compact"
+                      />
+                    )}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.setsLabel')}</span>
                     <div className="flex gap-2">
                       {ex.setsCompleted.map((reps, setIdx) => {
-                        const target = targetReps(ex);
+                        const target = targetReps(ex, setIdx);
                         const stateClass = reps === null
                           ? (isDark ? 'border border-ink/18 text-ink/40' : 'border border-ink-lt/18 text-ink-lt/40')
                           : reps === target
@@ -1378,11 +1540,16 @@ const App = () => {
                 const newHistory = [...unsortedHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
                 const savedIndex = newHistory.findIndex(s => s === editingEntry.session);
                 const isLatestEntry = savedIndex === 0;
+                // Progression only runs for a Standard entry that's both the newest session
+                // and the program you're actually on -- a Madcow entry never bumps mcTop/mcWeek
+                // here, since those advance on the weekly rollover and a manually logged (or
+                // backdated) session would otherwise double-advance them.
+                const shouldProgress = isLatestEntry && entryProg.id === 'standard' && preset === 'standard';
 
                 let nextWeights = weights;
                 let nextType = currentWorkoutType;
 
-                if (isLatestEntry) {
+                if (shouldProgress) {
                   const priorHistory = newHistory.slice(1);
                   const { nextWeights: adjustedWeights } = evaluateWorkoutOutcome(editingEntry.session, priorHistory, weights);
                   nextWeights = adjustedWeights;
@@ -1469,7 +1636,7 @@ const App = () => {
                     <div className="flex justify-start gap-1.5 mt-2.5">
                       {ex.setsCompleted.map((r, i) => {
                         const val = r ?? 0;
-                        const failed = val < targetReps(ex);
+                        const failed = val < targetReps(ex, i);
                         const split = formatClock(setDurations[i]);
                         return (
                           <div
@@ -1539,10 +1706,6 @@ const App = () => {
             <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
             <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-5 mb-6 text-left">
               {[
-                { Icon: Barbell, title: t('help.programTitle'), body: t('help.programBody') },
-                { Icon: TrendUp, title: t('help.progressionTitle'), body: t('help.progressionBody') },
-                { Icon: Pause, title: t('help.stallTitle'), body: t('help.stallBody') },
-                { Icon: TrendDown, title: t('help.deloadTitle'), body: t('help.deloadBody') },
                 { Icon: Timer, title: t('help.restTitle'), body: t('help.restBody') },
                 { Icon: Moon, title: t('help.longBreaksTitle'), body: t('help.longBreaksBody') },
                 { Icon: Cloud, title: t('help.backupsTitle'), body: t('help.backupsBody') },
@@ -1553,9 +1716,24 @@ const App = () => {
                 </div>
               ))}
             </div>
+            <button
+              onClick={() => { setShowHelp(false); setActiveTab('program'); }}
+              className={`w-full flex items-center justify-between p-4 rounded-[10px] border mb-3 active:scale-[0.99] transition-transform ${isDark ? 'bg-surface-deep border-ink/8' : 'bg-surface-deep-lt border-ink-lt/8'}`}
+            >
+              <span className="flex items-center gap-2 text-[14.5px] font-medium">
+                <Barbell weight="fill" size={17} className="text-accent" /> {t('help.programLink')}
+              </span>
+              <span className="flex items-center gap-1 text-[13.5px] text-accent-300 shrink-0">
+                {t(getProgram(preset).nameKey)} <CaretRight size={14} />
+              </span>
+            </button>
             <button autoFocus onClick={() => setShowHelp(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('help.gotIt')}</button>
           </div>
         </div>
+      )}
+
+      {guideLift && (
+        <ExerciseGuideSheet liftId={guideLift} isDark={isDark} onClose={() => setGuideLift(null)} />
       )}
 
       {pendingDriveRestore && (

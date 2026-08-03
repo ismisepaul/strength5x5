@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 
 export function useTimer({ onExpire } = {}) {
   const [seconds, setSeconds] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -36,10 +37,11 @@ export function useTimer({ onExpire } = {}) {
     return () => clearInterval(interval);
   }, [isExpired]);
 
-  const start = useCallback((duration) => {
-    endTimeRef.current = Date.now() + duration * 1000;
+  const start = useCallback((newDuration) => {
+    endTimeRef.current = Date.now() + newDuration * 1000;
     expiredAtRef.current = null;
-    setSeconds(duration);
+    setSeconds(newDuration);
+    setDuration(newDuration);
     setElapsed(0);
     setIsActive(true);
     setIsExpired(false);
@@ -48,6 +50,7 @@ export function useTimer({ onExpire } = {}) {
   const stop = useCallback(() => {
     setIsActive(false);
     setSeconds(0);
+    setDuration(0);
     setElapsed(0);
     endTimeRef.current = null;
     expiredAtRef.current = null;
@@ -65,11 +68,12 @@ export function useTimer({ onExpire } = {}) {
   const reset = useCallback(() => {
     setIsActive(false);
     setSeconds(0);
+    setDuration(0);
     setElapsed(0);
     setIsExpired(false);
     endTimeRef.current = null;
     expiredAtRef.current = null;
   }, []);
 
-  return { seconds, isActive, isExpired, elapsed, start, stop, skip, reset };
+  return { seconds, duration, isActive, isExpired, elapsed, start, stop, skip, reset };
 }

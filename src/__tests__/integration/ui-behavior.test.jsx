@@ -475,7 +475,7 @@ describe('Same-day workout prevention', () => {
 
     const btn = screen.getByText('Trained today').closest('button');
     expect(btn).toBeDisabled();
-    expect(screen.getByText('Already trained today — rest up.')).toBeInTheDocument();
+    expect(screen.getByText('Already trained today. Rest until next session.')).toBeInTheDocument();
   });
 
   it('enables Start Workout when no workout exists for today', () => {
@@ -484,7 +484,7 @@ describe('Same-day workout prevention', () => {
 
     const btn = screen.getByText('Start workout').closest('button');
     expect(btn).not.toBeDisabled();
-    expect(screen.queryByText('Already trained today — rest up.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Already trained today. Rest until next session.')).not.toBeInTheDocument();
   });
 
   it('shows date conflict warning when edit date collides with existing session', async () => {

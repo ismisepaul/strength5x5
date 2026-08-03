@@ -24,7 +24,10 @@ function seedHistory() {
   }));
 }
 
-const benchCard = () => within(screen.getByText('Bench Press').closest('.border'));
+// After opening the customise disclosure, "Bench Press" appears twice: once in the
+// preview card above, once as the customiser's own bordered exercise card.
+const benchCard = () => within(screen.getAllByText('Bench Press').at(-1).closest('.border'));
+const openCustomise = (user) => user.click(screen.getByText('Customise sets and reps'));
 
 describe('Program tab', () => {
   it('reduces the number of live set buttons for an exercise set below 5', async () => {
@@ -33,6 +36,7 @@ describe('Program tab', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
 
@@ -52,6 +56,7 @@ describe('Program tab', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     await user.click(benchCard().getByLabelText('Decrease bench reps'));
     await user.click(benchCard().getByLabelText('Decrease bench reps'));
 
@@ -84,33 +89,49 @@ describe('Program tab', () => {
     const { unmount } = render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
     unmount();
 
     render(<App />);
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     const benchSets = benchCard().getByText('4');
     expect(benchSets).toBeInTheDocument();
   });
 
-  it('toggles the how-to-perform accordion independently per exercise', async () => {
+  it('opens the exercise guide sheet from the Program tab, keyed to the tapped lift', async () => {
     seedHistory();
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    expect(screen.queryByText('Lie on bench with eyes directly under bar.')).not.toBeInTheDocument();
 
-    expect(benchCard().queryByText('Lie on the bench with your eyes under the bar.')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'How to perform Bench Press' }));
+    const benchDialog = screen.getByRole('dialog', { name: 'How to perform Bench Press' });
+    expect(within(benchDialog).getByText('Lie on bench with eyes directly under bar.')).toBeInTheDocument();
+    expect(within(benchDialog).getByText('Rack bar securely after final rep.')).toBeInTheDocument();
 
-    await user.click(benchCard().getByText('How to perform'));
-    expect(benchCard().getByText('Lie on the bench with your eyes under the bar.')).toBeInTheDocument();
-    expect(benchCard().getByText('Rack the bar securely after the final rep.')).toBeInTheDocument();
+    await user.click(within(benchDialog).getByText('Close'));
+    expect(screen.queryByRole('dialog', { name: 'How to perform Bench Press' })).not.toBeInTheDocument();
 
-    const squatCard = () => within(screen.getByText('Back Squat').closest('.border'));
-    expect(squatCard().queryByText('Set the bar on your upper back and unrack it.')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'How to perform Back Squat' }));
+    const squatDialog = screen.getByRole('dialog', { name: 'How to perform Back Squat' });
+    expect(within(squatDialog).getByText('Place bar on upper back (traps) and unrack.')).toBeInTheDocument();
+    expect(squatDialog.textContent).not.toContain('Lie on bench with eyes directly under bar.');
+  });
 
-    await user.click(benchCard().getByText('How to perform'));
-    expect(benchCard().queryByText('Lie on the bench with your eyes under the bar.')).not.toBeInTheDocument();
+  it('no longer nests a how-to-perform control inside Customise sets and reps', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
+
+    expect(benchCard().queryByText('How to perform')).not.toBeInTheDocument();
+    expect(benchCard().getByLabelText('Decrease bench sets')).toBeInTheDocument();
   });
 
   it('resets to defaults', async () => {
@@ -119,8 +140,9 @@ describe('Program tab', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Program'));
+    await openCustomise(user);
     await user.click(benchCard().getByLabelText('Decrease bench sets'));
-    await user.click(screen.getByText('Reset'));
+    await user.click(screen.getByText('Reset to 5×5'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.program.bench.sets).toBe(5);
