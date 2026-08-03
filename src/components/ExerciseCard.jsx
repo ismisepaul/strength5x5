@@ -50,7 +50,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
   return (
     <div className={`p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
       <div className="mb-5">
-        <div className="flex items-center justify-between">
+        <div className={`flex justify-between ${isRamped ? 'items-start' : 'items-center'}`}>
           <div className="flex-1 min-w-0 pr-4">
             <h3 className="font-semibold text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
             {isRamped && (
@@ -66,6 +66,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
               label={t('exercises.' + ex.id)}
               isDark={isDark}
               variant="prominent"
+              topSet
             />
           ) : (
             <WeightInput

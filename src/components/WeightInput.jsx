@@ -17,13 +17,20 @@ export const parseWeightInput = (str) => {
   return Number.isFinite(n) ? n : null;
 };
 
-const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, isDark, variant = 'prominent' }) => {
+const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, isDark, variant = 'prominent', topSet = false }) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(null); // null while not editing; typed string while editing
   const cancelingRef = useRef(false);
   const { size, iconSize, valueClass, width } = VARIANTS[variant];
   const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
   const displayValue = draft !== null ? draft : String(value);
+  // A Madcow top set is never the day's flat working weight, so it gets its own aria
+  // wording everywhere -- and, in the prominent (headline-number) variant, a visible
+  // caption too, since Workout C's header number is the top set, not the day's
+  // heavier triple attempt shown under the sets below (see design-system.md §4).
+  const decreaseAriaKey = topSet ? 'workout.decreaseTopSetAria' : 'workout.decreaseWeightAria';
+  const increaseAriaKey = topSet ? 'workout.increaseTopSetAria' : 'workout.increaseWeightAria';
+  const inputAriaKey = topSet ? 'workout.topSetInputAria' : 'workout.weightInputAria';
 
   const commit = (str) => {
     const parsed = parseWeightInput(str);
@@ -33,58 +40,64 @@ const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, isDark,
   };
 
   // Steps from whatever's currently typed (if it parses), otherwise from the
-  // committed value -- so typing then tapping + adjusts the typed number.
+  // committed value -- so typing then tapping + adjusts the typed number, and
+  // always snaps back to the grid the same way commit() does.
   const step = (diff) => {
     const parsed = draft !== null ? parseWeightInput(draft) : null;
     const base = parsed !== null ? parsed : value;
-    onChange(Math.max(min, base + diff));
+    onChange(roundWeight(base + diff, increment, min));
     setDraft(null);
   };
 
   return (
-    <div className="flex items-center gap-2 shrink-0">
-      <StepperButton
-        onClick={() => step(-increment)}
-        onMouseDown={(e) => e.preventDefault()}
-        ariaLabel={t('workout.decreaseWeightAria', { name: label })}
-        icon={Minus}
-        isDark={isDark}
-        size={size}
-        iconSize={iconSize}
-      />
-      <div className="flex items-baseline gap-1">
-        <input
-          type="text"
-          inputMode="decimal"
-          value={displayValue}
-          onFocus={(e) => { setDraft(String(value)); e.target.select(); }}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={(e) => {
-            if (cancelingRef.current) { cancelingRef.current = false; setDraft(null); return; }
-            commit(e.target.value);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.currentTarget.blur();
-            } else if (e.key === 'Escape') {
-              cancelingRef.current = true;
-              e.currentTarget.blur();
-            }
-          }}
-          aria-label={t('workout.weightInputAria', { name: label })}
-          className={`${width} text-center ${valueClass} font-medium tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] ${isDark ? 'border-ink/18' : 'border-ink-lt/18'} focus:border-accent focus:outline-none`}
+    <div className="flex flex-col items-end gap-1 shrink-0">
+      {topSet && variant === 'prominent' && (
+        <span className={`text-[10.5px] ${mutedClass}`}>{t('workout.topSetFieldLabel')}</span>
+      )}
+      <div className="flex items-center gap-2">
+        <StepperButton
+          onClick={() => step(-increment)}
+          onMouseDown={(e) => e.preventDefault()}
+          ariaLabel={t(decreaseAriaKey, { name: label })}
+          icon={Minus}
+          isDark={isDark}
+          size={size}
+          iconSize={iconSize}
         />
-        <span className={`text-[13px] ${mutedClass}`}>kg</span>
+        <div className="flex items-baseline gap-1">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={displayValue}
+            onFocus={(e) => { setDraft(String(value)); e.target.select(); }}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={(e) => {
+              if (cancelingRef.current) { cancelingRef.current = false; setDraft(null); return; }
+              commit(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              } else if (e.key === 'Escape') {
+                cancelingRef.current = true;
+                e.currentTarget.blur();
+              }
+            }}
+            aria-label={t(inputAriaKey, { name: label })}
+            className={`${width} text-center ${valueClass} font-medium tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] ${isDark ? 'border-ink/18' : 'border-ink-lt/18'} focus:border-accent focus:outline-none`}
+          />
+          <span className={`text-[13px] ${mutedClass}`}>kg</span>
+        </div>
+        <StepperButton
+          onClick={() => step(increment)}
+          onMouseDown={(e) => e.preventDefault()}
+          ariaLabel={t(increaseAriaKey, { name: label })}
+          icon={Plus}
+          isDark={isDark}
+          size={size}
+          iconSize={iconSize}
+        />
       </div>
-      <StepperButton
-        onClick={() => step(increment)}
-        onMouseDown={(e) => e.preventDefault()}
-        ariaLabel={t('workout.increaseWeightAria', { name: label })}
-        icon={Plus}
-        isDark={isDark}
-        size={size}
-        iconSize={iconSize}
-      />
     </div>
   );
 };

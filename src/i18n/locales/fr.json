@@ -41,6 +41,10 @@
     "decreaseWeightAria": "Diminuer le poids de {{name}}",
     "increaseWeightAria": "Augmenter le poids de {{name}}",
     "weightInputAria": "Poids de {{name}} en kilogrammes",
+    "decreaseTopSetAria": "Diminuer la série maximale de {{name}}",
+    "increaseTopSetAria": "Augmenter la série maximale de {{name}}",
+    "topSetInputAria": "Série maximale de {{name}} en kilogrammes",
+    "topSetFieldLabel": "Série maximale",
     "standardKicker": "Standard 5×5",
     "madcowKicker": "Madcow 5×5 · semaine {{week}}",
     "madcowSubtitle": "Jour {{mood}} · {{lifts}}",
@@ -83,7 +87,7 @@
       "subtitle": "Vos poids et votre historique sont conservés dans les deux cas.",
       "active": "Actif",
       "cancel": "Annuler",
-      "standardBody": "Séance A : Squat, Développé couché, Rowing. Séance B : Squat, Développé militaire, Deadlift. 5 séries de 5 répétitions à poids fixe. Validez toutes les répétitions pour augmenter le poids la séance suivante.",
+      "standardBody": "Séance A : Squat, Développé couché, Rowing. Séance B : Squat, Développé militaire, Deadlift. 5 séries de 5 répétitions à poids fixe (1 série de 5 pour le Deadlift). Validez toutes les répétitions pour augmenter le poids la séance suivante.",
       "madcowBody": "Séries en rampe jusqu'à 1 série maximale par exercice sur un planning Lourd-Léger-Moyen. Squat 3x/semaine, Développé incliné le jour léger. Progression hebdomadaire.",
       "chipFrequency": "3 × semaine",
       "chipStandardDays": "A / B",
@@ -136,7 +140,7 @@
       "dayCLabel": "4×5 · 1×3 · 1×8",
       "dayANote": "5 séries en rampe de 5 répétitions. Le poids maximal égale le triplet du vendredi précédent.",
       "dayBNote": "Jour léger. Squat : 4 séries de 5 (séries 1-3 en rampe, série 4 répète la série 3). Développé incliné et Deadlift progressent indépendamment.",
-      "dayCNote": "Jour moyen. 4 séries en rampe de 5, 1 série maximale de 3 (+2.5% plus lourd), 1 série dégressive de 8 au poids de la série 3.",
+      "dayCNote": "Jour moyen. 4 séries en rampe de 5, puis un triplet plus lourd, puis une série dégressive de 8 au poids de la série 3.",
       "howTitle": "Comment le poids augmente",
       "howSteps": [
         "Séance C (Vendredi) : Réalisez une série maximale de 3 répétitions plus lourde.",
@@ -174,12 +178,14 @@
         "Raccrochez la barre en toute sécurité après la dernière répétition."
       ],
       "row": [
-        "Tenez-vous au-dessus de la barre au milieu du pied, pieds largeur des hanches.",
-        "Penchez le buste à l'horizontale (parallèle au sol), genoux légèrement fléchis.",
-        "Saisissez la barre plus large que le deadlift, dos plat et tronc gainé.",
-        "Tirez la barre depuis le sol jusqu'au bas de la poitrine/sternum.",
-        "Touchez la poitrine en haut sans tricher avec le buste.",
-        "Reposez complètement la barre au sol entre chaque répétition."
+        "Tenez-vous debout, pieds écartés à la largeur des hanches, et saisissez la barre juste à l'extérieur des jambes.",
+        "Basculez au niveau des hanches jusqu'à ce que le torse soit incliné à environ 30–45° au-dessus de l'horizontale.",
+        "Gainez votre tronc et gardez le dos plat.",
+        "Laissez la barre pendre sous les épaules.",
+        "Tirez la barre vers le bas de la poitrine ou le haut de l'abdomen.",
+        "Serrez les omoplates l'une vers l'autre en haut du mouvement.",
+        "Redescendez la barre de façon contrôlée jusqu'à extension complète des bras.",
+        "Après la dernière répétition, redressez-vous et reposez la barre en toute sécurité."
       ],
       "press": [
         "Tenez-vous avec la barre reposant sur l'avant des épaules, prise juste hors des épaules.",
@@ -268,7 +274,7 @@
     "savesAfterWorkout": "Sauvegarde vers Drive après chaque séance",
     "syncNow": "Synchroniser",
     "lastSaved": "Dernière sauvegarde : {{time}}",
-    "saveFailed": "Échec de sauvegarde -- appuyez pour réessayer",
+    "saveFailed": "Échec de sauvegarde — appuyez pour réessayer",
     "connectedToDrive": "Connecté",
     "notConnected": "Non connecté"
   },

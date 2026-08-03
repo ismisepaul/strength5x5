@@ -74,7 +74,7 @@ describe('Switching to Madcow', () => {
     render(<App />);
 
     await switchToMadcow(user);
-    await user.click(screen.getByLabelText('Increase Back Squat weight'));
+    await user.click(screen.getByLabelText('Increase Back Squat top set'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.mcTop.squat).toBe(110);

@@ -132,8 +132,45 @@ describe('WeightInput', () => {
     expect(onChange).toHaveBeenCalledWith(72.5);
   });
 
+  it('snaps a stepper tap from an off-grid typed draft back onto the grid', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<WeightInput {...defaultProps} onChange={onChange} />);
+    const input = screen.getByDisplayValue('60');
+    await user.clear(input);
+    await user.type(input, '63'); // off-grid for a 2.5kg increment
+    await user.click(screen.getByLabelText('Increase Back Squat weight'));
+    // 63 + 2.5 = 65.5, which must round back onto the grid rather than persist as-is.
+    expect(onChange).toHaveBeenCalledWith(65);
+  });
+
   it('has an accessible label naming the exercise', () => {
     render(<WeightInput {...defaultProps} />);
     expect(screen.getByLabelText('Back Squat weight in kilograms')).toBeInTheDocument();
+  });
+
+  describe('topSet variant', () => {
+    it('uses top-set aria wording instead of generic weight wording', () => {
+      render(<WeightInput {...defaultProps} topSet />);
+      expect(screen.getByLabelText('Decrease Back Squat top set')).toBeInTheDocument();
+      expect(screen.getByLabelText('Increase Back Squat top set')).toBeInTheDocument();
+      expect(screen.getByLabelText('Back Squat top set in kilograms')).toBeInTheDocument();
+    });
+
+    it('shows a "Top set" caption in the prominent variant', () => {
+      render(<WeightInput {...defaultProps} topSet variant="prominent" />);
+      expect(screen.getByText('Top set')).toBeInTheDocument();
+    });
+
+    it('omits the caption in the compact variant, used inside already-labelled rows', () => {
+      render(<WeightInput {...defaultProps} topSet variant="compact" />);
+      expect(screen.queryByText('Top set')).not.toBeInTheDocument();
+    });
+
+    it('does not show the caption or top-set aria wording by default', () => {
+      render(<WeightInput {...defaultProps} />);
+      expect(screen.queryByText('Top set')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Increase Back Squat top set')).not.toBeInTheDocument();
+    });
   });
 });

@@ -44,7 +44,7 @@ describe('Train tab under Madcow', () => {
     // The top-set weight is editable, same as the Program tab.
     expect(screen.getByDisplayValue('107.5')).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText('Increase Back Squat weight'));
+    await user.click(screen.getByLabelText('Increase Back Squat top set'));
     expect(screen.getByDisplayValue('110')).toBeInTheDocument();
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -85,7 +85,7 @@ describe('Train tab under Madcow', () => {
     await user.click(screen.getByText('Start workout'));
     expect(squatCard().getByText('107.5')).toBeInTheDocument();
 
-    await user.click(squatCard().getByLabelText('Increase Back Squat weight'));
+    await user.click(squatCard().getByLabelText('Increase Back Squat top set'));
 
     // The active session's top-of-ramp set reflects the edit immediately.
     expect(squatCard().getByDisplayValue('110')).toBeInTheDocument();

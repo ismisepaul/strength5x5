@@ -293,6 +293,7 @@ const ProgramTab = ({
                     label={t('exercises.' + id)}
                     isDark={isDark}
                     variant="compact"
+                    topSet
                   />
                 </div>
               );

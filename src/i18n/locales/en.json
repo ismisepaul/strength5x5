@@ -41,6 +41,10 @@
     "decreaseWeightAria": "Decrease {{name}} weight",
     "increaseWeightAria": "Increase {{name}} weight",
     "weightInputAria": "{{name}} weight in kilograms",
+    "decreaseTopSetAria": "Decrease {{name}} top set",
+    "increaseTopSetAria": "Increase {{name}} top set",
+    "topSetInputAria": "{{name}} top set in kilograms",
+    "topSetFieldLabel": "Top set",
     "standardKicker": "Standard 5×5",
     "madcowKicker": "Madcow 5×5 · week {{week}}",
     "madcowSubtitle": "{{mood}} day · {{lifts}}",
@@ -83,7 +87,7 @@
       "subtitle": "Your weights and history carry over either way.",
       "active": "Active",
       "cancel": "Cancel",
-      "standardBody": "Workout A: Squat, Bench Press, Barbell Row. Workout B: Squat, Overhead Press, Deadlift. 5 sets of 5 reps at fixed weight. Complete all reps to increase weight next session.",
+      "standardBody": "Workout A: Squat, Bench Press, Barbell Row. Workout B: Squat, Overhead Press, Deadlift. 5 sets of 5 reps at fixed weight (1 set of 5 for Deadlift). Complete all reps to increase weight next session.",
       "madcowBody": "Ramped sets up to 1 top set per lift on a Heavy-Light-Medium schedule. Squat 3x/week, Incline Bench on light day. Progress weight weekly.",
       "chipFrequency": "3 × week",
       "chipStandardDays": "A / B",
@@ -136,7 +140,7 @@
       "dayCLabel": "4×5 · 1×3 · 1×8",
       "dayANote": "5 ramped sets of 5 reps. Top set weight equals Friday's triple from last week.",
       "dayBNote": "Light day. Squat: 4 sets of 5 reps (sets 1-3 ramp, set 4 repeats set 3). Incline Bench and Deadlift progress independently.",
-      "dayCNote": "Medium day. 4 ramped sets of 5, 1 top set of 3 (+2.5% heavier), 1 back-off set of 8 at set 3 weight.",
+      "dayCNote": "Medium day. 4 ramped sets of 5, then a heavier triple, then a back-off set of 8 at set 3 weight.",
       "howTitle": "How the weight goes up",
       "howSteps": [
         "Workout C (Friday): Lift heavier top set for 3 reps.",
@@ -158,7 +162,7 @@
       "squat": [
         "Place bar on upper back (traps) and unrack.",
         "Step back and set feet shoulder-width apart, toes turned 30° out.",
-        "Brace core and look at a spot on the floor 6 feet ahead.",
+        "Brace core and look at a spot on the floor 2 metres ahead.",
         "Squat down by pushing knees out and bowing at hips.",
         "Lower until hip joint is below top of knees (below parallel).",
         "Drive hips straight up to stand, keeping knees pushed out.",
@@ -174,12 +178,14 @@
         "Rack bar securely after final rep."
       ],
       "row": [
-        "Stand with bar over mid-foot, feet hip-width apart.",
-        "Bend at hips with knees slightly bent until torso is parallel to floor.",
-        "Grip bar wider than deadlift grip with flat back and tight core.",
-        "Pull bar from floor to lower chest/sternum.",
-        "Touch chest at top without swinging torso.",
-        "Return bar completely to floor under control between every rep."
+        "Stand with feet hip-width apart and grip the bar just outside your legs.",
+        "Hinge at your hips until your torso is about 30–45° above horizontal.",
+        "Brace your core and keep your back flat.",
+        "Let the bar hang below your shoulders.",
+        "Pull the bar toward your lower chest or upper abdomen.",
+        "Squeeze your shoulder blades together at the top.",
+        "Lower the bar under control to full arm extension.",
+        "After the final rep, stand up and lower the bar safely."
       ],
       "press": [
         "Stand with bar resting on front shoulders, grip just outside shoulder width.",
@@ -189,7 +195,7 @@
         "Lower bar under control back to front shoulders."
       ],
       "deadlift": [
-        "Stand with bar over mid-foot (1 inch from shins), feet hip-width apart.",
+        "Stand with bar over mid-foot (2-3 cm from shins), feet hip-width apart.",
         "Hinge at hips and grip bar shoulder-width without moving bar.",
         "Bend knees until shins touch bar.",
         "Lift chest to flatten back and pull slack out of bar.",
@@ -268,7 +274,7 @@
     "savesAfterWorkout": "Saves to Drive after every workout",
     "syncNow": "Sync Now",
     "lastSaved": "Last saved: {{time}}",
-    "saveFailed": "Save failed -- tap to retry",
+    "saveFailed": "Save failed — tap to retry",
     "connectedToDrive": "Connected",
     "notConnected": "Not connected"
   },

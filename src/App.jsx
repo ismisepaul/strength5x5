@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
 import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
-import { updateMadcowTopSet } from './madcow';
+import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from './programs';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
@@ -458,13 +458,15 @@ const App = () => {
 
   // The one path every Madcow top-set edit goes through -- Program tab, Train's idle
   // row, and Train's active-workout card -- so mcTop, the mirrored `weights`, and (if
-  // that lift is mid-session) its live ramp never drift apart. See madcow.js.
+  // that lift is mid-session) its live ramp never drift apart. Each setter reads its
+  // own fresh `prev` rather than closing over mcTop/weights/currentWorkout, so this
+  // stays correct even if two taps land before a render lands between them.
   const updateMcTop = useCallback((liftId, nextTop) => {
-    const result = updateMadcowTopSet({ liftId, nextTop, mcTop, weights, mcInterval, currentWorkout });
-    setMcTop(result.mcTop);
-    setWeights(result.weights);
-    if (result.currentWorkout !== currentWorkout) setCurrentWorkout(result.currentWorkout);
-  }, [mcTop, weights, mcInterval, currentWorkout]);
+    const clamped = clampMcTop(liftId, nextTop);
+    setMcTop(prev => ({ ...prev, [liftId]: clamped }));
+    setWeights(prev => applyMcTopToWeights(prev, { [liftId]: clamped }));
+    setCurrentWorkout(prev => reviseWorkoutTopSet(prev, liftId, clamped, mcInterval));
+  }, [mcInterval]);
 
   const applyLocalImport = useCallback((d) => {
     setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
@@ -794,7 +796,7 @@ const App = () => {
                         const topWeight = topWeightOf(ex);
                         return (
                         <div key={liftId} className={`py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
-                          <div className="flex justify-between items-center">
+                          <div className={`flex justify-between ${isMadcow ? 'items-start' : 'items-center'}`}>
                             <button
                               onClick={() => setExpandedBarSetup(prev => ({ ...prev, [liftId]: !prev[liftId] }))}
                               aria-expanded={isBarSetupOpen}
@@ -816,6 +818,7 @@ const App = () => {
                               label={exName}
                               isDark={isDark}
                               variant="prominent"
+                              topSet={isMadcow}
                             />
                           </div>
                           {isBarSetupOpen && (
