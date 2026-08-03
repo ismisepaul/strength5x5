@@ -10,11 +10,12 @@ import {
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
+import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
+import { calculateBest1RM, calculateDeload, deloadWeightByPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
+import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
+import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from './programs';
-import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useTimer } from './hooks/useTimer';
@@ -30,6 +31,7 @@ import Toast from './components/Toast';
 import WeightInput from './components/WeightInput';
 import { useToast } from './hooks/useToast';
 import { useGoogleDrive } from './hooks/useGoogleDrive';
+import { createChime } from './audio/chime';
 
 const LONG_BREAK_DELOAD_KEY = 'strength5x5_long_break_deload_for_date';
 
@@ -85,66 +87,16 @@ const App = () => {
 
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
-  const audioCtxRef = useRef(null);
-  const reverbRef = useRef(null);
+  const chimeRef = useRef(null);
+  if (!chimeRef.current) chimeRef.current = createChime();
 
   const gdrive = useGoogleDrive();
 
   useWakeLock();
 
-  const playChime = useCallback(() => {
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-        const duration = 2;
-        const rate = audioCtxRef.current.sampleRate;
-        const length = rate * duration;
-        const impulse = audioCtxRef.current.createBuffer(2, length, rate);
-        for (let c = 0; c < 2; c++) {
-          const data = impulse.getChannelData(c);
-          for (let i = 0; i < length; i++) {
-            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 4);
-          }
-        }
-        const convolver = audioCtxRef.current.createConvolver();
-        convolver.buffer = impulse;
-        reverbRef.current = convolver;
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') { ctx.resume(); }
-
-      const now = ctx.currentTime;
-      const mainGain = ctx.createGain();
-      const dryGain = ctx.createGain();
-      const reverbGain = ctx.createGain();
-      const osc1 = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-
-      osc1.type = 'sine'; osc2.type = 'sine';
-      osc1.frequency.value = 1358; osc2.frequency.value = 2844;
-      osc1.connect(mainGain); osc2.connect(mainGain);
-      mainGain.connect(dryGain); mainGain.connect(reverbGain);
-      dryGain.connect(ctx.destination);
-
-      if (reverbRef.current) {
-        reverbGain.connect(reverbRef.current);
-        reverbRef.current.connect(ctx.destination);
-      }
-
-      dryGain.gain.setValueAtTime(0.8, now);
-      reverbGain.gain.setValueAtTime(0.2, now);
-      mainGain.gain.setValueAtTime(0, now);
-      mainGain.gain.linearRampToValueAtTime(0.6, now + 0.005);
-      mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-      osc1.start(now); osc2.start(now);
-      osc1.stop(now + 0.5); osc2.stop(now + 0.5);
-    } catch (e) { /* WebAudio may fail silently */ }
-  }, []);
-
   const timer = useTimer({
     onExpire: () => {
-      if (soundEnabled) playChime();
+      if (soundEnabled) chimeRef.current.play();
       if (vibrationEnabled && navigator?.vibrate) { navigator.vibrate([200, 100, 200]); }
     }
   });
@@ -283,84 +235,6 @@ const App = () => {
     setRepPicker(null);
   }, [repPicker, applySetValue]);
 
-  const evaluateWorkoutOutcome = useCallback((workout, priorHistory, baseWeights) => {
-    const nextWeights = { ...baseWeights };
-    const progressions = [];
-    const pendingDeloads = [];
-
-    workout.exercises.forEach(ex => {
-      const passed = isExercisePassed(ex);
-      const defaultIncrement = ex.id === 'deadlift' ? 5 : 2.5;
-      const increment = ex.increment
-        ?? WORKOUTS[workout.type]?.exercises.find(e => e.id === ex.id)?.increment
-        ?? defaultIncrement;
-
-      if (passed) {
-        nextWeights[ex.id] = ex.weight + increment;
-        progressions.push(ex.id);
-      } else {
-        const priorFailures = getConsecutiveFailures(priorHistory, ex.id, ex.weight);
-        if (priorFailures >= 2) {
-          pendingDeloads.push({ id: ex.id, currentWeight: ex.weight });
-        }
-      }
-    });
-
-    return { nextWeights, progressions, pendingDeloads };
-  }, []);
-
-  const getPendingFailureDeloadsForStart = useCallback((historyToCheck, workoutWeights) => {
-    const exercises = Object.values(WORKOUTS)
-      .flatMap(workout => workout.exercises)
-      .filter((exercise, index, arr) => arr.findIndex(e => e.id === exercise.id) === index);
-    const getLatestFailureStreak = (exerciseId) => {
-      const latestSessionWithExercise = historyToCheck.find(session => session.exercises?.some(e => e.id === exerciseId));
-      const latestExercise = latestSessionWithExercise?.exercises?.find(e => e.id === exerciseId);
-      if (!latestExercise) return { streakWeight: null, consecutiveFailures: 0 };
-      const streakWeight = latestExercise.weight;
-      return {
-        streakWeight,
-        consecutiveFailures: getConsecutiveFailures(historyToCheck, exerciseId, streakWeight),
-      };
-    };
-    const diagnostics = exercises.map(ex => {
-      const streak = getLatestFailureStreak(ex.id);
-      return {
-        id: ex.id,
-        plannedWeight: workoutWeights[ex.id],
-        streakWeight: streak.streakWeight,
-        consecutiveFailures: streak.consecutiveFailures,
-      };
-    });
-    const pending = diagnostics
-      .filter(ex => ex.consecutiveFailures >= 3)
-      .map(ex => ({ id: ex.id, currentWeight: ex.plannedWeight }));
-    return pending;
-  }, []);
-
-  const getStartDeloadPrompt = useCallback((historyToCheck, workoutWeights) => {
-    if (historyToCheck.length === 0) return null;
-
-    const lastWorkoutDate = historyToCheck[0].date;
-    const last = new Date(lastWorkoutDate);
-    const daysOff = Math.floor((new Date() - last) / 86400000);
-    if (daysOff >= 14 && longBreakDeloadForDate !== lastWorkoutDate) {
-      const recommended = getRecommendedDeloadPercent(daysOff);
-      return { type: 'longBreak', daysOff, recommended };
-    }
-
-    // Madcow's stall is "the top set holds" -- no forced-deload prompt, only the
-    // long-break safety check above applies to it.
-    if (!getProgram(preset).usesDeloads) return null;
-
-    const pendingDeloads = getPendingFailureDeloadsForStart(historyToCheck, workoutWeights);
-    if (pendingDeloads.length > 0) {
-      return { type: 'failure', pendingDeloads };
-    }
-
-    return null;
-  }, [getPendingFailureDeloadsForStart, longBreakDeloadForDate, preset]);
-
   const finishWorkout = useCallback(() => {
     const isMadcow = getProgram(preset).ramped;
     const savedWorkout = {
@@ -413,7 +287,7 @@ const App = () => {
       isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
       preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay, mcPending: nextMcPending,
     });
-  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
+  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -432,7 +306,7 @@ const App = () => {
 
   const startWorkout = useCallback((force = false) => {
     if (history.length === 0 && !force) { setShowRestorePrompt(true); return; }
-    const prompt = getStartDeloadPrompt(history, weights);
+    const prompt = getStartDeloadPrompt(history, weights, { longBreakDeloadForDate, preset });
     if (prompt?.type === 'longBreak') {
       setDeloadPercent(prompt.recommended);
       setDeloadAlert({ daysOff: prompt.daysOff, recommended: prompt.recommended, message: t('modals.deloadMessage', { days: prompt.daysOff }) });
@@ -444,7 +318,7 @@ const App = () => {
       return;
     }
     initializeWorkout(weights);
-  }, [history, weights, initializeWorkout, getStartDeloadPrompt, t]);
+  }, [history, weights, initializeWorkout, longBreakDeloadForDate, preset, t]);
 
   // Switches the active program, converting weights each direction so Stats and the
   // Program tab always agree with whatever's actually being trained.
@@ -477,21 +351,11 @@ const App = () => {
   }, [mcInterval]);
 
   const applyLocalImport = useCallback((d) => {
-    setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
-    if (d.nextType) setCurrentWorkoutType(d.nextType);
-    setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
-    if (d.preferredRest) setPreferredRest(d.preferredRest);
-    if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
-    if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
-    if (d.logGrouping) setLogGrouping(d.logGrouping);
-    if (d.language) i18n.changeLanguage(d.language);
-    setPreset(normalizePreset(d.preset));
-    setMcTop(normalizeMcTop(d.mcTop, d.weights));
-    setMcWeek(normalizeMcWeek(d.mcWeek));
-    setMcInterval(normalizeMcInterval(d.mcInterval));
-    setMcPress(normalizeMcPress(d.mcPress));
-    setMcNextDay(normalizeMcNextDay(d.mcNextDay));
-    setMcPending(normalizeMcPending(d.mcPending));
+    hydrateFromBackup(d, {
+      setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
+      setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
+      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending,
+    });
     setActiveTab('workout'); setShowRestorePrompt(false);
     setPendingLocalImport(null);
     showToast(t('toast.backupRestored'), 'success');
@@ -517,42 +381,29 @@ const App = () => {
       showToast(t('toast.fileTooLarge'), 'error');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const raw = JSON.parse(event.target.result);
-        const d = validateImportData(raw);
-        if (!d) {
-          console.warn('Import failed: invalid data structure');
-          showToast(t('toast.invalidBackup'), 'error');
-          return;
-        }
+    readBackupFile(file).then((d) => {
+      const importCount = d.history?.length || 0;
+      const localCount = history.length;
 
-        const importCount = d.history?.length || 0;
-        const localCount = history.length;
-
-        if (localCount > 0 && importCount < localCount) {
-          const latestImport = d.history.reduce((latest, s) => {
-            const dt = new Date(s.date);
-            return dt > latest ? dt : latest;
-          }, new Date(d.history[0].date));
-          setPendingLocalImport({
-            data: d,
-            backupCount: importCount,
-            backupDate: latestImport.toLocaleDateString(),
-            localCount,
-            lossCount: Math.max(0, localCount - importCount),
-          });
-          return;
-        }
-
-        applyLocalImport(d);
-      } catch (err) {
-        console.warn('Import failed:', err);
-        showToast(t('toast.couldNotRead'), 'error');
+      if (localCount > 0 && importCount < localCount) {
+        const latestImport = d.history.reduce((latest, s) => {
+          const dt = new Date(s.date);
+          return dt > latest ? dt : latest;
+        }, new Date(d.history[0].date));
+        setPendingLocalImport({
+          data: d,
+          backupCount: importCount,
+          backupDate: latestImport.toLocaleDateString(),
+          localCount,
+          lossCount: Math.max(0, localCount - importCount),
+        });
+        return;
       }
-    };
-    reader.readAsText(file);
+
+      applyLocalImport(d);
+    }).catch((err) => {
+      showToast(t('toast.' + (err.code === 'invalidBackup' ? 'invalidBackup' : 'couldNotRead')), 'error');
+    });
     e.target.value = '';
   };
 
@@ -564,22 +415,11 @@ const App = () => {
       showToast(t('toast.fileTooLarge'), 'error');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const result = convertStrongliftsCSV(event.target.result);
-        if (!result.history.length) {
-          console.warn('StrongLifts import failed: no valid workouts found');
-          showToast(t('toast.noValidWorkouts'), 'error');
-          return;
-        }
-        setPendingCSVImport(result);
-      } catch (err) {
-        console.warn('StrongLifts import failed:', err);
-        showToast(t('toast.couldNotReadCSV'), 'error');
-      }
-    };
-    reader.readAsText(file);
+    readStrongliftsFile(file).then((result) => {
+      setPendingCSVImport(result);
+    }).catch((err) => {
+      showToast(t('toast.' + (err.code === 'noValidWorkouts' ? 'noValidWorkouts' : 'couldNotReadCSV')), 'error');
+    });
     e.target.value = '';
   };
 
@@ -602,21 +442,11 @@ const App = () => {
   }, [pendingCSVImport, showToast, getAppState, saveToDriveQuietly]);
 
   const applyDriveRestore = useCallback((d) => {
-    setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
-    if (d.nextType) setCurrentWorkoutType(d.nextType);
-    setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
-    if (d.preferredRest) setPreferredRest(d.preferredRest);
-    if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
-    if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
-    if (d.logGrouping) setLogGrouping(d.logGrouping);
-    if (d.language) i18n.changeLanguage(d.language);
-    setPreset(normalizePreset(d.preset));
-    setMcTop(normalizeMcTop(d.mcTop, d.weights));
-    setMcWeek(normalizeMcWeek(d.mcWeek));
-    setMcInterval(normalizeMcInterval(d.mcInterval));
-    setMcPress(normalizeMcPress(d.mcPress));
-    setMcNextDay(normalizeMcNextDay(d.mcNextDay));
-    setMcPending(normalizeMcPending(d.mcPending));
+    hydrateFromBackup(d, {
+      setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
+      setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
+      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending,
+    });
     setActiveTab('workout');
     showToast(t('toast.restoredFromDrive'), 'success');
   }, [showToast, t]);
@@ -718,7 +548,7 @@ const App = () => {
   }, []);
 
   const handleTimerSkip = useCallback(() => {
-    if (audioCtxRef.current?.state === 'suspended') { audioCtxRef.current.resume(); }
+    chimeRef.current.resume();
     if (isExerciseComplete) {
       timer.reset();
       setIsExerciseComplete(false);
