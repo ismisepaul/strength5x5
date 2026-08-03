@@ -10,9 +10,6 @@ Full spec: [docs/design-system.md](../../../docs/design-system.md). Migration sp
 [docs/design/nocturne-implementation-plan.md](../../../docs/design/nocturne-implementation-plan.md).
 Visual reference: `docs/design/nocturne-prototype.dc.html` (read as markup; option 1a only).
 
-**The codebase has not been migrated yet.** It still uses slate/indigo/emerald/rose/amber,
-`font-black` and mixed radii. New UI follows Nocturne; do not extend the old system.
-
 ## Non-negotiables
 
 - **One accent: `#9184d9`.** No emerald, rose, amber, indigo, blue or raw slate. Status is
