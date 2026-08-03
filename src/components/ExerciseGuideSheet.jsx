@@ -10,12 +10,12 @@ const ExerciseGuideSheet = ({ liftId, onClose }) => {
 
   return (
     <div role="dialog" aria-modal="true" aria-label={t('technique.openAria', { exercise: exerciseName })} onClick={onClose} className="fixed inset-0 z-[500] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-      <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 bg-surface`}>
+      <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
         <h3 className="text-lg font-semibold mb-5">{exerciseName}</h3>
         <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-3 mb-6">
           {t('technique.steps.' + liftId, { returnObjects: true }).map((step, i) => (
             <div key={i} className="flex items-start gap-3">
-              <span className="w-[22px] h-[22px] shrink-0 rounded-full border border-accent/50 text-accent-300 text-[11px] font-semibold flex items-center justify-center tabular-nums">{i + 1}</span>
+              <span className="w-[22px] h-[22px] shrink-0 rounded-full border border-accent/50 text-accent-300 text-tab font-semibold flex items-center justify-center tabular-nums">{i + 1}</span>
               <p className={`text-[13px] leading-[1.5] text-ink/70`}>{step}</p>
             </div>
           ))}

@@ -52,7 +52,7 @@ const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant
   return (
     <div className="flex flex-col items-end gap-1 shrink-0">
       {topSet && variant === 'prominent' && (
-        <span className={`text-[10.5px] ${mutedClass}`}>{t('workout.topSetFieldLabel')}</span>
+        <span className={`text-kicker ${mutedClass}`}>{t('workout.topSetFieldLabel')}</span>
       )}
       <div className="flex items-center gap-2">
         <StepperButton

@@ -9,7 +9,7 @@ const RepPicker = ({ ex, setIdx, onSelect, onClose }) => {
 
   return (
     <div role="dialog" aria-modal="true" aria-label="Rep picker" className="fixed inset-0 z-[200] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-      <div className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 bg-surface`}>
+      <div className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
         <div className="mb-6">
           <h3 className="text-lg font-semibold">{t('modals.repPickerTitle', { name: t('exercises.' + ex.id), set: setIdx + 1 })}</h3>
           <p className={`text-[12.5px] mt-1 text-ink/50`}>{t('modals.repPickerQuestion')}</p>

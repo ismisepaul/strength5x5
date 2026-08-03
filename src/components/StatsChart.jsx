@@ -83,7 +83,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-semibold">{title}</h2>
-          <p className="text-[15px] tabular-nums">
+          <p className="text-card tabular-nums">
             {showWeight && <span className="text-accent">{currentWeight}kg</span>}
             {showWeight && showE1rm && <span className={mutedClass}> / </span>}
             {showE1rm && <span className="text-accent-300">{t('stats.est1rmValue', { value: currentE1rm })}</span>}
@@ -97,7 +97,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
             <button
               key={r.label}
               onClick={() => { setRange(r.label); try { localStorage.setItem(RANGE_STORAGE_KEY, r.label); } catch {} }}
-              className={`flex-1 py-3 text-[12px] uppercase tracking-wide transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+              className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
             >
               {r.label}
             </button>
@@ -106,13 +106,13 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
 
         {filteredData.length === 0 ? (
           <div className="py-16 text-center">
-            <p className={`text-[15px] ${mutedClass}`}>{t('stats.noDataForRange')}</p>
+            <p className={`text-card ${mutedClass}`}>{t('stats.noDataForRange')}</p>
           </div>
         ) : (
           <div className="h-56 relative">
             {filteredData.length === 1 && (
               <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <p className={`text-[13.5px] px-4 py-2 rounded-lg bg-surface-deep/90 ${mutedClass}`}>{t('stats.minTwoWorkouts')}</p>
+                <p className={`text-body px-4 py-2 rounded-lg bg-surface-deep/90 ${mutedClass}`}>{t('stats.minTwoWorkouts')}</p>
               </div>
             )}
             <ResponsiveContainer width="100%" height="100%">
@@ -175,7 +175,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
           <button
             onClick={toggleWeight}
             aria-pressed={showWeight}
-            className={`flex-1 py-3 rounded-lg text-[12px] uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: WEIGHT_COLOR }} />
             {t('stats.weight')}
@@ -183,7 +183,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
           <button
             onClick={toggleE1rm}
             aria-pressed={showE1rm}
-            className={`flex-1 py-3 rounded-lg text-[12px] uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: E1RM_COLOR }} />
             {t('stats.est1rm')}

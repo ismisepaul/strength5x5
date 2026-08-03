@@ -24,14 +24,14 @@ const ProgramEditor = ({ program, onChange }) => {
         return (
           <div key={id} className={`p-4 rounded-[10px] border bg-surface border-ink/8`}>
             <div className="flex justify-between items-center mb-4">
-              <p className="text-[15px] font-semibold">{t('exercises.' + id)}</p>
+              <p className="text-card font-semibold">{t('exercises.' + id)}</p>
               <p className={`text-[12.5px] text-ink/50`}>
                 {t('program.summary', { sets: t('program.setsCount', { count: sets }), reps: t('program.repsCount', { count: reps }) })}
               </p>
             </div>
 
             <div className="flex items-center gap-3 mb-4">
-              <span className={`w-9 text-[12px] uppercase ${mutedClass}`}>{t('program.setsLabel')}</span>
+              <span className={`w-9 text-meta uppercase ${mutedClass}`}>{t('program.setsLabel')}</span>
               <div className="flex-1 flex gap-1">
                 {Array.from({ length: MAX_SETS }, (_, i) => (
                   <div key={i} className={`flex-1 h-1.5 rounded-full ${i < sets ? 'bg-accent' : ('bg-ink/12')}`} />
@@ -51,7 +51,7 @@ const ProgramEditor = ({ program, onChange }) => {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className={`w-9 text-[12px] uppercase ${mutedClass}`}>{t('program.repsLabel')}</span>
+              <span className={`w-9 text-meta uppercase ${mutedClass}`}>{t('program.repsLabel')}</span>
               <div className="flex-1 flex justify-between">
                 {Array.from({ length: MAX_REPS }, (_, i) => (
                   <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < reps ? 'bg-accent' : ('bg-ink/12')}`} />

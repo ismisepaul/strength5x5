@@ -785,16 +785,16 @@ const App = () => {
                   return (
                     <>
                       <div className="mb-4">
-                        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{isMadcow ? t('workout.madcowKicker', { week: mcWeek }) : t('workout.standardKicker')}</p>
+                        <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-1">{isMadcow ? t('workout.madcowKicker', { week: mcWeek }) : t('workout.standardKicker')}</p>
                         <div className="flex items-center gap-[10px]">
-                          <h2 className="text-[32px] font-medium leading-tight">{t(`workout.type${day}`)}</h2>
+                          <h2 className="text-hero font-medium leading-tight">{t(`workout.type${day}`)}</h2>
                           <button
                             onClick={() => setWorkoutPicker(true)}
                             aria-label={t('workout.chooseWorkoutAria')}
                             className={`w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 border-ink/18 text-ink`}
                           ><CaretDown size={16} /></button>
                         </div>
-                        <p className={`text-[13.5px] mt-1 text-ink/45`}>
+                        <p className={`text-body mt-1 text-ink/45`}>
                           {isMadcow
                             ? t('workout.madcowSubtitle', { mood: moodLabel(day), lifts: liftIds.map(id => t('exercises.' + id)).join(' · ') })
                             : liftIds.map(id => t('exercises.' + id)).join(' · ')}
@@ -848,11 +848,11 @@ const App = () => {
                   );
                 })()}
                 <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
-                <p className={`text-[12px] text-center mt-3 text-ink/38`}>{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
+                <p className={`text-meta text-center mt-3 text-ink/38`}>{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex justify-center mb-2"><h2 className={`text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink/45`}>{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
+                <div className="flex justify-center mb-2"><h2 className={`text-kicker font-semibold uppercase tracking-[0.14em] text-ink/45`}>{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
                 {(() => {
                   const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
                   return currentWorkout?.exercises.map((ex, exIdx) => (
@@ -877,11 +877,11 @@ const App = () => {
                     return (
                       <>
                         <button onClick={finishWorkout} disabled={!allDone} className={`w-full h-[52px] rounded-lg border font-medium text-[15.5px] ${allDone ? 'border-accent text-accent active:scale-[0.98]' : ('border-ink/12 text-ink/30')}`}>{t('workout.finishWorkout')}</button>
-                        {!allDone && <p className={`text-[12px] text-center mt-3 text-ink/45`}>{t('workout.completeAllSets')}</p>}
+                        {!allDone && <p className={`text-meta text-center mt-3 text-ink/45`}>{t('workout.completeAllSets')}</p>}
                       </>
                     );
                   })()}
-                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 w-full min-h-[44px] flex items-center justify-center text-[15px] text-ink/45`}>{t('workout.discardWorkout')}</button>
+                  <button onClick={() => setShowCancelModal(true)} className={`mt-8 w-full min-h-[44px] flex items-center justify-center text-card text-ink/45`}>{t('workout.discardWorkout')}</button>
                 </div>
               </div>
             )}
@@ -893,13 +893,13 @@ const App = () => {
           const renderEntry = (s, key, onClick) => (
             <button key={key} onClick={onClick} className={`w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/8`}>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent">{t(getProgram(s.preset).nameKey)}</span>
-                <span className={`text-[13.5px] ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
+                <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent">{t(getProgram(s.preset).nameKey)}</span>
+                <span className={`text-body ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
               </div>
-              <p className="text-[15px] font-semibold mb-3">{t(`workout.type${s.type}`)}</p>
+              <p className="text-card font-semibold mb-3">{t(`workout.type${s.type}`)}</p>
               <div className="space-y-2">{s.exercises.map(ex => (
-                <div key={ex.id} className="flex justify-between text-[15px] items-center">
-                  <span className={`text-[12px] uppercase ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
+                <div key={ex.id} className="flex justify-between text-card items-center">
+                  <span className={`text-meta uppercase ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
                   <div className="flex items-center gap-3">
                     <span className="tabular-nums">{ex.weight}kg</span>
                     <div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (
@@ -914,7 +914,7 @@ const App = () => {
           return (
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-[24px] font-medium">{t('log.title')}</h2>
+              <h2 className="text-title font-medium">{t('log.title')}</h2>
               <button
                 onClick={() => {
                   // Defaults to whatever program/day you're actually on -- the modal lets
@@ -935,11 +935,11 @@ const App = () => {
                   <div key={i} className={i < stats.thisWeek ? 'w-2 h-2 rounded-full bg-accent' : `w-2 h-2 rounded-full border border-ink/30`} />
                 ))}
               </div>
-              <span className={`text-[13.5px] ${mutedClass}`}>{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</span>
+              <span className={`text-body ${mutedClass}`}>{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</span>
               <span className={mutedClass}>·</span>
-              <span className={`text-[13.5px] ${mutedClass}`}>{t('header.streak', { count: stats.streak })}</span>
+              <span className={`text-body ${mutedClass}`}>{t('header.streak', { count: stats.streak })}</span>
               <span className={mutedClass}>·</span>
-              <span className={`text-[13.5px] ${mutedClass}`}>{stats.total} {t('log.total')}</span>
+              <span className={`text-body ${mutedClass}`}>{stats.total} {t('log.total')}</span>
             </div>
 
             {history.length > 0 && (
@@ -948,7 +948,7 @@ const App = () => {
                   <button
                     key={opt.val}
                     onClick={() => { setLogGrouping(opt.val); if (opt.val !== 'all') { const groups = groupHistory(history, opt.val, 0); setExpandedGroups(groups.length > 0 ? { [groups[0].key]: true } : {}); } else { setExpandedGroups({}); } }}
-                    className={`flex-1 py-3 text-[12px] uppercase tracking-wide transition-all ${i > 0 ? ('border-l border-ink/10') : ''} ${logGrouping === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+                    className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? ('border-l border-ink/10') : ''} ${logGrouping === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
                   >{opt.label}</button>
                 ))}
               </div>
@@ -968,9 +968,9 @@ const App = () => {
                   >
                     <div className="flex items-center gap-3">
                       {expandedGroups[group.key] ? <CaretDown size={18} className={mutedClass} /> : <CaretRight size={18} className={mutedClass} />}
-                      <span className="text-[15px] font-medium">{group.key}</span>
+                      <span className="text-card font-medium">{group.key}</span>
                     </div>
-                    <span className={`text-[13.5px] px-2.5 py-1 rounded-lg bg-surface-deep text-ink/60`}>{group.entries.length}</span>
+                    <span className={`text-body px-2.5 py-1 rounded-lg bg-surface-deep text-ink/60`}>{group.entries.length}</span>
                   </button>
                   {expandedGroups[group.key] && (
                     <div className="space-y-3 mt-3 ml-2">
@@ -993,21 +993,21 @@ const App = () => {
             {history.length === 0 ? (
               <div className="py-20 text-center px-10">
                 <h2 className="text-lg font-semibold mb-2">{t('stats.noStats')}</h2>
-                <p className={`text-[15px] leading-relaxed ${mutedClass}`}>{t('stats.noStatsBody')}</p>
+                <p className={`text-card leading-relaxed ${mutedClass}`}>{t('stats.noStatsBody')}</p>
               </div>
             ) : statsView ? (
               <StatsChart exerciseId={statsView} history={history} onBack={() => setStatsView(null)} weights={weights} best1RMs={best1RMs} />
             ) : (
               <>
-                <h2 className="text-[24px] font-medium mb-4">{t('stats.title')}</h2>
+                <h2 className="text-title font-medium mb-4">{t('stats.title')}</h2>
                 {(() => {
                   const big3Trend = getBig3Trend(history);
                   const { Icon: TrendIcon, className: trendClass } = trendIconFor(big3Trend);
                   return (
                     <button onClick={() => setStatsView('big3')} className={cardClass}>
                       <div className="text-left">
-                        <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('stats.big3Total')}</p>
-                        <p className="text-[24px] font-medium tabular-nums">{big3Total}kg</p>
+                        <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('stats.big3Total')}</p>
+                        <p className="text-title font-medium tabular-nums">{big3Total}kg</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {big3Trend && <TrendIcon size={18} className={trendClass} />}
@@ -1032,14 +1032,14 @@ const App = () => {
                     return (
                       <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
                         <div className="min-w-0 pr-2 text-left">
-                          <p className="text-[15px] font-medium truncate">{t('exercises.' + id)}</p>
+                          <p className="text-card font-medium truncate">{t('exercises.' + id)}</p>
                           {hasData ? (
-                            <p className={`text-[12px] uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
+                            <p className={`text-meta uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
                           ) : (
-                            <p className={`text-[12px] leading-snug mt-1 ${mutedClass}`}>{t('stats.noSessionsForLift')}</p>
+                            <p className={`text-meta leading-snug mt-1 ${mutedClass}`}>{t('stats.noSessionsForLift')}</p>
                           )}
                           {isExtra && (
-                            <p className={`text-[11px] uppercase tracking-wide mt-0.5 ${mutedClass}`}>{t('stats.fromProgram', { program: otherProgramName })}</p>
+                            <p className={`text-tab uppercase tracking-wide mt-0.5 ${mutedClass}`}>{t('stats.fromProgram', { program: otherProgramName })}</p>
                           )}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
@@ -1092,18 +1092,18 @@ const App = () => {
                 <button
                   key={opt.val}
                   onClick={() => onChange(opt.val)}
-                  className={`flex-1 py-3 text-[12px] uppercase tracking-wide transition-all ${i > 0 ? ('border-l border-ink/10') : ''} ${value === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+                  className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? ('border-l border-ink/10') : ''} ${value === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
                 >{opt.label}</button>
               ))}
             </div>
           );
           return (
           <div className="space-y-6">
-            <h2 className="text-[24px] font-medium mb-6">{t('options.title')}</h2>
+            <h2 className="text-title font-medium mb-6">{t('options.title')}</h2>
             <div className={cardClass}>
               <div className="mb-4">
-                <p className="text-[15px] font-semibold">{t('options.restInterval')}</p>
-                <p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
+                <p className="text-card font-semibold">{t('options.restInterval')}</p>
+                <p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
               </div>
               <Segmented
                 options={[{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }]}
@@ -1114,18 +1114,18 @@ const App = () => {
 
             <div className={cardClass}>
               <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
-                <div><p className="text-[15px] font-semibold">{t('options.soundAlert')}</p><p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
+                <div><p className="text-card font-semibold">{t('options.soundAlert')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
                 <Switch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} ariaLabel="Sound alert" />
               </div>
               <div className="flex items-center justify-between">
-                <div><p className="text-[15px] font-semibold">{t('options.vibration')}</p><p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>
+                <div><p className="text-card font-semibold">{t('options.vibration')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>
                 <Switch checked={vibrationEnabled} onChange={() => setVibrationEnabled(!vibrationEnabled)} ariaLabel="Vibration" />
               </div>
             </div>
 
             <div className={cardClass}>
               <div className="flex items-center justify-between">
-                <div><p className="text-[15px] font-semibold">{t('options.darkMode')}</p><p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.darkModeDesc')}</p></div>
+                <div><p className="text-card font-semibold">{t('options.darkMode')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.darkModeDesc')}</p></div>
                 <Switch checked={isDark} onChange={() => setIsDark(!isDark)} ariaLabel="Dark mode" />
               </div>
             </div>
@@ -1133,13 +1133,13 @@ const App = () => {
             {/* Backup & Sync */}
             <div className={cardClass}>
               <div className={`pb-4 mb-4 ${innerRowClass}`}>
-                <p className="text-[15px] font-semibold">{t('options.backupSync')}</p>
-                <p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.backupSyncDesc')}</p>
+                <p className="text-card font-semibold">{t('options.backupSync')}</p>
+                <p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.backupSyncDesc')}</p>
               </div>
 
               {/* Local Backup toggle */}
               <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
-                <div><p className="text-[13.5px] font-medium">{t('options.localBackup')}</p><p className={`text-[12px] leading-tight ${mutedClass}`}>{t('options.localBackupDesc')}</p></div>
+                <div><p className="text-body font-medium">{t('options.localBackup')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.localBackupDesc')}</p></div>
                 <Switch checked={localBackup} onChange={() => setLocalBackup(!localBackup)} ariaLabel="Local backup" />
               </div>
 
@@ -1147,23 +1147,23 @@ const App = () => {
               {driveConfigured && (
                 <div className={`pb-4 mb-4 ${innerRowClass}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div><p className="text-[13.5px] font-medium">{t('options.googleDrive')}</p><p className={`text-[12px] leading-tight ${mutedClass}`}>{t('options.googleDriveDesc')}</p></div>
+                    <div><p className="text-body font-medium">{t('options.googleDrive')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.googleDriveDesc')}</p></div>
                     {gdrive.isConnected ? (
-                      <span className={`text-[12px] uppercase px-2.5 py-1.5 rounded-lg text-accent-300 bg-accent-900`}>{t('options.connectedToDrive')}</span>
+                      <span className={`text-meta uppercase px-2.5 py-1.5 rounded-lg text-accent-300 bg-accent-900`}>{t('options.connectedToDrive')}</span>
                     ) : (
-                      <button onClick={handleConnect} className={`text-[12px] uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 border-ink/18 text-ink`}>{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
+                      <button onClick={handleConnect} className={`text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 border-ink/18 text-ink`}>{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
                     )}
                   </div>
                   {(gdrive.isConnected || gdrive.hasEverConnected) && (
                     <div className="mt-3 space-y-2">
-                      <p className={`text-[12px] leading-tight ${mutedClass}`}>{t('options.savesAfterWorkout')}</p>
+                      <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.savesAfterWorkout')}</p>
                       <div className="flex items-center justify-between">
                         {gdrive.saveFailed ? (
-                          <button onClick={handleDriveSave} className={`text-[12px] active:scale-95 ${mutedClass}`}>{t('options.saveFailed')}</button>
+                          <button onClick={handleDriveSave} className={`text-meta active:scale-95 ${mutedClass}`}>{t('options.saveFailed')}</button>
                         ) : gdrive.lastSavedAt ? (
-                          <p className="text-[12px] text-accent">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
+                          <p className="text-meta text-accent">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
                         ) : <span />}
-                        <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-[12px] uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 border-ink/18 text-ink`}>{t('options.syncNow')}</button>
+                        <button onClick={handleDriveSave} disabled={gdrive.isLoading} className={`text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 border-ink/18 text-ink`}>{t('options.syncNow')}</button>
                       </div>
                     </div>
                   )}
@@ -1172,21 +1172,21 @@ const App = () => {
 
               {/* Backup & Restore buttons */}
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent flex flex-col items-center gap-2 text-[12px] uppercase active:scale-95 transition-transform">
+                <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform">
                   <DownloadSimple size={20} /> {t('options.backupToDevice')}
                 </button>
-                <button onClick={() => fileInputRef.current?.click()} className={`py-3.5 rounded-lg border flex flex-col items-center gap-2 text-[12px] uppercase active:scale-95 transition-transform border-ink/18 text-ink`}>
+                <button onClick={() => fileInputRef.current?.click()} className={`py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/18 text-ink`}>
                   <UploadSimple size={20} /> {t('options.restore')}
                 </button>
               </div>
-              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-3.5 rounded-lg border flex items-center justify-center gap-2 text-[12px] uppercase active:scale-95 transition-transform border-ink/18 text-ink`}>
+              <button onClick={() => csvInputRef.current?.click()} className={`w-full py-3.5 rounded-lg border flex items-center justify-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/18 text-ink`}>
                 <FileCsv size={20} /> {t('options.importStronglifts')}
               </button>
             </div>
 
             <div className={cardClass}>
               <div className="flex items-center justify-between">
-                <div><p className="text-[15px] font-semibold">{t('options.language')}</p><p className={`text-[12px] uppercase leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
+                <div><p className="text-card font-semibold">{t('options.language')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
                 <div className="w-24">
                   <Segmented
                     options={[{ label: 'EN', val: 'en' }, { label: 'FR', val: 'fr' }]}
@@ -1211,11 +1211,11 @@ const App = () => {
         return (
           <div className="flex-none px-3 py-1.5">
             <button onClick={() => handleTabClick('workout')} className="w-full h-10 px-4 rounded-[9px] border border-accent bg-accent-900 text-accent-300 flex items-center justify-between">
-              <span className="flex items-center gap-2 text-[13.5px] tabular-nums">
+              <span className="flex items-center gap-2 text-body tabular-nums">
                 <Play size={13} weight="fill" />
                 {liveDetail}
               </span>
-              <span className="flex items-center gap-1 text-[13.5px]">
+              <span className="flex items-center gap-1 text-body">
                 {t('liveWorkout.return')} <CaretRight size={12} />
               </span>
             </button>
@@ -1236,7 +1236,7 @@ const App = () => {
           return (
             <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex-1 flex flex-col items-center gap-1 py-1.5 px-2.5 transition-all active:scale-95 ${colorClass}`}>
               <tab.icon size={23} weight={isActive ? 'fill' : 'regular'} />
-              <span className="text-[11px]">{tab.label}</span>
+              <span className="text-tab">{tab.label}</span>
             </button>
           );
         })}
@@ -1244,11 +1244,11 @@ const App = () => {
 
       {showCancelModal && (
         <div role="dialog" aria-modal="true" aria-label="Discard workout" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-xs flex flex-col items-center p-6 rounded-xl border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-xs flex flex-col items-center p-6 rounded-modal border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-3">{t('modals.discardTitle')}</h3>
-            <p className={`text-[15px] leading-relaxed mb-6 text-ink/60`}>{t('modals.discardBody')}</p>
+            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.discardBody')}</p>
             <button onClick={() => setShowCancelModal(false)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.keepLifting')}</button>
-            <button onClick={cancelWorkout} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 text-ink/45`}>{t('modals.yesDiscard')}</button>
+            <button onClick={cancelWorkout} className={`w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/45`}>{t('modals.yesDiscard')}</button>
           </div>
         </div>
       )}
@@ -1257,19 +1257,19 @@ const App = () => {
         const previewWeights = calculateDeload(weights, deloadPercent);
         return (
         <div role="dialog" aria-modal="true" aria-label="Deload recommendation" className="fixed inset-0 z-[400] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-3">{t('modals.acceptDeload')}</h3>
-            <p className={`text-[15px] leading-relaxed mb-6 text-ink/60`}>{deloadAlert.message}</p>
+            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{deloadAlert.message}</p>
             <div className="mb-4">
-              <p className="text-[24px] font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
-              <p className={`text-[12px] text-ink/45`}>{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
+              <p className="text-title font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+              <p className={`text-meta text-ink/45`}>{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
             </div>
             <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-accent" />
             <div className="space-y-2 mb-6">
               {EXPECTED_WEIGHT_KEYS.filter(id => weights[id] > 0).map(id => (
                 <div key={id} className={`flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep`}>
-                  <span className={`text-[12px] uppercase text-ink/45`}>{t('exercises.' + id)}</span>
-                  <span className="text-[15px] tabular-nums">{weights[id]}kg <span className="text-accent mx-1">&rarr;</span> {previewWeights[id]}kg</span>
+                  <span className={`text-meta uppercase text-ink/45`}>{t('exercises.' + id)}</span>
+                  <span className="text-card tabular-nums">{weights[id]}kg <span className="text-accent mx-1">&rarr;</span> {previewWeights[id]}kg</span>
                 </div>
               ))}
             </div>
@@ -1284,7 +1284,7 @@ const App = () => {
               initializeWorkout(newW);
               setDeloadAlert(null);
             }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.acceptAndLift')}</button>
-            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 text-ink/45`}>{t('modals.skipDeload')}</button>
+            <button onClick={() => { initializeWorkout(weights); setDeloadAlert(null); }} className={`w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/45`}>{t('modals.skipDeload')}</button>
           </div>
         </div>
         );
@@ -1292,16 +1292,16 @@ const App = () => {
 
       {showRestorePrompt && (
         <div role="dialog" aria-modal="true" aria-label="Restore backup" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-2">{t('modals.syncHistory')}</h3>
-            <p className={`text-[15px] leading-relaxed mb-8 text-ink/60`}>{t('modals.syncHistoryBody')}</p>
+            <p className={`text-card leading-relaxed mb-8 text-ink/60`}>{t('modals.syncHistoryBody')}</p>
             <div className="space-y-3">
               <button onClick={() => fileInputRef.current?.click()} className="w-full h-12 rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 flex items-center justify-center gap-2"><UploadSimple size={18} /> {t('modals.restoreBackup')}</button>
               {driveConfigured && (
                 <button onClick={handleConnect} className={`w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/18 text-ink`}><Cloud size={18} /> {t('modals.restoreFromDrive')}</button>
               )}
               <button onClick={() => csvInputRef.current?.click()} className={`w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/18 text-ink`}><FileCsv size={18} /> {t('options.importStronglifts')}</button>
-              <button onClick={() => startWorkout(true)} className={`text-[15px] mt-4 block mx-auto text-ink/45`}>{t('modals.skipAndStart')}</button>
+              <button onClick={() => startWorkout(true)} className={`text-card mt-4 block mx-auto text-ink/45`}>{t('modals.skipAndStart')}</button>
             </div>
           </div>
         </div>
@@ -1309,10 +1309,10 @@ const App = () => {
 
       {showResumePrompt && saved.activeSession && (
         <div role="dialog" aria-modal="true" aria-label="Resume workout" className="fixed inset-0 z-[350] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-2">{t('modals.resumeWorkout')}</h3>
-            <p className={`text-[15px] leading-relaxed mb-1 text-ink/60`}>{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
-            <p className={`text-[13.5px] mb-8 text-ink/45`}>
+            <p className={`text-card leading-relaxed mb-1 text-ink/60`}>{t('modals.inProgress', { name: t(`workout.type${saved.activeSession.session.type}`) })}</p>
+            <p className={`text-body mb-8 text-ink/45`}>
               {t('modals.setsCompleted', { completed: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.filter(s => s !== null).length, 0), total: saved.activeSession.session.exercises.reduce((n, ex) => n + ex.setsCompleted.length, 0) })}
             </p>
             <button
@@ -1338,7 +1338,7 @@ const App = () => {
                 localStorage.removeItem(ACTIVE_WORKOUT_KEY);
                 setShowResumePrompt(false);
               }}
-              className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 text-ink/45`}
+              className={`w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/45`}
             >{t('modals.discard')}</button>
           </div>
         </div>
@@ -1359,7 +1359,7 @@ const App = () => {
         const currentValue = getCurrentDay(prog.id);
         return (
           <div role="dialog" aria-modal="true" aria-label={t('workout.todaysWorkout')} onClick={() => setWorkoutPicker(false)} className="fixed inset-0 z-[400] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-            <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 bg-surface`}>
+            <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
               <h3 className="text-lg font-semibold mb-5">{t('workout.todaysWorkout')}</h3>
               <div className="space-y-3 mb-5">
                 {prog.days.map(day => {
@@ -1378,17 +1378,17 @@ const App = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <p className="font-medium text-[14.5px]">{t(`workout.type${day}`)}</p>
-                          {mood && <span className="text-[10.5px] uppercase tracking-wide px-2 py-0.5 rounded-lg text-accent-300 bg-accent-900">{mood}</span>}
+                          {mood && <span className="text-kicker uppercase tracking-wide px-2 py-0.5 rounded-lg text-accent-300 bg-accent-900">{mood}</span>}
                         </div>
                         <p className={`text-[12.5px] truncate text-ink/50`}>{liftIds.map(id => t('exercises.' + id)).join(' · ')}</p>
-                        <p className={`text-[12px] tabular-nums text-ink/45`}>{dayWeights.join(' · ')} kg</p>
+                        <p className={`text-meta tabular-nums text-ink/45`}>{dayWeights.join(' · ')} kg</p>
                       </div>
                       {isCurrent && <Check size={18} className="text-accent-300 shrink-0" />}
                     </button>
                   );
                 })}
               </div>
-              <p className={`text-[12px] text-center mb-5 text-ink/45`}>{t('workout.scheduledNote')}</p>
+              <p className={`text-meta text-center mb-5 text-ink/45`}>{t('workout.scheduledNote')}</p>
               <button onClick={() => setWorkoutPicker(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink`}>{t('modals.cancel')}</button>
             </div>
           </div>
@@ -1397,19 +1397,19 @@ const App = () => {
 
       {pendingCSVImport && (
         <div role="dialog" aria-modal="true" aria-label="Confirm StrongLifts import" className="fixed inset-0 z-[300] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-2">{t('modals.importData')}</h3>
-            <p className={`text-[15px] leading-relaxed mb-6 text-ink/60`}>{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
+            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
             <div className="grid grid-cols-2 gap-2 mb-6">
               {EXPECTED_WEIGHT_KEYS.map(id => (
                 <div key={id} className={`p-3 rounded-lg text-left bg-surface-deep`}>
-                  <p className={`text-[12px] uppercase leading-none mb-1 text-ink/45`}>{t('exercises.' + id)}</p>
-                  <p className="text-[15px] tabular-nums">{pendingCSVImport.weights[id]}kg</p>
+                  <p className={`text-meta uppercase leading-none mb-1 text-ink/45`}>{t('exercises.' + id)}</p>
+                  <p className="text-card tabular-nums">{pendingCSVImport.weights[id]}kg</p>
                 </div>
               ))}
             </div>
             <button onClick={applyCSVImport} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.import')}</button>
-            <button onClick={() => setPendingCSVImport(null)} className={`text-[15px] active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
+            <button onClick={() => setPendingCSVImport(null)} className={`text-card active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
@@ -1432,7 +1432,7 @@ const App = () => {
         const isFutureDate = selectedDate > new Date().toISOString().slice(0, 10);
         return (
         <div role="dialog" aria-modal="true" aria-label={isNewEntry ? 'Add workout' : 'Edit workout'} className="fixed inset-0 z-[250] flex items-start justify-center overflow-y-auto overscroll-contain backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-md mx-auto my-6 rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-md mx-auto my-6 rounded-modal p-6 border bg-surface border-ink/8`}>
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold">{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
               <button onClick={() => { setEditingEntry(null); setShowDeleteConfirm(false); }} aria-label="Close edit modal" className={`w-10 h-10 rounded-lg border flex items-center justify-center border-ink/15 text-ink`}><X size={18} /></button>
@@ -1441,15 +1441,15 @@ const App = () => {
             {isNewEntry && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <label className={`text-[12px] uppercase tracking-[0.12em] text-ink/45`}>{t('modals.workoutType')}</label>
-                  <span className={`text-[12px] text-ink/45`}>{t(entryProg.nameKey)}</span>
+                  <label className={`text-meta uppercase tracking-[0.12em] text-ink/45`}>{t('modals.workoutType')}</label>
+                  <span className={`text-meta text-ink/45`}>{t(entryProg.nameKey)}</span>
                 </div>
                 <div className="flex gap-2">
                   {entryProg.days.map(wt => (
                     <button
                       key={wt}
                       onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(wt) } }))}
-                      className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : ('border-ink/18 text-ink/60')}`}
+                      className={`flex-1 py-3 rounded-lg text-card font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : ('border-ink/18 text-ink/60')}`}
                     >{t(`workout.type${wt}`)}</button>
                   ))}
                 </div>
@@ -1457,7 +1457,7 @@ const App = () => {
             )}
 
             <div className="mb-6">
-              <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 text-ink/45`}>{t('modals.date')}</label>
+              <label className={`text-meta uppercase tracking-[0.12em] block mb-2 text-ink/45`}>{t('modals.date')}</label>
               <input
                 type="date"
                 value={editingEntry.session.date.slice(0, 10)}
@@ -1467,20 +1467,20 @@ const App = () => {
                   newDate.setHours(12, 0, 0, 0);
                   setEditingEntry(prev => ({ ...prev, session: { ...prev.session, date: newDate.toISOString() } }));
                 }}
-                className={`w-full p-3 rounded-lg text-[15px] border ${dateConflict || isFutureDate ? 'border-dashed border-ink/50' : ('border-ink/18')} bg-surface-deep text-ink`}
+                className={`w-full p-3 rounded-lg text-card border ${dateConflict || isFutureDate ? 'border-dashed border-ink/50' : ('border-ink/18')} bg-surface-deep text-ink`}
               />
-              {dateConflict && <p className={`text-[13.5px] mt-2 text-ink/60`}>{t('modals.dateConflict')}</p>}
-              {isFutureDate && <p className={`text-[13.5px] mt-2 text-ink/60`}>{t('modals.futureDate')}</p>}
+              {dateConflict && <p className={`text-body mt-2 text-ink/60`}>{t('modals.dateConflict')}</p>}
+              {isFutureDate && <p className={`text-body mt-2 text-ink/60`}>{t('modals.futureDate')}</p>}
             </div>
 
             <div className="space-y-3 mb-6">
               {editingEntry.session.exercises.map((ex, exIdx) => (
                 <div key={ex.id} className={`p-4 rounded-lg border bg-surface-deep border-ink/8`}>
-                  <p className="text-[13.5px] font-medium mb-3">{t('exercises.' + ex.id)}</p>
+                  <p className="text-body font-medium mb-3">{t('exercises.' + ex.id)}</p>
                   <div className="flex justify-between items-center mb-3">
-                    <span className={`text-[12px] uppercase text-ink/45`}>{t('modals.weightLabel')}</span>
+                    <span className={`text-meta uppercase text-ink/45`}>{t('modals.weightLabel')}</span>
                     {entryProg.ramped ? (
-                      <span className="text-[15px] tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
+                      <span className="text-card tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
                     ) : (
                       <WeightInput
                         value={ex.weight}
@@ -1497,7 +1497,7 @@ const App = () => {
                     )}
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className={`text-[12px] uppercase text-ink/45`}>{t('modals.setsLabel')}</span>
+                    <span className={`text-meta uppercase text-ink/45`}>{t('modals.setsLabel')}</span>
                     <div className="flex gap-2">
                       {ex.setsCompleted.map((reps, setIdx) => {
                         const target = targetReps(ex, setIdx);
@@ -1516,7 +1516,7 @@ const App = () => {
                               return { ...prev, session: s };
                             })}
                             aria-label={`Set ${setIdx + 1}: ${reps === null ? 'not done' : reps + ' reps'}`}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center text-[13.5px] font-medium active:scale-90 transition-transform ${stateClass}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center text-body font-medium active:scale-90 transition-transform ${stateClass}`}
                           >
                             {reps === null ? '–' : reps}
                           </button>
@@ -1568,11 +1568,11 @@ const App = () => {
               !showDeleteConfirm ? (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className={`w-full min-h-[44px] flex items-center justify-center gap-2 text-[15px] active:scale-90 text-ink/45`}
+                  className={`w-full min-h-[44px] flex items-center justify-center gap-2 text-card active:scale-90 text-ink/45`}
                 ><Trash size={14} /> {t('modals.deleteWorkout')}</button>
               ) : (
                 <div className={`p-4 rounded-lg border border-dashed border-ink/30`}>
-                  <p className="text-[13.5px] text-center mb-3">{t('modals.deleteConfirm')}</p>
+                  <p className="text-body text-center mb-3">{t('modals.deleteConfirm')}</p>
                   <div className="flex gap-4">
                     <button
                       onClick={() => {
@@ -1602,12 +1602,12 @@ const App = () => {
         const totalTime = formatClock(completionSummary.workout.duration);
         return (
         <div role="dialog" aria-modal="true" aria-label="Workout complete" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent mb-4">{t('completion.kicker')}</p>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
+            <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-4">{t('completion.kicker')}</p>
             {totalTime && (
               <div className={`flex items-center justify-between px-4 py-2.5 rounded-lg mb-5 bg-surface-deep`}>
-                <span className={`text-[12px] uppercase text-ink/45`}>{t('completion.totalTime')}</span>
-                <span className="text-[15px] tabular-nums">{totalTime}</span>
+                <span className={`text-meta uppercase text-ink/45`}>{t('completion.totalTime')}</span>
+                <span className="text-card tabular-nums">{totalTime}</span>
               </div>
             )}
             <div className="space-y-3 mb-6">
@@ -1623,11 +1623,11 @@ const App = () => {
                 return (
                   <div key={ex.id} className={`p-3 rounded-lg border bg-surface-deep border-ink/8`}>
                     <div className="flex items-center justify-between">
-                      <span className="text-[15px] font-medium">{t('exercises.' + ex.id)}</span>
+                      <span className="text-card font-medium">{t('exercises.' + ex.id)}</span>
                       {progressed ? (
-                        <span className="flex items-center gap-1 text-[13.5px] text-accent"><TrendUp size={14} />{t('completion.progressedTo', { from: ex.weight, to: nextWeight })}</span>
+                        <span className="flex items-center gap-1 text-body text-accent"><TrendUp size={14} />{t('completion.progressedTo', { from: ex.weight, to: nextWeight })}</span>
                       ) : (
-                        <span className={`flex items-center gap-1 text-[13.5px] ${mutedColor}`}><ArrowRight size={14} />{t('completion.staysAt', { weight: ex.weight })}</span>
+                        <span className={`flex items-center gap-1 text-body ${mutedColor}`}><ArrowRight size={14} />{t('completion.staysAt', { weight: ex.weight })}</span>
                       )}
                     </div>
                     <div className="flex justify-start gap-1.5 mt-2.5">
@@ -1641,13 +1641,13 @@ const App = () => {
                             style={{ width: `calc((100% - ${6 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
                             className={`shrink-0 max-w-[3.5rem] rounded-lg py-1.5 bg-surface`}
                           >
-                            <div className={`text-[13.5px] leading-none ${failed && !passed ? 'text-ink' : ('text-ink/70')}`}>{val}</div>
-                            {hasSplits && <div className={`text-[12px] tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
+                            <div className={`text-body leading-none ${failed && !passed ? 'text-ink' : ('text-ink/70')}`}>{val}</div>
+                            {hasSplits && <div className={`text-meta tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
                           </div>
                         );
                       })}
                     </div>
-                    {exerciseTime && <p className={`text-[12px] tabular-nums mt-2 ${mutedColor}`}>{t('completion.exerciseTime', { time: exerciseTime })}</p>}
+                    {exerciseTime && <p className={`text-meta tabular-nums mt-2 ${mutedColor}`}>{t('completion.exerciseTime', { time: exerciseTime })}</p>}
                   </div>
                 );
               })}
@@ -1665,19 +1665,19 @@ const App = () => {
         }));
         return (
         <div role="dialog" aria-modal="true" aria-label="Failure deload" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-3">{t('modals.failureDeloadTitle')}</h3>
-            <p className={`text-[15px] leading-relaxed mb-6 text-ink/60`}>{t('modals.failureDeloadMessage')}</p>
+            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.failureDeloadMessage')}</p>
             <div className="mb-4">
-              <p className="text-[24px] font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
-              <p className={`text-[12px] text-ink/45`}>{t('modals.deloadRecommended', { percent: 10 })}</p>
+              <p className="text-title font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+              <p className={`text-meta text-ink/45`}>{t('modals.deloadRecommended', { percent: 10 })}</p>
             </div>
             <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => setDeloadPercent(Number(e.target.value))} className="w-full mb-6 accent-accent" />
             <div className="space-y-2 mb-6">
               {previewDeloads.map(d => (
                 <div key={d.id} className={`flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep`}>
-                  <span className={`text-[12px] uppercase text-ink/45`}>{t('exercises.' + d.id)}</span>
-                  <span className="text-[15px] tabular-nums">{d.currentWeight}kg <span className="text-accent mx-1">&rarr;</span> {d.newWeight}kg</span>
+                  <span className={`text-meta uppercase text-ink/45`}>{t('exercises.' + d.id)}</span>
+                  <span className="text-card tabular-nums">{d.currentWeight}kg <span className="text-accent mx-1">&rarr;</span> {d.newWeight}kg</span>
                 </div>
               ))}
             </div>
@@ -1691,7 +1691,7 @@ const App = () => {
             <button onClick={() => {
               setPendingFailureDeloads(null);
               initializeWorkout(weights);
-            }} className={`w-full min-h-[44px] flex items-center justify-center text-[15px] active:scale-90 text-ink/45`}>{t('modals.skipDeload')}</button>
+            }} className={`w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/45`}>{t('modals.skipDeload')}</button>
           </div>
         </div>
         );
@@ -1699,7 +1699,7 @@ const App = () => {
 
       {showHelp && (
         <div role="dialog" aria-modal="true" aria-label="How it works" onClick={() => setShowHelp(false)} className="fixed inset-0 z-[500] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 bg-surface`}>
+          <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
             <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
             <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-5 mb-6 text-left">
               {[
@@ -1709,7 +1709,7 @@ const App = () => {
               ].map(({ Icon, title, body }) => (
                 <div key={title} className="flex items-start gap-3">
                   <div className={`w-[30px] h-[30px] rounded-lg border border-accent text-accent flex items-center justify-center shrink-0`}><Icon size={18} /></div>
-                  <div><p className="text-[15px] font-medium">{title}</p><p className={`text-[13.5px] leading-relaxed text-ink/55`}>{body}</p></div>
+                  <div><p className="text-card font-medium">{title}</p><p className={`text-body leading-relaxed text-ink/55`}>{body}</p></div>
                 </div>
               ))}
             </div>
@@ -1720,7 +1720,7 @@ const App = () => {
               <span className="flex items-center gap-2 text-[14.5px] font-medium">
                 <Barbell weight="fill" size={17} className="text-accent" /> {t('help.programLink')}
               </span>
-              <span className="flex items-center gap-1 text-[13.5px] text-accent-300 shrink-0">
+              <span className="flex items-center gap-1 text-body text-accent-300 shrink-0">
                 {t(getProgram(preset).nameKey)} <CaretRight size={14} />
               </span>
             </button>
@@ -1735,33 +1735,33 @@ const App = () => {
 
       {pendingDriveRestore && (
         <div role="dialog" aria-modal="true" aria-label="Older backup warning" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
-            <p className={`text-[15px] leading-relaxed mb-6 text-ink/60`}>{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
+            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.olderBackupBody', { backupCount: pendingDriveRestore.backupCount, backupDate: pendingDriveRestore.backupDate, localCount: pendingDriveRestore.localCount, lossCount: pendingDriveRestore.lossCount })}</p>
             <button onClick={() => { applyDriveRestore(pendingDriveRestore.data); setPendingDriveRestore(null); }} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
-            <button onClick={() => setPendingDriveRestore(null)} className={`text-[15px] active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
+            <button onClick={() => setPendingDriveRestore(null)} className={`text-card active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
 
       {pendingLocalImport && (
         <div role="dialog" aria-modal="true" aria-label="Older backup warning" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
-            <p className={`text-[15px] leading-relaxed mb-6 text-ink/60`}>{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
+            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t('modals.olderBackupBody', { backupCount: pendingLocalImport.backupCount, backupDate: pendingLocalImport.backupDate, localCount: pendingLocalImport.localCount, lossCount: pendingLocalImport.lossCount })}</p>
             <button onClick={() => applyLocalImport(pendingLocalImport.data)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
-            <button onClick={() => setPendingLocalImport(null)} className={`text-[15px] active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
+            <button onClick={() => setPendingLocalImport(null)} className={`text-card active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}
 
       {connectSyncPrompt && (
         <div role="dialog" aria-modal="true" aria-label="Data conflict" className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-          <div className={`w-full max-w-sm rounded-xl p-6 border bg-surface border-ink/8`}>
+          <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
             <h3 className="text-lg font-semibold mb-3">
               {t('modals.dataConflictTitle')}
             </h3>
-            <p className={`text-[15px] leading-relaxed mb-6 text-ink/60`}>
+            <p className={`text-card leading-relaxed mb-6 text-ink/60`}>
               {t('modals.dataConflictBody', {
                 driveCount: connectSyncPrompt.driveCount,
                 cloudDate: connectSyncPrompt.cloudDate,
@@ -1794,7 +1794,7 @@ const App = () => {
                 {t('modals.useLocalData')}
               </button>
             </div>
-            <button onClick={() => setConnectSyncPrompt(null)} className={`text-[15px] active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
+            <button onClick={() => setConnectSyncPrompt(null)} className={`text-card active:scale-90 text-ink/45`}>{t('modals.cancel')}</button>
           </div>
         </div>
       )}

@@ -14,6 +14,27 @@
 
   --font-sans: 'Inter', system-ui, sans-serif;
 
+  /*
+    Type scale — see docs/design-system.md §2. Named for role, not pixel value,
+    so a scale change is one edit here instead of a find-and-replace across src/.
+    Sizes that fall between these roles stay as hardcoded text-[NNpx] utilities;
+    see docs/refactor-plan.md Phase 2 for the list and why they weren't snapped.
+  */
+  --text-kicker: 10.5px;
+  --text-tab:    11px;
+  --text-meta:   12px;
+  --text-body:   13.5px;
+  --text-card:   15px;
+  --text-title:  24px;
+  --text-hero:   32px;
+
+  /* Radii — see docs/design-system.md §2. rounded-control is not yet applied
+     to existing call sites (rounded-lg/[9px]/[10px] are all within the
+     documented 8–10px band); see docs/refactor-plan.md Phase 2. */
+  --radius-control: 10px;
+  --radius-modal:   12px;
+  --radius-sheet:   14px;
+
   @keyframes slideIn {
     0% {
       opacity: 0;

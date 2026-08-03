@@ -135,7 +135,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
                   </>
                 )}
               </button>
-              {isRamped && <span className={`text-[10.5px] tabular-nums ${ri === topIndex ? 'font-semibold text-accent-300' : mutedClass}`}>{ex.setWeights[ri]}</span>}
+              {isRamped && <span className={`text-kicker tabular-nums ${ri === topIndex ? 'font-semibold text-accent-300' : mutedClass}`}>{ex.setWeights[ri]}</span>}
             </div>
           );
         })}
@@ -149,7 +149,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
         </p>
       )}
       {showHint && (
-        <p className={`text-[12px] mt-3 text-ink/38`}>{t('workout.setHint', { count: targetReps(ex, 0) })}</p>
+        <p className={`text-meta mt-3 text-ink/38`}>{t('workout.setHint', { count: targetReps(ex, 0) })}</p>
       )}
       <div className={`mt-4 pt-3 flex items-center justify-between rule-fade-top`}>
         <button
