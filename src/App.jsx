@@ -10,8 +10,9 @@ import {
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_DAY_MOOD, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, getMadcowDayExercises, getMadcowDayLiftIds, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
+import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
+import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
+import { getProgram, topWeightOf } from './programs';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -382,7 +383,7 @@ const App = () => {
 
     // Madcow's stall is "the top set holds" -- no forced-deload prompt, only the
     // long-break safety check above applies to it.
-    if (preset !== 'standard') return null;
+    if (!getProgram(preset).usesDeloads) return null;
 
     const pendingDeloads = getPendingFailureDeloadsForStart(historyToCheck, workoutWeights);
     if (pendingDeloads.length > 0) {
@@ -393,7 +394,7 @@ const App = () => {
   }, [getPendingFailureDeloadsForStart, longBreakDeloadForDate, preset]);
 
   const finishWorkout = useCallback(() => {
-    const isMadcow = preset === 'madcow';
+    const isMadcow = getProgram(preset).ramped;
     const savedWorkout = {
       ...currentWorkout,
       preset,
@@ -451,14 +452,11 @@ const App = () => {
   }, [timer]);
 
   const initializeWorkout = useCallback((workoutWeights) => {
-    if (preset === 'madcow') {
-      const exercises = getMadcowDayExercises(mcNextDay, mcTop, mcInterval, mcPress).map(ex => ({
-        ...ex, setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null),
-      }));
-      setCurrentWorkout({ date: new Date().toISOString(), type: mcNextDay, startedAt: Date.now(), exercises });
-    } else {
-      setCurrentWorkout({ date: new Date().toISOString(), type: currentWorkoutType, startedAt: Date.now(), exercises: getProgramExercises(currentWorkoutType, program).map(ex => ({ ...ex, weight: workoutWeights[ex.id], setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) })) });
-    }
+    const prog = getProgram(preset);
+    const day = getCurrentDay(prog.id);
+    const exercises = prog.dayExercises(day, { program, weights: workoutWeights, mcTop, mcInterval, mcPress })
+      .map(ex => ({ ...ex, setsCompleted: new Array(ex.sets).fill(null), setTimes: new Array(ex.sets).fill(null) }));
+    setCurrentWorkout({ date: new Date().toISOString(), type: day, startedAt: Date.now(), exercises });
     setIsWorkoutActive(true); setActiveTab('workout'); setShowRestorePrompt(false); setIsExerciseComplete(false);
   }, [currentWorkoutType, program, preset, mcNextDay, mcTop, mcInterval, mcPress]);
 
@@ -754,9 +752,13 @@ const App = () => {
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const workoutStats = getWorkoutStats(history);
   const moodLabel = (day) => {
-    const mood = MADCOW_DAY_MOOD[day];
-    return t('program.madcow.mood' + mood.charAt(0).toUpperCase() + mood.slice(1));
+    const mood = getProgram(preset).dayMood(day);
+    return mood ? t('program.madcow.mood' + mood.charAt(0).toUpperCase() + mood.slice(1)) : null;
   };
+  // Where "today's workout" points for whichever program is active -- each program keeps
+  // its own pointer (Standard flips A/B on finish, Madcow advances mcNextDay weekly).
+  const getCurrentDay = (progId) => (progId === 'madcow' ? mcNextDay : currentWorkoutType);
+  const setCurrentDay = (progId, day) => { if (progId === 'madcow') setMcNextDay(day); else setCurrentWorkoutType(day); };
 
   return (
     <div className={`h-viewport max-w-md mx-auto flex flex-col font-sans transition-colors duration-300 ${isDark ? 'bg-ground text-ink' : 'bg-ground-lt text-ink-lt'}`}>
@@ -796,10 +798,12 @@ const App = () => {
             {!isWorkoutActive ? (
               <div>
                 {(() => {
-                  const isMadcow = preset === 'madcow';
-                  const day = isMadcow ? mcNextDay : currentWorkoutType;
-                  const liftIds = isMadcow ? getMadcowDayLiftIds(mcNextDay, mcPress) : getProgramExercises(currentWorkoutType, program).map(ex => ex.id);
-                  const dayExercises = isMadcow ? getMadcowDayExercises(mcNextDay, mcTop, mcInterval, mcPress) : getProgramExercises(currentWorkoutType, program).map(ex => ({ ...ex, weight: weights[ex.id] }));
+                  const prog = getProgram(preset);
+                  const isMadcow = prog.ramped;
+                  const day = getCurrentDay(prog.id);
+                  const programState = { program, weights, mcTop, mcInterval, mcPress };
+                  const liftIds = prog.liftIds(day, programState);
+                  const dayExercises = prog.dayExercises(day, programState);
                   return (
                     <>
                       <div className="mb-4">
@@ -814,7 +818,7 @@ const App = () => {
                         </div>
                         <p className={`text-[13.5px] mt-1 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>
                           {isMadcow
-                            ? t('workout.madcowSubtitle', { mood: moodLabel(mcNextDay), lifts: liftIds.map(id => t('exercises.' + id)).join(' · ') })
+                            ? t('workout.madcowSubtitle', { mood: moodLabel(day), lifts: liftIds.map(id => t('exercises.' + id)).join(' · ') })
                             : liftIds.map(id => t('exercises.' + id)).join(' · ')}
                         </p>
                       </div>
@@ -822,7 +826,7 @@ const App = () => {
                         const liftId = liftIds[i];
                         const exName = t('exercises.' + liftId);
                         const isBarSetupOpen = !!expandedBarSetup[liftId];
-                        const topWeight = isMadcow ? Math.max(...ex.setWeights) : ex.weight;
+                        const topWeight = topWeightOf(ex);
                         return (
                         <div key={liftId} className={`py-[15px] ${isDark ? 'rule-fade' : 'rule-fade-lt'}`}>
                           <div className="flex justify-between items-center">
@@ -1387,30 +1391,31 @@ const App = () => {
       )}
 
       {workoutPicker && (() => {
-        const isMadcow = preset === 'madcow';
-        const options = isMadcow ? MADCOW_DAYS : ['A', 'B'];
-        const currentValue = isMadcow ? mcNextDay : currentWorkoutType;
+        const prog = getProgram(preset);
+        const programState = { program, weights, mcTop, mcInterval, mcPress };
+        const currentValue = getCurrentDay(prog.id);
         return (
           <div role="dialog" aria-modal="true" aria-label={t('workout.todaysWorkout')} onClick={() => setWorkoutPicker(false)} className="fixed inset-0 z-[400] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
             <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-[14px] pt-[22px] px-5 pb-6 ${isDark ? 'bg-surface' : 'bg-surface-lt'}`}>
               <h3 className="text-lg font-semibold mb-5">{t('workout.todaysWorkout')}</h3>
               <div className="space-y-3 mb-5">
-                {options.map(day => {
+                {prog.days.map(day => {
                   const isCurrent = day === currentValue;
-                  const liftIds = isMadcow ? getMadcowDayLiftIds(day, mcPress) : getProgramExercises(day, program).map(ex => ex.id);
-                  const dayExercises = isMadcow ? getMadcowDayExercises(day, mcTop, mcInterval, mcPress) : getProgramExercises(day, program).map(ex => ({ ...ex, weight: weights[ex.id] }));
-                  const dayWeights = dayExercises.map(ex => (isMadcow ? Math.max(...ex.setWeights) : ex.weight));
+                  const liftIds = prog.liftIds(day, programState);
+                  const dayExercises = prog.dayExercises(day, programState);
+                  const dayWeights = dayExercises.map(topWeightOf);
+                  const mood = moodLabel(day);
                   return (
                     <button
                       key={day}
-                      onClick={() => { if (isMadcow) setMcNextDay(day); else setCurrentWorkoutType(day); setWorkoutPicker(false); }}
+                      onClick={() => { setCurrentDay(prog.id, day); setWorkoutPicker(false); }}
                       className={`w-full flex items-center gap-3 p-3.5 rounded-[10px] border text-left active:scale-[0.99] transition-transform ${isCurrent ? 'border-accent bg-accent-900' : (isDark ? 'border-ink/12' : 'border-ink-lt/12')}`}
                     >
                       <span className={`w-9 h-9 rounded-lg border flex items-center justify-center font-semibold shrink-0 ${isCurrent ? 'border-accent text-accent-300' : (isDark ? 'border-ink/18' : 'border-ink-lt/18')}`}>{day}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <p className="font-medium text-[14.5px]">{t(`workout.type${day}`)}</p>
-                          {isMadcow && <span className="text-[10.5px] uppercase tracking-wide px-2 py-0.5 rounded-lg text-accent-300 bg-accent-900">{moodLabel(day)}</span>}
+                          {mood && <span className="text-[10.5px] uppercase tracking-wide px-2 py-0.5 rounded-lg text-accent-300 bg-accent-900">{mood}</span>}
                         </div>
                         <p className={`text-[12.5px] truncate ${isDark ? 'text-ink/50' : 'text-ink-lt/50'}`}>{liftIds.map(id => t('exercises.' + id)).join(' · ')}</p>
                         <p className={`text-[12px] tabular-nums ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{dayWeights.join(' · ')} kg</p>
