@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
 import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
-import { getProgram, PROGRAM_IDS, topWeightOf } from './programs';
+import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from './programs';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -1053,13 +1053,13 @@ const App = () => {
                   );
                 })()}
                 <div className="grid gap-3">{(() => {
-                  const activeIds = preset === 'madcow' ? ['squat', 'bench', 'row', 'deadlift', mcPress] : EXPECTED_WEIGHT_KEYS;
+                  const activeIds = programAllLiftIds(preset, { program, weights, mcTop, mcInterval, mcPress });
                   // Lifts trained under the other program stay visible here too, instead of
                   // vanishing from Stats the moment you switch programs.
                   const extraIds = [...EXPECTED_WEIGHT_KEYS, 'incline'].filter(id =>
                     !activeIds.includes(id) && history.some(s => s.exercises?.some(e => e.id === id))
                   );
-                  const otherProgramName = t('program.strip.' + (preset === 'madcow' ? 'standard' : 'madcow') + 'Name');
+                  const otherProgramName = t(getProgram(PROGRAM_IDS.find(id => id !== normalizePreset(preset))).nameKey);
                   return [...activeIds, ...extraIds].map(id => {
                     const trend = getExerciseTrend(history, id);
                     const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
@@ -1774,7 +1774,7 @@ const App = () => {
                 <Barbell weight="fill" size={17} className="text-accent" /> {t('help.programLink')}
               </span>
               <span className="flex items-center gap-1 text-[13.5px] text-accent-300 shrink-0">
-                {t(`program.strip.${preset}Name`)} <CaretRight size={14} />
+                {t(getProgram(preset).nameKey)} <CaretRight size={14} />
               </span>
             </button>
             <button autoFocus onClick={() => setShowHelp(false)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}>{t('help.gotIt')}</button>
