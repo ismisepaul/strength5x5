@@ -1453,11 +1453,14 @@ const App = () => {
       {editingEntry && (() => {
         const isNewEntry = editingEntry.index === -1;
         const entryProg = getProgram(editingEntry.session.preset);
-        const rebuildEntryFor = (progId, day) => {
-          const p = getProgram(progId);
-          const exercises = p.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
+        // A logged entry always belongs to whatever program is active -- its exercises,
+        // customisation (e.g. Madcow's second-press choice) and increments all come from
+        // there, so the Log stays consistent with the Program tab. To log a session for
+        // the other program, switch to it first.
+        const rebuildEntryFor = (day) => {
+          const exercises = entryProg.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
             .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
-          return { type: day, preset: p.id, exercises };
+          return { type: day, preset: entryProg.id, exercises };
         };
         const selectedDate = editingEntry.session.date.slice(0, 10);
         const originalDate = !isNewEntry ? history[editingEntry.index]?.date.slice(0, 10) : null;
@@ -1472,32 +1475,21 @@ const App = () => {
             </div>
 
             {isNewEntry && (
-              <>
-                <div className="mb-6">
-                  <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.program')}</label>
-                  <div className="flex gap-2">
-                    {PROGRAM_IDS.map(id => (
-                      <button
-                        key={id}
-                        onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(id, getProgram(id).days[0]) } }))}
-                        className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${entryProg.id === id ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
-                      >{t(getProgram(id).nameKey)}</button>
-                    ))}
-                  </div>
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className={`text-[12px] uppercase tracking-[0.12em] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.workoutType')}</label>
+                  <span className={`text-[12px] ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t(entryProg.nameKey)}</span>
                 </div>
-                <div className="mb-6">
-                  <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.workoutType')}</label>
-                  <div className="flex gap-2">
-                    {entryProg.days.map(wt => (
-                      <button
-                        key={wt}
-                        onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(entryProg.id, wt) } }))}
-                        className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
-                      >{t(`workout.type${wt}`)}</button>
-                    ))}
-                  </div>
+                <div className="flex gap-2">
+                  {entryProg.days.map(wt => (
+                    <button
+                      key={wt}
+                      onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(wt) } }))}
+                      className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
+                    >{t(`workout.type${wt}`)}</button>
+                  ))}
                 </div>
-              </>
+              </div>
             )}
 
             <div className="mb-6">
