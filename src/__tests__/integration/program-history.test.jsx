@@ -114,3 +114,100 @@ describe('Stats surfaces lifts trained under the other program', () => {
     expect(within(squatCard).queryByText(/^From /)).not.toBeInTheDocument();
   });
 });
+
+describe('Add workout: pick a program, then a workout', () => {
+  it('defaults to the active program and its current day', async () => {
+    seed(); // preset defaults to standard, nextType 'A'
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getByLabelText('Add workout'));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Standard 5×5' })).toHaveClass('border-accent');
+    expect(within(dialog).getByRole('button', { name: 'Workout A' })).toHaveClass('border-accent');
+    // Standard is editable -- the +/- weight steppers are present.
+    expect(within(dialog).getByLabelText('Decrease Back Squat weight')).toBeInTheDocument();
+  });
+
+  it('switching the program in the modal rebuilds the day options and the ramp', async () => {
+    seed();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getByLabelText('Add workout'));
+    const dialog = screen.getByRole('dialog');
+
+    await user.click(within(dialog).getByRole('button', { name: 'Madcow 5×5' }));
+
+    expect(within(dialog).getByRole('button', { name: 'Workout A' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Workout B' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Workout C' })).toBeInTheDocument();
+    // Madcow is read-only -- no +/- weight steppers, just the ramp's top weight.
+    expect(within(dialog).queryByLabelText('Decrease Back Squat weight')).not.toBeInTheDocument();
+  });
+
+  it('logging a Madcow entry while Standard is active does not move mcTop or weights', async () => {
+    seed();
+    const user = userEvent.setup();
+    render(<App />);
+
+    const before = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getByLabelText('Add workout'));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Madcow 5×5' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Add workout' }));
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.history[0].preset).toBe('madcow');
+    expect(stored.weights).toEqual(before.weights);
+    expect(stored.mcTop).toEqual(before.mcTop);
+  });
+
+  it('logging a Standard entry as the newest session while Madcow is active does not progress weights', async () => {
+    seed({
+      preset: 'madcow',
+      mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 },
+      mcWeek: 5,
+      mcPress: 'incline',
+      mcNextDay: 'A',
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    const before = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getByLabelText('Add workout'));
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Standard 5×5' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Add workout' }));
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.history[0].preset).toBe('standard');
+    expect(stored.weights.squat).toBe(before.weights.squat);
+    expect(stored.mcTop).toEqual(before.mcTop);
+    expect(stored.mcWeek).toBe(before.mcWeek);
+  });
+
+  it('still progresses a Standard entry logged as the newest session while Standard is active', async () => {
+    seed();
+    const user = userEvent.setup();
+    render(<App />);
+
+    const before = JSON.parse(localStorage.getItem(STORAGE_KEY));
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getByLabelText('Add workout'));
+    const dialog = screen.getByRole('dialog');
+    // Left as the pre-filled full pass -- unchanged program, unchanged day.
+    await user.click(within(dialog).getByRole('button', { name: 'Add workout' }));
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.weights.squat).toBe(before.weights.squat + 2.5);
+  });
+});

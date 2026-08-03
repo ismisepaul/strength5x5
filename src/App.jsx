@@ -11,8 +11,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, getProgramExercises, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
-import { getProgram, topWeightOf } from './programs';
+import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
+import { getProgram, PROGRAM_IDS, topWeightOf } from './programs';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 import { getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
@@ -953,14 +953,13 @@ const App = () => {
               <h2 className="text-[24px] font-medium">{t('log.title')}</h2>
               <button
                 onClick={() => {
-                  const type = currentWorkoutType;
-                  const workout = {
-                    date: new Date().toISOString(),
-                    type,
-                    preset: 'standard',
-                    exercises: getProgramExercises(type, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
-                  };
-                  setEditingEntry({ index: -1, session: workout });
+                  // Defaults to whatever program/day you're actually on -- the modal lets
+                  // you pick a different program and day before saving.
+                  const prog = getProgram(preset);
+                  const day = getCurrentDay(prog.id);
+                  const exercises = prog.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
+                    .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
+                  setEditingEntry({ index: -1, session: { date: new Date().toISOString(), type: day, preset: prog.id, exercises } });
                 }}
                 aria-label="Add workout"
                 className={`w-10 h-10 rounded-lg border flex items-center justify-center active:scale-90 transition-transform ${isDark ? 'border-ink/18 text-ink' : 'border-ink-lt/18 text-ink-lt'}`}
@@ -1453,6 +1452,13 @@ const App = () => {
 
       {editingEntry && (() => {
         const isNewEntry = editingEntry.index === -1;
+        const entryProg = getProgram(editingEntry.session.preset);
+        const rebuildEntryFor = (progId, day) => {
+          const p = getProgram(progId);
+          const exercises = p.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
+            .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
+          return { type: day, preset: p.id, exercises };
+        };
         const selectedDate = editingEntry.session.date.slice(0, 10);
         const originalDate = !isNewEntry ? history[editingEntry.index]?.date.slice(0, 10) : null;
         const dateConflict = selectedDate !== originalDate && historyDateSet.has(selectedDate);
@@ -1466,25 +1472,32 @@ const App = () => {
             </div>
 
             {isNewEntry && (
-              <div className="mb-6">
-                <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.workoutType')}</label>
-                <div className="flex gap-2">
-                  {['A', 'B'].map(wt => (
-                    <button
-                      key={wt}
-                      onClick={() => setEditingEntry(prev => ({
-                        ...prev,
-                        session: {
-                          ...prev.session,
-                          type: wt,
-                          exercises: getProgramExercises(wt, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
-                        },
-                      }))}
-                      className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
-                    >{t(`workout.type${wt}`)}</button>
-                  ))}
+              <>
+                <div className="mb-6">
+                  <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.program')}</label>
+                  <div className="flex gap-2">
+                    {PROGRAM_IDS.map(id => (
+                      <button
+                        key={id}
+                        onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(id, getProgram(id).days[0]) } }))}
+                        className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${entryProg.id === id ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
+                      >{t(getProgram(id).nameKey)}</button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+                <div className="mb-6">
+                  <label className={`text-[12px] uppercase tracking-[0.12em] block mb-2 ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.workoutType')}</label>
+                  <div className="flex gap-2">
+                    {entryProg.days.map(wt => (
+                      <button
+                        key={wt}
+                        onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(entryProg.id, wt) } }))}
+                        className={`flex-1 py-3 rounded-lg text-[15px] font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : (isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60')}`}
+                      >{t(`workout.type${wt}`)}</button>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
 
             <div className="mb-6">
@@ -1510,27 +1523,31 @@ const App = () => {
                   <p className="text-[13.5px] font-medium mb-3">{t('exercises.' + ex.id)}</p>
                   <div className="flex justify-between items-center mb-3">
                     <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.weightLabel')}</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setEditingEntry(prev => {
-                          const s = JSON.parse(JSON.stringify(prev.session));
-                          s.exercises[exIdx].weight = Math.max(0, s.exercises[exIdx].weight - 2.5);
-                          return { ...prev, session: s };
-                        })}
-                        aria-label={`Decrease ${ex.name} weight`}
-                        className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
-                      ><Minus size={16} /></button>
-                      <span className="w-14 text-center text-[15px] tabular-nums">{ex.weight}kg</span>
-                      <button
-                        onClick={() => setEditingEntry(prev => {
-                          const s = JSON.parse(JSON.stringify(prev.session));
-                          s.exercises[exIdx].weight += 2.5;
-                          return { ...prev, session: s };
-                        })}
-                        aria-label={`Increase ${ex.name} weight`}
-                        className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
-                      ><Plus size={16} /></button>
-                    </div>
+                    {entryProg.ramped ? (
+                      <span className="text-[15px] tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingEntry(prev => {
+                            const s = JSON.parse(JSON.stringify(prev.session));
+                            s.exercises[exIdx].weight = Math.max(0, s.exercises[exIdx].weight - 2.5);
+                            return { ...prev, session: s };
+                          })}
+                          aria-label={`Decrease ${ex.name} weight`}
+                          className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
+                        ><Minus size={16} /></button>
+                        <span className="w-14 text-center text-[15px] tabular-nums">{ex.weight}kg</span>
+                        <button
+                          onClick={() => setEditingEntry(prev => {
+                            const s = JSON.parse(JSON.stringify(prev.session));
+                            s.exercises[exIdx].weight += 2.5;
+                            return { ...prev, session: s };
+                          })}
+                          aria-label={`Increase ${ex.name} weight`}
+                          className={`w-10 h-10 rounded-lg border flex items-center justify-center ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'} active:scale-90`}
+                        ><Plus size={16} /></button>
+                      </div>
+                    )}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className={`text-[12px] uppercase ${isDark ? 'text-ink/45' : 'text-ink-lt/45'}`}>{t('modals.setsLabel')}</span>
@@ -1573,11 +1590,16 @@ const App = () => {
                 const newHistory = [...unsortedHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
                 const savedIndex = newHistory.findIndex(s => s === editingEntry.session);
                 const isLatestEntry = savedIndex === 0;
+                // Progression only runs for a Standard entry that's both the newest session
+                // and the program you're actually on -- a Madcow entry never bumps mcTop/mcWeek
+                // here, since those advance on the weekly rollover and a manually logged (or
+                // backdated) session would otherwise double-advance them.
+                const shouldProgress = isLatestEntry && entryProg.id === 'standard' && preset === 'standard';
 
                 let nextWeights = weights;
                 let nextType = currentWorkoutType;
 
-                if (isLatestEntry) {
+                if (shouldProgress) {
                   const priorHistory = newHistory.slice(1);
                   const { nextWeights: adjustedWeights } = evaluateWorkoutOutcome(editingEntry.session, priorHistory, weights);
                   nextWeights = adjustedWeights;
