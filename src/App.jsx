@@ -17,6 +17,8 @@ import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup
 import { getProgram } from './programs';
 import { getWorkoutStats } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
+import { useMadcowState } from './state/useMadcowState';
+import { useSettings } from './state/useSettings';
 import { useTimer } from './hooks/useTimer';
 import { useWakeLock } from './hooks/useWakeLock';
 import RestTimer from './components/RestTimer';
@@ -56,17 +58,15 @@ const App = () => {
   const [history, setHistory] = useState(Array.isArray(saved.history) ? saved.history : []);
   const [currentWorkoutType, setCurrentWorkoutType] = useState(saved.nextType ?? 'A');
   const [preset, setPreset] = useState(() => normalizePreset(saved.preset));
-  const [mcTop, setMcTop] = useState(() => normalizeMcTop(saved.mcTop, saved.weights ?? INITIAL_WEIGHTS));
-  const [mcWeek, setMcWeek] = useState(() => normalizeMcWeek(saved.mcWeek));
-  const [mcInterval, setMcInterval] = useState(() => normalizeMcInterval(saved.mcInterval));
-  const [mcPress, setMcPress] = useState(() => normalizeMcPress(saved.mcPress));
-  const [mcNextDay, setMcNextDay] = useState(() => normalizeMcNextDay(saved.mcNextDay));
-  const [mcPending, setMcPending] = useState(() => normalizeMcPending(saved.mcPending));
-  const [isDark, setIsDark] = useState(saved.isDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const [localBackup, setLocalBackup] = useState(saved.autoSave ?? false);
-  const [preferredRest, setPreferredRest] = useState(saved.preferredRest ?? 90);
-  const [soundEnabled, setSoundEnabled] = useState(saved.soundEnabled ?? false);
-  const [vibrationEnabled, setVibrationEnabled] = useState(saved.vibrationEnabled ?? saved.hapticsEnabled ?? false);
+  const {
+    mcTop, setMcTop, mcWeek, setMcWeek, mcInterval, setMcInterval,
+    mcPress, setMcPress, mcNextDay, setMcNextDay, mcPending, setMcPending,
+    hydrate: hydrateMadcow,
+  } = useMadcowState(saved);
+  const {
+    isDark, setIsDark, localBackup, setLocalBackup, preferredRest, setPreferredRest,
+    soundEnabled, setSoundEnabled, vibrationEnabled, setVibrationEnabled, logGrouping, setLogGrouping,
+  } = useSettings(saved);
 
   const [activeTab, setActiveTab] = useState('workout');
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
@@ -81,7 +81,6 @@ const App = () => {
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
-  const [logGrouping, setLogGrouping] = useState(saved.logGrouping ?? 'all');
   const [expandedGroups, setExpandedGroups] = useState({});
   const [expandedBarSetup, setExpandedBarSetup] = useState({});
   const [completionSummary, setCompletionSummary] = useState(null);
@@ -123,12 +122,7 @@ const App = () => {
     if (Array.isArray(updated.history)) setHistory(updated.history);
     if (updated.isDark !== undefined) setIsDark(updated.isDark);
     if (updated.preset) setPreset(normalizePreset(updated.preset));
-    if (updated.mcTop) setMcTop(normalizeMcTop(updated.mcTop, updated.weights ?? weights));
-    if (updated.mcWeek) setMcWeek(normalizeMcWeek(updated.mcWeek));
-    if (updated.mcInterval) setMcInterval(normalizeMcInterval(updated.mcInterval));
-    if (updated.mcPress) setMcPress(normalizeMcPress(updated.mcPress));
-    if (updated.mcNextDay) setMcNextDay(normalizeMcNextDay(updated.mcNextDay));
-    if (updated.mcPending !== undefined) setMcPending(normalizeMcPending(updated.mcPending));
+    hydrateMadcow(updated, weights);
   });
 
   useEffect(() => {
