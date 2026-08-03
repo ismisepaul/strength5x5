@@ -152,13 +152,13 @@ describe('evaluateMadcowOutcome', () => {
 
   it('does not touch top sets during the on-ramp, but climbs them on the Friday rollover', () => {
     const exercises = getMadcowDayExercises('A', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline').map(passedExercise);
-    const result = evaluateMadcowOutcome('A', exercises, mcTop, 1, MADCOW_ONRAMP_WEEKS);
+    const result = evaluateMadcowOutcome('A', exercises, mcTop, 1, [], MADCOW_ONRAMP_WEEKS);
     expect(result.nextTop).toEqual(mcTop);
     expect(result.progressions).toEqual([]);
     expect(result.nextWeek).toBe(1);
 
     const cExercises = getMadcowDayExercises('C', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline').map(passedExercise);
-    const rollover = evaluateMadcowOutcome('C', cExercises, mcTop, 1, MADCOW_ONRAMP_WEEKS);
+    const rollover = evaluateMadcowOutcome('C', cExercises, mcTop, 1, [], MADCOW_ONRAMP_WEEKS);
     expect(rollover.nextWeek).toBe(2);
     expect(rollover.nextTop.squat).toBe(110);
     expect(rollover.nextTop.bench).toBe(65);
@@ -170,7 +170,7 @@ describe('evaluateMadcowOutcome', () => {
     let week = 1;
     for (let i = 0; i < MADCOW_ONRAMP_WEEKS - 1; i++) {
       const cExercises = getMadcowDayExercises('C', top, MADCOW_DEFAULT_INTERVAL, 'incline').map(passedExercise);
-      const result = evaluateMadcowOutcome('C', cExercises, top, week, MADCOW_ONRAMP_WEEKS);
+      const result = evaluateMadcowOutcome('C', cExercises, top, week, [], MADCOW_ONRAMP_WEEKS);
       top = result.nextTop; week = result.nextWeek;
     }
     expect(week).toBe(MADCOW_ONRAMP_WEEKS);
@@ -179,35 +179,96 @@ describe('evaluateMadcowOutcome', () => {
     expect(top.row).toBe(72.5);
   });
 
-  it('advances squat/bench/row on a passed Workout A once past the on-ramp', () => {
+  it('queues squat/bench/row on a passed Workout A once past the on-ramp, without moving the live top set yet', () => {
     const exercises = getMadcowDayExercises('A', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline').map(passedExercise);
-    const result = evaluateMadcowOutcome('A', exercises, mcTop, MADCOW_ONRAMP_WEEKS, MADCOW_ONRAMP_WEEKS);
-    expect(result.nextTop.squat).toBe(110);
-    expect(result.nextTop.bench).toBe(65);
-    expect(result.nextTop.row).toBe(70);
+    const result = evaluateMadcowOutcome('A', exercises, mcTop, MADCOW_ONRAMP_WEEKS, [], MADCOW_ONRAMP_WEEKS);
+    // The top set itself doesn't move until Friday's rollover -- Wednesday's squat ramp
+    // and Friday's `top + increment` attempt both still need this week's actual Monday weight.
+    expect(result.nextTop).toEqual(mcTop);
+    expect(result.nextPending.sort()).toEqual(['bench', 'row', 'squat']);
     expect(result.progressions.sort()).toEqual(['bench', 'row', 'squat']);
+    // The completion summary still projects the eventual weight, for display only.
+    expect(result.projectedTop.squat).toBe(110);
+    expect(result.projectedTop.bench).toBe(65);
+    expect(result.projectedTop.row).toBe(70);
   });
 
   it('holds the top set when the heaviest set is missed', () => {
     const exercises = getMadcowDayExercises('A', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline').map(failedTopSet);
-    const result = evaluateMadcowOutcome('A', exercises, mcTop, MADCOW_ONRAMP_WEEKS, MADCOW_ONRAMP_WEEKS);
+    const result = evaluateMadcowOutcome('A', exercises, mcTop, MADCOW_ONRAMP_WEEKS, [], MADCOW_ONRAMP_WEEKS);
     expect(result.nextTop).toEqual(mcTop);
+    expect(result.nextPending).toEqual([]);
     expect(result.progressions).toEqual([]);
   });
 
-  it('advances the second press and deadlift on a passed Workout B, but never squat', () => {
+  it('advances the second press and deadlift on a passed Workout B immediately, but never squat', () => {
     const exercises = getMadcowDayExercises('B', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline').map(passedExercise);
-    const result = evaluateMadcowOutcome('B', exercises, mcTop, MADCOW_ONRAMP_WEEKS, MADCOW_ONRAMP_WEEKS);
+    const result = evaluateMadcowOutcome('B', exercises, mcTop, MADCOW_ONRAMP_WEEKS, [], MADCOW_ONRAMP_WEEKS);
     expect(result.progressions.sort()).toEqual(['deadlift', 'incline']);
     expect(result.nextTop.squat).toBe(mcTop.squat);
+    // Unlike Workout A, B's press/deadlift bump the live top set right away -- neither
+    // lift is read again before next Wednesday, so there's no same-week Friday to overshoot.
+    expect(result.nextTop.deadlift).toBe(120);
+    expect(result.nextTop.incline).toBe(51.25);
+    expect(result.nextPending).toEqual([]);
   });
 
   it('never advances top sets from Workout C, only the week counter', () => {
     const exercises = getMadcowDayExercises('C', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline').map(passedExercise);
-    const result = evaluateMadcowOutcome('C', exercises, mcTop, MADCOW_ONRAMP_WEEKS, MADCOW_ONRAMP_WEEKS);
+    const result = evaluateMadcowOutcome('C', exercises, mcTop, MADCOW_ONRAMP_WEEKS, [], MADCOW_ONRAMP_WEEKS);
     expect(result.progressions).toEqual([]);
     expect(result.nextTop).toEqual(mcTop);
     expect(result.nextWeek).toBe(MADCOW_ONRAMP_WEEKS + 1);
+  });
+
+  it('applies a queued Workout A bump at the Friday rollover, then clears the queue', () => {
+    const cExercises = getMadcowDayExercises('C', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline').map(passedExercise);
+    const result = evaluateMadcowOutcome('C', cExercises, mcTop, MADCOW_ONRAMP_WEEKS, ['squat', 'bench'], MADCOW_ONRAMP_WEEKS);
+    expect(result.nextTop.squat).toBe(110);
+    expect(result.nextTop.bench).toBe(65);
+    expect(result.nextTop.row).toBe(mcTop.row); // row never passed Monday, wasn't queued
+    expect(result.nextPending).toEqual([]);
+  });
+
+  // Regression coverage for the "Friday's top set is one increment too heavy" bug: a
+  // full two-week trace, squat passing Monday every week, verified against StrongLifts'
+  // published Madcow numbers (Monday 100 -> Friday 102.5 -> Monday 102.5 -> Friday 105).
+  it('keeps Friday exactly one increment above the current week\'s Monday top, week over week', () => {
+    const squatTop = { squat: 100 };
+    const squatOnly = (day, top) => getMadcowDayExercises(day, { ...top, bench: 1, row: 1, deadlift: 1, press: 1, incline: 1 }, MADCOW_DEFAULT_INTERVAL, 'incline').filter(ex => ex.id === 'squat');
+
+    let top = squatTop;
+    let pending = [];
+    const week = MADCOW_ONRAMP_WEEKS; // past on-ramp, progression is live
+
+    // Week N: Monday passes.
+    const [mondayEx] = squatOnly('A', top);
+    expect(mondayEx.weight).toBe(100); // week N's actual Monday top set
+    let outcome = evaluateMadcowOutcome('A', [passedExercise(mondayEx)], top, week, pending, MADCOW_ONRAMP_WEEKS);
+    top = outcome.nextTop; pending = outcome.nextPending;
+
+    // Week N: Friday's attempt is still only one increment above Monday's actual weight.
+    const [fridayEx] = squatOnly('C', top);
+    expect(fridayEx.weight).toBe(102.5);
+    outcome = evaluateMadcowOutcome('C', [passedExercise(fridayEx)], top, week, pending, MADCOW_ONRAMP_WEEKS);
+    top = outcome.nextTop; pending = outcome.nextPending;
+
+    // Week N+1: Monday's top set has advanced by exactly one increment.
+    const [monday2] = squatOnly('A', top);
+    expect(monday2.weight).toBe(102.5);
+    outcome = evaluateMadcowOutcome('A', [passedExercise(monday2)], top, week + 1, pending, MADCOW_ONRAMP_WEEKS);
+    top = outcome.nextTop; pending = outcome.nextPending;
+
+    // Week N+1: Friday is one increment above week N+1's Monday, not two.
+    const [friday2] = squatOnly('C', top);
+    expect(friday2.weight).toBe(105);
+  });
+
+  it('still adds Friday\'s increment when Monday was missed, since Friday is a fresh attempt regardless', () => {
+    const exercises = getMadcowDayExercises('A', mcTop, MADCOW_DEFAULT_INTERVAL, 'incline').map(failedTopSet);
+    const outcome = evaluateMadcowOutcome('A', exercises, mcTop, MADCOW_ONRAMP_WEEKS, [], MADCOW_ONRAMP_WEEKS);
+    const [fridaySquat] = getMadcowDayExercises('C', outcome.nextTop, MADCOW_DEFAULT_INTERVAL, 'incline');
+    expect(fridaySquat.weight).toBe(mcTop.squat + 2.5);
   });
 });
 

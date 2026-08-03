@@ -11,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { WORKOUTS, INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MAX_SETS, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
+import { validateImportData, calculateBest1RM, calculateDeload, deloadWeightByPercent, getConsecutiveFailures, getRecommendedDeloadPercent, formatDuration, formatClock, calculateSetDurations, normalizeProgram, targetReps, isExercisePassed, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, madcowRestSeconds } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from './programs';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
@@ -48,6 +48,7 @@ const App = () => {
   const [mcInterval, setMcInterval] = useState(() => normalizeMcInterval(saved.mcInterval));
   const [mcPress, setMcPress] = useState(() => normalizeMcPress(saved.mcPress));
   const [mcNextDay, setMcNextDay] = useState(() => normalizeMcNextDay(saved.mcNextDay));
+  const [mcPending, setMcPending] = useState(() => normalizeMcPending(saved.mcPending));
   const [isDark, setIsDark] = useState(saved.isDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [localBackup, setLocalBackup] = useState(saved.autoSave ?? false);
   const [preferredRest, setPreferredRest] = useState(saved.preferredRest ?? 90);
@@ -151,7 +152,7 @@ const App = () => {
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,
     isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
-    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay,
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending,
   });
 
   useStorageSync(STORAGE_KEY, (updated) => {
@@ -165,6 +166,7 @@ const App = () => {
     if (updated.mcInterval) setMcInterval(normalizeMcInterval(updated.mcInterval));
     if (updated.mcPress) setMcPress(normalizeMcPress(updated.mcPress));
     if (updated.mcNextDay) setMcNextDay(normalizeMcNextDay(updated.mcNextDay));
+    if (updated.mcPending !== undefined) setMcPending(normalizeMcPending(updated.mcPending));
   });
 
   useEffect(() => {
@@ -192,8 +194,8 @@ const App = () => {
 
   const getAppState = useCallback(() => ({
     weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
-    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay,
-  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay]);
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending,
+  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
 
   const exportData = useCallback((targetHistory) => {
     const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState(), history: targetHistory || history };
@@ -374,18 +376,20 @@ const App = () => {
     let nextMcTop = mcTop;
     let nextMcWeek = mcWeek;
     let nextMcNextDay = mcNextDay;
+    let nextMcPending = mcPending;
     let progressions, pendingDeloads, summaryNextValues;
 
     if (isMadcow) {
-      const outcome = evaluateMadcowOutcome(currentWorkout.type, currentWorkout.exercises, mcTop, mcWeek, MADCOW_ONRAMP_WEEKS);
+      const outcome = evaluateMadcowOutcome(currentWorkout.type, currentWorkout.exercises, mcTop, mcWeek, mcPending, MADCOW_ONRAMP_WEEKS);
       nextMcTop = outcome.nextTop;
       nextMcWeek = outcome.nextWeek;
+      nextMcPending = outcome.nextPending;
       nextWeights = applyMcTopToWeights(weights, nextMcTop);
       nextMcNextDay = MADCOW_DAYS[(MADCOW_DAYS.indexOf(currentWorkout.type) + 1) % MADCOW_DAYS.length];
       progressions = outcome.progressions;
       pendingDeloads = [];
-      summaryNextValues = nextMcTop;
-      setMcTop(nextMcTop); setMcWeek(nextMcWeek); setMcNextDay(nextMcNextDay); setWeights(nextWeights);
+      summaryNextValues = outcome.projectedTop;
+      setMcTop(nextMcTop); setMcWeek(nextMcWeek); setMcNextDay(nextMcNextDay); setMcPending(nextMcPending); setWeights(nextWeights);
     } else {
       const outcome = evaluateWorkoutOutcome(currentWorkout, history, weights);
       nextWeights = outcome.nextWeights;
@@ -406,9 +410,9 @@ const App = () => {
     saveToDriveQuietly({
       weights: nextWeights, program, history: newHistory, nextType,
       isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
-      preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay,
+      preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay, mcPending: nextMcPending,
     });
-  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay]);
+  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, evaluateWorkoutOutcome, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -450,6 +454,7 @@ const App = () => {
       setMcTop(seeded);
       setMcWeek(1);
       setMcNextDay('A');
+      setMcPending([]);
       setWeights(prev => applyMcTopToWeights(prev, seeded));
     } else {
       setWeights(prev => madcowTopsToWeights(prev, mcTop, mcPress));
@@ -485,6 +490,7 @@ const App = () => {
     setMcInterval(normalizeMcInterval(d.mcInterval));
     setMcPress(normalizeMcPress(d.mcPress));
     setMcNextDay(normalizeMcNextDay(d.mcNextDay));
+    setMcPending(normalizeMcPending(d.mcPending));
     setActiveTab('workout'); setShowRestorePrompt(false);
     setPendingLocalImport(null);
     showToast(t('toast.backupRestored'), 'success');
@@ -498,6 +504,7 @@ const App = () => {
       language: d.language || i18n.language,
       preset: normalizePreset(d.preset), mcTop: normalizeMcTop(d.mcTop, d.weights), mcWeek: normalizeMcWeek(d.mcWeek),
       mcInterval: normalizeMcInterval(d.mcInterval), mcPress: normalizeMcPress(d.mcPress), mcNextDay: normalizeMcNextDay(d.mcNextDay),
+      mcPending: normalizeMcPending(d.mcPending),
     });
   }, [currentWorkoutType, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, showToast, t]);
 
@@ -608,6 +615,7 @@ const App = () => {
     setMcInterval(normalizeMcInterval(d.mcInterval));
     setMcPress(normalizeMcPress(d.mcPress));
     setMcNextDay(normalizeMcNextDay(d.mcNextDay));
+    setMcPending(normalizeMcPending(d.mcPending));
     setActiveTab('workout');
     showToast(t('toast.restoredFromDrive'), 'success');
   }, [showToast, t]);

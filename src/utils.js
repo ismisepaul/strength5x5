@@ -88,6 +88,14 @@ export function normalizeMcNextDay(raw) {
   return MADCOW_DAYS.includes(raw) ? raw : 'A';
 }
 
+// Lift ids that passed Workout A's top set this week but whose bump is deferred to the
+// Friday rollover (see evaluateMadcowOutcome) -- so anything else is dropped as junk.
+export function normalizeMcPending(raw) {
+  if (!Array.isArray(raw)) return [];
+  const valid = new Set(Object.keys(MADCOW_WEEKLY_INCREMENTS));
+  return [...new Set(raw.filter(id => typeof id === 'string' && valid.has(id)))];
+}
+
 // Mirrors every Madcow top set into `weights` too, so Stats and any Standard-shaped
 // view of "the current weight" agree with Madcow's ramp -- see madcowTopsToWeights
 // for the reverse direction (Madcow -> Standard).
@@ -233,8 +241,18 @@ export function getMadcowDayLiftIds(day, pressId) {
 // whether the week rolls over. Progression is frozen during the on-ramp (weeks 1..
 // onrampWeeks-1), which instead climbs on schedule at each Friday rollover; day B's
 // squat never gates progression since it's the week's recovery volume, not a top set.
-export function evaluateMadcowOutcome(day, exercises, mcTop, week, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
+//
+// `mcTop` always holds *this week's* Monday top set, never next week's -- Wednesday's
+// squat ramp and Friday's `top + increment` attempt both depend on that staying true
+// all week. A passed Workout A therefore can't bump `nextTop` immediately (that would
+// make Wednesday/Friday read a weight nobody actually lifted yet); instead it's queued
+// in `nextPending` and only applied -- alongside the week's own increment during the
+// on-ramp -- at the Friday rollover. Workout B's press/deadlift bump `nextTop` directly
+// since neither lift is read again before next Wednesday, so there's nothing for a
+// same-week Friday to over-read.
+export function evaluateMadcowOutcome(day, exercises, mcTop, week, mcPending, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
   const nextTop = { ...mcTop };
+  const nextPending = new Set(mcPending);
   const progressions = [];
   const gated = week >= onrampWeeks;
 
@@ -242,16 +260,26 @@ export function evaluateMadcowOutcome(day, exercises, mcTop, week, onrampWeeks =
     exercises.forEach(ex => {
       const relevant = day === 'A' || (day === 'B' && ex.id !== 'squat');
       if (!relevant || !isExercisePassed(ex)) return;
-      const increment = MADCOW_WEEKLY_INCREMENTS[ex.id] ?? 2.5;
-      const floor = INITIAL_WEIGHTS[ex.id] ?? 20;
-      nextTop[ex.id] = roundWeight(mcTop[ex.id] + increment, increment, floor);
       progressions.push(ex.id);
+      if (day === 'A') {
+        nextPending.add(ex.id);
+      } else {
+        const increment = MADCOW_WEEKLY_INCREMENTS[ex.id] ?? 2.5;
+        const floor = INITIAL_WEIGHTS[ex.id] ?? 20;
+        nextTop[ex.id] = roundWeight(mcTop[ex.id] + increment, increment, floor);
+      }
     });
   }
 
   let nextWeek = week;
   if (day === 'C') {
     nextWeek = week + 1;
+    for (const id of nextPending) {
+      const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
+      const floor = INITIAL_WEIGHTS[id] ?? 20;
+      nextTop[id] = roundWeight(nextTop[id] + increment, increment, floor);
+    }
+    nextPending.clear();
     if (week < onrampWeeks) {
       for (const id of Object.keys(nextTop)) {
         const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
@@ -261,7 +289,18 @@ export function evaluateMadcowOutcome(day, exercises, mcTop, week, onrampWeeks =
     }
   }
 
-  return { nextTop, progressions, nextWeek };
+  // The weight to *show* as "progressed to" -- newly-queued lifts haven't actually
+  // moved in nextTop yet (that waits for Friday), so project their eventual value for
+  // display without mutating the real, still-frozen top set.
+  const projectedTop = { ...nextTop };
+  for (const id of nextPending) {
+    if (mcPending.includes(id)) continue;
+    const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
+    const floor = INITIAL_WEIGHTS[id] ?? 20;
+    projectedTop[id] = roundWeight(nextTop[id] + increment, increment, floor);
+  }
+
+  return { nextTop, nextPending: [...nextPending], progressions, projectedTop, nextWeek };
 }
 
 // Short rest for a light ramp set, longer as the next set approaches the day's top.
@@ -311,6 +350,7 @@ export function validateImportData(d) {
     mcInterval: normalizeMcInterval(d.mcInterval),
     mcPress: normalizeMcPress(d.mcPress),
     mcNextDay: normalizeMcNextDay(d.mcNextDay),
+    mcPending: normalizeMcPending(d.mcPending),
   };
 }
 
