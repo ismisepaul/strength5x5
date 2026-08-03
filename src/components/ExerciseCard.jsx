@@ -79,7 +79,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
             <WeightInput
               value={ex.weight}
               increment={ex.increment}
-              min={0}
+              min={20}
               onChange={onWeightChange}
               label={t('exercises.' + ex.id)}
               isDark={isDark}

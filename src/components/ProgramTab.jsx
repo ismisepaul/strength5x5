@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
-import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops } from '../utils';
+import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
 import ProgramEditor from './ProgramEditor';
 import WeightInput from './WeightInput';
@@ -394,6 +394,10 @@ const ProgramTab = ({
         const previewTop = toMadcow ? seedMadcowTops(weights) : mcTop;
         const pressId = mcPress === 'press' ? 'press' : 'incline';
         const rowIds = ['squat', 'bench', 'row', 'deadlift', pressId];
+        // Existing users' saved `weights` predate the incline lift, so it may be
+        // missing entirely -- fall back to the same bench-derived seed used to
+        // build previewTop, so the "from" side is never undefined.
+        const fromWeights = { ...weights, incline: weights.incline ?? seedInclineWeight(weights.bench) };
         return (
           <div role="dialog" aria-modal="true" aria-label={t(toMadcow ? 'program.confirm.toMadcowTitle' : 'program.confirm.toStandardTitle')} className="fixed inset-0 z-[450] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
             <div className={`w-full max-w-sm rounded-xl p-6 border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
@@ -405,7 +409,7 @@ const ProgramTab = ({
                     <span className={`text-[12px] uppercase ${mutedClass}`}>{t('exercises.' + id)}</span>
                     <span className="text-[14px] tabular-nums">
                       {toMadcow
-                        ? t('program.confirm.topSetRow', { from: weights[id], to: previewTop[id] })
+                        ? t('program.confirm.topSetRow', { from: fromWeights[id], to: previewTop[id] })
                         : t('program.confirm.flatRow', { weight: previewTop[id] })}
                     </span>
                   </div>

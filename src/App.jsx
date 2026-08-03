@@ -1487,7 +1487,7 @@ const App = () => {
                       <WeightInput
                         value={ex.weight}
                         increment={entryProg.increments[ex.id] ?? 2.5}
-                        min={0}
+                        min={20}
                         onChange={(next) => setEditingEntry(prev => {
                           const s = JSON.parse(JSON.stringify(prev.session));
                           s.exercises[exIdx].weight = next;
