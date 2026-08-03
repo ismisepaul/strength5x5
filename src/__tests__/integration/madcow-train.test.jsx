@@ -67,6 +67,7 @@ describe('Train tab under Madcow', () => {
     expect(stored.mcTop.bench).toBe(65);
     expect(stored.weights.squat).toBe(110);
     expect(stored.mcNextDay).toBe('B');
+    expect(stored.history[0].preset).toBe('madcow');
   });
 
   it('shows the Madcow-specific missed-reps note instead of the Standard one', async () => {

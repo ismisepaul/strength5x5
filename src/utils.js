@@ -291,12 +291,14 @@ export function validateImportData(d) {
     ? Math.round(d.weights.incline / EXERCISE_INCREMENTS.incline) * EXERCISE_INCREMENTS.incline
     : seedInclineWeight(normalizedWeights.bench);
 
-  const validHistory = d.history.filter(entry =>
-    entry && typeof entry === 'object' &&
-    typeof entry.date === 'string' &&
-    typeof entry.type === 'string' &&
-    Array.isArray(entry.exercises)
-  );
+  const validHistory = d.history
+    .filter(entry =>
+      entry && typeof entry === 'object' &&
+      typeof entry.date === 'string' &&
+      typeof entry.type === 'string' &&
+      Array.isArray(entry.exercises)
+    )
+    .map(entry => ({ ...entry, preset: normalizePreset(entry.preset) }));
 
   return {
     ...d,

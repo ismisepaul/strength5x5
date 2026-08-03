@@ -287,6 +287,7 @@ describe('Workout Flow', () => {
     expect(stored.weights.bench).toBe(47.5);
     expect(stored.weights.row).toBe(52.5);
     expect(stored.history).toHaveLength(2);
+    expect(stored.history[0].preset).toBe('standard');
   });
 
   it('does not increment weight for failed sets', async () => {

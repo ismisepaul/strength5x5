@@ -44,6 +44,20 @@ describe('Import / Export', () => {
     expect(result.weights.incline % 1.25).toBe(0);
   });
 
+  it('defaults history entries with no preset to standard', () => {
+    const result = validateImportData(legacyBackup);
+    expect(result.history.every(entry => entry.preset === 'standard')).toBe(true);
+  });
+
+  it('keeps a madcow preset tag on a history entry', () => {
+    const result = validateImportData({
+      ...legacyBackup,
+      history: [{ ...legacyBackup.history[0], preset: 'madcow' }, legacyBackup.history[1]],
+    });
+    expect(result.history[0].preset).toBe('madcow');
+    expect(result.history[1].preset).toBe('standard');
+  });
+
   it('exports data when backup button is clicked', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       version: 1,

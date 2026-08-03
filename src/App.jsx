@@ -396,6 +396,7 @@ const App = () => {
     const isMadcow = preset === 'madcow';
     const savedWorkout = {
       ...currentWorkout,
+      preset,
       duration: Date.now() - (currentWorkout.startedAt || Date.now()),
       exercises: calculateSetDurations(currentWorkout.exercises, currentWorkout.startedAt),
     };
@@ -951,6 +952,7 @@ const App = () => {
                   const workout = {
                     date: new Date().toISOString(),
                     type,
+                    preset: 'standard',
                     exercises: getProgramExercises(type, program).map(ex => ({ ...ex, weight: weights[ex.id], setsCompleted: new Array(ex.sets).fill(ex.reps) })),
                   };
                   setEditingEntry({ index: -1, session: workout });
