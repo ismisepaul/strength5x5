@@ -59,11 +59,6 @@ export const MADCOW_DAY_LIFTS = {
 };
 export const MADCOW_DEFAULT_PRESS = 'incline';
 export const MADCOW_PRESS_OPTIONS = ['incline', 'press'];
-// The most sets any lift/day combination produces -- Day C's 4 ramp sets plus its
-// attempt and back-off sets (see buildMadcowLiftPlan in utils.js). Used as a fixed
-// reference so a lift's ramp bars are the same width everywhere, regardless of how
-// many sets that particular lift/day happens to have (Day A: 5, Day C: 6, Day B: 4).
-export const MADCOW_MAX_RAMP_SETS = 6;
 export const MADCOW_ONRAMP_WEEKS = 4;
 export const MADCOW_DEFAULT_INTERVAL = 12.5;
 export const MADCOW_INTERVAL_OPTIONS = [10, 12.5, 15];

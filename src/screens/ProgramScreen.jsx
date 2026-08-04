@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
-import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, MADCOW_MAX_RAMP_SETS, INITIAL_WEIGHTS } from '../constants';
+import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, MAX_SETS, INITIAL_WEIGHTS } from '../constants';
 import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight, projectOnrampMcTop } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
 import { mergeMadcowGains } from '../programSwitch';
@@ -31,6 +31,10 @@ const Chip = ({ children }) => (
 // A read-only readout, not a control: thin flat bars, height proportional to
 // weight, role (top / back-off / plain) carried by the border only -- never by
 // fill colour. Deliberately not styled like the Train tab's tappable set circles.
+// Gap between bars, kept in sync with the row's gap-1.5 below -- the width calc needs
+// the same number to divide the row into exactly `columns` even slots.
+const RAMP_BAR_GAP = 6;
+
 const RampBars = ({ ex, day }) => {
   const n = ex.setWeights.length;
   const hasTop = day === 'A' || day === 'B' || day === 'C';
@@ -38,6 +42,9 @@ const RampBars = ({ ex, day }) => {
   const backoffIndex = day === 'C' ? n - 1 : -1;
   const min = Math.min(...ex.setWeights);
   const max = Math.max(...ex.setWeights);
+  // A row of MAX_SETS (5) bars fills the width, matching every other set-target row in
+  // the app; a lift with more sets than that (Madcow Day C's 6) shrinks to fit instead.
+  const columns = Math.max(n, MAX_SETS);
 
   return (
     <div className="flex items-end gap-1.5 mt-[9px]">
@@ -50,10 +57,12 @@ const RampBars = ({ ex, day }) => {
           <div
             key={i}
             className="flex flex-col items-center min-w-0"
-            style={{ width: `calc((100% - ${6 * (MADCOW_MAX_RAMP_SETS - 1)}px) / ${MADCOW_MAX_RAMP_SETS})` }}
+            style={{ width: `calc((100% - ${RAMP_BAR_GAP * (columns - 1)}px) / ${columns})` }}
           >
             <span className="text-kicker font-semibold text-accent-300 tabular-nums h-[13px] leading-[13px]">{reps !== 5 ? `×${reps}` : ''}</span>
             <div
+              role="img"
+              aria-label={`${w} kg × ${reps}`}
               style={{ height: `${height}px` }}
               className={`w-full rounded-t-[4px] rounded-b-[2px] bg-accent/40 ${
                 isTop ? 'border border-accent'
