@@ -5,6 +5,7 @@ import { INITIAL_WEIGHTS } from '../constants';
 import { getProgram, topWeightOf } from '../programs';
 import WeightInput from '../components/WeightInput';
 import BarSetupDiagram from '../components/BarSetupDiagram';
+import PlateStrip from '../components/PlateStrip';
 import ExerciseCard from '../components/ExerciseCard';
 
 const TrainScreen = ({
@@ -65,6 +66,7 @@ const TrainScreen = ({
                         <p className="text-[12.5px] text-ink/45">
                           {isMadcow ? (day === 'C' ? t('workout.dayCMeta') : t('workout.rampSetsMeta', { sets: ex.sets, from: Math.min(...ex.setWeights), to: topWeight })) : `${ex.sets} × ${ex.reps}`}
                         </p>
+                        <PlateStrip weight={topWeight} />
                       </button>
                       <WeightInput
                         value={isMadcow ? mcTop[liftId] : weights[liftId]}
