@@ -12,9 +12,12 @@ describe('PlateStrip', () => {
     expect(bars[0]).toHaveStyle({ backgroundColor: '#37628f', height: '19px' });
   });
 
-  it('renders nothing for an empty bar', () => {
+  it('reserves its height for an empty bar instead of collapsing', () => {
     const { container } = render(<PlateStrip weight={20} />);
-    expect(container).toBeEmptyDOMElement();
+    const strip = container.querySelector('[aria-hidden="true"]');
+    expect(strip).toBeInTheDocument();
+    expect(strip.children).toHaveLength(0);
+    expect(strip.className).toContain('h-5');
   });
 
   it('is decorative and hidden from the accessibility tree', () => {
