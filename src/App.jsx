@@ -137,7 +137,16 @@ const App = () => {
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
   }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
 
-  const big3Total = useMemo(() => (weights?.squat || 0) + (weights?.bench || 0) + (weights?.deadlift || 0), [weights]);
+  // Madcow trains a ramp, not a flat weight, so anything that renders a single "current
+  // weight" reads the top set instead. Kept derived rather than mirrored into `weights`
+  // -- mirroring is what let a program switch overwrite the Standard weights (see
+  // switchProgramState in programSwitch.js).
+  const displayWeights = useMemo(
+    () => getProgram(preset).ramped ? applyMcTopToWeights(weights, mcTop) : weights,
+    [preset, weights, mcTop],
+  );
+
+  const big3Total = useMemo(() => (displayWeights?.squat || 0) + (displayWeights?.bench || 0) + (displayWeights?.deadlift || 0), [displayWeights]);
 
   const best1RMs = useMemo(() => {
     const result = {};
@@ -652,7 +661,7 @@ const App = () => {
         {activeTab === 'progress' && (
           <StatsScreen
             history={history} statsView={statsView} setStatsView={setStatsView}
-            weights={weights} best1RMs={best1RMs} big3Total={big3Total}
+            weights={displayWeights} best1RMs={best1RMs} big3Total={big3Total}
             preset={preset} program={program} mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress}
           />
         )}
