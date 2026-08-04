@@ -6,6 +6,10 @@ import { MAX_SETS } from '../../constants';
 import Modal from './Modal';
 import { Z_TOP } from './zIndex';
 
+// Gap between set blocks, kept in sync with the row's gap-1.5 below -- the width calc
+// needs the same number to divide the row into exactly `columns` even slots.
+const SET_BLOCK_GAP = 6;
+
 const CompletionSummaryModal = ({ completionSummary, onDone }) => {
   const { t } = useTranslation();
   const totalTime = formatClock(completionSummary.workout.duration);
@@ -28,6 +32,9 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
           const logged = setDurations.filter(d => typeof d === 'number');
           const hasSplits = logged.length > 0;
           const exerciseTime = hasSplits ? formatClock(logged.reduce((sum, d) => sum + d, 0)) : null;
+          // A row of MAX_SETS (5) blocks fills the width; a lift with more sets than
+          // that (Madcow Day C's 6) shrinks its blocks to fit instead of overflowing.
+          const setColumns = Math.max(ex.setsCompleted.length, MAX_SETS);
           return (
             <div key={ex.id} className="p-3 rounded-lg border bg-surface-deep border-ink/8">
               <div className="flex items-center justify-between">
@@ -46,7 +53,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
                   return (
                     <div
                       key={i}
-                      style={{ width: `calc((100% - ${6 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
+                      style={{ width: `calc((100% - ${SET_BLOCK_GAP * (setColumns - 1)}px) / ${setColumns})` }}
                       className="shrink-0 max-w-[3.5rem] rounded-lg py-1.5 bg-surface"
                     >
                       <div className={`text-body leading-none ${failed && !passed ? 'text-ink' : 'text-ink/70'}`}>{val}</div>
