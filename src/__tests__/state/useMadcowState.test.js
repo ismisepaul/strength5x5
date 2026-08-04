@@ -44,5 +44,12 @@ describe('useMadcowState', () => {
       act(() => { result.current.hydrate({ mcPending: [] }, {}); });
       expect(result.current.mcPending).toEqual([]);
     });
+
+    it('treats a falsy-but-present mcWeek as present (uses !== undefined, not truthiness)', () => {
+      const { result } = renderHook(() => useMadcowState({ mcWeek: 5 }));
+      expect(result.current.mcWeek).toBe(5);
+      act(() => { result.current.hydrate({ mcWeek: 0 }, {}); });
+      expect(result.current.mcWeek).toBe(1);
+    });
   });
 });
