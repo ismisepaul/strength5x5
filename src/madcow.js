@@ -1,8 +1,10 @@
-import { INITIAL_WEIGHTS } from './constants';
-import { applyMcTopToWeights, buildMadcowLiftPlan } from './utils';
+import { INITIAL_WEIGHTS, MADCOW_WEEKLY_INCREMENTS } from './constants';
+import { applyMcTopToWeights, buildMadcowLiftPlan, roundWeight } from './utils';
 
+// Floors at the lift's empty-bar weight and snaps to the plate grid, so a top set
+// can never end up stored (and later displayed) as something no barbell can load.
 export function clampMcTop(liftId, nextTop) {
-  return Math.max(INITIAL_WEIGHTS[liftId] ?? 20, nextTop);
+  return roundWeight(nextTop, MADCOW_WEEKLY_INCREMENTS[liftId], INITIAL_WEIGHTS[liftId] ?? 20);
 }
 
 // Re-derives one lift's ramp against a new (already-clamped) top set, without

@@ -54,7 +54,7 @@ describe('WeightInput', () => {
     expect(onChange).toHaveBeenCalledWith(100);
   });
 
-  it('commits a typed value snapped to a 1.25kg increment', async () => {
+  it('never snaps finer than the 2.5kg plate grid, even when a smaller increment is requested', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<WeightInput {...defaultProps} increment={1.25} min={20} onChange={onChange} />);
@@ -62,7 +62,7 @@ describe('WeightInput', () => {
     await user.clear(input);
     await user.type(input, '48.7');
     await user.tab();
-    expect(onChange).toHaveBeenCalledWith(48.75);
+    expect(onChange).toHaveBeenCalledWith(47.5);
   });
 
   it('accepts a comma decimal', async () => {

@@ -1,5 +1,5 @@
-import { WORKOUTS } from './constants';
-import { isExercisePassed, getConsecutiveFailures, getRecommendedDeloadPercent } from './utils';
+import { WORKOUTS, INITIAL_WEIGHTS } from './constants';
+import { isExercisePassed, getConsecutiveFailures, getRecommendedDeloadPercent, roundWeight } from './utils';
 import { getProgram } from './programs';
 
 // Standard-program progression: +increment on every exercise that hit its full rep
@@ -19,7 +19,7 @@ export const evaluateWorkoutOutcome = (workout, priorHistory, baseWeights) => {
       ?? defaultIncrement;
 
     if (passed) {
-      nextWeights[ex.id] = ex.weight + increment;
+      nextWeights[ex.id] = roundWeight(ex.weight + increment, increment, INITIAL_WEIGHTS[ex.id] ?? 20);
       progressions.push(ex.id);
     } else {
       const priorFailures = getConsecutiveFailures(priorHistory, ex.id, ex.weight);

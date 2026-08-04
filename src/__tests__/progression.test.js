@@ -26,9 +26,15 @@ describe('evaluateWorkoutOutcome', () => {
   });
 
   it('prefers an exercise-level increment over the workout-day default', () => {
+    const workout = { type: 'A', exercises: [{ ...passedEx('squat', 60), increment: 5 }] };
+    const { nextWeights } = evaluateWorkoutOutcome(workout, [], { squat: 60 });
+    expect(nextWeights.squat).toBe(65);
+  });
+
+  it('never progresses onto a finer grid than 2.5kg, even with an off-grid increment', () => {
     const workout = { type: 'A', exercises: [{ ...passedEx('squat', 60), increment: 1.25 }] };
     const { nextWeights } = evaluateWorkoutOutcome(workout, [], { squat: 60 });
-    expect(nextWeights.squat).toBe(61.25);
+    expect(nextWeights.squat).toBe(62.5);
   });
 
   it('leaves the weight unchanged on a failed exercise with no prior failure streak', () => {

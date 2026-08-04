@@ -44,7 +44,7 @@ describe('Switching to Madcow', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Switch to Madcow 5×5?' });
     expect(within(dialog).getByText('115kg → 107.5kg top set')).toBeInTheDocument();
-    expect(within(dialog).getByText('67.5kg → 63.75kg top set')).toBeInTheDocument();
+    expect(within(dialog).getByText('67.5kg → 60kg top set')).toBeInTheDocument();
 
     await user.click(within(dialog).getByText('Switch'));
 
@@ -116,7 +116,7 @@ describe('Switching to Madcow', () => {
 
 describe('Exercise guide under Madcow', () => {
   it('reaches Incline Bench technique from Workout B, unlike the old Customise-only flow', async () => {
-    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
     const user = userEvent.setup();
     render(<App />);
 
@@ -131,7 +131,7 @@ describe('Exercise guide under Madcow', () => {
 
 describe('Stats under Madcow', () => {
   it('lists Incline Bench instead of Overhead Press, and Standard exercises when active', async () => {
-    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
     const user = userEvent.setup();
     render(<App />);
 

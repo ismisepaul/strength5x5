@@ -45,6 +45,7 @@
     "increaseTopSetAria": "Augmenter la série maximale de {{name}}",
     "topSetInputAria": "Série maximale de {{name}} en kilogrammes",
     "topSetFieldLabel": "Série maximale",
+    "currentSetFieldLabel": "Série {{current}} sur {{total}}",
     "standardKicker": "Standard 5×5",
     "madcowKicker": "Madcow 5×5 · semaine {{week}}",
     "madcowSubtitle": "Jour {{mood}} · {{lifts}}",

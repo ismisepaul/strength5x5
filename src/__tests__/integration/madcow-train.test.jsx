@@ -13,7 +13,7 @@ beforeEach(() => {
 function seedMadcow(overrides = {}) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     version: 2,
-    weights: { squat: 107.5, bench: 63.75, row: 68.75, press: 55, deadlift: 117.5, incline: 50 },
+    weights: { squat: 107.5, bench: 65, row: 70, press: 55, deadlift: 117.5, incline: 50 },
     history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
     nextType: 'A',
     isDark: true,
@@ -22,7 +22,7 @@ function seedMadcow(overrides = {}) {
     soundEnabled: false,
     vibrationEnabled: false,
     preset: 'madcow',
-    mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 },
+    mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 },
     mcWeek: 5, // past the on-ramp, so progression is live
     mcInterval: 12.5,
     mcPress: 'incline',
@@ -74,7 +74,7 @@ describe('Train tab under Madcow', () => {
     // ramp and Friday's `top + increment` attempt both still need to read that same
     // number. The earned bump is queued and only lands at Friday's rollover.
     expect(stored.mcTop.squat).toBe(107.5);
-    expect(stored.mcTop.bench).toBe(63.75);
+    expect(stored.mcTop.bench).toBe(65);
     expect(stored.weights.squat).toBe(107.5);
     expect(stored.mcPending.sort()).toEqual(['bench', 'row', 'squat']);
     expect(stored.mcNextDay).toBe('B');
