@@ -63,7 +63,7 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
           className="h-full"
           style={{
             width: `${progress}%`,
-            background: 'linear-gradient(to right, transparent, #9184d9 24px, #9184d9)',
+            background: 'linear-gradient(to right, transparent, var(--color-accent) 24px, var(--color-accent))',
             transition: 'width 1s linear',
           }}
         />

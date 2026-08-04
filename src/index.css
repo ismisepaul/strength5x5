@@ -1,16 +1,15 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-ground:        #161826;
-  --color-surface:       #232532;
-  --color-surface-deep:  #1c1e2c;
-  --color-surface-nav:   #141624;
-  --color-ink:           #e9e9ed;
-  --color-accent:        #9184d9;
-  --color-accent-300:    #d2cefd;
-  --color-accent-800:    #423a6a;
-  --color-accent-900:    #2b2741;
-  --color-neutral-tint:  #3f424d;
+  --color-ground:        #141310;
+  --color-surface:       #1f1d18;
+  --color-surface-deep:  #191713;
+  --color-surface-nav:   #100f0c;
+  --color-ink:           #ece9e2;
+  --color-accent:        #c8663a;
+  --color-accent-300:    #eda175;
+  --color-accent-900:    #3a2413;
+  --color-neutral-tint:  #433d34;
 
   --font-sans: 'Inter', system-ui, sans-serif;
 
@@ -50,15 +49,19 @@
 /*
   Light theme — see docs/design-system.md §7. Overrides the @theme custom
   properties directly so every utility built on them (text-ink/45,
-  bg-surface, border-ink/18, ...) re-themes without a second `-lt` class.
-  Stamped on <html> by App.jsx's isDark effect.
+  bg-surface, border-ink/18, text-accent-300, bg-accent-900, ...) re-themes
+  without a second `-lt` class. Stamped on <html> by App.jsx's isDark effect.
 */
 :root[data-theme='light'] {
-  --color-ground:       #f5f5f8;
+  --color-ground:       #f7f4ef;
   --color-surface:      #ffffff;
-  --color-surface-deep: #ececf2;
+  --color-surface-deep: #ece6dd;
   --color-surface-nav:  #ffffff;
-  --color-ink:          #1b1c28;
+  --color-ink:          #191612;
+  --color-accent:       #b4552b;
+  --color-accent-300:   #93401d;
+  --color-accent-900:   #f9e9df;
+  --color-neutral-tint: #ded7cc;
 }
 
 .h-viewport {
@@ -75,22 +78,22 @@
 
 .rule-fade {
   background: linear-gradient(to right, transparent,
-    rgba(233,233,237,.09) 48px, rgba(233,233,237,.09) calc(100% - 48px),
+    rgba(236,233,226,.09) 48px, rgba(236,233,226,.09) calc(100% - 48px),
     transparent) bottom / 100% 1px no-repeat;
 }
 .rule-fade-top {
   background: linear-gradient(to right, transparent,
-    rgba(233,233,237,.08) 32px, rgba(233,233,237,.08) calc(100% - 32px),
+    rgba(236,233,226,.08) 32px, rgba(236,233,226,.08) calc(100% - 32px),
     transparent) top / 100% 1px no-repeat;
 }
 :root[data-theme='light'] .rule-fade {
   background: linear-gradient(to right, transparent,
-    rgba(27,28,40,.10) 48px, rgba(27,28,40,.10) calc(100% - 48px),
+    rgba(25,22,18,.10) 48px, rgba(25,22,18,.10) calc(100% - 48px),
     transparent) bottom / 100% 1px no-repeat;
 }
 :root[data-theme='light'] .rule-fade-top {
   background: linear-gradient(to right, transparent,
-    rgba(27,28,40,.09) 32px, rgba(27,28,40,.09) calc(100% - 32px),
+    rgba(25,22,18,.09) 32px, rgba(25,22,18,.09) calc(100% - 32px),
     transparent) top / 100% 1px no-repeat;
 }
 
@@ -115,11 +118,11 @@
     overflow: hidden;
     overscroll-behavior: none;
     min-height: 100%;
-    background: var(--app-page-bg, #161826);
+    background: var(--app-page-bg, #141310);
   }
 
   #root {
     min-height: 100%;
-    background: var(--app-page-bg, #161826);
+    background: var(--app-page-bg, #141310);
   }
 }
