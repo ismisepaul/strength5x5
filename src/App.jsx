@@ -10,7 +10,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
 import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
@@ -61,6 +61,7 @@ const App = () => {
   const {
     mcTop, setMcTop, mcWeek, setMcWeek, mcInterval, setMcInterval,
     mcPress, setMcPress, mcNextDay, setMcNextDay, mcPending, setMcPending,
+    mcSeeded, setMcSeeded,
     hydrate: hydrateMadcow,
   } = useMadcowState(saved);
   const {
@@ -113,7 +114,7 @@ const App = () => {
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,
     isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
-    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending,
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded,
   });
 
   useStorageSync(STORAGE_KEY, (updated) => {
@@ -151,8 +152,8 @@ const App = () => {
 
   const getAppState = useCallback(() => ({
     weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
-    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending,
-  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded,
+  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded]);
 
   const exportData = useCallback((targetHistory) => {
     const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState(), history: targetHistory || history };
@@ -309,9 +310,9 @@ const App = () => {
     saveToDriveQuietly({
       weights: nextWeights, program, history: newHistory, nextType,
       isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
-      preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay, mcPending: nextMcPending,
+      preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay, mcPending: nextMcPending, mcSeeded,
     });
-  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
+  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -378,7 +379,7 @@ const App = () => {
     hydrateFromBackup(d, {
       setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
       setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
-      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending,
+      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending, setMcSeeded,
     });
     setActiveTab('workout'); setShowRestorePrompt(false);
     setPendingLocalImport(null);
@@ -393,7 +394,7 @@ const App = () => {
       language: d.language || i18n.language,
       preset: normalizePreset(d.preset), mcTop: normalizeMcTop(d.mcTop, d.weights), mcWeek: normalizeMcWeek(d.mcWeek),
       mcInterval: normalizeMcInterval(d.mcInterval), mcPress: normalizeMcPress(d.mcPress), mcNextDay: normalizeMcNextDay(d.mcNextDay),
-      mcPending: normalizeMcPending(d.mcPending),
+      mcPending: normalizeMcPending(d.mcPending), mcSeeded: normalizeMcSeeded(d.mcSeeded, d),
     });
   }, [currentWorkoutType, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, showToast, t]);
 
@@ -469,7 +470,7 @@ const App = () => {
     hydrateFromBackup(d, {
       setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
       setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
-      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending,
+      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending, setMcSeeded,
     });
     setActiveTab('workout');
     showToast(t('toast.restoredFromDrive'), 'success');

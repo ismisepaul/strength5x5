@@ -14,6 +14,7 @@ import {
   formatClock,
   calculateSetDurations,
   normalizeProgram,
+  normalizeMcSeeded,
   getProgramExercises,
   targetReps,
   isExercisePassed,
@@ -347,6 +348,30 @@ describe('normalizeProgram', () => {
     }
     expect(result.bench).toEqual({ sets: 3, reps: 8 });
     expect(result.deadlift).toEqual(DEFAULT_PROGRAM.deadlift);
+  });
+});
+
+describe('normalizeMcSeeded', () => {
+  it('returns true when the raw value is exactly true', () => {
+    expect(normalizeMcSeeded(true, {})).toBe(true);
+  });
+
+  it('returns false for undefined/garbage with no legacy signal', () => {
+    expect(normalizeMcSeeded(undefined, {})).toBe(false);
+    expect(normalizeMcSeeded('yes', {})).toBe(false);
+    expect(normalizeMcSeeded(false, { preset: 'standard', mcWeek: 1 })).toBe(false);
+  });
+
+  it('infers true from a legacy save already on Madcow', () => {
+    expect(normalizeMcSeeded(undefined, { preset: 'madcow' })).toBe(true);
+  });
+
+  it('infers true from a legacy save past week 1, even back on Standard', () => {
+    expect(normalizeMcSeeded(undefined, { preset: 'standard', mcWeek: 6 })).toBe(true);
+  });
+
+  it('defaults to false with no saved data at all', () => {
+    expect(normalizeMcSeeded(undefined)).toBe(false);
   });
 });
 
