@@ -185,18 +185,35 @@ const ProgramScreen = ({
                 })}
               </div>
               <p className={`text-meta leading-relaxed mb-3 ${mutedClass}`}>{t('program.madcow.weekSwipeHint')}</p>
-              <p className={`text-body leading-relaxed ${mutedClass}`}>
-                {t(`program.madcow.${phase === 'onramp' ? 'onrampNote' : phase === 'matching' ? 'matchingNote' : 'recordNote'}`)}
-              </p>
-              {isPreviewing ? (
-                <button onClick={() => setPreviewWeek(null)} className="text-[13px] mt-3 text-accent-300 active:scale-95">
+              {/* All three notes stacked in the same grid cell so the row reserves
+                  height for the tallest one -- swiping between phases with different
+                  text lengths changes the words, never the card's height. */}
+              <div className="grid text-body leading-relaxed">
+                {['onramp', 'matching', 'record'].map(p => (
+                  <p
+                    key={p}
+                    className={`col-start-1 row-start-1 ${mutedClass} ${phase === p ? '' : 'invisible'}`}
+                    aria-hidden={phase !== p}
+                  >
+                    {t(`program.madcow.${p === 'onramp' ? 'onrampNote' : p === 'matching' ? 'matchingNote' : 'recordNote'}`)}
+                  </p>
+                ))}
+              </div>
+              <div className="grid mt-3">
+                <button
+                  onClick={() => setPreviewWeek(null)}
+                  className={`col-start-1 row-start-1 text-left text-[13px] text-accent-300 active:scale-95 ${isPreviewing ? '' : 'invisible'}`}
+                  aria-hidden={!isPreviewing}
+                >
                   {t('program.madcow.backToCurrentWeek')}
                 </button>
-              ) : (
-                <p className="text-[13px] mt-3 text-accent-300">
+                <p
+                  className={`col-start-1 row-start-1 text-[13px] text-accent-300 ${isPreviewing ? 'invisible' : ''}`}
+                  aria-hidden={isPreviewing}
+                >
                   {t('program.madcow.nextSession', { workout: t(`workout.type${mcNextDay}`), mood: moodBadge(mcNextDay) })}
                 </p>
-              )}
+              </div>
             </div>
 
             <Segmented variant="medium" value={selectedDay} onChange={setSelectedDay} options={prog.days.map(d => ({ val: d, label: t(`workout.type${d}`) }))} />

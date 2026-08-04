@@ -161,9 +161,12 @@ describe('Program tab week preview', () => {
     await user.click(screen.getByLabelText('Program'));
 
     // Past the on-ramp (week 5), the card shows the live week and the real next session.
+    // The "back to current week" link is always in the DOM too (both are, so the card
+    // never resizes between them), just hidden from sight and screen readers.
     expect(screen.getByText('Week 5')).toBeInTheDocument();
     expect(screen.getByText('Record territory')).toBeInTheDocument();
-    expect(screen.getByText(/Next session/)).toBeInTheDocument();
+    expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'false');
+    expect(screen.getByText('Back to current week')).toHaveAttribute('aria-hidden', 'true');
 
     const weekCard = screen.getByLabelText('Week progress. Swipe left or right to preview weeks 1 to 4.');
 
@@ -174,7 +177,8 @@ describe('Program tab week preview', () => {
     fireEvent.pointerUp(weekCard, { clientX: 260 });
     expect(screen.getByText('Week 4')).toBeInTheDocument();
     expect(screen.getByText('Matching your best')).toBeInTheDocument();
-    expect(screen.queryByText(/Next session/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('Back to current week')).toHaveAttribute('aria-hidden', 'false');
 
     // Nothing persisted -- this was only ever a preview.
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -188,7 +192,7 @@ describe('Program tab week preview', () => {
     await user.click(screen.getByText('Back to current week'));
     expect(screen.getByText('Week 5')).toBeInTheDocument();
     expect(screen.getByText('Record territory')).toBeInTheDocument();
-    expect(screen.getByText(/Next session/)).toBeInTheDocument();
+    expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'false');
   });
 });
 
