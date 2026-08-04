@@ -274,6 +274,30 @@ describe('Program tab week preview', () => {
   });
 });
 
+describe('Ramp bar width', () => {
+  it('fills the row on a 5-set day but shrinks to fit Day C\'s 6 sets', async () => {
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcWeek: 5, mcPress: 'incline' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+
+    await user.click(screen.getByRole('button', { name: 'Workout A' }));
+    let squatButton = screen.getByRole('button', { name: 'How to perform Back Squat' });
+    let bars = within(squatButton).getAllByRole('img');
+    expect(bars).toHaveLength(5);
+    // jsdom normalizes `(100% - 24px) / 5` to `0.2 * (100% - 24px)` -- same value, different serialization.
+    expect(bars[0].parentElement.style.width).toBe('calc(0.2 * (100% - 24px))');
+
+    await user.click(screen.getByRole('button', { name: 'Workout C' }));
+    squatButton = screen.getByRole('button', { name: 'How to perform Back Squat' });
+    bars = within(squatButton).getAllByRole('img');
+    expect(bars).toHaveLength(6);
+    // A 6th column is narrower than the 5-slot reference width above.
+    expect(bars[0].parentElement.style.width).toBe('calc(0.16666666666666666 * (100% - 30px))');
+  });
+});
+
 describe('Switching back to Standard', () => {
   it('carries the current top set back as the flat working weight', async () => {
     seedHistory({ preset: 'madcow', mcTop: { squat: 120, bench: 70, row: 75, deadlift: 130, press: 60, incline: 55 }, mcWeek: 5, mcPress: 'incline' });

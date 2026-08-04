@@ -147,6 +147,19 @@ describe('Program tab', () => {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.program.bench.sets).toBe(5);
   });
+
+  it('fills the row with a 5-set ramp preview, not a 6-slot column', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+    const squatButton = screen.getByRole('button', { name: 'How to perform Back Squat' });
+    const bars = within(squatButton).getAllByRole('img');
+    expect(bars).toHaveLength(5);
+    // jsdom normalizes `(100% - 24px) / 5` to `0.2 * (100% - 24px)` -- same value, different serialization.
+    expect(bars[0].parentElement.style.width).toBe('calc(0.2 * (100% - 24px))');
+  });
 });
 
 describe('Rep picker', () => {
