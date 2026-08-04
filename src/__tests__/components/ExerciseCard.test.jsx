@@ -179,6 +179,21 @@ describe('ExerciseCard', () => {
     expect(setButtons[0].querySelector('svg')).not.toBeInTheDocument();
   });
 
+  it('sizes a single set target to fill the full row width, not a 5-slot column', () => {
+    const deadliftEx = { ...baseEx, id: 'deadlift', name: 'Deadlift', sets: 1, setsCompleted: [null] };
+    render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
+    const setButton = screen.getByLabelText('Set 1');
+    // jsdom normalizes `(100% - 0px) / 1` to `1 * (100% - 0px)` -- same value, different serialization.
+    expect(setButton.parentElement.style.width).toBe('calc(1 * (100% - 0px))');
+  });
+
+  it('sizes three set targets from the actual set count, not a fixed 5-slot column', () => {
+    const threeSetEx = { ...baseEx, setsCompleted: [null, null, null] };
+    render(<ExerciseCard {...defaultProps} ex={threeSetEx} />);
+    const setButton = screen.getByLabelText('Set 1');
+    expect(setButton.parentElement.style.width).toBe('calc(0.3333333333333333 * (100% - 16px))');
+  });
+
   it('shows a missed-set badge and "holds next session" note when a set is under target', () => {
     const missedEx = { ...baseEx, setsCompleted: [5, 3, null, null, null] };
     render(<ExerciseCard {...defaultProps} ex={missedEx} />);
