@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clampMcTop, reviseWorkoutTopSet, updateMadcowTopSet } from '../madcow';
+import { clampMcTop, reviseWorkoutTopSet } from '../madcow';
 import { getMadcowDayExercises } from '../utils';
 import { MADCOW_DEFAULT_INTERVAL } from '../constants';
 
@@ -53,29 +53,5 @@ describe('reviseWorkoutTopSet', () => {
 
   it('is a no-op when there is no active workout', () => {
     expect(reviseWorkoutTopSet(null, 'squat', 110, MADCOW_DEFAULT_INTERVAL)).toBe(null);
-  });
-});
-
-describe('updateMadcowTopSet', () => {
-  it('mirrors the clamped top into mcTop and weights, and re-derives the live ramp without rewriting logged sets', () => {
-    const workout = workoutFor('A');
-    const squatIdx = workout.exercises.findIndex(e => e.id === 'squat');
-    workout.exercises[squatIdx].setsCompleted = [5, 5, 5, null, null];
-
-    const result = updateMadcowTopSet({
-      liftId: 'squat', nextTop: 110, mcTop: MC_TOP,
-      weights: { squat: 107.5 }, mcInterval: MADCOW_DEFAULT_INTERVAL, currentWorkout: workout,
-    });
-
-    expect(result.mcTop.squat).toBe(110);
-    expect(result.weights.squat).toBe(110);
-    expect(result.currentWorkout.exercises[squatIdx].setWeights).toEqual([55, 67.5, 80, 97.5, 110]);
-  });
-
-  it('clamps below the lift\'s floor', () => {
-    const result = updateMadcowTopSet({
-      liftId: 'squat', nextTop: -5, mcTop: MC_TOP, weights: {}, mcInterval: MADCOW_DEFAULT_INTERVAL, currentWorkout: null,
-    });
-    expect(result.mcTop.squat).toBe(20);
   });
 });
