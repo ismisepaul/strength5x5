@@ -668,7 +668,7 @@ const App = () => {
           <ProgramScreen
             isWorkoutActive={isWorkoutActive} preset={preset}
             program={program} onChangeProgram={setProgram} weights={weights} history={history}
-            mcTop={mcTop} mcWeek={mcWeek} mcInterval={mcInterval} mcPress={mcPress}
+            mcTop={mcTop} mcWeek={mcWeek} mcInterval={mcInterval} mcPress={mcPress} mcSeeded={mcSeeded}
             onUpdateMcTop={updateMcTop} onChangeMcInterval={setMcInterval} onChangeMcPress={setMcPress}
             onRecalculate={() => setMcInterval(MADCOW_DEFAULT_INTERVAL)}
             currentWorkoutType={currentWorkoutType} mcNextDay={mcNextDay}

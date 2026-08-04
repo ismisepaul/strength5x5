@@ -307,7 +307,13 @@ describe('Switching back to Standard', () => {
     await user.click(screen.getByLabelText('Program'));
     await user.click(screen.getByLabelText('Choose a program'));
     await user.click(screen.getByText('Standard 5×5'));
-    await user.click(screen.getByText('Switch'));
+
+    // The preview matches what actually gets saved -- 125 (Standard), not 120
+    // (the Madcow top set).
+    const dialog = screen.getByRole('dialog', { name: 'Back to Standard 5×5?' });
+    expect(within(dialog).getByText('125kg every set')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByText('Switch'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     // 125 (Standard) beats 120 (the Madcow top set) -- the higher of the two wins.
@@ -332,7 +338,14 @@ describe('Returning to a Madcow block in progress', () => {
     await user.click(screen.getByLabelText('Program'));
     await user.click(screen.getByLabelText('Choose a program'));
     await user.click(screen.getByText('Madcow 5×5'));
-    await user.click(screen.getByText('Switch'));
+
+    // The dialog says "resume", with the real saved top set -- not a fresh on-ramp
+    // seeded from Standard's (unrelated, since it's untouched) weights.
+    const dialog = screen.getByRole('dialog', { name: 'Resume Madcow 5×5?' });
+    expect(within(dialog).getByText(/week 6/)).toBeInTheDocument();
+    expect(within(dialog).getByText('130kg top set')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByText('Switch'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.mcWeek).toBe(6);
