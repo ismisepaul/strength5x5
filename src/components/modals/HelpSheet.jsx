@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Timer, Moon, Cloud, Barbell, CaretRight } from '@phosphor-icons/react';
+import { Barbell, Stack, CalendarDots, Feather, TrendUp, Timer, Moon, Cloud, ArrowsLeftRight, CaretRight } from '@phosphor-icons/react';
 import { getProgram } from '../../programs';
 import Sheet from './Sheet';
 import { Z_TOP } from './zIndex';
@@ -8,12 +8,21 @@ import { Z_TOP } from './zIndex';
 const HelpSheet = ({ preset, onOpenProgram, onClose }) => {
   const { t } = useTranslation();
   return (
-    <Sheet ariaLabel="How it works" z={Z_TOP} onClose={onClose}>
+    <Sheet ariaLabel={t('help.title')} z={Z_TOP} onClose={onClose}>
       <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
       <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-5 mb-6 text-left">
         {[
+          // What 5x5 is, then how this app runs it. The training ideas lead because the
+          // sheet is the only place that explains the method itself -- the Program tab
+          // below covers the per-program sets/reps/progression detail.
+          { Icon: Barbell, title: t('help.liftsTitle'), body: t('help.liftsBody') },
+          { Icon: Stack, title: t('help.setsTitle'), body: t('help.setsBody') },
+          { Icon: CalendarDots, title: t('help.frequencyTitle'), body: t('help.frequencyBody') },
+          { Icon: Feather, title: t('help.startLightTitle'), body: t('help.startLightBody') },
+          { Icon: TrendUp, title: t('help.addWeightTitle'), body: t('help.addWeightBody') },
           { Icon: Timer, title: t('help.restTitle'), body: t('help.restBody') },
           { Icon: Moon, title: t('help.longBreaksTitle'), body: t('help.longBreaksBody') },
+          { Icon: ArrowsLeftRight, title: t('help.programsTitle'), body: t('help.programsBody') },
           { Icon: Cloud, title: t('help.backupsTitle'), body: t('help.backupsBody') },
         ].map(({ Icon, title, body }) => (
           <div key={title} className="flex items-start gap-3">
