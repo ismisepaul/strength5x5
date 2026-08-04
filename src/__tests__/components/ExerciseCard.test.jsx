@@ -179,19 +179,25 @@ describe('ExerciseCard', () => {
     expect(setButtons[0].querySelector('svg')).not.toBeInTheDocument();
   });
 
-  it('sizes a single set target to fill the full row width, not a 5-slot column', () => {
+  it('sizes a single set target to the same fixed column as a 5-set exercise, not full width', () => {
     const deadliftEx = { ...baseEx, id: 'deadlift', name: 'Deadlift', sets: 1, setsCompleted: [null] };
-    render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
-    const setButton = screen.getByLabelText('Set 1');
-    // jsdom normalizes `(100% - 0px) / 1` to `1 * (100% - 0px)` -- same value, different serialization.
-    expect(setButton.parentElement.style.width).toBe('calc(1 * (100% - 0px))');
+    const fiveSetEx = { ...baseEx };
+    const { unmount } = render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
+    const deadliftWidth = screen.getByLabelText('Set 1').parentElement.style.width;
+    unmount();
+    render(<ExerciseCard {...defaultProps} ex={fiveSetEx} />);
+    const squatWidth = screen.getAllByLabelText(/^Set 1/)[0].parentElement.style.width;
+    // A set target is a fixed-size unit across the app -- a 1-set exercise's block
+    // must not stretch to fill the row, it should match every other exercise's column.
+    expect(deadliftWidth).toBe(squatWidth);
   });
 
-  it('sizes three set targets from the actual set count, not a fixed 5-slot column', () => {
+  it('sizes set-target columns from the fixed 5-slot max, not the exercise\'s actual set count', () => {
     const threeSetEx = { ...baseEx, setsCompleted: [null, null, null] };
     render(<ExerciseCard {...defaultProps} ex={threeSetEx} />);
     const setButton = screen.getByLabelText('Set 1');
-    expect(setButton.parentElement.style.width).toBe('calc(0.3333333333333333 * (100% - 16px))');
+    // jsdom normalizes `(100% - 32px) / 5` to `0.2 * (100% - 32px)` -- same value, different serialization.
+    expect(setButton.parentElement.style.width).toBe('calc(0.2 * (100% - 32px))');
   });
 
   it('shows a missed-set badge and "holds next session" note when a set is under target', () => {

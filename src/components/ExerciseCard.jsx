@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CaretUp, CaretDown, ArrowBendDownRight, Info, X } from '@phosphor-icons/react';
 import { targetReps } from '../utils';
+import { MAX_SETS } from '../constants';
 import WeightInput from './WeightInput';
 import BarSetupDiagram from './BarSetupDiagram';
 
@@ -100,9 +101,8 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
           if (passed) stateClass = 'border border-accent bg-accent-900 text-accent-300';
           else if (missed) stateClass = 'border-[1.5px] border-dashed border-ink/50 bg-neutral-tint text-ink';
           else stateClass = 'border border-ink/18 text-ink/40';
-          const setCount = ex.setsCompleted.length;
           return (
-            <div key={ri} className="flex flex-col items-center gap-1" style={{ width: `calc((100% - ${8 * (setCount - 1)}px) / ${setCount})` }}>
+            <div key={ri} className="flex flex-col items-center gap-1" style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}>
               <button
                 onClick={() => handleClick(ri)}
                 onPointerDown={() => handlePointerDown(ri)}
