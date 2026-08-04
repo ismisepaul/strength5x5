@@ -183,7 +183,7 @@ const ProgramScreen = ({
               {/* A pagination indicator, not a progress bar -- only whichever week is
                   on screen right now is filled (and widens into a dash); every other
                   week, past or future, stays a hollow dot. */}
-              <div className="flex items-center gap-1.5 mb-1">
+              <div className="flex items-center gap-1.5 mb-3">
                 {onrampDots.map(w => {
                   const selected = displayWeek === w;
                   return (
@@ -194,7 +194,6 @@ const ProgramScreen = ({
                   );
                 })}
               </div>
-              <p className={`text-meta leading-relaxed mb-3 ${mutedClass}`}>{t('program.madcow.weekSwipeHint')}</p>
               {/* All three notes stacked in the same grid cell so the row reserves
                   height for the tallest one -- swiping between phases with different
                   text lengths changes the words, never the card's height. */}
