@@ -203,8 +203,9 @@ describe('Program tab week preview', () => {
     await switchToMadcow(user);
 
     const squatBlock = () => screen.getByRole('button', { name: 'How to perform Back Squat' });
-    // Week 1's seeded top set.
+    // Week 1's seeded top set, and its own (not weeks 2-3's) note copy.
     expect(within(squatBlock()).getByText('107.5')).toBeInTheDocument();
+    expect(screen.getByText('Deliberately light. 3 more automatic steps before you match your old best in week 4.')).toBeInTheDocument();
 
     const weekCard = screen.getByLabelText('Week progress. Swipe left or right, or use the arrow keys, to preview weeks 1 to 4.');
     weekCard.focus();
@@ -215,7 +216,24 @@ describe('Program tab week preview', () => {
     // week 3's top set is knowable in advance: 107.5 + 2 * 2.5 = 112.5.
     expect(screen.getByText('Week 3')).toBeInTheDocument();
     expect(within(squatBlock()).getByText('112.5')).toBeInTheDocument();
+    // The note's step count also moves, so weeks 1-3 read as distinct copy, not
+    // three repeats of the same sentence.
+    expect(screen.getByText('Deliberately light. One more automatic step and you match your old best in week 4.')).toBeInTheDocument();
     expect(within(squatBlock()).queryByText('107.5')).not.toBeInTheDocument();
+  });
+
+  it('keeps the phase note selectable, unlike the swipeable week label/dots above it', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await switchToMadcow(user);
+
+    const note = screen.getByText(/Deliberately light/);
+    expect(note.closest('.select-none')).toBeNull();
+
+    const weekLabel = screen.getByText('Week 1');
+    expect(weekLabel.closest('.select-none')).not.toBeNull();
   });
 
   it('lets keyboard users reach the same preview via arrow keys, since the dots themselves stay non-interactive', async () => {

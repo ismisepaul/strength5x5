@@ -173,7 +173,7 @@ const ProgramScreen = ({
         return (
           <>
             <div
-              className={`${cardClass} touch-pan-y select-none`}
+              className={`${cardClass} touch-pan-y`}
               onPointerDown={handleWeekPointerDown}
               onPointerUp={handleWeekPointerUp}
               onPointerCancel={() => { weekSwipeStartXRef.current = null; }}
@@ -182,27 +182,34 @@ const ProgramScreen = ({
               tabIndex={0}
               aria-label={t('program.madcow.weekSwipeAria')}
             >
-              <div className="flex justify-between items-center mb-2">
-                <p className="font-semibold text-[16px]">{t('program.madcow.weekLabel', { week: displayWeek })}</p>
-                <Badge>{t(`program.madcow.phase${phase === 'onramp' ? 'Onramp' : phase === 'matching' ? 'Matching' : 'Record'}`)}</Badge>
-              </div>
-              {/* A pagination indicator, not a progress bar -- only whichever week is
-                  on screen right now is filled (and widens into a dash); every other
-                  week, past or future, stays a hollow dot. */}
-              <div className="flex items-center gap-1.5 mb-3">
-                {onrampDots.map(w => {
-                  const selected = displayWeek === w;
-                  return (
-                    <div
-                      key={w}
-                      className={`h-2 rounded-full border transition-[width] ${selected ? 'w-6 bg-accent border-accent' : 'w-2 border-accent/50'}`}
-                    />
-                  );
-                })}
+              {/* select-none only here, not on the note text below -- the swipe
+                  gesture needs this row immune to accidental drag-selection, but the
+                  description text is worth letting people select/copy. */}
+              <div className="select-none">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="font-semibold text-[16px]">{t('program.madcow.weekLabel', { week: displayWeek })}</p>
+                  <Badge>{t(`program.madcow.phase${phase === 'onramp' ? 'Onramp' : phase === 'matching' ? 'Matching' : 'Record'}`)}</Badge>
+                </div>
+                {/* A pagination indicator, not a progress bar -- only whichever week is
+                    on screen right now is filled (and widens into a dash); every other
+                    week, past or future, stays a hollow dot. */}
+                <div className="flex items-center gap-1.5 mb-3">
+                  {onrampDots.map(w => {
+                    const selected = displayWeek === w;
+                    return (
+                      <div
+                        key={w}
+                        className={`h-2 rounded-full border transition-[width] ${selected ? 'w-6 bg-accent border-accent' : 'w-2 border-accent/50'}`}
+                      />
+                    );
+                  })}
+                </div>
               </div>
               {/* All three notes stacked in the same grid cell so the row reserves
                   height for the tallest one -- swiping between phases with different
-                  text lengths changes the words, never the card's height. */}
+                  text lengths changes the words, never the card's height. Onramp's note
+                  also carries how many more automatic steps are left, so weeks 1-3
+                  read as distinct instead of three copies of the same sentence. */}
               <div className="grid text-body leading-relaxed">
                 {['onramp', 'matching', 'record'].map(p => (
                   <p
@@ -210,7 +217,9 @@ const ProgramScreen = ({
                     className={`col-start-1 row-start-1 ${mutedClass} ${phase === p ? '' : 'invisible'}`}
                     aria-hidden={phase !== p}
                   >
-                    {t(`program.madcow.${p === 'onramp' ? 'onrampNote' : p === 'matching' ? 'matchingNote' : 'recordNote'}`)}
+                    {p === 'onramp'
+                      ? t('program.madcow.onrampNote', { count: Math.max(1, MADCOW_ONRAMP_WEEKS - displayWeek) })
+                      : t(`program.madcow.${p === 'matching' ? 'matchingNote' : 'recordNote'}`)}
                   </p>
                 ))}
               </div>
