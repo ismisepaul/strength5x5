@@ -22,7 +22,7 @@ const Toast = React.memo(({ toasts }) => {
             className="pointer-events-auto max-w-sm w-full px-4 py-3 rounded-lg border border-accent bg-accent-900 text-accent-300 flex items-center gap-3 animate-[slideIn_0.2s_ease-out]"
           >
             <Icon size={18} className="shrink-0" />
-            <span className="text-[15px] flex-1">{t.message}</span>
+            <span className="text-card flex-1">{t.message}</span>
           </div>
         );
       })}

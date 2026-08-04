@@ -17,7 +17,6 @@ describe('ExerciseCard', () => {
   const defaultProps = {
     ex: baseEx,
     exIdx: 0,
-    isDark: true,
     onToggleSet: vi.fn(),
     onWeightChange: vi.fn(),
   };

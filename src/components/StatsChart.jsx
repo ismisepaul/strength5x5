@@ -4,6 +4,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 import { ArrowLeft } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
 import { buildExerciseTimeline, buildBig3Timeline } from '../utils/chartData';
+import { useTheme } from '../hooks/useTheme';
 
 const RANGES = [
   { label: '1M', days: 30 },
@@ -18,8 +19,9 @@ const E1RM_COLOR = '#d2cefd';
 
 const RANGE_STORAGE_KEY = 'strength5x5_stats_range';
 
-const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) => {
+const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
   const [range, setRange] = useState(() => {
     try { return localStorage.getItem(RANGE_STORAGE_KEY) || '6M'; } catch { return '6M'; }
   });
@@ -64,7 +66,9 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
     return `${d.getDate()}/${d.getMonth() + 1}`;
   };
 
-  const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
+  const mutedClass = 'text-ink/45';
+  // Recharts consumes these as literal prop values (SVG attrs / inline styles), not
+  // Tailwind classNames, so they can't re-theme via the CSS custom properties alone.
   const axisColor = isDark ? 'rgba(233,233,237,.4)' : 'rgba(27,28,40,.4)';
 
   return (
@@ -73,13 +77,13 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
         <button
           onClick={onBack}
           aria-label="Back to stats"
-          className={`w-10 h-10 rounded-lg border flex items-center justify-center active:scale-95 ${isDark ? 'border-ink/18 text-ink/60' : 'border-ink-lt/18 text-ink-lt/60'}`}
+          className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-95 border-ink/18 text-ink/60"
         >
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-semibold">{title}</h2>
-          <p className="text-[15px] tabular-nums">
+          <p className="text-card tabular-nums">
             {showWeight && <span className="text-accent">{currentWeight}kg</span>}
             {showWeight && showE1rm && <span className={mutedClass}> / </span>}
             {showE1rm && <span className="text-accent-300">{t('stats.est1rmValue', { value: currentE1rm })}</span>}
@@ -87,13 +91,13 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
         </div>
       </div>
 
-      <div className={`p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
-        <div className={`flex rounded-lg border overflow-hidden mb-4 ${isDark ? 'border-ink/10' : 'border-ink-lt/10'}`}>
+      <div className="p-4 rounded-[10px] border bg-surface border-ink/8">
+        <div className="flex rounded-lg border overflow-hidden mb-4 border-ink/10">
           {RANGES.map((r, i) => (
             <button
               key={r.label}
               onClick={() => { setRange(r.label); try { localStorage.setItem(RANGE_STORAGE_KEY, r.label); } catch {} }}
-              className={`flex-1 py-3 text-[12px] uppercase tracking-wide transition-all ${i > 0 ? (isDark ? 'border-l border-ink/10' : 'border-l border-ink-lt/10') : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+              className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
             >
               {r.label}
             </button>
@@ -102,13 +106,13 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
 
         {filteredData.length === 0 ? (
           <div className="py-16 text-center">
-            <p className={`text-[15px] ${mutedClass}`}>{t('stats.noDataForRange')}</p>
+            <p className={`text-card ${mutedClass}`}>{t('stats.noDataForRange')}</p>
           </div>
         ) : (
           <div className="h-56 relative">
             {filteredData.length === 1 && (
               <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                <p className={`text-[13.5px] px-4 py-2 rounded-lg ${isDark ? 'bg-surface-deep/90' : 'bg-surface-deep-lt/90'} ${mutedClass}`}>{t('stats.minTwoWorkouts')}</p>
+                <p className={`text-body px-4 py-2 rounded-lg bg-surface-deep/90 ${mutedClass}`}>{t('stats.minTwoWorkouts')}</p>
               </div>
             )}
             <ResponsiveContainer width="100%" height="100%">
@@ -171,7 +175,7 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
           <button
             onClick={toggleWeight}
             aria-pressed={showWeight}
-            className={`flex-1 py-3 rounded-lg text-[12px] uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : (isDark ? 'border-ink/18 text-ink/45' : 'border-ink-lt/18 text-ink-lt/45')}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: WEIGHT_COLOR }} />
             {t('stats.weight')}
@@ -179,7 +183,7 @@ const StatsChart = ({ exerciseId, history, isDark, onBack, weights, best1RMs }) 
           <button
             onClick={toggleE1rm}
             aria-pressed={showE1rm}
-            className={`flex-1 py-3 rounded-lg text-[12px] uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : (isDark ? 'border-ink/18 text-ink/45' : 'border-ink-lt/18 text-ink-lt/45')}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: E1RM_COLOR }} />
             {t('stats.est1rm')}

@@ -1,5 +1,8 @@
 # Application Architecture
 
+`App.jsx` is mid-decomposition into `src/screens/` and `src/components/modals/` — see
+[refactor-plan.md](refactor-plan.md) for the phased plan and current status.
+
 ## Overview
 
 Strength 5x5 is a client-side React application with no backend. All data is stored in the browser's localStorage. The app is built with Vite, styled with Tailwind CSS, and deployed to Vercel.

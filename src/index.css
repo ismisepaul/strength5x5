@@ -12,16 +12,28 @@
   --color-accent-900:    #2b2741;
   --color-neutral-tint:  #3f424d;
 
-  /* interim light palette — see docs/design-system.md §7 */
-  --color-ground-lt:       #f5f5f8;
-  --color-surface-lt:      #ffffff;
-  --color-surface-deep-lt: #ececf2;
-  --color-surface-nav-lt:  #ffffff;
-  --color-ink-lt:          #1b1c28;
-  --color-accent-ink-lt:   #5b4fb0;
-  --color-accent-tint-lt:  #efedfa;
-
   --font-sans: 'Inter', system-ui, sans-serif;
+
+  /*
+    Type scale — see docs/design-system.md §2. Named for role, not pixel value,
+    so a scale change is one edit here instead of a find-and-replace across src/.
+    Sizes that fall between these roles stay as hardcoded text-[NNpx] utilities;
+    see docs/refactor-plan.md Phase 2 for the list and why they weren't snapped.
+  */
+  --text-kicker: 10.5px;
+  --text-tab:    11px;
+  --text-meta:   12px;
+  --text-body:   13.5px;
+  --text-card:   15px;
+  --text-title:  24px;
+  --text-hero:   32px;
+
+  /* Radii — see docs/design-system.md §2. rounded-control is not yet applied
+     to existing call sites (rounded-lg/[9px]/[10px] are all within the
+     documented 8–10px band); see docs/refactor-plan.md Phase 2. */
+  --radius-control: 10px;
+  --radius-modal:   12px;
+  --radius-sheet:   14px;
 
   @keyframes slideIn {
     0% {
@@ -33,6 +45,20 @@
       transform: translateY(0) scale(1);
     }
   }
+}
+
+/*
+  Light theme — see docs/design-system.md §7. Overrides the @theme custom
+  properties directly so every utility built on them (text-ink/45,
+  bg-surface, border-ink/18, ...) re-themes without a second `-lt` class.
+  Stamped on <html> by App.jsx's isDark effect.
+*/
+:root[data-theme='light'] {
+  --color-ground:       #f5f5f8;
+  --color-surface:      #ffffff;
+  --color-surface-deep: #ececf2;
+  --color-surface-nav:  #ffffff;
+  --color-ink:          #1b1c28;
 }
 
 .h-viewport {
@@ -52,17 +78,17 @@
     rgba(233,233,237,.09) 48px, rgba(233,233,237,.09) calc(100% - 48px),
     transparent) bottom / 100% 1px no-repeat;
 }
-.rule-fade-lt {
-  background: linear-gradient(to right, transparent,
-    rgba(27,28,40,.10) 48px, rgba(27,28,40,.10) calc(100% - 48px),
-    transparent) bottom / 100% 1px no-repeat;
-}
 .rule-fade-top {
   background: linear-gradient(to right, transparent,
     rgba(233,233,237,.08) 32px, rgba(233,233,237,.08) calc(100% - 32px),
     transparent) top / 100% 1px no-repeat;
 }
-.rule-fade-top-lt {
+:root[data-theme='light'] .rule-fade {
+  background: linear-gradient(to right, transparent,
+    rgba(27,28,40,.10) 48px, rgba(27,28,40,.10) calc(100% - 48px),
+    transparent) bottom / 100% 1px no-repeat;
+}
+:root[data-theme='light'] .rule-fade-top {
   background: linear-gradient(to right, transparent,
     rgba(27,28,40,.09) 32px, rgba(27,28,40,.09) calc(100% - 32px),
     transparent) top / 100% 1px no-repeat;

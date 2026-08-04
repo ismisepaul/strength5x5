@@ -162,8 +162,8 @@ describe('Live Workout bar', () => {
 
 describe('System dark mode preference', () => {
   it('defaults to system preference when no saved isDark', () => {
-    const { container } = render(<App />);
-    expect(container.firstChild).toHaveClass('bg-ground');
+    render(<App />);
+    expect(document.documentElement.dataset.theme).toBe('dark');
     expect(document.documentElement.style.getPropertyValue('--app-page-bg')).toBe('#161826');
   });
 
@@ -172,8 +172,8 @@ describe('System dark mode preference', () => {
       ...workoutData,
       isDark: false,
     }));
-    const { container } = render(<App />);
-    expect(container.firstChild).toHaveClass('bg-ground-lt');
+    render(<App />);
+    expect(document.documentElement.dataset.theme).toBe('light');
     expect(document.documentElement.style.getPropertyValue('--app-page-bg')).toBe('#f5f5f8');
   });
 });

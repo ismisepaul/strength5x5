@@ -33,7 +33,7 @@ Strength 5x5 is a client-side React web app for tracking 5x5 barbell strength tr
 
 - **No backend.** All logic is client-side. Do not introduce server dependencies.
 - **Single-page app** with no router — navigation is state-driven with modals/views.
-- **App.jsx is the main state manager** (~1400 lines). All top-level state lives here. This is intentional — do not refactor into Redux/Zustand/context unless asked.
+- **App.jsx owns top-level state** and delegates rendering to `src/screens/` (one file per tab) and `src/components/modals/` (one file per dialog/sheet). State stays in App and flows down as explicit props — screens and modals take data and callbacks, they do not read from a store. External state libraries (Redux/Zustand) and a router remain off the table; see [docs/refactor-plan.md](docs/refactor-plan.md) for the decomposition in progress.
 - **localStorage** is the persistence layer. Data is stored under `strength5x5_data` with schema versioning (currently v2). Active workouts are stored separately under `strength5x5_active_workout`.
 - **Google Drive sync is optional** — the app must work perfectly without it.
 
@@ -46,7 +46,9 @@ src/
 ├── constants.js         # Workout definitions, initial weights, storage keys
 ├── utils.js             # Pure utilities (plates, 1RM, deload, validation)
 ├── index.css            # Tailwind imports + custom keyframes
+├── screens/              # One file per tab (Train, Log, Stats, Program, Options)
 ├── components/          # Reusable UI components (PascalCase.jsx)
+│   └── modals/           # Dialogs and bottom sheets (Modal/Sheet shells + one file each)
 ├── hooks/               # Custom hooks (useCamelCase.js)
 ├── utils/               # Additional utility modules (camelCase.js)
 ├── i18n/                # i18next config and locale JSON files
@@ -139,7 +141,7 @@ describe('Component', () => {
 
 - Do not add a backend or external database
 - Do not add authentication (Google Drive OAuth is the only auth, and it's optional)
-- Do not refactor App.jsx into smaller state management without being asked
+- Do not introduce Redux, Zustand, Context, or a router — App.jsx stays the state owner with explicit props down to screens and modals (see [docs/refactor-plan.md](docs/refactor-plan.md))
 - Do not add dependencies without good reason — keep the bundle light
 - Do not break offline functionality — the app must work without network
 - Do not store sensitive data; this is a client-side app with no secrets
@@ -147,3 +149,10 @@ describe('Component', () => {
   radius outside the Nocturne scale (see Design System above)
 - Do not change training logic while changing presentation — a redesign task touches
   how things look, never how progression, deload, timing or sync behave
+
+## Automated Review
+
+GitHub Copilot's PR reviewer reads [.github/copilot-instructions.md](.github/copilot-instructions.md)
+for repo-specific review guidance (e.g. not flagging missing guards for standard browser
+APIs, since this app has no non-browser runtime target). Keep that file in sync with this
+one where they overlap.

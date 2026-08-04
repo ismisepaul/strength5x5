@@ -7,7 +7,6 @@ describe('RestTimer', () => {
   const defaultProps = {
     seconds: 60,
     total: 90,
-    isDark: true,
     isExerciseComplete: false,
     isExpired: false,
     isActive: false,

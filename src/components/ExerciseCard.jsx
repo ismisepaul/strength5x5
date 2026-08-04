@@ -8,7 +8,7 @@ import BarSetupDiagram from './BarSetupDiagram';
 
 const LONG_PRESS_MS = 450;
 
-const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPicker, showHint, onWeightChange, topSetValue, topSetMin, onTopSetChange, onOpenGuide }) => {
+const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, showHint, onWeightChange, topSetValue, topSetMin, onTopSetChange, onOpenGuide }) => {
   const { t } = useTranslation();
   const isRamped = Array.isArray(ex.setWeights);
   // A ramp's "top set" is its heaviest -- the last rung, except on a back-off day
@@ -45,10 +45,10 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
     onToggleSet(exIdx, setIdx);
   };
 
-  const mutedClass = isDark ? 'text-ink/45' : 'text-ink-lt/45';
+  const mutedClass = 'text-ink/45';
 
   return (
-    <div className={`p-4 rounded-[10px] border ${isDark ? 'bg-surface border-ink/8' : 'bg-surface-lt border-ink-lt/8'}`}>
+    <div className={`p-4 rounded-[10px] border bg-surface border-ink/8`}>
       <div className="mb-5">
         <div className={`flex justify-between ${isRamped ? 'items-start' : 'items-center'}`}>
           <div className="flex-1 min-w-0 pr-4">
@@ -71,7 +71,6 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
               min={topSetMin}
               onChange={onTopSetChange}
               label={t('exercises.' + ex.id)}
-              isDark={isDark}
               variant="prominent"
               topSet
             />
@@ -82,7 +81,6 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
               min={20}
               onChange={onWeightChange}
               label={t('exercises.' + ex.id)}
-              isDark={isDark}
               variant="prominent"
             />
           )}
@@ -96,7 +94,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
           let stateClass;
           if (passed) stateClass = 'border border-accent bg-accent-900 text-accent-300';
           else if (missed) stateClass = 'border-[1.5px] border-transparent bg-neutral-tint text-ink';
-          else stateClass = isDark ? 'border border-ink/18 text-ink/40' : 'border border-ink-lt/18 text-ink-lt/40';
+          else stateClass = 'border border-ink/18 text-ink/40';
           const missedDasharray = r === 0 ? '0.5 24' : `3 ${Math.min(24, 3 * (target - r))}`;
           return (
             <div key={ri} className="flex flex-col items-center gap-1" style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}>
@@ -137,7 +135,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
                   </>
                 )}
               </button>
-              {isRamped && <span className={`text-[10.5px] tabular-nums ${ri === topIndex ? 'font-semibold text-accent-300' : mutedClass}`}>{ex.setWeights[ri]}</span>}
+              {isRamped && <span className={`text-kicker tabular-nums ${ri === topIndex ? 'font-semibold text-accent-300' : mutedClass}`}>{ex.setWeights[ri]}</span>}
             </div>
           );
         })}
@@ -145,15 +143,15 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
       {hasMissed && (
         <p className="flex items-center gap-1 text-[12.5px] mt-3">
           <ArrowBendDownRight size={13} className="text-accent shrink-0" />
-          <span className={isDark ? 'text-ink/55' : 'text-ink-lt/55'}>
+          <span className="text-ink/55">
             {isRamped ? t('workout.missedNoteTopSet') : t('workout.missedNote', { weight: ex.weight })}
           </span>
         </p>
       )}
       {showHint && (
-        <p className={`text-[12px] mt-3 ${isDark ? 'text-ink/38' : 'text-ink-lt/38'}`}>{t('workout.setHint', { count: targetReps(ex, 0) })}</p>
+        <p className={`text-meta mt-3 text-ink/38`}>{t('workout.setHint', { count: targetReps(ex, 0) })}</p>
       )}
-      <div className={`mt-4 pt-3 flex items-center justify-between ${isDark ? 'rule-fade-top' : 'rule-fade-top-lt'}`}>
+      <div className={`mt-4 pt-3 flex items-center justify-between rule-fade-top`}>
         <button
           onClick={() => setPanel(p => p === 'warm' ? null : 'warm')}
           aria-expanded={panel === 'warm'}
@@ -172,7 +170,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
         </button>
       </div>
       {panel === 'warm' && (
-        <div className={`mt-2 rounded-[9px] p-3.5 space-y-2 ${isDark ? 'bg-ground/60' : 'bg-ground-lt/60'}`}>
+        <div className={`mt-2 rounded-[9px] p-3.5 space-y-2 bg-ground/60`}>
           {isRamped ? ex.setWeights.map((w, i) => {
             const isTop = i === topIndex;
             const isBackoff = i === backoffIndex;
@@ -198,8 +196,8 @@ const ExerciseCard = React.memo(({ ex, exIdx, isDark, onToggleSet, onOpenRepPick
         </div>
       )}
       {panel === 'bar' && (
-        <div className={`mt-2 rounded-[9px] p-3.5 ${isDark ? 'bg-ground/60' : 'bg-ground-lt/60'}`}>
-          <BarSetupDiagram weight={topWeight} isDark={isDark} />
+        <div className={`mt-2 rounded-[9px] p-3.5 bg-ground/60`}>
+          <BarSetupDiagram weight={topWeight} />
         </div>
       )}
     </div>
