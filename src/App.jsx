@@ -10,8 +10,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
+import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
 import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
 import { getProgram } from './programs';
@@ -293,12 +294,11 @@ const App = () => {
       nextMcTop = outcome.nextTop;
       nextMcWeek = outcome.nextWeek;
       nextMcPending = outcome.nextPending;
-      nextWeights = applyMcTopToWeights(weights, nextMcTop);
       nextMcNextDay = MADCOW_DAYS[(MADCOW_DAYS.indexOf(currentWorkout.type) + 1) % MADCOW_DAYS.length];
       progressions = outcome.progressions;
       pendingDeloads = [];
       summaryNextValues = outcome.projectedTop;
-      setMcTop(nextMcTop); setMcWeek(nextMcWeek); setMcNextDay(nextMcNextDay); setMcPending(nextMcPending); setWeights(nextWeights);
+      setMcTop(nextMcTop); setMcWeek(nextMcWeek); setMcNextDay(nextMcNextDay); setMcPending(nextMcPending);
     } else {
       const outcome = evaluateWorkoutOutcome(currentWorkout, history, weights);
       nextWeights = outcome.nextWeights;
@@ -354,33 +354,31 @@ const App = () => {
     initializeWorkout(weights);
   }, [history, weights, initializeWorkout, longBreakDeloadForDate, preset, t]);
 
-  // Switches the active program, converting weights each direction so Stats and the
-  // Program tab always agree with whatever's actually being trained.
+  // Switches the active program. weights (Standard's working weights) and Madcow's
+  // mcTop/mcWeek/etc are two separate slices of state now -- see switchProgramState in
+  // programSwitch.js for why: overwriting one with the other on every switch is what
+  // used to erase Standard's weights and re-seed Madcow's on-ramp from scratch on
+  // every trip.
   const switchProgram = useCallback((target) => {
     if (isWorkoutActive) cancelWorkout();
-    if (target === 'madcow') {
-      const seeded = seedMadcowTops(weights);
-      setMcTop(seeded);
-      setMcWeek(1);
-      setMcNextDay('A');
-      setMcPending([]);
-      setWeights(prev => applyMcTopToWeights(prev, seeded));
-    } else {
-      setWeights(prev => madcowTopsToWeights(prev, mcTop, mcPress));
-    }
+    const next = switchProgramState({ target, weights, mcTop, mcWeek, mcNextDay, mcPending, mcPress, mcSeeded });
+    setWeights(next.weights);
+    setMcTop(next.mcTop);
+    setMcWeek(next.mcWeek);
+    setMcNextDay(next.mcNextDay);
+    setMcPending(next.mcPending);
+    setMcSeeded(next.mcSeeded);
     setPreset(target);
     setProgramSheet(null);
-  }, [weights, mcTop, mcPress, isWorkoutActive, cancelWorkout]);
+  }, [weights, mcTop, mcWeek, mcNextDay, mcPending, mcPress, mcSeeded, isWorkoutActive, cancelWorkout]);
 
   // The one path every Madcow top-set edit goes through -- Program tab, Train's idle
-  // row, and Train's active-workout card -- so mcTop, the mirrored `weights`, and (if
-  // that lift is mid-session) its live ramp never drift apart. Each setter reads its
-  // own fresh `prev` rather than closing over mcTop/weights/currentWorkout, so this
-  // stays correct even if two taps land before a render lands between them.
+  // row, and Train's active-workout card -- so mcTop and (if that lift is mid-session)
+  // its live ramp never drift apart. Does not touch `weights`: Madcow's top set is
+  // its own state now, independent of Standard's working weight (see switchProgram).
   const updateMcTop = useCallback((liftId, nextTop) => {
     const clamped = clampMcTop(liftId, nextTop);
     setMcTop(prev => ({ ...prev, [liftId]: clamped }));
-    setWeights(prev => applyMcTopToWeights(prev, { [liftId]: clamped }));
     setCurrentWorkout(prev => reviseWorkoutTopSet(prev, liftId, clamped, mcInterval));
   }, [mcInterval]);
 
