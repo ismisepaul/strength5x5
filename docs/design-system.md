@@ -1,30 +1,31 @@
-# Nocturne Design System
+# Oxide Design System
 
 The design language for Strength 5x5. **Every UI change must follow this document.**
 
-Status: **implemented** (issue #18). The dark palette is live across the app; the light
-palette below is an interim pass, not the final light-mode redesign (that's a follow-up
-issue). Follow these rules for all UI work, including `ErrorBoundary.jsx`'s crash screen,
-which was out of scope for the migration and still carries the pre-Nocturne palette.
+Status: **implemented**. Both the dark and light palettes are live across the app.
+Follow these rules for all UI work, including `ErrorBoundary.jsx`'s crash screen, which
+was out of scope for the migration and still carries the pre-Oxide palette.
 
 Source of truth for the migration (retained for history; the plan and prototype describe
-the dark theme this document now reflects):
+option 4a, which this document now reflects):
 
-- [docs/design/nocturne-implementation-plan.md](design/nocturne-implementation-plan.md) — screen-by-screen spec
-- [docs/design/nocturne-prototype.dc.html](design/nocturne-prototype.dc.html) — interactive prototype
-  (option 1a is approved; 1b/1c on the same canvas are exploratory — ignore them).
-  It renders in a design-tool runtime, so read it as reference markup: styles are inline
-  and behavior is in the `Component` class at the bottom.
+- [docs/design/oxide-implementation-plan.md](design/oxide-implementation-plan.md) — screen-by-screen spec
+- [docs/design/oxide-prototype.dc.html](design/oxide-prototype.dc.html) — interactive prototype
+  (`variant="oxide"` is approved; the other variants on the same canvas are exploratory —
+  ignore them). It renders in a design-tool runtime, so read it as reference markup:
+  styles are inline and behavior is in the `Component` class at the bottom.
 
 ---
 
 ## 1. Principles
 
-1. **One accent, no other hues.** `#9184d9` carries every piece of emphasis — lines,
-   borders, icons, marks, active states. Status is never communicated by hue.
+1. **One accent, no other hues.** `#c8663a` dark / `#b4552b` light carries every piece of
+   emphasis — lines, borders, icons, marks, active states. Status is never communicated
+   by hue.
 2. **Quiet typography.** Inter, weight 600 maximum. Nothing shouts. Uppercase is
    reserved for kickers.
-3. **One radius scale.** 8–10px for cards and buttons. Set targets are the only circles.
+3. **One radius scale.** 8–10px for cards and buttons. Set targets are rounded
+   rectangles; adherence dots are the only circles.
 4. **Outlined, not filled.** Primary actions are a 1px accent outline on transparent.
    Filled buttons do not exist.
 5. **Structure over chrome.** Rows with fading rules instead of nested cards; a border
@@ -40,20 +41,21 @@ the dark theme this document now reflects):
 
 This project is on **Tailwind CSS v4** — there is no `tailwind.config.js`. Tokens are
 declared in the `@theme` block of [src/index.css](../src/index.css) and become utilities
-automatically (`--color-accent` → `bg-accent`, `text-accent`, `border-accent`).
+automatically (`--color-accent` → `bg-accent`, `text-accent`, `border-accent`). Light
+mode overrides the **same** variable names inside `:root[data-theme='light']` — there is
+no separate `-lt`-suffixed token set (see §7).
 
 ```css
 @theme {
-  --color-ground:        #161826; /* app background */
-  --color-surface:       #232532; /* cards, sheets */
-  --color-surface-deep:  #1c1e2c; /* timer strip */
-  --color-surface-nav:   #141624; /* tab bar */
-  --color-ink:           #e9e9ed; /* primary text */
-  --color-accent:        #9184d9; /* the only accent */
-  --color-accent-300:    #d2cefd; /* accent-tinted text: weights, active labels */
-  --color-accent-800:    #423a6a; /* tinted fill: active segment */
-  --color-accent-900:    #2b2741; /* tinted fill: completed sets, toasts */
-  --color-neutral-tint:  #3f424d; /* missed-set badge background */
+  --color-ground:        #141310; /* app background */
+  --color-surface:       #1f1d18; /* cards, sheets */
+  --color-surface-deep:  #191713; /* timer strip */
+  --color-surface-nav:   #100f0c; /* tab bar */
+  --color-ink:           #ece9e2; /* primary text */
+  --color-accent:        #c8663a; /* the only accent */
+  --color-accent-300:    #eda175; /* accent-tinted text: weights, active labels */
+  --color-accent-900:    #3a2413; /* tinted fill: completed sets, toasts, active segment */
+  --color-neutral-tint:  #433d34; /* missed-set badge background */
 }
 ```
 
@@ -73,7 +75,8 @@ separate grey. Canonical steps:
 | Inactive tab, disabled label | `text-ink/35` |
 | Unlogged set number | `text-ink/40` |
 | Card / control border | `border-ink/8` … `border-ink/18` |
-| Chart grid | `rgba(233,233,237,.07)` |
+| Missed-set border | `border-ink/50` |
+| Chart grid | `rgba(236,233,226,.07)` dark / `rgba(25,22,18,.07)` light |
 
 ### Type scale
 
@@ -81,6 +84,7 @@ separate grey. Canonical steps:
 | --- | --- |
 | Page title | 24px / 500 |
 | Hero (workout name on Train) | 32px / 500 |
+| Working-weight numeral (`WeightInput` `prominent`) | 26px / 500 |
 | Card title | 15–17px / 600 |
 | Body | 13.5–15px |
 | Meta | 12–12.5px |
@@ -89,15 +93,14 @@ separate grey. Canonical steps:
 
 **Kickers are the only uppercase text in the app.** Font family is Inter (400/500/600);
 never `font-bold`+ beyond 600, never `font-black`. **Type floor is 12px** everywhere
-except kickers (10.5px) and tab labels (11px) — a gym-legibility pass raised every size
-in this table by roughly 1.5–2px from the original redesign handoff; if you're touching
-type sizes, hold this floor rather than the historical plan's smaller values.
+except kickers (10.5px) and tab labels (11px).
 
 ### Radii
 
 8–10px for cards, buttons and controls. 12px for centred modals, `14px 14px 0 0` for
-bottom sheets. Set targets and adherence dots are full circles. Nothing else is round,
-and `rounded-2xl` / `rounded-3xl` / `rounded-[2rem]` / `rounded-[2.5rem]` are gone.
+bottom sheets. Set targets are `aspect-[1.35]` rounded rectangles at `rounded-[10px]`;
+adherence dots are the only full circles. `rounded-2xl` / `rounded-3xl` /
+`rounded-[2rem]` / `rounded-[2.5rem]` are gone.
 
 ### Fading rule
 
@@ -107,19 +110,20 @@ Section separators fade out at both ends instead of running edge to edge:
 background: linear-gradient(
     to right,
     transparent,
-    rgba(233,233,237,.09) 48px,
-    rgba(233,233,237,.09) calc(100% - 48px),
+    rgba(236,233,226,.09) 48px,
+    rgba(236,233,226,.09) calc(100% - 48px),
     transparent
   ) bottom / 100% 1px no-repeat;
 ```
 
+(`.rule-fade` / `.rule-fade-top` in `index.css`; the `:root[data-theme='light']`
+overrides use the light ink rgb triple, `25,22,18`, instead.)
+
 ### Icons
 
-**Phosphor** (`@phosphor-icons/react`) — replaces Lucide. Weight `regular` by default;
-`fill` for the active tab icon, the brand barbell and play glyphs; `bold` only for the
-9px ✕ on a missed-set badge. Icon sizes generally run ~2px larger than the original
-redesign handoff (a gym-legibility pass bumped every icon `size` prop uniformly). The
-full glyph inventory is in the implementation plan.
+**Phosphor** (`@phosphor-icons/react`). Weight `regular` by default; `fill` for the
+active tab icon, the brand barbell and play glyphs; `bold` only for the 9px ✕ on a
+missed-set badge. The full glyph inventory is in the implementation plan.
 
 ---
 
@@ -133,27 +137,27 @@ a 12% border with 30% text; never a colour change.
 a card inside a card — use rows with fading rules.
 
 **Rows.** Label left, value right, fading rule underneath. This is the default layout
-for lists (exercise lists, options, program editor).
+for lists (exercise lists, options, program editor). On Train's idle screen, each row
+also carries a small always-visible plate-stack preview under the exercise name
+(`PlateStrip.jsx`, decorative/`aria-hidden`) — scaled down from the same `PLATE_STYLES`
+map `BarSetupDiagram` uses for the full bar-load diagram (`src/plateStyles.js`).
 
-**Set targets.** ~62px circles (capped `max-w-[62px]`), 20px/600 number.
+**Planned load.** A "PLANNED LOAD" kicker + total kg row sits above Start workout on
+the idle screen, from `plannedVolume()` in [utils.js](../src/utils.js) — `weight × sets
+× reps` for Standard's flat entries, summed per-set for Madcow's ramped entries.
+
+**Set targets.** `aspect-[1.35]` rounded rectangles (`rounded-[10px]`, filling their
+flex slot), 20px/600 number — roughly twice the tap area of a circle, and the row reads
+like a loaded bar rather than five dots.
 
 | State | Treatment |
 | --- | --- |
 | Unlogged | 1px `ink/18` border, `ink/40` number, shows the target |
 | Passed | 1px accent border, `accent-900` fill, `accent-300` number |
-| Missed (0 ≤ reps < target) | 1.5px **transparent** border (same width as the other states, so the circle doesn't resize) with a graded dashed ring drawn over it, neutral tint fill, shows reps achieved, plus a 19px corner badge (`neutral-tint` circle, bold 9px ✕) |
+| Missed (0 ≤ reps < target) | 1.5px **dashed** `ink/50` border, `neutral-tint` fill, shows reps achieved, plus a 19px corner badge (`neutral-tint` circle, bold 9px ✕) |
 
-Never render a slot for a set the program doesn't include.
-
-**Missed-set ring.** An SVG circle overlaid on the button (`inset: -1.5px`, `pathLength="100"`,
-`rotate(-90 50 50)` so it starts at 12 o'clock), stroke `rgba(233,233,237,.55)` — fixed, not
-theme-swapped, matching the rest of this state's ink-token styling — at 3px width. Dash length
-is fixed at 3; the gap is `min(24, 3 × (target − reps))` — one rep short gives a 3/3 dash-equals-gap
-ratio (a classic fine dashed border), and each additional missed rep widens the gap further,
-clamped at 24 so a badly missed set doesn't dissolve into nothing. 0 reps is a hardcoded
-`"0.5 24"` (faint specks) rather than the formula's result (which would give a 3-length dash),
-so a fully-missed set reads as clearly emptier than a 1-rep set. Works for any Program-tab rep
-target (1–10). Never becomes red — status here is shape/density, not hue.
+Never render a slot for a set the program doesn't include. Never becomes red — status
+here is shape (dashed border + badge), not hue.
 
 **Modals and sheets.** `surface` background, 12px radius centred / `14px 14px 0 0` when
 bottom-anchored, outlined primary action, plain-text secondary. Rep picker and help are
@@ -161,14 +165,14 @@ bottom-anchored, outlined primary action, plain-text secondary. Rep picker and h
 `aria-label` on every one. There is no plate-calculator modal — the bar-load diagram is
 an inline accordion on `ExerciseCard` (see below).
 
-**ExerciseCard warm-up/bar-setup accordions.** Below the set circles (and below the
-missed-reps note / teaching caption, when present): a faded top rule (`.rule-fade-top`
-/ `-lt`, 1px, 32px fade), then a `flex justify-between` row of two text-buttons, each
-≥36px tall, 12.5px/500 — "⌄ Warm-up" (caret before label) and "Bar setup ⌄" (caret
-after). Inactive text is 45% alpha; the open one brightens to `accent-300` and its caret
-flips from `CaretDown` to `CaretUp`. State is `null | 'warm' | 'bar'`, local to the card
-— opening one closes the other. The open panel is a recessed block (`bg-ground/60` /
-`bg-ground-lt/60`, 9px radius, ~14px padding) directly below the footer row:
+**ExerciseCard warm-up/bar-setup accordions.** Below the set targets (and below the
+missed-reps note / teaching caption, when present): a faded top rule (`.rule-fade-top`),
+then a `flex justify-between` row of two text-buttons, each ≥36px tall, 12.5px/500 —
+"⌄ Warm-up" (caret before label) and "Bar setup ⌄" (caret after). Inactive text is 45%
+alpha; the open one brightens to `accent-300` and its caret flips from `CaretDown` to
+`CaretUp`. State is `null | 'warm' | 'bar'`, local to the card — opening one closes the
+other. The open panel is a recessed block (`bg-ground/60`, 9px radius, ~14px padding)
+directly below the footer row:
 - **Warm-up:** three rows (13px, tabular) — empty bar (20 kg × 5), prep
   (`round((20 + (weight−20) × 0.6) / 2.5) × 2.5` kg × 3), and working weight
   (`accent-300`, weight kg × reps).
@@ -176,13 +180,15 @@ flips from `CaretDown` to `CaretUp`. State is `null | 'warm' | 'bar'`, local to 
   cards, built from `calculatePlates` (the same greedy 25/20/15/10/5/2.5/1.25-per-side
   breakdown used elsewhere) — shaft, collar, one chip per plate (largest first, tallest
   first), then a sleeve labelled "20". Plate fills are standard muted plate colours
-  scoped to this diagram only: 25 `#a8403e`, 20 `#37628f`, 15 `#b8971f` with `#1a1608`
-  text, 10 `#3a7a53`, 5 `#2a2c38`, 2.5 `#5f636f`, 1.25 `#7c8090`, with light `#e9e9ed`
-  text elsewhere. Plate heights are 118/112/100/88/70/56/44px respectively. The weight
-  is printed on every plate, so colour is never the only cue. Colours here are fixed
-  hex, not theme tokens — the diagram reads the same in light and dark mode. A caption
-  below reads "Per side · 20 kg bar · {total} total", or "Empty bar · 20 kg" when loaded
-  weight is at or below the bar itself.
+  scoped to this diagram (and the idle-row `PlateStrip`) only, declared in
+  [plateStyles.js](../src/plateStyles.js): 25 `#a8403e`, 20 `#37628f`, 15 `#b8971f`
+  with `#1a1608` text, 10 `#3a7a53`, 5 `#2a2c38`, 2.5 `#5f636f`, 1.25 `#7c8090`, with
+  light `#e9e9ed` text elsewhere. Plate heights are 118/112/100/88/70/56/44px
+  respectively (the idle-row strip scales these down by /6). The weight is printed on
+  every plate, so colour is never the only cue. Colours here are fixed hex, not theme
+  tokens — the diagram reads the same in light and dark mode. A caption below reads
+  "Per side · 20 kg bar · {total} total", or "Empty bar · 20 kg" when loaded weight is
+  at or below the bar itself.
 
 **Switches.** Custom 46×26 track, 20px knob (`translate-x-[21px]` when on) — accent border,
 `accent-900` track and accent knob when on; `ink/18` border and neutral knob when off.
@@ -192,16 +198,21 @@ outlined `ink/18` border. `ProgramEditor` sets/reps use the default 40×40px / 1
 Weight editing (see below) uses the 44×44px / 15px-icon `prominent` variant on Train,
 and the 40×40px / 16px-icon `compact` variant on the Program tab and in the Log.
 
-**Segmented controls.** Active segment = `accent-900` fill with an inset accent ring;
+**Segmented controls.** Active segment = `accent-900` fill with an inset accent ring
+(`shadow-[inset_0_0_0_1px_var(--color-accent)]`, so it re-themes automatically);
 inactive = transparent, `ink/45` label.
 
 **Toasts.** `accent-900` background, accent border, `accent-300` text, centred above the
 nav bar.
 
-**Charts** ([StatsChart.jsx](../src/components/StatsChart.jsx), Recharts stays). Weight
-line `#9184d9` 2px with dots; e1RM line `#d2cefd` at 55% alpha, 1.5px dashed; grid
-`rgba(233,233,237,.07)`; axis text 11px at 40% alpha, tooltip text 13.5px. Series toggles are outlined chips
-with a colour dot; at least one series is always on.
+**Charts** ([StatsChart.jsx](../src/components/StatsChart.jsx), Recharts stays). Recharts
+consumes stroke/fill colours as literal prop values, not Tailwind classNames, so they
+can't re-theme via the CSS custom properties alone — they're computed from `isDark`
+instead: weight line `#c8663a` dark / `#b4552b` light, 2px with dots; e1RM line
+`#eda175` dark / `#93401d` light at 55% alpha, 1.5px dashed; grid and axis text use the
+theme's ink rgb triple (`236,233,226` dark / `25,22,18` light) at 7%/40% alpha; tooltip
+text 13.5px. Series toggles are outlined chips with a colour dot; at least one series is
+always on.
 
 **Trends are never red or green.** Up = accent, down = neutral, flat = `ink/40`.
 
@@ -217,19 +228,23 @@ with a colour dot; at least one series is always on.
   **live bar** sits above the tab bar: play icon + "Resting · m:ss" (or "Workout in
   progress") + "Return ›". Tapping it returns to Train.
 - During an active workout on the Train tab, the **timer strip replaces the header** at
-  the top of the screen — it is not docked at the bottom. Header everywhere else.
+  the top of the screen — it is not docked at the bottom. Header everywhere else. The
+  strip is full-bleed: 44px tabular digits, a 3px accent progress line that fades in
+  from the left (`transition: width 1s linear`). All timer logic (wall-clock anchor,
+  expire → stopwatch, sound/vibrate) lives in `useTimer`/`RestTimer.jsx` and is
+  untouched by presentation work.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
 - **Every editable weight in the app — Train (idle and active), the Program tab's
   Madcow top sets, and the Log's add/edit-entry modal — uses one `WeightInput`
   component.** There is no pencil, no disclosure step, and no separate commit/cancel
   row: a − stepper, the number itself, and a + stepper are all always visible and
   always usable.
-  - The number is a bare `<input inputMode="decimal">` (19-22px/500 accent-300,
-    transparent background, a 1.5px `ink/18` bottom border that turns accent on
-    focus, ~60-76px wide, a muted "kg" suffix beside it).
-  - Two variants: `prominent` (44px steppers / 15px icons — Train idle rows and
-    `ExerciseCard`) and `compact` (40px steppers / 16px icons — Madcow top sets and
-    the Log modal).
+  - The number is a bare `<input inputMode="decimal">`, transparent background, a
+    1.5px `ink/18` bottom border that turns accent on focus, a muted "kg" suffix
+    beside it.
+  - Two variants: `prominent` (26px/500 number, 56px wide, 44px steppers / 15px icons
+    — Train idle rows and `ExerciseCard`) and `compact` (16px/500 number, 40px
+    steppers / 16px icons — Madcow top sets and the Log modal).
   - **Editing is draft-based, but local to each field.** Focusing the input seeds a
     draft from the current value and selects it; typing only mutates that draft.
     It commits on blur or Enter — parsing the draft (comma decimals accepted),
@@ -252,7 +267,7 @@ with a colour dot; at least one series is always on.
     Program tab alike** — never a flat per-session weight, since Madcow displays a
     computed ramp. This is why, on Workout C ("heavy" day), the big number can differ
     from the day's actual heaviest working set (`top + increment`, i.e. the day's
-    attempt): that attempt value is still shown under its own set circle and in the
+    attempt): that attempt value is still shown under its own set target and in the
     ramp meta caption, just not as the header number. Every caller — the idle Train
     row, `ExerciseCard` mid-workout, and the Program tab — funnels through one
     `updateMadcowTopSet()` in [madcow.js](../src/madcow.js), so the persisted
@@ -266,7 +281,7 @@ with a colour dot; at least one series is always on.
 - **Set tap cycle:** unlogged → target → target−1 → … → 1 → 0 → unlogged.
 - **450ms long-press** on a set opens the rep-picker bottom sheet (0…target, plus
   "Clear set"). Must work with touch *and* mouse; suppress `contextmenu` on set buttons.
-- A missed set shows the dashed ring, the ✕ badge, and a note under the exercise:
+- A missed set shows the dashed border, the ✕ badge, and a note under the exercise:
   `↳ Missed reps — 62.5 kg holds next session`.
 - The first exercise shows a teaching caption until the first set is logged:
   "Tap to log all 5 reps · hold a set to pick an exact count".
@@ -277,10 +292,11 @@ with a colour dot; at least one series is always on.
 
 ## 6. Do not
 
-- Introduce a second hue. No emerald, rose, amber, indigo, blue, or raw slate classes.
+- Introduce a second hue. No emerald, rose, amber, indigo, blue, lilac/purple, or raw
+  slate classes.
 - Use `font-black`, or uppercase anything that isn't a kicker.
 - Add a filled primary button, a drop shadow, or a radius outside the 8–14px scale.
-- Encode state in colour alone — pair it with a shape (dashed ring, hollow dot, badge).
+- Encode state in colour alone — pair it with a shape (dashed border, hollow dot, badge).
 - Hardcode a user-facing string. Every new label goes through `t()` with EN **and** FR keys.
 - Change training logic while changing presentation. Progression, deload, the wall-clock
   timer, recovery, Drive sync, import/export and the localStorage schema are untouched by
@@ -290,37 +306,43 @@ with a colour dot; at least one series is always on.
 
 **Light mode stays.** The toggle in Options is a shipped feature and was not removed.
 
-The Nocturne spec defines the **dark** theme; light is an interim derivation of the same
-structure (invert ground/surface, keep the single accent, keep every rule in §3–§5), not
-yet a from-scratch light redesign. The `isDark` prop and its ternary class strings stay in
-place everywhere — every dark token has a `-lt` counterpart and both branches ship in the
-same commit.
+Light is a derivation of the same structure as dark (invert ground/surface, keep the
+single accent, keep every rule in §3–§5), not a from-scratch light redesign. The
+mechanism is a single `:root[data-theme='light']` block in `src/index.css` that
+overrides the **same** `--color-*` variable names declared in the `@theme` block —
+there is no second `-lt`-suffixed token set, and no ternary className branching per
+component. Every utility built on a token (`text-ink/45`, `bg-surface`,
+`border-ink/18`, `text-accent-300`, `bg-accent-900`, …) re-themes automatically once
+the variable is overridden. Stamped on `<html>` by `App.jsx`'s `isDark` effect.
 
-Interim light palette, declared in the `@theme` block of `src/index.css` alongside the dark
-tokens:
+```css
+:root[data-theme='light'] {
+  --color-ground:       #f7f4ef;
+  --color-surface:      #ffffff;
+  --color-surface-deep: #ece6dd;
+  --color-surface-nav:  #ffffff;
+  --color-ink:          #191612;
+  --color-accent:       #b4552b;
+  --color-accent-300:   #93401d;
+  --color-accent-900:   #f9e9df;
+  --color-neutral-tint: #ded7cc;
+}
+```
 
-| Token | Value | Dark equivalent |
-| --- | --- | --- |
-| `--color-ground-lt` | `#f5f5f8` | `ground` |
-| `--color-surface-lt` | `#ffffff` | `surface` |
-| `--color-surface-deep-lt` | `#ececf2` | `surface-deep` |
-| `--color-surface-nav-lt` | `#ffffff` | `surface-nav` |
-| `--color-ink-lt` | `#1b1c28` | `ink` (same 55/45/38/18/8 alpha steps) |
-| `--color-accent-ink-lt` | `#5b4fb0` | `accent-300` for text — `#d2cefd` is unreadable on white |
-| `--color-accent-tint-lt` | `#efedfa` | `accent-900`/`accent-800` fills |
+Unlike the prior palette, **`accent` itself is not the same hex in both themes** —
+`#c8663a` dark, `#b4552b` light — since a single hex read too weak against white.
+Anywhere a literal colour is unavoidable (Recharts props, `manifest.json`,
+`index.html`'s `theme-color`), branch on `isDark` / declare both values rather than
+reusing one constant across themes; see `StatsChart.jsx` for the pattern.
 
-`accent` itself (`#9184d9`) is used as-is in both themes for borders and icons. The fading
-rule has a light counterpart, `.rule-fade-lt`, at 10% ink-lt alpha instead of 9% ink alpha.
-
-Light mode is expected to look transitional — legible and usable on every screen, never
-dark-on-dark or unstyled, but not a polished light-specific design. That polish is a
-follow-up issue.
+`.rule-fade` / `.rule-fade-top` also have a `:root[data-theme='light']` override, using
+the light ink rgb triple (`25,22,18`) instead of the dark one (`236,233,226`).
 
 ## 8. Checking your work
 
 ```bash
 # no stray hues (empty except ErrorBoundary.jsx, which predates and is outside the migration)
-grep -roE "(bg|text|border|ring|from|to|fill|stroke)-(emerald|rose|amber|indigo|blue|slate)-[0-9]+" src
+grep -roE "(bg|text|border|ring|from|to|fill|stroke)-(emerald|rose|amber|indigo|blue|slate|violet|purple)-[0-9]+" src
 
 # no shouting type
 grep -ro "font-black" src
