@@ -136,6 +136,12 @@ const ProgramScreen = ({
         const volume = computeProjectedVolume(dayExercises).toLocaleString();
         const onrampDots = Array.from({ length: MADCOW_ONRAMP_WEEKS }, (_, i) => i + 1);
 
+        // touch-action: pan-y hands horizontal drags to us instead of letting the
+        // browser's own gesture recognizer claim them for the page's vertical scroll --
+        // without it, the browser fires pointercancel mid-swipe (never pointerup) the
+        // moment it decides the touch is a scroll, so the gesture silently never lands.
+        // No pointer capture here: it would retarget the eventual click to this div,
+        // breaking the "back to current week" button nested inside it.
         const handleWeekPointerDown = (e) => { weekSwipeStartXRef.current = e.clientX; };
         const handleWeekPointerUp = (e) => {
           const startX = weekSwipeStartXRef.current;
@@ -150,7 +156,7 @@ const ProgramScreen = ({
         return (
           <>
             <div
-              className={cardClass}
+              className={`${cardClass} touch-pan-y select-none`}
               onPointerDown={handleWeekPointerDown}
               onPointerUp={handleWeekPointerUp}
               onPointerCancel={() => { weekSwipeStartXRef.current = null; }}
