@@ -168,7 +168,7 @@ describe('Program tab week preview', () => {
     expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'false');
     expect(screen.getByText('Back to current week')).toHaveAttribute('aria-hidden', 'true');
 
-    const weekCard = screen.getByLabelText('Week progress. Swipe left or right to preview weeks 1 to 4.');
+    const weekCard = screen.getByLabelText('Week progress. Swipe left or right, or use the arrow keys, to preview weeks 1 to 4.');
 
     // Swiping right (dragging toward an earlier week) previews week 4 -- the note
     // updates, and the live "next session" line is replaced by a way back, not a
@@ -193,6 +193,27 @@ describe('Program tab week preview', () => {
     expect(screen.getByText('Week 5')).toBeInTheDocument();
     expect(screen.getByText('Record territory')).toBeInTheDocument();
     expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it('lets keyboard users reach the same preview via arrow keys, since the dots themselves stay non-interactive', async () => {
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcWeek: 5, mcPress: 'incline' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+    const weekCard = screen.getByLabelText('Week progress. Swipe left or right, or use the arrow keys, to preview weeks 1 to 4.');
+
+    expect(weekCard).toHaveAttribute('tabindex', '0');
+
+    weekCard.focus();
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByText('Week 4')).toBeInTheDocument();
+
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByText('Week 3')).toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByText('Week 4')).toBeInTheDocument();
   });
 });
 

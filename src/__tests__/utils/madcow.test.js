@@ -354,4 +354,10 @@ describe('roundWeight', () => {
   it('never snaps finer than the 2.5kg plate grid, even when asked to', () => {
     expect(roundWeight(53.6, 1.25, 20)).toBe(52.5);
   });
+
+  it('falls back to the minimum increment for a non-finite or non-positive increment, rather than returning NaN', () => {
+    expect(roundWeight(53.6, NaN, 20)).toBe(52.5);
+    expect(roundWeight(53.6, 0, 20)).toBe(52.5);
+    expect(roundWeight(53.6, -5, 20)).toBe(52.5);
+  });
 });

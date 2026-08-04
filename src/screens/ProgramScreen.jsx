@@ -142,6 +142,14 @@ const ProgramScreen = ({
         // moment it decides the touch is a scroll, so the gesture silently never lands.
         // No pointer capture here: it would retarget the eventual click to this div,
         // breaking the "back to current week" button nested inside it.
+        //
+        // The dots themselves stay non-interactive indicators (not buttons) -- arrow
+        // keys on the card are the keyboard/screen-reader path into the same preview,
+        // so keyboard users aren't locked out of a swipe-only gesture.
+        const goToWeek = (targetWeek) => {
+          const clamped = Math.min(MADCOW_ONRAMP_WEEKS, Math.max(1, targetWeek));
+          setPreviewWeek(clamped === mcWeek ? null : clamped);
+        };
         const handleWeekPointerDown = (e) => { weekSwipeStartXRef.current = e.clientX; };
         const handleWeekPointerUp = (e) => {
           const startX = weekSwipeStartXRef.current;
@@ -149,8 +157,11 @@ const ProgramScreen = ({
           if (startX === null) return;
           const deltaX = e.clientX - startX;
           if (Math.abs(deltaX) < WEEK_SWIPE_THRESHOLD) return;
-          const next = Math.min(MADCOW_ONRAMP_WEEKS, Math.max(1, displayWeek + (deltaX < 0 ? 1 : -1)));
-          setPreviewWeek(next === mcWeek ? null : next);
+          goToWeek(displayWeek + (deltaX < 0 ? 1 : -1));
+        };
+        const handleWeekKeyDown = (e) => {
+          if (e.key === 'ArrowLeft') { e.preventDefault(); goToWeek(displayWeek - 1); }
+          else if (e.key === 'ArrowRight') { e.preventDefault(); goToWeek(displayWeek + 1); }
         };
 
         return (
@@ -160,7 +171,9 @@ const ProgramScreen = ({
               onPointerDown={handleWeekPointerDown}
               onPointerUp={handleWeekPointerUp}
               onPointerCancel={() => { weekSwipeStartXRef.current = null; }}
+              onKeyDown={handleWeekKeyDown}
               role="group"
+              tabIndex={0}
               aria-label={t('program.madcow.weekSwipeAria')}
             >
               <div className="flex justify-between items-center mb-2">

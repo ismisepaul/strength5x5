@@ -109,10 +109,12 @@ export function applyMcTopToWeights(weights, mcTop) {
 
 // The single choke point every displayed/stored weight passes through. No caller may
 // round to a finer grid than MIN_WEIGHT_INCREMENT -- whatever `increment` it passes
-// (even a stale or corrupt one) gets snapped up to the nearest loadable multiple first,
-// so the app can never show a weight nobody could actually put on a bar.
+// (even a stale, corrupt, or non-finite one) gets rounded onto the nearest loadable
+// multiple first, so the app can never show a weight nobody could actually put on a
+// bar -- or, for a genuinely broken increment (NaN, 0, negative), silently show NaN.
 export function roundWeight(weight, increment = MIN_WEIGHT_INCREMENT, floor = 20) {
-  const step = Math.max(MIN_WEIGHT_INCREMENT, Math.round(increment / MIN_WEIGHT_INCREMENT) * MIN_WEIGHT_INCREMENT);
+  const safeIncrement = Number.isFinite(increment) && increment > 0 ? increment : MIN_WEIGHT_INCREMENT;
+  const step = Math.max(MIN_WEIGHT_INCREMENT, Math.round(safeIncrement / MIN_WEIGHT_INCREMENT) * MIN_WEIGHT_INCREMENT);
   return Math.max(floor, Math.round(weight / step) * step);
 }
 
