@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY, ACTIVE_WORKOUT_KEY } from '../../constants';
@@ -153,7 +153,7 @@ describe('Stats under Madcow', () => {
 });
 
 describe('Program tab week preview', () => {
-  it('lets the on-ramp dots preview weeks 1-4 without changing the live week', async () => {
+  it('lets swiping the week card preview weeks 1-4 without changing the live week', async () => {
     seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcWeek: 5, mcPress: 'incline' });
     const user = userEvent.setup();
     render(<App />);
@@ -165,16 +165,25 @@ describe('Program tab week preview', () => {
     expect(screen.getByText('Record territory')).toBeInTheDocument();
     expect(screen.getByText(/Next session/)).toBeInTheDocument();
 
-    // Tapping an earlier week's dot previews it -- the note updates, and the live
-    // "next session" line is replaced by a way back, not a stale claim about week 2.
-    await user.click(screen.getByLabelText('Preview week 2'));
-    expect(screen.getByText('Week 2')).toBeInTheDocument();
-    expect(screen.getByText('On-ramp')).toBeInTheDocument();
+    const weekCard = screen.getByLabelText('Week progress. Swipe left or right to preview weeks 1 to 4.');
+
+    // Swiping right (dragging toward an earlier week) previews week 4 -- the note
+    // updates, and the live "next session" line is replaced by a way back, not a
+    // stale claim about week 4.
+    fireEvent.pointerDown(weekCard, { clientX: 200 });
+    fireEvent.pointerUp(weekCard, { clientX: 260 });
+    expect(screen.getByText('Week 4')).toBeInTheDocument();
+    expect(screen.getByText('Matching your best')).toBeInTheDocument();
     expect(screen.queryByText(/Next session/)).not.toBeInTheDocument();
 
     // Nothing persisted -- this was only ever a preview.
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.mcWeek).toBe(5);
+
+    // A drag under the swipe threshold doesn't count as a swipe.
+    fireEvent.pointerDown(weekCard, { clientX: 200 });
+    fireEvent.pointerUp(weekCard, { clientX: 210 });
+    expect(screen.getByText('Week 4')).toBeInTheDocument();
 
     await user.click(screen.getByText('Back to current week'));
     expect(screen.getByText('Week 5')).toBeInTheDocument();
