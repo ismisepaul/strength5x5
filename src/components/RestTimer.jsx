@@ -38,12 +38,12 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   const mutedClass = 'text-ink/45';
 
   return (
-    <div className={`flex-none pt-3 px-5 pb-2.5 bg-surface-deep`}>
+    <div className={`flex-none pt-4 px-5 pb-3 bg-surface-deep`}>
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-2">
           <div>
             <p className={`text-kicker font-semibold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent' : mutedClass}`}>{kicker}</p>
-            <p className={`text-[30px] font-medium tabular-nums leading-none ${accentState ? 'text-accent' : ''}`}>{formatClock(digits * 1000)}</p>
+            <p className={`text-[44px] font-medium tabular-nums leading-none ${accentState ? 'text-accent' : ''}`}>{formatClock(digits * 1000)}</p>
           </div>
           {showSkip && (
             <button
@@ -58,12 +58,12 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
           <p className={`text-[16px] tabular-nums leading-none text-ink/60`}>{formatClock(sessionElapsed * 1000)}</p>
         </div>
       </div>
-      <div className={`h-0.5 w-full mt-2.5 bg-ink/8 overflow-hidden`}>
+      <div className={`h-[3px] w-full mt-2.5 bg-ink/8 overflow-hidden`}>
         <div
           className="h-full"
           style={{
             width: `${progress}%`,
-            background: 'linear-gradient(to right, transparent, #9184d9 24px, #9184d9)',
+            background: 'linear-gradient(to right, transparent, var(--color-accent) 24px, var(--color-accent))',
             transition: 'width 1s linear',
           }}
         />

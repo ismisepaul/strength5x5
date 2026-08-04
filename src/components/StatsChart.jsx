@@ -14,9 +14,6 @@ const RANGES = [
   { label: 'All', days: null },
 ];
 
-const WEIGHT_COLOR = '#9184d9';
-const E1RM_COLOR = '#d2cefd';
-
 const RANGE_STORAGE_KEY = 'strength5x5_stats_range';
 
 const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
@@ -69,7 +66,9 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
   const mutedClass = 'text-ink/45';
   // Recharts consumes these as literal prop values (SVG attrs / inline styles), not
   // Tailwind classNames, so they can't re-theme via the CSS custom properties alone.
-  const axisColor = isDark ? 'rgba(233,233,237,.4)' : 'rgba(27,28,40,.4)';
+  const axisColor = isDark ? 'rgba(236,233,226,.4)' : 'rgba(25,22,18,.4)';
+  const weightColor = isDark ? '#c8663a' : '#b4552b';
+  const e1rmColor = isDark ? '#eda175' : '#93401d';
 
   return (
     <div className="space-y-4">
@@ -97,7 +96,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
             <button
               key={r.label}
               onClick={() => { setRange(r.label); try { localStorage.setItem(RANGE_STORAGE_KEY, r.label); } catch {} }}
-              className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+              className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_var(--color-accent)]' : mutedClass}`}
             >
               {r.label}
             </button>
@@ -117,7 +116,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
             )}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(233,233,237,.07)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(236,233,226,.07)' : 'rgba(25,22,18,.07)'} />
                 <XAxis
                   dataKey="date"
                   tickFormatter={formatDate}
@@ -136,8 +135,8 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: isDark ? '#232532' : '#ffffff',
-                    border: `1px solid ${isDark ? 'rgba(233,233,237,.1)' : 'rgba(27,28,40,.1)'}`,
+                    backgroundColor: isDark ? '#1f1d18' : '#ffffff',
+                    border: `1px solid ${isDark ? 'rgba(236,233,226,.1)' : 'rgba(25,22,18,.1)'}`,
                     borderRadius: '8px',
                     fontSize: 13.5,
                   }}
@@ -148,22 +147,22 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
                   <Line
                     type="monotone"
                     dataKey="weight"
-                    stroke={WEIGHT_COLOR}
+                    stroke={weightColor}
                     strokeWidth={2}
-                    dot={{ r: 3, fill: WEIGHT_COLOR, strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: WEIGHT_COLOR, strokeWidth: 2, stroke: isDark ? '#161826' : '#ffffff' }}
+                    dot={{ r: 3, fill: weightColor, strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: weightColor, strokeWidth: 2, stroke: isDark ? '#141310' : '#ffffff' }}
                   />
                 )}
                 {showE1rm && (
                   <Line
                     type="monotone"
                     dataKey="e1rm"
-                    stroke={E1RM_COLOR}
+                    stroke={e1rmColor}
                     strokeOpacity={0.55}
                     strokeWidth={1.5}
                     strokeDasharray="4 3"
-                    dot={{ r: 3, fill: E1RM_COLOR, strokeWidth: 0, fillOpacity: 0.55 }}
-                    activeDot={{ r: 5, fill: E1RM_COLOR, strokeWidth: 2, stroke: isDark ? '#161826' : '#ffffff' }}
+                    dot={{ r: 3, fill: e1rmColor, strokeWidth: 0, fillOpacity: 0.55 }}
+                    activeDot={{ r: 5, fill: e1rmColor, strokeWidth: 2, stroke: isDark ? '#141310' : '#ffffff' }}
                   />
                 )}
               </LineChart>
@@ -177,7 +176,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
             aria-pressed={showWeight}
             className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
           >
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: WEIGHT_COLOR }} />
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: weightColor }} />
             {t('stats.weight')}
           </button>
           <button
@@ -185,7 +184,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
             aria-pressed={showE1rm}
             className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
           >
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: E1RM_COLOR }} />
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: e1rmColor }} />
             {t('stats.est1rm')}
           </button>
         </div>

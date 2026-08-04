@@ -69,14 +69,14 @@ Plus the phase's own checks.
    - Replace "Do not refactor App.jsx into smaller state management without being asked"
      under **Things to Avoid** with "Do not introduce Redux/Zustand/Context or a router".
    - Add `screens/` and `components/modals/` to the **File Structure** block.
-2. In [.claude/skills/nocturne-ui/SKILL.md](../.claude/skills/nocturne-ui/SKILL.md):
+2. In [.claude/skills/oxide-ui/SKILL.md](../.claude/skills/oxide-ui/SKILL.md):
    delete the paragraph beginning "**The codebase has not been migrated yet.**" It is
    false — the migration landed (issue #18) and `grep` finds zero stray hues. It is
    actively misleading agents into thinking they must avoid a palette that is already gone.
 3. Link this plan from [docs/architecture.md](architecture.md).
 
 **Done when:** no doc in the repo tells an agent that this refactor is forbidden or that
-the Nocturne migration is pending.
+the design migration is pending.
 
 ---
 

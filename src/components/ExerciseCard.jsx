@@ -99,9 +99,8 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
           const missed = r !== null && r < target;
           let stateClass;
           if (passed) stateClass = 'border border-accent bg-accent-900 text-accent-300';
-          else if (missed) stateClass = 'border-[1.5px] border-transparent bg-neutral-tint text-ink';
+          else if (missed) stateClass = 'border-[1.5px] border-dashed border-ink/50 bg-neutral-tint text-ink';
           else stateClass = 'border border-ink/18 text-ink/40';
-          const missedDasharray = r === 0 ? '0.5 24' : `3 ${Math.min(24, 3 * (target - r))}`;
           return (
             <div key={ri} className="flex flex-col items-center gap-1" style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}>
               <button
@@ -112,33 +111,13 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
                 onPointerCancel={handlePointerUp}
                 onContextMenu={(e) => e.preventDefault()}
                 aria-label={`Set ${ri + 1}${r !== null ? `, ${r} reps` : ''}`}
-                className={`relative shrink-0 w-full aspect-square max-w-[62px] rounded-full flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
+                className={`relative w-full aspect-[1.35] rounded-[10px] flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
               >
                 <span className="text-[20px] font-semibold">{r !== null ? r : target}</span>
                 {missed && (
-                  <>
-                    <svg
-                      viewBox="0 0 100 100"
-                      className="absolute pointer-events-none"
-                      style={{ inset: '-1.5px', width: 'calc(100% + 3px)', height: 'calc(100% + 3px)' }}
-                    >
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="48"
-                        fill="none"
-                        stroke="rgba(233,233,237,.55)"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        pathLength="100"
-                        transform="rotate(-90 50 50)"
-                        strokeDasharray={missedDasharray}
-                      />
-                    </svg>
-                    <span className="absolute -top-1 -right-1 w-[19px] h-[19px] rounded-full bg-neutral-tint flex items-center justify-center">
-                      <X size={9} weight="bold" />
-                    </span>
-                  </>
+                  <span className="absolute -top-1 -right-1 w-[19px] h-[19px] rounded-full bg-neutral-tint flex items-center justify-center">
+                    <X size={9} weight="bold" />
+                  </span>
                 )}
               </button>
               {isRamped && <span className={`text-kicker tabular-nums ${ri === topIndex ? 'font-semibold text-accent-300' : mutedClass}`}>{ex.setWeights[ri]}</span>}

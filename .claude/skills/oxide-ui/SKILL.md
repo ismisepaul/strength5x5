@@ -1,27 +1,30 @@
 ---
-name: nocturne-ui
+name: oxide-ui
 description: Design rules for any UI work in the Strength 5x5 app — styling, layout, colors, typography, icons, modals, sheets, navigation, or new screens. Use before writing or reviewing JSX/Tailwind in src/, and whenever a change touches how something looks or how a gesture is discovered. Triggers on "style", "restyle", "redesign", "theme", "colors", "dark mode", "layout", "component", "modal", "sheet", "nav", "icon", "spacing".
 ---
 
-# Nocturne UI
+# Oxide UI
 
-Strength 5x5 uses one design language: **Nocturne** — quiet, single-accent, structural.
+Strength 5x5 uses one design language: **Oxide** — warm, single-accent, structural, built
+around the weight room (plate stacks, planned load, big numerals).
 Full spec: [docs/design-system.md](../../../docs/design-system.md). Migration spec:
-[docs/design/nocturne-implementation-plan.md](../../../docs/design/nocturne-implementation-plan.md).
-Visual reference: `docs/design/nocturne-prototype.dc.html` (read as markup; option 1a only).
+[docs/design/oxide-implementation-plan.md](../../../docs/design/oxide-implementation-plan.md).
+Visual reference: `docs/design/oxide-prototype.dc.html` (read as markup; `variant="oxide"` only).
 
 ## Non-negotiables
 
-- **One accent: `#9184d9`.** No emerald, rose, amber, indigo, blue or raw slate. Status is
-  never carried by hue — pair it with a shape (dashed ring, hollow dot, corner badge).
+- **One accent: `#c8663a` dark / `#b4552b` light.** No emerald, rose, amber, indigo, blue,
+  purple/lilac or raw slate. Status is never carried by hue — pair it with a shape (dashed
+  border, hollow dot, corner badge).
 - **Inter, weight ≤ 600.** No `font-black`. Uppercase only on kickers (9.5–10px, .12–.14em,
   accent, weight 600).
 - **One radius scale:** 8–10px cards/buttons, 12px modals, `14px 14px 0 0` sheets. Set
-  targets and adherence dots are circles. Nothing else.
+  targets are rounded rectangles (`aspect-[1.35]`, 10px radius), not circles. Adherence
+  dots stay circles.
 - **Primary buttons are a 1px accent outline on transparent.** Never filled. Secondary =
   `ink/18` outline. Tertiary = plain text.
-- **Surfaces:** ground `#161826`, cards `#232532`, 1px `ink/8–18` border, no shadow.
-  Muted text is the ink token at 55/45/38% alpha, never a grey.
+- **Surfaces:** ground/surface/deep/nav tokens live in `src/index.css`; 1px `ink/8–18`
+  border, no shadow. Muted text is the ink token at 55/45/38% alpha, never a grey.
 - **Tab bar never collapses**, including mid-workout. Train always routes to the live
   workout when one is active. A live bar appears above the nav on other tabs.
 - **Nothing dead on screen** — no placeholder slots for unprogrammed sets.
@@ -33,7 +36,8 @@ Visual reference: `docs/design/nocturne-prototype.dc.html` (read as markup; opti
 Tailwind **v4** — there is no `tailwind.config.js`. Add tokens to the `@theme` block in
 [src/index.css](../../../src/index.css) as `--color-*`; they become utilities
 automatically. Never name one after a stock palette entry (`--color-neutral-800`), which
-silently overrides Tailwind's own.
+silently overrides Tailwind's own. Light mode overrides the **same** variable names inside
+`:root[data-theme='light']` — there is no separate `-lt`-suffixed token set.
 
 ## Every UI change also
 
@@ -49,7 +53,7 @@ silently overrides Tailwind's own.
 ## Before finishing
 
 ```bash
-grep -roE "(bg|text|border|ring|from|to|fill|stroke)-(emerald|rose|amber|indigo|blue|slate)-[0-9]+" src
+grep -roE "(bg|text|border|ring|from|to|fill|stroke)-(emerald|rose|amber|indigo|blue|slate|violet|purple)-[0-9]+" src
 grep -ro "font-black" src
 grep -roE "rounded(-\[[^]]+\]|-[a-z0-9]+)?" src | sed 's/^[^:]*://' | sort | uniq -c
 npm test

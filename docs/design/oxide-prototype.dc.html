@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<style>
+body { margin: 0; }
+input { font-family: inherit; }
+</style>
+</helmet>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ fw }}" height="{{ fh }}" dark="{{ isDark }}" background="{{ T.ground }}" hint-size="392px,800px">
+<div style="height:100%;display:flex;flex-direction:column;overflow:hidden;font-family:Inter,system-ui,sans-serif;font-size:14px;background:{{ T.ground }};color:{{ T.ink }}">
+
+  <sc-if value="{{ showHeader }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:14px 20px 10px;display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:8px">
+        <i class="ph-fill ph-barbell" style="font-size:20px;color:{{ T.accent }}"></i>
+        <span style="font-size:17px;font-weight:600;letter-spacing:-0.01em">Strength 5x5</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="display:flex;align-items:center;gap:4px">
+          <i class="ph-fill ph-flame" style="font-size:15px;color:{{ T.accent }}"></i>
+          <span style="font-size:12.5px;color:{{ T.ink55 }}">3-week streak</span>
+        </div>
+        <div style="width:36px;height:36px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;border:1px solid {{ T.ink15 }}">
+          <i class="ph ph-question" style="font-size:18px"></i>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showTimer }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;padding:{{ timer.pad }};background:{{ T.deep }}">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between">
+        <div style="display:flex;align-items:flex-end;gap:8px">
+          <div>
+            <p style="margin:0 0 2px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:{{ timer.kickerColor }}">{{ timer.kicker }}</p>
+            <p style="margin:0;font-size:{{ timer.digitSize }};font-weight:500;font-variant-numeric:tabular-nums;line-height:1;color:{{ timer.digitColor }}">{{ timer.digits }}</p>
+          </div>
+          <sc-if value="{{ timer.showSkip }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ onSkip }}" style="width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;color:{{ T.ink }};border:1px solid {{ T.ink18 }}">
+              <i class="ph-fill ph-skip-forward" style="font-size:14px"></i>
+            </button>
+          </sc-if>
+        </div>
+        <div style="text-align:right">
+          <p style="margin:0 0 2px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:{{ T.accent }}">Workout A</p>
+          <p style="margin:0;font-size:16px;font-variant-numeric:tabular-nums;line-height:1;color:{{ T.ink60 }}">{{ timer.session }}</p>
+        </div>
+      </div>
+      <div style="height:{{ timer.barH }};width:100%;margin-top:10px;overflow:hidden;background:{{ T.ink8 }}">
+        <div style="height:100%;transition:width 1s linear;width:{{ timer.progress }};background:linear-gradient(to right, transparent, {{ T.accent }} 24px, {{ T.accent }})"></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:16px">
+
+    <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="margin-bottom:16px">
+          <p style="margin:0 0 4px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:{{ T.accent }}">Standard 5×5</p>
+          <div style="display:flex;align-items:center;gap:10px">
+            <h2 style="margin:0;font-size:32px;font-weight:500;line-height:1.15;letter-spacing:-0.02em">Workout A</h2>
+            <div style="width:38px;height:38px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;border:1px solid {{ T.ink18 }}">
+              <i class="ph ph-caret-down" style="font-size:16px"></i>
+            </div>
+          </div>
+          <p style="margin:4px 0 0;font-size:13.5px;color:{{ T.ink45 }}">Back Squat · Bench Press · Barbell Row</p>
+        </div>
+
+        <div style="margin-bottom:32px">
+          <sc-for list="{{ idleRows }}" as="row" hint-placeholder-count="3">
+            <div style="padding:15px 0;background:{{ T.rule }}">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <button onClick="{{ row.onToggleBar }}" style="display:flex;flex-direction:column;align-items:flex-start;min-height:44px;justify-content:center;text-align:left;flex:1;min-width:0;padding:0 12px 0 0;background:transparent;border:0;cursor:pointer;color:inherit;font-family:inherit">
+                  <div style="display:flex;align-items:center;gap:6px;min-width:0">
+                    <span style="font-size:16px;font-weight:500">{{ row.name }}</span>
+                    <i class="ph-bold ph-caret-down" style="font-size:12px;opacity:0.35;transform:{{ row.caret }}"></i>
+                  </div>
+                  <span style="font-size:12.5px;color:{{ T.ink45 }}">{{ row.meta }}</span>
+                  <sc-if value="{{ F.plateStrip }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;align-items:flex-end;gap:3px;height:20px;margin-top:6px">
+                      <sc-for list="{{ row.plates }}" as="p" hint-placeholder-count="2">
+                        <div style="width:6px;border-radius:2px;height:{{ p.h }};background:{{ p.bg }}"></div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </button>
+                <div style="display:flex;align-items:center;gap:8px;flex:none">
+                  <button onClick="{{ row.onDec }}" style="width:44px;height:44px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;border:1px solid {{ T.ink18 }};color:{{ T.ink60 }}"><i class="ph ph-minus" style="font-size:15px"></i></button>
+                  <div style="display:flex;align-items:baseline;gap:4px">
+                    <span style="width:{{ W.width }};text-align:center;font-size:{{ W.size }};font-weight:500;font-variant-numeric:tabular-nums;display:inline-block;padding-bottom:2px;color:{{ T.aText }};border-bottom:1.5px solid {{ T.ink18 }}">{{ row.weight }}</span>
+                    <span style="font-size:13px;color:{{ T.ink45 }}">kg</span>
+                  </div>
+                  <button onClick="{{ row.onInc }}" style="width:44px;height:44px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;border:1px solid {{ T.ink18 }};color:{{ T.ink60 }}"><i class="ph ph-plus" style="font-size:15px"></i></button>
+                </div>
+              </div>
+              <sc-if value="{{ row.barOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px;border-radius:9px;padding:14px;background:{{ T.surface70 }}">
+                  <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+                    <div style="width:30px;height:11px;border-radius:3px 0 0 3px;background:{{ T.tint }}"></div>
+                    <div style="width:9px;height:46px;border-radius:3px;background:{{ T.tint }}"></div>
+                    <sc-for list="{{ row.bigPlates }}" as="p" hint-placeholder-count="2">
+                      <div style="width:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;height:{{ p.h }};background:{{ p.bg }};color:{{ p.fg }}">{{ p.w }}</div>
+                    </sc-for>
+                    <div style="height:11px;border-radius:0 3px 3px 0;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;background:{{ T.tint }};color:{{ T.ink }}">20</div>
+                  </div>
+                  <p style="margin:12px 0 0;text-align:center;font-size:11px;color:{{ T.ink40 }}">{{ row.plateCaption }}</p>
+                  <button onClick="{{ noop }}" style="display:flex;align-items:center;gap:4px;min-height:36px;margin-top:12px;font-size:12.5px;font-weight:500;background:transparent;border:0;cursor:pointer;font-family:inherit;color:{{ T.aText }}"><i class="ph ph-info" style="font-size:13px"></i> How to perform</button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ F.tonnage }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 2px 14px">
+            <span style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:{{ T.ink45 }}">Planned load</span>
+            <span style="font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;color:{{ T.aText }}">{{ plannedVolume }} <span style="font-size:12px;color:{{ T.ink45 }}">kg</span></span>
+          </div>
+        </sc-if>
+
+        <button onClick="{{ onStart }}" style="width:100%;height:54px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:500;font-family:inherit;background:transparent;cursor:pointer;border:1px solid {{ T.accent }};color:{{ T.accent }}">
+          <i class="ph-fill ph-play" style="font-size:18px"></i> Start workout
+        </button>
+        <p style="margin:12px 0 0;text-align:center;font-size:12px;color:{{ T.ink38 }}">1 of 3 workouts this week</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isActive }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <sc-if value="{{ showActiveKicker }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;justify-content:center;margin-bottom:8px">
+            <span style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:{{ T.ink45 }}">Workout A</span>
+          </div>
+        </sc-if>
+        <sc-for list="{{ cards }}" as="c" hint-placeholder-count="3">
+          <div style="padding:16px;border-radius:{{ R.ctl }};margin-bottom:24px;background:{{ T.surface }};border:1px solid {{ T.ink8 }}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:8px">
+              <div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px">
+                <h3 style="margin:0;font-size:17px;font-weight:600;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</h3>
+                <button onClick="{{ noop }}" style="width:24px;height:24px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:0;padding:0;cursor:pointer;color:{{ T.ink45 }}"><i class="ph ph-info" style="font-size:15px"></i></button>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex:none">
+                <button onClick="{{ c.onDec }}" style="width:44px;height:44px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;border:1px solid {{ T.ink18 }};color:{{ T.ink60 }}"><i class="ph ph-minus" style="font-size:15px"></i></button>
+                <div style="display:flex;align-items:baseline;gap:4px">
+                  <span style="width:{{ W.width }};text-align:center;font-size:{{ W.size }};font-weight:500;font-variant-numeric:tabular-nums;display:inline-block;padding-bottom:2px;color:{{ T.aText }};border-bottom:1.5px solid {{ T.ink18 }}">{{ c.weight }}</span>
+                  <span style="font-size:13px;color:{{ T.ink45 }}">kg</span>
+                </div>
+                <button onClick="{{ c.onInc }}" style="width:44px;height:44px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;border:1px solid {{ T.ink18 }};color:{{ T.ink60 }}"><i class="ph ph-plus" style="font-size:15px"></i></button>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:flex-start;gap:8px;align-items:center">
+              <sc-for list="{{ c.sets }}" as="s" hint-placeholder-count="5">
+                <button onClick="{{ s.onClick }}" style="position:relative;flex:1;min-width:0;aspect-ratio:{{ S.ratio }};max-width:{{ S.max }};border-radius:{{ S.radius }};display:flex;align-items:center;justify-content:center;font-family:inherit;font-size:20px;font-weight:600;cursor:pointer;transition:all .15s;border:{{ s.border }};background:{{ s.bg }};color:{{ s.fg }}">
+                  <span>{{ s.label }}</span>
+                  <sc-if value="{{ s.ring }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;inset:-1.5px;pointer-events:none">
+                      <svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block">
+                        <circle cx="50" cy="50" r="48" fill="none" stroke="{{ T.missedRing }}" stroke-width="3" stroke-linecap="round" path-length="100" transform="rotate(-90 50 50)" stroke-dasharray="{{ s.dash }}"></circle>
+                      </svg>
+                    </span>
+                  </sc-if>
+                  <sc-if value="{{ s.missed }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;top:-4px;right:-4px;width:19px;height:19px;border-radius:9999px;display:flex;align-items:center;justify-content:center;background:{{ T.tint }};color:{{ T.ink }}"><i class="ph-bold ph-x" style="font-size:9px"></i></span>
+                  </sc-if>
+                </button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ c.hasMissed }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:12px 0 0;display:flex;align-items:center;gap:4px;font-size:12.5px">
+                <i class="ph ph-arrow-bend-down-right" style="font-size:13px;flex:none;color:{{ T.accent }}"></i>
+                <span style="color:{{ T.ink55 }}">{{ c.missedNote }}</span>
+              </p>
+            </sc-if>
+            <sc-if value="{{ c.showHint }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:12px 0 0;font-size:12px;color:{{ T.ink38 }}">Tap to log 5 reps. Long-press to set exact count.</p>
+            </sc-if>
+
+            <div style="margin-top:16px;padding-top:12px;display:flex;align-items:center;justify-content:space-between;background:{{ T.ruleTop }}">
+              <button onClick="{{ c.onWarm }}" style="display:flex;align-items:center;gap:4px;min-height:36px;font-size:12.5px;font-weight:500;background:transparent;border:0;cursor:pointer;font-family:inherit;color:{{ c.warmColor }}">
+                <i class="ph {{ c.warmCaret }}" style="font-size:11px"></i> Warm-up
+              </button>
+              <button onClick="{{ c.onBar }}" style="display:flex;align-items:center;gap:4px;min-height:36px;font-size:12.5px;font-weight:500;background:transparent;border:0;cursor:pointer;font-family:inherit;color:{{ c.barColor }}">
+                Bar setup <i class="ph {{ c.barCaret }}" style="font-size:11px"></i>
+              </button>
+            </div>
+
+            <sc-if value="{{ c.warmOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:8px;border-radius:9px;padding:14px;display:flex;flex-direction:column;gap:8px;background:{{ T.ground60 }}">
+                <div style="display:flex;justify-content:space-between;font-size:13px;font-variant-numeric:tabular-nums;color:{{ T.ink45 }}"><span>Empty bar</span><span>20 kg × 5</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;font-variant-numeric:tabular-nums;color:{{ T.ink45 }}"><span>Prep</span><span>{{ c.prep }} kg × 3</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;font-variant-numeric:tabular-nums;color:{{ T.aText }}"><span>Working weight</span><span>{{ c.weight }} kg × 5</span></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ c.barOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:8px;border-radius:9px;padding:14px;background:{{ T.ground60 }}">
+                <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+                  <div style="width:30px;height:11px;border-radius:3px 0 0 3px;background:{{ T.tint }}"></div>
+                  <div style="width:9px;height:46px;border-radius:3px;background:{{ T.tint }}"></div>
+                  <sc-for list="{{ c.bigPlates }}" as="p" hint-placeholder-count="2">
+                    <div style="width:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;height:{{ p.h }};background:{{ p.bg }};color:{{ p.fg }}">{{ p.w }}</div>
+                  </sc-for>
+                  <div style="height:11px;border-radius:0 3px 3px 0;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;background:{{ T.tint }};color:{{ T.ink }}">20</div>
+                </div>
+                <p style="margin:12px 0 0;text-align:center;font-size:11px;color:{{ T.ink40 }}">{{ c.plateCaption }}</p>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <div style="padding-top:16px;display:flex;flex-direction:column;align-items:center">
+          <button onClick="{{ onFinish }}" style="width:100%;height:52px;border-radius:{{ R.ctl }};font-size:15.5px;font-weight:500;font-family:inherit;background:transparent;cursor:pointer;border:1px solid {{ finish.border }};color:{{ finish.color }}">Finish workout</button>
+          <sc-if value="{{ finish.showNote }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:12px 0 0;text-align:center;font-size:12px;color:{{ T.ink45 }}">Complete all sets to finish</p>
+          </sc-if>
+          <button onClick="{{ onDiscard }}" style="margin-top:32px;width:100%;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;font-family:inherit;background:transparent;border:0;cursor:pointer;color:{{ T.ink45 }}">Discard workout</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isProgram }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-0.01em">Program</h2>
+
+        <button onClick="{{ noop }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border-radius:{{ R.ctl }};text-align:left;font-family:inherit;cursor:pointer;border:1px solid {{ T.accent }};background:{{ T.aFill }}">
+          <i class="ph-fill ph-barbell" style="font-size:20px;flex:none;color:{{ T.aText }}"></i>
+          <div style="flex:1;min-width:0">
+            <p style="margin:0;font-size:16px;font-weight:600;color:{{ T.ink }}">Standard 5×5</p>
+            <p style="margin:0;font-size:12.5px;color:{{ T.ink55 }}">Straight sets · add weight every session</p>
+          </div>
+          <span style="display:flex;align-items:center;gap:4px;font-size:13.5px;flex:none;color:{{ T.aText }}">Change <i class="ph ph-caret-right" style="font-size:14px"></i></span>
+        </button>
+
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;flex:none;color:{{ T.accent }}">The program</span>
+          <div style="flex:1;height:1px;background:linear-gradient(to right, {{ T.ink15 }}, transparent)"></div>
+        </div>
+
+        <div style="display:flex;border-radius:{{ R.ctl }};overflow:hidden;border:1px solid {{ T.ink10 }}">
+          <sc-for list="{{ progTabs }}" as="p" hint-placeholder-count="2">
+            <button onClick="{{ p.onClick }}" style="flex:1;padding:12px 0;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;border:0;border-left:{{ p.divider }};background:{{ p.bg }};color:{{ p.color }};box-shadow:{{ p.ring }}">{{ p.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="padding:16px;border-radius:{{ R.ctl }};background:{{ T.surface }};border:1px solid {{ T.ink8 }}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <p style="margin:0;font-size:16px;font-weight:600">Workout {{ progDay }}</p>
+              <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.02em;padding:4px 10px;border-radius:8px;flex:none;color:{{ T.aText }};background:{{ T.aFill }}">Straight sets</span>
+            </div>
+            <span style="font-size:12.5px;flex:none;color:{{ T.ink45 }}">{{ dayVolume }} kg lifted</span>
+          </div>
+          <p style="margin:0 0 4px;font-size:13.5px;line-height:1.6;color:{{ T.ink45 }}">Same weight for all 5 sets. Complete all reps to add weight next session. If any reps are missed, weight remains the same.</p>
+          <p style="margin:0 0 16px;font-size:12px;line-height:1.6;color:{{ T.ink45 }}">Tap a lift to see how to perform it.</p>
+          <sc-for list="{{ dayLifts }}" as="l" hint-placeholder-count="3">
+            <div style="margin-top:{{ l.gapTop }};padding-top:{{ l.padTop }};background:{{ l.rule }}">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+                <span style="font-size:13.5px;font-weight:500">{{ l.name }}</span>
+                <span style="font-size:11.5px;flex:none;color:{{ T.ink40 }}">{{ l.setsReps }}</span>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:6px;margin-top:9px">
+                <sc-for list="{{ l.bars }}" as="b" hint-placeholder-count="5">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center">
+                    <div style="width:100%;height:52px;border-radius:4px 4px 2px 2px;background:{{ T.accent40 }};border:1px solid {{ T.accent35 }}"></div>
+                    <span style="font-size:11px;font-variant-numeric:tabular-nums;margin-top:6px;line-height:1;color:{{ T.ink50 }}">{{ b.w }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="padding:16px;border-radius:{{ R.ctl }};background:{{ T.surface }};border:1px solid {{ T.ink8 }}">
+          <p style="margin:0 0 16px;font-size:16px;font-weight:600">Progression</p>
+          <sc-for list="{{ progressionRows }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;background:{{ r.rule }}">
+              <span style="font-size:13.5px;color:{{ T.ink45 }}">{{ r.label }}</span>
+              <span style="font-size:13.5px;text-align:right">{{ r.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;flex:none;color:{{ T.accent }}">Adjust</span>
+          <div style="flex:1;height:1px;background:linear-gradient(to right, {{ T.ink15 }}, transparent)"></div>
+        </div>
+
+        <div style="padding:16px;border-radius:{{ R.ctl }};background:{{ T.surface }};border:1px solid {{ T.ink8 }}">
+          <button onClick="{{ onToggleCustomise }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:15px;font-family:inherit;background:transparent;border:0;cursor:pointer;padding:0;color:{{ customiseColor }}">
+            Customise sets and reps
+            <i class="ph {{ customiseCaret }}" style="font-size:14px"></i>
+          </button>
+          <p style="margin:8px 0 0;font-size:13px;line-height:1.6;color:{{ T.ink45 }}">Modifying sets or reps creates a custom variation. Automatic progression rules still apply.</p>
+          <sc-if value="{{ customiseOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:16px;display:flex;flex-direction:column;gap:16px">
+              <sc-for list="{{ editorRows }}" as="e" hint-placeholder-count="5">
+                <div style="padding:16px;border-radius:{{ R.ctl }};background:{{ T.surface }};border:1px solid {{ T.ink8 }}">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px">
+                    <p style="margin:0;font-size:15px;font-weight:600">{{ e.name }}</p>
+                    <p style="margin:0;font-size:12.5px;color:{{ T.ink50 }}">{{ e.summary }}</p>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+                    <span style="width:36px;font-size:12px;text-transform:uppercase;color:{{ T.ink45 }}">Sets</span>
+                    <div style="flex:1;display:flex;gap:4px">
+                      <sc-for list="{{ e.setBars }}" as="b" hint-placeholder-count="5">
+                        <div style="flex:1;height:6px;border-radius:9999px;background:{{ b.bg }}"></div>
+                      </sc-for>
+                    </div>
+                    <button onClick="{{ e.onSetsDec }}" style="width:40px;height:40px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;border:1px solid {{ T.ink18 }};color:{{ T.ink60 }}"><i class="ph ph-minus" style="font-size:16px"></i></button>
+                    <span style="width:24px;text-align:center;font-size:19px;font-variant-numeric:tabular-nums">{{ e.sets }}</span>
+                    <button onClick="{{ e.onSetsInc }}" style="width:40px;height:40px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;border:1px solid {{ T.ink18 }};color:{{ T.ink60 }}"><i class="ph ph-plus" style="font-size:16px"></i></button>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:36px;font-size:12px;text-transform:uppercase;color:{{ T.ink45 }}">Reps</span>
+                    <div style="flex:1;display:flex;justify-content:space-between">
+                      <sc-for list="{{ e.repDots }}" as="d" hint-placeholder-count="10">
+                        <div style="width:6px;height:6px;border-radius:9999px;background:{{ d.bg }}"></div>
+                      </sc-for>
+                    </div>
+                    <button onClick="{{ e.onRepsDec }}" style="width:40px;height:40px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;border:1px solid {{ T.ink18 }};color:{{ T.ink60 }}"><i class="ph ph-minus" style="font-size:16px"></i></button>
+                    <span style="width:24px;text-align:center;font-size:19px;font-variant-numeric:tabular-nums">{{ e.reps }}</span>
+                    <button onClick="{{ e.onRepsInc }}" style="width:40px;height:40px;border-radius:{{ R.ctl }};display:flex;align-items:center;justify-content:center;flex:none;background:transparent;cursor:pointer;border:1px solid {{ T.ink18 }};color:{{ T.ink60 }}"><i class="ph ph-plus" style="font-size:16px"></i></button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStub }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:64px 8px;text-align:center">
+        <p style="margin:0 0 8px;font-size:15px;font-weight:600">{{ stubTitle }}</p>
+        <p style="margin:0;font-size:13px;line-height:1.6;color:{{ T.ink45 }}">Out of scope for this exploration — Train and Program are the screens under review.</p>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ showLiveBar }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:none;padding:6px 12px">
+      <button onClick="{{ onReturn }}" style="width:100%;height:40px;padding:0 16px;border-radius:9px;display:flex;align-items:center;justify-content:space-between;font-family:inherit;cursor:pointer;border:1px solid {{ T.accent }};background:{{ T.aFill }};color:{{ T.aText }}">
+        <span style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-variant-numeric:tabular-nums"><i class="ph-fill ph-play" style="font-size:13px"></i> {{ liveDetail }}</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:13.5px">Return <i class="ph ph-caret-right" style="font-size:12px"></i></span>
+      </button>
+    </div>
+  </sc-if>
+
+  <div style="flex:none;display:flex;justify-content:space-between;padding:6px 8px 6px;background:{{ T.nav }};border-top:1px solid {{ T.ink8 }}">
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+      <button onClick="{{ t.onClick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 10px;background:transparent;border:0;cursor:pointer;font-family:inherit;color:{{ t.color }}">
+        <i class="{{ t.icon }}" style="font-size:23px"></i>
+        <span style="font-size:11px">{{ t.label }}</span>
+      </button>
+    </sc-for>
+  </div>
+</div>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:440,&quot;height&quot;:830},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;oxide&quot;,&quot;forge&quot;,&quot;cold&quot;,&quot;warm&quot;,&quot;gym&quot;,&quot;combined&quot;,&quot;base&quot;,&quot;repair&quot;,&quot;weightroom&quot;,&quot;effort&quot;],&quot;default&quot;:&quot;forge&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;start&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;idle&quot;,&quot;active&quot;,&quot;program&quot;],&quot;default&quot;:&quot;idle&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const LIFTS = [
+  { id: 'squat', name: 'Back Squat', w: 60 },
+  { id: 'bench', name: 'Bench Press', w: 45 },
+  { id: 'row', name: 'Barbell Row', w: 50 },
+];
+
+const PLATE_STYLES = {
+  25:   { height: 118, bg: '#a8403e', text: '#e9e9ed' },
+  20:   { height: 112, bg: '#37628f', text: '#e9e9ed' },
+  15:   { height: 100, bg: '#b8971f', text: '#1a1608' },
+  10:   { height: 88,  bg: '#3a7a53', text: '#e9e9ed' },
+  5:    { height: 70,  bg: '#2a2c38', text: '#e9e9ed' },
+  2.5:  { height: 56,  bg: '#5f636f', text: '#e9e9ed' },
+  1.25: { height: 44,  bg: '#7c8090', text: '#e9e9ed' },
+};
+const PLATE_WEIGHTS = [25, 20, 15, 10, 5, 2.5, 1.25];
+
+const calculatePlates = (weight) => {
+  let per = Math.max(0, (weight - 20) / 2);
+  const out = [];
+  for (const p of PLATE_WEIGHTS) {
+    while (per >= p - 0.001) { out.push(p); per -= p; }
+  }
+  return out;
+};
+
+// Faithful to src/index.css: the shipped light theme overrides ground/surface/
+// surface-deep/surface-nav/ink only — accent-300 and accent-900 stay at their dark
+// values, which is exactly the unreadable-on-white problem this exploration is about.
+const THEMES = {
+  base: {
+    dark:  { ground:'#161826', surface:'#232532', deep:'#1c1e2c', nav:'#141624', ink:'#e9e9ed', accent:'#9184d9', aText:'#d2cefd', aFill:'#2b2741', tint:'#3f424d' },
+    light: { ground:'#f5f5f8', surface:'#ffffff', deep:'#ececf2', nav:'#ffffff', ink:'#1b1c28', accent:'#9184d9', aText:'#d2cefd', aFill:'#2b2741', tint:'#3f424d' },
+  },
+  repair: {
+    dark:  { ground:'#161826', surface:'#232532', deep:'#1c1e2c', nav:'#141624', ink:'#e9e9ed', accent:'#9184d9', aText:'#d2cefd', aFill:'#2b2741', tint:'#3f424d' },
+    light: { ground:'#f5f5f8', surface:'#ffffff', deep:'#ececf2', nav:'#ffffff', ink:'#1b1c28', accent:'#7b6ccb', aText:'#5b4fb0', aFill:'#efedfa', tint:'#d9dae2' },
+  },
+  weightroom: {
+    dark:  { ground:'#13151f', surface:'#1f2230', deep:'#181b26', nav:'#0f1119', ink:'#ecebf0', accent:'#9184d9', aText:'#d2cefd', aFill:'#2b2741', tint:'#3f424d' },
+    light: { ground:'#f1efe9', surface:'#fffefb', deep:'#e7e4db', nav:'#fffefb', ink:'#1a1814', accent:'#6f5fc4', aText:'#4e3fa6', aFill:'#eeebfa', tint:'#d6d2c8' },
+  },
+  combined: {
+    dark:  { ground:'#13151f', surface:'#1f2230', deep:'#181b26', nav:'#0f1119', ink:'#ecebf0', accent:'#9184d9', aText:'#d2cefd', aFill:'#2b2741', tint:'#3f424d' },
+    light: { ground:'#f1efe9', surface:'#fffefb', deep:'#e7e4db', nav:'#fffefb', ink:'#1a1814', accent:'#6f5fc4', aText:'#4e3fa6', aFill:'#eeebfa', tint:'#d6d2c8' },
+  },
+  oxide: {
+    dark:  { ground:'#141310', surface:'#1f1d18', deep:'#191713', nav:'#100f0c', ink:'#ece9e2', accent:'#c8663a', aText:'#eda175', aFill:'#3a2413', tint:'#433d34' },
+    light: { ground:'#f7f4ef', surface:'#ffffff', deep:'#ece6dd', nav:'#ffffff', ink:'#191612', accent:'#b4552b', aText:'#93401d', aFill:'#f9e9df', tint:'#ded7cc' },
+  },
+  forge: {
+    dark:  { ground:'#131210', surface:'#1e1c17', deep:'#181613', nav:'#0f0e0c', ink:'#eeeae1', accent:'#cf8438', aText:'#f0b477', aFill:'#3a2a13', tint:'#443e34' },
+    light: { ground:'#f6f3ed', surface:'#ffffff', deep:'#ebe5da', nav:'#ffffff', ink:'#181510', accent:'#a85e21', aText:'#8a4c17', aFill:'#faecd9', tint:'#ded6c9' },
+  },
+  cold: {
+    dark:  { ground:'#0f141c', surface:'#1a212c', deep:'#141a24', nav:'#0b1017', ink:'#e5ecf3', accent:'#7f9bd4', aText:'#c3d6f2', aFill:'#1f2c3f', tint:'#39424f' },
+    light: { ground:'#eef1f5', surface:'#ffffff', deep:'#e1e7ee', nav:'#ffffff', ink:'#121924', accent:'#4a70ab', aText:'#2f5794', aFill:'#e6edf9', tint:'#ccd4de' },
+  },
+  warm: {
+    dark:  { ground:'#16120e', surface:'#211b15', deep:'#1b1611', nav:'#110e0a', ink:'#efe8dd', accent:'#c9973f', aText:'#e8c485', aFill:'#362817', tint:'#443c31' },
+    light: { ground:'#f6f1e7', surface:'#fffdf8', deep:'#ebe3d4', nav:'#fffdf8', ink:'#1b1712', accent:'#a4762a', aText:'#84601f', aFill:'#f8ecd5', tint:'#ddd4c3' },
+  },
+  gym: {
+    dark:  { ground:'#0e0f0d', surface:'#191b17', deep:'#131512', nav:'#0a0b09', ink:'#f0f2ec', accent:'#a8cf3e', aText:'#cfe589', aFill:'#242e18', tint:'#3b3f36' },
+    light: { ground:'#f1f2ec', surface:'#ffffff', deep:'#e5e8dd', nav:'#ffffff', ink:'#13150f', accent:'#5f7a14', aText:'#4c6310', aFill:'#eef3da', tint:'#d4d8ca' },
+  },
+  effort: {
+    dark:  { ground:'#141310', surface:'#1f1d18', deep:'#191713', nav:'#100f0c', ink:'#ece9e2', accent:'#c8663a', aText:'#eda175', aFill:'#3a2413', tint:'#433d34' },
+    light: { ground:'#f7f4ef', surface:'#ffffff', deep:'#ece6dd', nav:'#ffffff', ink:'#191612', accent:'#b4552b', aText:'#93401d', aFill:'#f9e9df', tint:'#ded7cc' },
+  },
+};
+
+const FLAGS = {
+  base: {},
+  repair: {},
+  weightroom: { plateStrip: true, bigWeight: true, tonnage: true },
+  effort: { repBar: true, fullTimer: true, bigWeight: true, tonnage: true },
+  combined: { plateStrip: true, bigWeight: true, tonnage: true, repBar: true, fullTimer: true },
+  oxide: { plateStrip: true, bigWeight: true, tonnage: true, repBar: true, fullTimer: true },
+  forge: { plateStrip: true, bigWeight: true, tonnage: true, repBar: true, fullTimer: true, hardEdge: true },
+  cold: { plateStrip: true, bigWeight: true, tonnage: true, repBar: true, fullTimer: true },
+  warm: { plateStrip: true, bigWeight: true, tonnage: true, repBar: true, fullTimer: true },
+  gym: { plateStrip: true, bigWeight: true, tonnage: true, repBar: true, fullTimer: true, hardEdge: true },
+};
+
+const hexToRgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const fmtClock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const prepOf = (w) => Math.round((20 + (w - 20) * 0.6) / 2.5) * 2.5;
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const start = props.start || 'idle';
+    this.state = {
+      tab: start === 'program' ? 'program' : 'train',
+      active: start === 'active',
+      sets: start === 'active'
+        ? { squat: [5, 5, 4, null, null], bench: [null, null, null, null, null], row: [null, null, null, null, null] }
+        : { squat: [null, null, null, null, null], bench: [null, null, null, null, null], row: [null, null, null, null, null] },
+      weights: { squat: 60, bench: 45, row: 50 },
+      panel: {},
+      barOpen: {},
+      timerOn: start === 'active',
+      remaining: 62,
+      total: 90,
+      expired: false,
+      elapsed: 0,
+      session: start === 'active' ? 512 : 0,
+      progDay: 'A',
+      customise: start === 'program',
+      prog: { squat: { sets: 5, reps: 5 }, bench: { sets: 5, reps: 5 }, row: { sets: 5, reps: 5 }, press: { sets: 5, reps: 5 }, deadlift: { sets: 1, reps: 5 } },
+    };
+  }
+
+  componentDidMount() {
+    this.tick = setInterval(() => {
+      this.setState(s => {
+        if (!s.active) return null;
+        const next = { session: s.session + 1 };
+        if (s.timerOn && !s.expired) {
+          if (s.remaining <= 1) { next.remaining = 0; next.expired = true; next.elapsed = 0; }
+          else next.remaining = s.remaining - 1;
+        } else if (s.expired) next.elapsed = s.elapsed + 1;
+        return next;
+      });
+    }, 1000);
+  }
+  componentWillUnmount() { clearInterval(this.tick); }
+
+  tokens() {
+    const theme = this.props.theme === 'light' ? 'light' : 'dark';
+    const variant = this.props.variant || 'base';
+    const t = THEMES[variant][theme];
+    const [r, g, b] = hexToRgb(t.ink);
+    const a = (v) => `rgba(${r},${g},${b},${v})`;
+    const [ar, ag, ab] = hexToRgb(t.accent);
+    const ruleAt = (alpha, inset) => `linear-gradient(to right, transparent, ${a(alpha)} ${inset}px, ${a(alpha)} calc(100% - ${inset}px), transparent) bottom / 100% 1px no-repeat`;
+    return Object.assign({}, t, {
+      ink70: a(0.7), ink60: a(0.6), ink55: a(0.55), ink50: a(0.5), ink45: a(0.45),
+      ink40: a(0.4), ink38: a(0.38), ink35: a(0.35), ink30: a(0.3), ink18: a(0.18),
+      ink15: a(0.15), ink12: a(0.12), ink10: a(0.1), ink8: a(0.08),
+      accent40: `rgba(${ar},${ag},${ab},0.4)`,
+      accent35: `rgba(${ar},${ag},${ab},0.35)`,
+      surface70: t.surface,
+      ground60: theme === 'light' ? t.deep : t.ground,
+      missedRing: theme === 'light' ? 'rgba(27,28,40,.45)' : 'rgba(233,233,237,.55)',
+      rule: ruleAt(theme === 'light' ? 0.1 : 0.09, 48),
+      ruleTop: `linear-gradient(to right, transparent, ${a(theme === 'light' ? 0.09 : 0.08)} 32px, ${a(theme === 'light' ? 0.09 : 0.08)} calc(100% - 32px), transparent) top / 100% 1px no-repeat`,
+    });
+  }
+
+  setTab = (id) => this.setState({ tab: id });
+
+  tapSet = (liftId, i) => {
+    this.setState(s => {
+      const arr = s.sets[liftId].slice();
+      const cur = arr[i];
+      arr[i] = cur === null ? 5 : cur > 0 ? cur - 1 : null;
+      const isLast = i === arr.length - 1;
+      const next = { sets: Object.assign({}, s.sets, { [liftId]: arr }) };
+      if (arr[i] !== null && !isLast) { next.timerOn = true; next.remaining = 90; next.total = 90; next.expired = false; next.elapsed = 0; }
+      else { next.timerOn = false; next.expired = false; }
+      return next;
+    });
+  };
+
+  bumpWeight = (liftId, d) => this.setState(s => ({ weights: Object.assign({}, s.weights, { [liftId]: Math.max(20, s.weights[liftId] + d) }) }));
+
+  bumpProg = (id, field, d, min, max) => this.setState(s => ({
+    prog: Object.assign({}, s.prog, { [id]: Object.assign({}, s.prog[id], { [field]: Math.min(max, Math.max(min, s.prog[id][field] + d)) }) }),
+  }));
+
+  plateBars(weight, T) {
+    return calculatePlates(weight).map((p, i) => ({ key: i, h: `${Math.round(PLATE_STYLES[p].height / 6)}px`, bg: PLATE_STYLES[p].bg }));
+  }
+  bigPlates(weight) {
+    return calculatePlates(weight).map((p, i) => ({ key: i, w: p, h: `${PLATE_STYLES[p].height}px`, bg: PLATE_STYLES[p].bg, fg: PLATE_STYLES[p].text }));
+  }
+  plateCaption(weight) {
+    return weight <= 20 ? 'Empty bar · 20 kg' : `Per side · 20 kg bar · ${weight} total`;
+  }
+
+  renderVals() {
+    const T = this.tokens();
+    const F = FLAGS[this.props.variant || 'base'] || {};
+    const s = this.state;
+    const isTrain = s.tab === 'train';
+    const isIdle = isTrain && !s.active;
+    const isActive = isTrain && s.active;
+    const isProgram = s.tab === 'program';
+    const isStub = !isTrain && !isProgram;
+
+    const W = F.bigWeight ? { size: '26px', width: '56px' } : { size: '19px', width: '60px' };
+    const R = { ctl: F.hardEdge ? '5px' : '10px' };
+    const S = F.repBar
+      ? { ratio: '1.35', max: '100%', radius: F.hardEdge ? '4px' : '10px' }
+      : { ratio: '1', max: '62px', radius: '9999px' };
+
+    // Timer readout — mirrors RestTimer.jsx's four states.
+    let kicker, digits, showSkip, accentState, progress;
+    if (s.timerOn && !s.expired) { kicker = 'Rest'; digits = s.remaining; showSkip = true; accentState = false; progress = (1 - s.remaining / s.total) * 100; }
+    else if (s.expired) { kicker = 'Lifting'; digits = s.elapsed; showSkip = true; accentState = true; progress = 100; }
+    else { kicker = 'In session'; digits = s.session; showSkip = false; accentState = false; progress = 0; }
+
+    const timer = {
+      kicker, showSkip,
+      digits: fmtClock(digits),
+      session: fmtClock(s.session),
+      kickerColor: accentState ? T.accent : T.ink45,
+      digitColor: accentState ? T.accent : T.ink,
+      digitSize: F.fullTimer ? '44px' : '30px',
+      barH: F.fullTimer ? '3px' : '2px',
+      pad: F.fullTimer ? '16px 20px 12px' : '12px 20px 10px',
+      progress: `${progress}%`,
+    };
+
+    const idleRows = LIFTS.map(l => {
+      const w = s.weights[l.id];
+      return {
+        key: l.id, name: l.name, meta: `${s.prog[l.id].sets} × ${s.prog[l.id].reps}`, weight: w,
+        caret: s.barOpen[l.id] ? 'rotate(180deg)' : 'rotate(0deg)',
+        barOpen: !!s.barOpen[l.id],
+        plates: this.plateBars(w, T),
+        plateLabel: w <= 20 ? 'empty bar' : `${calculatePlates(w).join(' + ')} per side`,
+        bigPlates: this.bigPlates(w),
+        plateCaption: this.plateCaption(w),
+        onToggleBar: () => this.setState(st => ({ barOpen: Object.assign({}, st.barOpen, { [l.id]: !st.barOpen[l.id] }) })),
+        onDec: () => this.bumpWeight(l.id, -2.5),
+        onInc: () => this.bumpWeight(l.id, 2.5),
+      };
+    });
+
+    const anyLogged = LIFTS.some(l => s.sets[l.id].some(v => v !== null));
+    const cards = LIFTS.map((l, li) => {
+      const arr = s.sets[l.id];
+      const w = s.weights[l.id];
+      const panel = s.panel[l.id] || null;
+      return {
+        key: l.id, name: l.name, weight: w, prep: prepOf(w),
+        sets: arr.map((v, i) => {
+          const passed = v !== null && v === 5;
+          const missed = v !== null && v < 5;
+          return {
+            key: i,
+            label: v !== null ? v : 5,
+            missed,
+            ring: missed && !F.repBar,
+            dash: v === 0 ? '0.5 24' : `3 ${Math.min(24, 3 * (5 - (v || 0)))}`,
+            border: passed ? `1px solid ${T.accent}`
+              : missed ? (F.repBar ? `1.5px dashed ${T.missedRing}` : '1.5px solid transparent')
+              : `1px solid ${T.ink18}`,
+            bg: passed ? T.aFill : missed ? T.tint : 'transparent',
+            fg: passed ? T.aText : missed ? T.ink : T.ink40,
+            onClick: () => this.tapSet(l.id, i),
+          };
+        }),
+        hasMissed: arr.some(v => v !== null && v < 5),
+        missedNote: `Missed reps: keep weight at ${w}kg next session`,
+        showHint: li === 0 && !anyLogged,
+        warmOpen: panel === 'warm',
+        barOpen: panel === 'bar',
+        warmColor: panel === 'warm' ? T.aText : T.ink45,
+        barColor: panel === 'bar' ? T.aText : T.ink45,
+        warmCaret: panel === 'warm' ? 'ph-caret-up' : 'ph-caret-down',
+        barCaret: panel === 'bar' ? 'ph-caret-up' : 'ph-caret-down',
+        bigPlates: this.bigPlates(w),
+        plateCaption: this.plateCaption(w),
+        onWarm: () => this.setState(st => ({ panel: Object.assign({}, st.panel, { [l.id]: st.panel[l.id] === 'warm' ? null : 'warm' }) })),
+        onBar: () => this.setState(st => ({ panel: Object.assign({}, st.panel, { [l.id]: st.panel[l.id] === 'bar' ? null : 'bar' }) })),
+        onDec: () => this.bumpWeight(l.id, -2.5),
+        onInc: () => this.bumpWeight(l.id, 2.5),
+      };
+    });
+
+    const allDone = LIFTS.every(l => s.sets[l.id].every(v => v !== null));
+    const dayLiftIds = s.progDay === 'A' ? ['squat', 'bench', 'row'] : ['squat', 'press', 'deadlift'];
+    const NAMES = { squat: 'Back Squat', bench: 'Bench Press', row: 'Barbell Row', press: 'Overhead Press', deadlift: 'Deadlift' };
+    const DEMO_W = { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 };
+    const dayVolume = dayLiftIds.reduce((n, id) => n + DEMO_W[id] * s.prog[id].sets * s.prog[id].reps, 0);
+    const plannedVolume = LIFTS.reduce((n, l) => n + s.weights[l.id] * s.prog[l.id].sets * s.prog[l.id].reps, 0);
+
+    const TABS = [
+      { id: 'train', label: 'Train', icon: 'ph-barbell' },
+      { id: 'program', label: 'Program', icon: 'ph-sliders-horizontal' },
+      { id: 'log', label: 'Log', icon: 'ph-list-checks' },
+      { id: 'stats', label: 'Stats', icon: 'ph-chart-line-up' },
+      { id: 'options', label: 'Options', icon: 'ph-gear' },
+    ];
+
+    return {
+      T, F, W, S, R, timer,
+      fw: 412, fh: 800,
+      isDark: this.props.theme !== 'light',
+      showHeader: !(isActive),
+      showTimer: isActive,
+      showActiveKicker: !F.fullTimer,
+      isIdle, isActive, isProgram, isStub,
+      stubTitle: isStub ? TABS.filter(t => t.id === s.tab).map(t => t.label)[0] : '',
+      idleRows, cards,
+      plannedVolume: plannedVolume.toLocaleString(),
+      finish: {
+        border: allDone ? T.accent : T.ink12,
+        color: allDone ? T.accent : T.ink30,
+        showNote: !allDone,
+      },
+      showLiveBar: s.active && s.tab !== 'train',
+      liveDetail: s.expired ? `Lifting · ${fmtClock(s.elapsed)}` : s.timerOn ? `Resting · ${fmtClock(s.remaining)}` : 'Workout in progress',
+      onReturn: () => this.setTab('train'),
+      onStart: () => this.setState({ active: true, session: 0, timerOn: false, expired: false }),
+      onFinish: () => this.setState({ active: false, timerOn: false, expired: false, sets: { squat: [null, null, null, null, null], bench: [null, null, null, null, null], row: [null, null, null, null, null] } }),
+      onDiscard: () => this.setState({ active: false, timerOn: false, expired: false, sets: { squat: [null, null, null, null, null], bench: [null, null, null, null, null], row: [null, null, null, null, null] } }),
+      onSkip: () => this.setState({ timerOn: false, expired: false, remaining: 0 }),
+      noop: () => {},
+      tabs: TABS.map(t => ({
+        key: t.id, label: t.label,
+        icon: s.tab === t.id ? `ph-fill ${t.icon}` : `ph ${t.icon}`,
+        color: s.tab === t.id ? T.aText : T.ink35,
+        onClick: () => this.setTab(t.id),
+      })),
+      progDay: s.progDay,
+      progTabs: ['A', 'B'].map((d, i) => ({
+        key: d, label: `Workout ${d}`,
+        divider: i > 0 ? `1px solid ${T.ink10}` : '0',
+        bg: s.progDay === d ? T.aFill : 'transparent',
+        color: s.progDay === d ? T.aText : T.ink45,
+        ring: s.progDay === d ? `inset 0 0 0 1px ${T.accent}` : 'none',
+        onClick: () => this.setState({ progDay: d }),
+      })),
+      dayVolume: dayVolume.toLocaleString(),
+      dayLifts: dayLiftIds.map((id, i) => ({
+        key: id, name: NAMES[id],
+        setsReps: `${s.prog[id].sets}×${s.prog[id].reps}`,
+        gapTop: i > 0 ? '16px' : '0px',
+        padTop: i > 0 ? '16px' : '0px',
+        rule: i > 0 ? T.ruleTop : 'none',
+        bars: Array.from({ length: s.prog[id].sets }, (_, k) => ({ key: k, w: DEMO_W[id] })),
+      })),
+      progressionRows: [
+        ['All reps', '+2.5 kg next session · +5 kg deadlift'],
+        ['Missed reps', 'same weight again next time'],
+        ['Three misses in a row', 'deload 10% and work back up'],
+      ].map(([label, value], i) => ({ key: label, label, value, rule: i > 0 ? T.rule : 'none' })),
+      customiseOpen: s.customise,
+      customiseColor: s.customise ? T.aText : T.ink,
+      customiseCaret: s.customise ? 'ph-caret-up' : 'ph-caret-down',
+      onToggleCustomise: () => this.setState(st => ({ customise: !st.customise })),
+      editorRows: ['squat', 'bench', 'row', 'press', 'deadlift'].map(id => {
+        const p = s.prog[id];
+        return {
+          key: id, name: NAMES[id], sets: p.sets, reps: p.reps,
+          summary: `${p.sets} ${p.sets === 1 ? 'set' : 'sets'} of ${p.reps} ${p.reps === 1 ? 'rep' : 'reps'}`,
+          setBars: Array.from({ length: 5 }, (_, i) => ({ key: i, bg: i < p.sets ? T.accent : T.ink12 })),
+          repDots: Array.from({ length: 10 }, (_, i) => ({ key: i, bg: i < p.reps ? T.accent : T.ink12 })),
+          onSetsDec: () => this.bumpProg(id, 'sets', -1, 1, 5),
+          onSetsInc: () => this.bumpProg(id, 'sets', 1, 1, 5),
+          onRepsDec: () => this.bumpProg(id, 'reps', -1, 1, 10),
+          onRepsInc: () => this.bumpProg(id, 'reps', 1, 1, 10),
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>

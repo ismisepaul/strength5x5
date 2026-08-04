@@ -164,7 +164,7 @@ describe('System dark mode preference', () => {
   it('defaults to system preference when no saved isDark', () => {
     render(<App />);
     expect(document.documentElement.dataset.theme).toBe('dark');
-    expect(document.documentElement.style.getPropertyValue('--app-page-bg')).toBe('#161826');
+    expect(document.documentElement.style.getPropertyValue('--app-page-bg')).toBe('#141310');
   });
 
   it('respects saved light mode preference over system default', () => {
@@ -174,7 +174,7 @@ describe('System dark mode preference', () => {
     }));
     render(<App />);
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(document.documentElement.style.getPropertyValue('--app-page-bg')).toBe('#f5f5f8');
+    expect(document.documentElement.style.getPropertyValue('--app-page-bg')).toBe('#f7f4ef');
   });
 });
 

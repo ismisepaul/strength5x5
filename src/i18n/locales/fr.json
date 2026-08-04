@@ -35,6 +35,7 @@
     "trainedToday": "Entraîné aujourd'hui",
     "weekProgress": "{{count}} séance sur 3 cette semaine",
     "weekProgress_other": "{{count}} séances sur 3 cette semaine",
+    "plannedLoad": "Charge prévue",
     "setHint": "Touchez pour valider {{count}} répétitions. Maintenez pour choisir un nombre exact.",
     "missedNote": "Répétitions manquées : poids maintenu à {{weight}}kg la prochaine fois",
     "discardWorkout": "Abandonner",

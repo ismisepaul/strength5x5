@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { CaretDown, Play, Info } from '@phosphor-icons/react';
 import { INITIAL_WEIGHTS } from '../constants';
 import { getProgram, topWeightOf } from '../programs';
+import { plannedVolume } from '../utils';
 import WeightInput from '../components/WeightInput';
 import BarSetupDiagram from '../components/BarSetupDiagram';
+import PlateStrip from '../components/PlateStrip';
 import ExerciseCard from '../components/ExerciseCard';
 
 const TrainScreen = ({
@@ -65,6 +67,7 @@ const TrainScreen = ({
                         <p className="text-[12.5px] text-ink/45">
                           {isMadcow ? (day === 'C' ? t('workout.dayCMeta') : t('workout.rampSetsMeta', { sets: ex.sets, from: Math.min(...ex.setWeights), to: topWeight })) : `${ex.sets} × ${ex.reps}`}
                         </p>
+                        <PlateStrip weight={topWeight} />
                       </button>
                       <WeightInput
                         value={isMadcow ? mcTop[liftId] : weights[liftId]}
@@ -90,6 +93,10 @@ const TrainScreen = ({
                   </div>
                   );
                 })}</div>
+                <div className="flex justify-between items-baseline px-0.5 pb-3.5">
+                  <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-ink/45">{t('workout.plannedLoad')}</span>
+                  <span className="text-[20px] font-medium tabular-nums text-accent-300">{plannedVolume(dayExercises).toLocaleString()} <span className="text-meta text-ink/45">kg</span></span>
+                </div>
               </>
             );
           })()}

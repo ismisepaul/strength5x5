@@ -18,6 +18,7 @@ import {
   getProgramExercises,
   targetReps,
   isExercisePassed,
+  plannedVolume,
 } from '../utils';
 import { SCHEMA_VERSION, DEFAULT_PROGRAM, EXPECTED_WEIGHT_KEYS } from '../constants';
 
@@ -185,6 +186,31 @@ describe('calculateWarmup', () => {
 
   it('handles edge case at bar weight', () => {
     expect(calculateWarmup(30)).toBe(20); // 30*0.6 = 18 => round(18/2.5)*2.5 = 17.5 => max(20, 17.5) = 20
+  });
+});
+
+describe('plannedVolume', () => {
+  it('sums weight x sets x reps for flat Standard entries', () => {
+    const dayExercises = [
+      { weight: 60, sets: 5, reps: 5 },
+      { weight: 45, sets: 5, reps: 5 },
+    ];
+    expect(plannedVolume(dayExercises)).toBe(60 * 5 * 5 + 45 * 5 * 5);
+  });
+
+  it('sums per-set weight x reps for ramped Madcow entries', () => {
+    const dayExercises = [
+      { setWeights: [35, 45, 55], setReps: [5, 5, 5] },
+    ];
+    expect(plannedVolume(dayExercises)).toBe(35 * 5 + 45 * 5 + 55 * 5);
+  });
+
+  it('mixes flat and ramped entries in the same day', () => {
+    const dayExercises = [
+      { weight: 60, sets: 5, reps: 5 },
+      { setWeights: [35, 45, 55], setReps: [5, 5, 5] },
+    ];
+    expect(plannedVolume(dayExercises)).toBe(60 * 5 * 5 + (35 + 45 + 55) * 5);
   });
 });
 

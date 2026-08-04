@@ -18,7 +18,7 @@ const Segmented = ({ options, value, onChange, variant = 'uppercase' }) => {
         <button
           key={opt.val}
           onClick={() => onChange(opt.val)}
-          className={`flex-1 py-3 ${VARIANT_TEXT[variant]} transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${value === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_#9184d9]' : mutedClass}`}
+          className={`flex-1 py-3 ${VARIANT_TEXT[variant]} transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${value === opt.val ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_var(--color-accent)]' : mutedClass}`}
         >{opt.label}</button>
       ))}
     </div>

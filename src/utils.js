@@ -436,6 +436,18 @@ export function calculateWarmup(workingWeight) {
   return roundWeight(workingWeight * 0.6);
 }
 
+// Total kg across a day's exercises, shown on Train's idle screen above Start workout.
+// Works for both Standard's flat weight/sets/reps entries and Madcow's ramped
+// setWeights/setReps entries, since dayExercises() from programs.js can return either.
+export function plannedVolume(dayExercises) {
+  return dayExercises.reduce((total, ex) => {
+    if (Array.isArray(ex.setWeights)) {
+      return total + ex.setWeights.reduce((sum, w, i) => sum + w * (ex.setReps[i] ?? 0), 0);
+    }
+    return total + ex.weight * ex.sets * ex.reps;
+  }, 0);
+}
+
 export function deloadWeightByPercent(weight, percent, exerciseId) {
   const floor = INITIAL_WEIGHTS[exerciseId] ?? 20;
   return roundWeight(weight * (1 - percent / 100), MIN_WEIGHT_INCREMENT, floor);

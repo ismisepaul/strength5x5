@@ -8,7 +8,7 @@ import { roundWeight } from '../utils';
 // is always typeable. Draft state is local to each instance, so several of these
 // can be open on screen at once without stomping on each other.
 const VARIANTS = {
-  prominent: { size: 44, iconSize: 15, valueClass: 'text-[19px]', width: 'w-[60px]' },
+  prominent: { size: 44, iconSize: 15, valueClass: 'text-[26px]', width: 'w-[56px]' },
   compact: { size: 40, iconSize: 16, valueClass: 'text-[16px]', width: 'w-14' },
 };
 

@@ -129,7 +129,7 @@ const App = () => {
 
   useEffect(() => {
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
-    document.documentElement.style.setProperty('--app-page-bg', isDark ? '#161826' : '#f5f5f8');
+    document.documentElement.style.setProperty('--app-page-bg', isDark ? '#141310' : '#f7f4ef');
   }, [isDark]);
 
   useEffect(() => {
