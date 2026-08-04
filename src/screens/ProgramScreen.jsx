@@ -167,19 +167,16 @@ const ProgramScreen = ({
                 <p className="font-semibold text-[16px]">{t('program.madcow.weekLabel', { week: displayWeek })}</p>
                 <Badge>{t(`program.madcow.phase${phase === 'onramp' ? 'Onramp' : phase === 'matching' ? 'Matching' : 'Record'}`)}</Badge>
               </div>
-              {/* Read-only progress readout -- role carried by shape/fill, matching
-                  RampBars' own indicator-not-control convention below. Whichever week
-                  is on screen right now (progressed past or not) always reads solid,
-                  so the dash you're swiping to is never left looking hollow. */}
+              {/* A pagination indicator, not a progress bar -- only whichever week is
+                  on screen right now is filled (and widens into a dash); every other
+                  week, past or future, stays a hollow dot. */}
               <div className="flex items-center gap-1.5 mb-1">
                 {onrampDots.map(w => {
-                  const progressed = w <= mcWeek || madcowPhase(mcWeek, MADCOW_ONRAMP_WEEKS) === 'record';
                   const selected = displayWeek === w;
-                  const solid = progressed || selected;
                   return (
                     <div
                       key={w}
-                      className={`h-2 rounded-full border transition-[width] ${selected ? 'w-6' : 'w-2'} ${solid ? 'bg-accent border-accent' : 'border-accent/50'}`}
+                      className={`h-2 rounded-full border transition-[width] ${selected ? 'w-6 bg-accent border-accent' : 'w-2 border-accent/50'}`}
                     />
                   );
                 })}
