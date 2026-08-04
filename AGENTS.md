@@ -149,3 +149,10 @@ describe('Component', () => {
   radius outside the Nocturne scale (see Design System above)
 - Do not change training logic while changing presentation — a redesign task touches
   how things look, never how progression, deload, timing or sync behave
+
+## Automated Review
+
+GitHub Copilot's PR reviewer reads [.github/copilot-instructions.md](.github/copilot-instructions.md)
+for repo-specific review guidance (e.g. not flagging missing guards for standard browser
+APIs, since this app has no non-browser runtime target). Keep that file in sync with this
+one where they overlap.
