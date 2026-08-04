@@ -1,5 +1,5 @@
 {
-  "ignoreCommand": "[ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ] && exit 1; git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA^{commit}\" 2>/dev/null || exit 1; git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- src/ index.html public/ package.json package-lock.json .npmrc vite.config.js vercel.json",
+  "ignoreCommand": "s=$VERCEL_GIT_PREVIOUS_SHA; [ -z \"$s\" ] && exit 1; git cat-file -e \"$s^{commit}\" 2>/dev/null || exit 1; git diff --quiet \"$s\" HEAD -- src/ index.html public/ package.json package-lock.json .npmrc vite.config.js vercel.json",
   "headers": [
     {
       "source": "/(.*)",
