@@ -156,20 +156,26 @@ describe('WeightInput', () => {
       expect(screen.getByLabelText('Back Squat top set in kilograms')).toBeInTheDocument();
     });
 
-    it('shows a "Top set" caption in the prominent variant', () => {
-      render(<WeightInput {...defaultProps} topSet variant="prominent" />);
+    it('does not use top-set aria wording by default', () => {
+      render(<WeightInput {...defaultProps} />);
+      expect(screen.queryByLabelText('Increase Back Squat top set')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('caption', () => {
+    it('shows the given caption in the prominent variant', () => {
+      render(<WeightInput {...defaultProps} caption="Top set" variant="prominent" />);
       expect(screen.getByText('Top set')).toBeInTheDocument();
     });
 
     it('omits the caption in the compact variant, used inside already-labelled rows', () => {
-      render(<WeightInput {...defaultProps} topSet variant="compact" />);
+      render(<WeightInput {...defaultProps} caption="Top set" variant="compact" />);
       expect(screen.queryByText('Top set')).not.toBeInTheDocument();
     });
 
-    it('does not show the caption or top-set aria wording by default', () => {
+    it('shows no caption when none is given', () => {
       render(<WeightInput {...defaultProps} />);
       expect(screen.queryByText('Top set')).not.toBeInTheDocument();
-      expect(screen.queryByLabelText('Increase Back Squat top set')).not.toBeInTheDocument();
     });
   });
 });

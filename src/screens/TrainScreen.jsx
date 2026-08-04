@@ -11,7 +11,8 @@ const TrainScreen = ({
   isWorkoutActive, preset, getCurrentDay, program, weights, mcTop, mcInterval, mcPress, mcWeek, moodLabel,
   expandedBarSetup, setExpandedBarSetup, setWorkoutPicker, updateMcTop, handleUpdateIdleWeight, setGuideLift,
   startWorkout, trainedToday, workoutStats,
-  currentWorkout, handleToggleSet, handleOpenRepPicker, handleUpdateActiveWeight, finishWorkout, setShowCancelModal,
+  currentWorkout, handleToggleSet, handleOpenRepPicker, handleUpdateActiveWeight, handleUpdateActiveSetWeight,
+  finishWorkout, setShowCancelModal,
 }) => {
   const { t } = useTranslation();
 
@@ -73,6 +74,7 @@ const TrainScreen = ({
                         label={exName}
                         variant="prominent"
                         topSet={isMadcow}
+                        caption={isMadcow ? t('workout.topSetFieldLabel') : undefined}
                       />
                     </div>
                     {isBarSetupOpen && (
@@ -108,9 +110,8 @@ const TrainScreen = ({
                 onOpenRepPicker={handleOpenRepPicker}
                 showHint={exIdx === 0 && !anySetLogged}
                 onWeightChange={(next) => handleUpdateActiveWeight(exIdx, next)}
-                topSetValue={mcTop[ex.id]}
-                topSetMin={INITIAL_WEIGHTS[ex.id] ?? 20}
-                onTopSetChange={(next) => updateMcTop(ex.id, next)}
+                setWeightMin={INITIAL_WEIGHTS[ex.id] ?? 20}
+                onSetWeightChange={(setIdx, next) => handleUpdateActiveSetWeight(exIdx, setIdx, next)}
                 onOpenGuide={() => setGuideLift(ex.id)}
               />
             ));

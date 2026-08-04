@@ -26,11 +26,13 @@ export function reviseWorkoutTopSet(currentWorkout, liftId, clampedTop, mcInterv
   };
 }
 
-// The single place a Madcow top set gets changed. The Program tab, Train's idle
-// row, and Train's active-workout card all funnel through this (directly, or via
-// clampMcTop/reviseWorkoutTopSet individually -- see App.jsx's updateMcTop), so
-// persisted mcTop, the mirrored `weights` snapshot, and (if a workout for that
-// lift is mid-session) its remaining ramp never drift apart from each other.
+// The single place a Madcow top set gets changed. The Program tab and Train's idle
+// row both funnel through this (directly, or via clampMcTop/reviseWorkoutTopSet
+// individually -- see App.jsx's updateMcTop), so persisted mcTop, the mirrored
+// `weights` snapshot, and (if a workout for that lift is mid-session) its remaining
+// ramp never drift apart from each other. Train's active-workout card does NOT use
+// this -- its per-set control (App.jsx's handleUpdateActiveSetWeight) only ever
+// touches the one rung in progress and never persists to mcTop.
 export function updateMadcowTopSet({ liftId, nextTop, mcTop, weights, mcInterval, currentWorkout }) {
   const clamped = clampMcTop(liftId, nextTop);
   const nextMcTop = { ...mcTop, [liftId]: clamped };

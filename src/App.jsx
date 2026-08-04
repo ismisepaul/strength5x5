@@ -10,7 +10,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome } from './utils';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
 import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
@@ -174,7 +174,27 @@ const App = () => {
 
 
   const handleUpdateActiveWeight = useCallback((exIdx, nextWeight) => {
-    setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(0, nextWeight) })) }) : null);
+    setCurrentWorkout(prev => prev ? ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({ ...e, weight: Math.max(20, nextWeight) })) }) : null);
+  }, []);
+
+  // Madcow's in-workout weight control: unlike updateMcTop (Program tab, Train's idle
+  // row), this only ever touches the one rung the user is about to lift, and never
+  // persists to mcTop -- next week's programmed top is untouched by a same-session
+  // nudge. See ExerciseCard's currentSetIndex for how that rung is chosen.
+  const handleUpdateActiveSetWeight = useCallback((exIdx, setIdx, nextWeight) => {
+    setCurrentWorkout(prev => {
+      if (!prev) return prev;
+      const ex = prev.exercises[exIdx];
+      const floor = INITIAL_WEIGHTS[ex.id] ?? 20;
+      const clamped = roundWeight(nextWeight, ex.increment, floor);
+      return {
+        ...prev,
+        exercises: prev.exercises.map((e, i) => i !== exIdx ? e : ({
+          ...e,
+          setWeights: e.setWeights.map((w, j) => j === setIdx ? clamped : w),
+        })),
+      };
+    });
   }, []);
 
   // Idle-screen input adjusts `weights` directly (there's no active workout yet),
@@ -613,7 +633,8 @@ const App = () => {
             setWorkoutPicker={setWorkoutPicker} updateMcTop={updateMcTop} handleUpdateIdleWeight={handleUpdateIdleWeight}
             setGuideLift={setGuideLift} startWorkout={startWorkout} trainedToday={trainedToday} workoutStats={workoutStats}
             currentWorkout={currentWorkout} handleToggleSet={handleToggleSet} handleOpenRepPicker={handleOpenRepPicker}
-            handleUpdateActiveWeight={handleUpdateActiveWeight} finishWorkout={finishWorkout} setShowCancelModal={setShowCancelModal}
+            handleUpdateActiveWeight={handleUpdateActiveWeight} handleUpdateActiveSetWeight={handleUpdateActiveSetWeight}
+            finishWorkout={finishWorkout} setShowCancelModal={setShowCancelModal}
           />
         )}
 

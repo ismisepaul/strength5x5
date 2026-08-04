@@ -8,7 +8,7 @@ import BarSetupDiagram from './BarSetupDiagram';
 
 const LONG_PRESS_MS = 450;
 
-const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, showHint, onWeightChange, topSetValue, topSetMin, onTopSetChange, onOpenGuide }) => {
+const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, showHint, onWeightChange, setWeightMin, onSetWeightChange, onOpenGuide }) => {
   const { t } = useTranslation();
   const isRamped = Array.isArray(ex.setWeights);
   // A ramp's "top set" is its heaviest -- the last rung, except on a back-off day
@@ -18,6 +18,10 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
   const backoffIndex = hasBackoff ? ex.setWeights.length - 1 : -1;
   const topWeight = isRamped ? ex.setWeights[topIndex] : ex.weight;
   const bottomWeight = isRamped ? Math.min(...ex.setWeights) : ex.weight;
+  // The big +/- control tracks whichever set hasn't been logged yet -- once every set
+  // is done there's nothing left "in progress", so it settles on the last one.
+  const firstPendingIndex = ex.setsCompleted.findIndex(r => r === null);
+  const currentSetIndex = firstPendingIndex === -1 ? ex.setsCompleted.length - 1 : firstPendingIndex;
 
   const pressTimerRef = useRef(null);
   const longPressFiredRef = useRef(false);
@@ -66,13 +70,13 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
           </div>
           {isRamped ? (
             <WeightInput
-              value={topSetValue}
+              value={ex.setWeights[currentSetIndex]}
               increment={ex.increment}
-              min={topSetMin}
-              onChange={onTopSetChange}
+              min={setWeightMin}
+              onChange={(next) => onSetWeightChange(currentSetIndex, next)}
               label={t('exercises.' + ex.id)}
               variant="prominent"
-              topSet
+              caption={t('workout.currentSetFieldLabel', { current: currentSetIndex + 1, total: ex.sets })}
             />
           ) : (
             <WeightInput
