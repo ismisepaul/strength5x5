@@ -179,6 +179,25 @@ export function madcowPhase(week, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
   return 'record';
 }
 
+// "Week 1: Starting weight. Week 2: add increment. Week 3: add another increment.
+// Week 4: match your previous 5-rep max" -- the on-ramp adds one fixed increment per
+// week regardless of performance (see evaluateMadcowOutcome's unconditional bump while
+// `week < onrampWeeks`), so any on-ramp week's top set is knowable in advance from any
+// other: just walk the fixed step the right number of times. Only valid while both
+// `week` and `targetWeek` are still inside the on-ramp -- once a lift is in weekly
+// (performance-gated) progression, its future top sets aren't arithmetic anymore.
+export function projectOnrampMcTop(mcTop, week, targetWeek, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
+  if (week > onrampWeeks || targetWeek > onrampWeeks || targetWeek === week) return mcTop;
+  const delta = targetWeek - week;
+  const result = {};
+  for (const id of Object.keys(mcTop)) {
+    const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
+    const floor = INITIAL_WEIGHTS[id] ?? 20;
+    result[id] = roundWeight(mcTop[id] + delta * increment, increment, floor);
+  }
+  return result;
+}
+
 // The i-th (1-indexed) of `count` ramp sets as a fraction of `top`, the last landing
 // exactly on `top`. count=5, interval=12.5 -> 50/62.5/75/87.5/100%.
 function rampFraction(index, count, intervalPercent) {

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
-import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight } from '../utils';
+import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight, projectOnrampMcTop } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
 import ProgramEditor from '../components/ProgramEditor';
 import WeightInput from '../components/WeightInput';
@@ -131,8 +131,14 @@ const ProgramScreen = ({
         const displayWeek = previewWeek ?? mcWeek;
         const isPreviewing = previewWeek !== null && previewWeek !== mcWeek;
         const phase = madcowPhase(displayWeek, MADCOW_ONRAMP_WEEKS);
-        const dayExercises = prog.dayExercises(selectedDay, programState);
-        const liftIds = prog.liftIds(selectedDay, programState);
+        // Swiping to another on-ramp week doesn't just relabel the badge -- the guide's
+        // fixed +1-increment-per-week on-ramp means each week really does load different
+        // plates, so the ramp below has to show that week's projected top set, not
+        // whatever's currently live (see projectOnrampMcTop).
+        const previewMcTop = projectOnrampMcTop(mcTop, mcWeek, displayWeek, MADCOW_ONRAMP_WEEKS);
+        const previewProgramState = { ...programState, mcTop: previewMcTop };
+        const dayExercises = prog.dayExercises(selectedDay, previewProgramState);
+        const liftIds = prog.liftIds(selectedDay, previewProgramState);
         const volume = computeProjectedVolume(dayExercises).toLocaleString();
         const onrampDots = Array.from({ length: MADCOW_ONRAMP_WEEKS }, (_, i) => i + 1);
 

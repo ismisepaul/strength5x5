@@ -5,6 +5,7 @@ import {
   normalizeMcTop,
   madcowTopsToWeights,
   madcowPhase,
+  projectOnrampMcTop,
   computeRampWeights,
   getMadcowDayExercises,
   getMadcowDayLiftIds,
@@ -83,6 +84,30 @@ describe('madcowPhase', () => {
     expect(madcowPhase(3)).toBe('onramp');
     expect(madcowPhase(4)).toBe('matching');
     expect(madcowPhase(5)).toBe('record');
+  });
+});
+
+describe('projectOnrampMcTop', () => {
+  const week1Top = seedMadcowTops(STANDARD_WEIGHTS); // squat 107.5
+
+  it('walks the fixed weekly increment forward to a later on-ramp week', () => {
+    const projected = projectOnrampMcTop(week1Top, 1, 3);
+    expect(projected.squat).toBe(112.5);
+    expect(projected.bench).toBe(65);
+  });
+
+  it('walks it backward too, for previewing an earlier on-ramp week', () => {
+    const week3Top = projectOnrampMcTop(week1Top, 1, 3);
+    expect(projectOnrampMcTop(week3Top, 3, 1).squat).toBe(week1Top.squat);
+  });
+
+  it('is a no-op for the same week', () => {
+    expect(projectOnrampMcTop(week1Top, 2, 2)).toBe(week1Top);
+  });
+
+  it('refuses to project once either week is past the on-ramp, since progression there is performance-gated, not arithmetic', () => {
+    expect(projectOnrampMcTop(week1Top, 5, 3)).toBe(week1Top);
+    expect(projectOnrampMcTop(week1Top, 1, 5)).toBe(week1Top);
   });
 });
 

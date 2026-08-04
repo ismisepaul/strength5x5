@@ -195,6 +195,29 @@ describe('Program tab week preview', () => {
     expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'false');
   });
 
+  it("projects each on-ramp week's own top set into the ramp below, not just the badge", async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await switchToMadcow(user);
+
+    const squatBlock = () => screen.getByRole('button', { name: 'How to perform Back Squat' });
+    // Week 1's seeded top set.
+    expect(within(squatBlock()).getByText('107.5')).toBeInTheDocument();
+
+    const weekCard = screen.getByLabelText('Week progress. Swipe left or right, or use the arrow keys, to preview weeks 1 to 4.');
+    weekCard.focus();
+    await user.keyboard('{ArrowRight}');
+    await user.keyboard('{ArrowRight}');
+
+    // On-ramp weeks add one fixed increment per week regardless of performance, so
+    // week 3's top set is knowable in advance: 107.5 + 2 * 2.5 = 112.5.
+    expect(screen.getByText('Week 3')).toBeInTheDocument();
+    expect(within(squatBlock()).getByText('112.5')).toBeInTheDocument();
+    expect(within(squatBlock()).queryByText('107.5')).not.toBeInTheDocument();
+  });
+
   it('lets keyboard users reach the same preview via arrow keys, since the dots themselves stay non-interactive', async () => {
     seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcWeek: 5, mcPress: 'incline' });
     const user = userEvent.setup();
