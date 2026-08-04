@@ -48,7 +48,7 @@ strength5x5/
       setup.js             # Vitest setup (i18n, localStorage mock)
       fixtures/            # Test data files
   docs/                    # Architecture and integration documentation
-    design-system.md       # Nocturne design language (authority for UI work)
+    design-system.md       # Oxide design language (authority for UI work)
     design/                # Redesign spec + prototype handoff
 ```
 
@@ -186,12 +186,11 @@ Regression coverage:
   and become utilities automatically
 - Dark/light mode via conditional class strings keyed on `isDark` prop
 - Mobile-first design with `max-w-md mx-auto` container
-- Visual language is defined by [docs/design-system.md](design-system.md) (Nocturne): single
-  accent `#9184d9`, Inter at weight ≤ 600, 8--10px radii, outlined primary buttons. **Read it
-  before any UI change**
-- The Nocturne migration (issue #18) has landed: dark palette plus an interim light palette
-  (design-system.md §7), Phosphor icons, Inter self-hosted via `@fontsource/inter`. Light mode
-  is intentionally transitional -- a full light-specific redesign is a follow-up issue
+- Visual language is defined by [docs/design-system.md](design-system.md) (Oxide): single
+  accent `#c8663a` dark / `#b4552b` light, Inter at weight ≤ 600, 8--10px radii, outlined
+  primary buttons. **Read it before any UI change**
+- The Oxide migration has landed: full dark and light palettes (design-system.md §7),
+  Phosphor icons, Inter self-hosted via `@fontsource/inter`
 
 ## Testing
 

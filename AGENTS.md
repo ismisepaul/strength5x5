@@ -72,21 +72,22 @@ src/
 - All user-facing strings must use i18n translation keys via `t('key')`
 - No `.eslintrc` or `.prettierrc` — follow existing code style
 
-## Design System (Nocturne)
+## Design System (Oxide)
 
 **Read [docs/design-system.md](docs/design-system.md) before any UI change.** It is the
 authority on colour, type, radii, components, navigation and interaction. Summary of the
 rules you cannot break:
 
-- **One accent — `#9184d9`.** No emerald, rose, amber, indigo, blue or raw slate. Status
-  is never carried by hue alone; pair it with a shape (dashed ring, hollow dot, badge).
+- **One accent — `#c8663a` dark / `#b4552b` light.** No emerald, rose, amber, indigo, blue,
+  purple/lilac or raw slate. Status is never carried by hue alone; pair it with a shape
+  (dashed border, hollow dot, badge).
 - **Inter, weight ≤ 600.** No `font-black`. Uppercase only on kickers.
 - **One radius scale:** 8–10px cards/buttons, 12px modals, `14px 14px 0 0` bottom sheets.
-  Set targets and adherence dots are the only circles.
+  Set targets are rounded rectangles; adherence dots are the only circles.
 - **Primary buttons are a 1px accent outline on transparent** — never filled, never a
   drop shadow.
-- **Surfaces:** ground `#161826`, cards `#232532`, 1px `ink/8–18` borders. Muted text is
-  the ink token at reduced alpha, never a separate grey.
+- **Surfaces:** ground/surface/deep/nav tokens in `src/index.css`, 1px `ink/8–18` borders.
+  Muted text is the ink token at reduced alpha, never a separate grey.
 - **Tab bar never collapses**, including mid-workout; Train always routes to a live
   workout when one is active.
 - **Nothing dead on screen** (no placeholder slots for unprogrammed sets) and **gestures
@@ -94,12 +95,13 @@ rules you cannot break:
 - **Both themes.** Light mode is a shipped feature — a dark-only change is unfinished.
 
 Tokens are declared in the `@theme` block of `src/index.css` (Tailwind v4 — there is no
-`tailwind.config.js`) and become utilities automatically.
+`tailwind.config.js`) and become utilities automatically. Light mode overrides the same
+variable names inside `:root[data-theme='light']`.
 
-The Nocturne migration has landed (issue #18). `docs/design/nocturne-implementation-plan.md`
-and the prototype in `docs/design/nocturne-prototype.dc.html` are kept for history; the
-current rules live in `docs/design-system.md`, including the interim light palette (§7).
-`ErrorBoundary.jsx`'s crash screen was out of scope and still uses the pre-Nocturne palette.
+The Oxide migration has landed. `docs/design/oxide-implementation-plan.md` and the
+prototype in `docs/design/oxide-prototype.dc.html` are kept for history; the current
+rules live in `docs/design-system.md`, including the light palette (§7).
+`ErrorBoundary.jsx`'s crash screen was out of scope and still uses the pre-Oxide palette.
 
 ## Testing
 
@@ -146,7 +148,7 @@ describe('Component', () => {
 - Do not break offline functionality — the app must work without network
 - Do not store sensitive data; this is a client-side app with no secrets
 - Do not introduce a second accent colour, `font-black`, filled primary buttons, or a
-  radius outside the Nocturne scale (see Design System above)
+  radius outside the Oxide scale (see Design System above)
 - Do not change training logic while changing presentation — a redesign task touches
   how things look, never how progression, deload, timing or sync behave
 
