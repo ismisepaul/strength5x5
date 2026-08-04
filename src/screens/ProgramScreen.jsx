@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
-import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
+import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, MADCOW_MAX_RAMP_SETS, INITIAL_WEIGHTS } from '../constants';
 import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight, projectOnrampMcTop } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
 import { mergeMadcowGains } from '../programSwitch';
@@ -47,7 +47,11 @@ const RampBars = ({ ex, day }) => {
         const isBackoff = hasTop && i === backoffIndex;
         const height = max === min ? 52 : 26 + 28 * (w - min) / (max - min);
         return (
-          <div key={i} className="flex-1 flex flex-col items-center min-w-0">
+          <div
+            key={i}
+            className="flex flex-col items-center min-w-0"
+            style={{ width: `calc((100% - ${6 * (MADCOW_MAX_RAMP_SETS - 1)}px) / ${MADCOW_MAX_RAMP_SETS})` }}
+          >
             <span className="text-kicker font-semibold text-accent-300 tabular-nums h-[13px] leading-[13px]">{reps !== 5 ? `×${reps}` : ''}</span>
             <div
               style={{ height: `${height}px` }}
