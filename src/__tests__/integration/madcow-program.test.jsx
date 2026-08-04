@@ -52,8 +52,9 @@ describe('Switching to Madcow', () => {
     expect(stored.preset).toBe('madcow');
     expect(stored.mcTop.squat).toBe(107.5);
     expect(stored.mcWeek).toBe(1);
-    // Weights mirror the seeded top sets, so Stats agrees with Program.
-    expect(stored.weights.squat).toBe(107.5);
+    // Standard's weights are untouched by the switch -- they're a separate slice of
+    // state now, so they're waiting exactly as they were if the user switches back.
+    expect(stored.weights.squat).toBe(115);
   });
 
   it('updates the Program tab strip and body after switching', async () => {
@@ -68,7 +69,7 @@ describe('Switching to Madcow', () => {
     expect(screen.getByText('On-ramp')).toBeInTheDocument();
   });
 
-  it('adjusting a top set stepper writes through to weights too', async () => {
+  it('adjusting a top set stepper writes to mcTop, leaving Standard weights alone', async () => {
     seedHistory();
     const user = userEvent.setup();
     render(<App />);
@@ -78,10 +79,10 @@ describe('Switching to Madcow', () => {
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.mcTop.squat).toBe(110);
-    expect(stored.weights.squat).toBe(110);
+    expect(stored.weights.squat).toBe(115);
   });
 
-  it('typing a top set directly writes through to weights too', async () => {
+  it('typing a top set directly writes to mcTop, leaving Standard weights alone', async () => {
     seedHistory();
     const user = userEvent.setup();
     render(<App />);
@@ -94,7 +95,7 @@ describe('Switching to Madcow', () => {
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.mcTop.squat).toBe(120);
-    expect(stored.weights.squat).toBe(120);
+    expect(stored.weights.squat).toBe(115);
   });
 
   it('builds a ramped session when starting a Madcow workout', async () => {
@@ -149,6 +150,21 @@ describe('Stats under Madcow', () => {
     await user.click(screen.getByLabelText('Stats'));
     expect(screen.getByText('Overhead Press')).toBeInTheDocument();
     expect(screen.queryByText('Incline Bench')).not.toBeInTheDocument();
+  });
+
+  it('shows the Madcow top set as the current weight, not the (now separate) Standard weight', async () => {
+    seedHistory({
+      preset: 'madcow',
+      weights: { squat: 90, bench: 60, row: 65, press: 50, deadlift: 100 },
+      mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 },
+      mcPress: 'incline',
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Stats'));
+    const squatCard = screen.getByText('Back Squat').closest('button');
+    expect(within(squatCard).getByText('107.5kg')).toBeInTheDocument();
   });
 });
 
@@ -275,5 +291,112 @@ describe('Switching back to Standard', () => {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.preset).toBe('standard');
     expect(stored.weights.squat).toBe(120);
+  });
+
+  it('does not drag a lift down when its Standard weight is already higher than the Madcow top set', async () => {
+    seedHistory({
+      weights: { squat: 125, bench: 67.5, row: 72.5, press: 55, deadlift: 125 },
+      preset: 'madcow',
+      mcTop: { squat: 120, bench: 70, row: 75, deadlift: 130, press: 60, incline: 55 },
+      mcWeek: 5,
+      mcPress: 'incline',
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+    await user.click(screen.getByLabelText('Choose a program'));
+    await user.click(screen.getByText('Standard 5×5'));
+
+    // The preview matches what actually gets saved -- 125 (Standard), not 120
+    // (the Madcow top set).
+    const dialog = screen.getByRole('dialog', { name: 'Back to Standard 5×5?' });
+    expect(within(dialog).getByText('125kg every set')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByText('Switch'));
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    // 125 (Standard) beats 120 (the Madcow top set) -- the higher of the two wins.
+    expect(stored.weights.squat).toBe(125);
+    // Lifts where Madcow's top set is ahead still pick that up.
+    expect(stored.weights.deadlift).toBe(130);
+  });
+});
+
+describe('Returning to a Madcow block in progress', () => {
+  it('resumes the saved week and top sets instead of re-seeding the on-ramp', async () => {
+    seedHistory({
+      preset: 'standard',
+      mcSeeded: true,
+      mcWeek: 6,
+      mcTop: { squat: 130, bench: 72.5, row: 77.5, deadlift: 140, press: 62.5, incline: 60 },
+      mcPress: 'incline',
+    });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+    await user.click(screen.getByLabelText('Choose a program'));
+    await user.click(screen.getByText('Madcow 5×5'));
+
+    // The dialog says "resume", with the real saved top set -- not a fresh on-ramp
+    // seeded from Standard's (unrelated, since it's untouched) weights.
+    const dialog = screen.getByRole('dialog', { name: 'Resume Madcow 5×5?' });
+    expect(within(dialog).getByText(/week 6/)).toBeInTheDocument();
+    expect(within(dialog).getByText('130kg top set')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByText('Switch'));
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.mcWeek).toBe(6);
+    expect(stored.mcTop.squat).toBe(130);
+    expect(screen.getByText('Week 6')).toBeInTheDocument();
+  });
+});
+
+describe('Round-tripping between programs', () => {
+  it('a there-and-back switch leaves every Standard weight untouched', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await switchToMadcow(user);
+    await user.click(screen.getByLabelText('Choose a program'));
+    await user.click(screen.getByText('Standard 5×5'));
+    await user.click(screen.getByText('Switch'));
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.preset).toBe('standard');
+    expect(stored.weights).toMatchObject({ squat: 115, bench: 67.5, row: 72.5, press: 55, deadlift: 125 });
+  });
+
+  it('repeated switching does not erode the weights', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    for (let i = 0; i < 3; i++) {
+      await switchToMadcow(user);
+      await user.click(screen.getByLabelText('Choose a program'));
+      await user.click(screen.getByText('Standard 5×5'));
+      await user.click(screen.getByText('Switch'));
+    }
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.weights).toMatchObject({ squat: 115, bench: 67.5, row: 72.5, press: 55, deadlift: 125 });
+  });
+
+  it('a Madcow block with incline never moves the overhead press', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await switchToMadcow(user);
+    await user.click(screen.getByLabelText('Choose a program'));
+    await user.click(screen.getByText('Standard 5×5'));
+    await user.click(screen.getByText('Switch'));
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.weights.press).toBe(55);
   });
 });

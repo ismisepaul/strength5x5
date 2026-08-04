@@ -49,7 +49,10 @@ describe('Train tab under Madcow', () => {
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.mcTop.squat).toBe(110);
-    expect(stored.weights.squat).toBe(110);
+    // A Madcow top-set edit is its own state now -- it never touches Standard's
+    // weights (see programSwitch.js), so a later switch back to Standard isn't
+    // silently pre-loaded with an edit made mid-Madcow-block.
+    expect(stored.weights.squat).toBe(107.5);
   });
 
   it('logs a ramped session with per-set weights and queues the top set to progress at the Friday rollover', async () => {
@@ -75,6 +78,7 @@ describe('Train tab under Madcow', () => {
     // number. The earned bump is queued and only lands at Friday's rollover.
     expect(stored.mcTop.squat).toBe(107.5);
     expect(stored.mcTop.bench).toBe(65);
+    // Finishing a Madcow session never touches Standard's weights either.
     expect(stored.weights.squat).toBe(107.5);
     expect(stored.mcPending.sort()).toEqual(['bench', 'row', 'squat']);
     expect(stored.mcNextDay).toBe('B');
@@ -101,7 +105,8 @@ describe('Train tab under Madcow', () => {
     expect(squatCard().getAllByText('57.5').length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('Increase Back Squat top set')).not.toBeInTheDocument();
 
-    // It's a session-only nudge -- next week's programmed top set is untouched.
+    // It's a session-only nudge -- next week's programmed top set, and Standard's
+    // weights, are both untouched.
     let stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.mcTop.squat).toBe(107.5);
     expect(stored.weights.squat).toBe(107.5);

@@ -2,6 +2,7 @@ import i18n from './i18n/index.js';
 import {
   validateImportData, normalizeProgram, normalizePreset,
   normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending,
+  normalizeMcSeeded,
 } from './utils';
 import { convertStrongliftsCSV } from './utils/convertStronglifts';
 
@@ -14,7 +15,7 @@ export const hydrateFromBackup = (d, setters) => {
   const {
     setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
     setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
-    setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending,
+    setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending, setMcSeeded,
   } = setters;
 
   setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
@@ -32,6 +33,7 @@ export const hydrateFromBackup = (d, setters) => {
   setMcPress(normalizeMcPress(d.mcPress));
   setMcNextDay(normalizeMcNextDay(d.mcNextDay));
   setMcPending(normalizeMcPending(d.mcPending));
+  setMcSeeded(normalizeMcSeeded(d.mcSeeded, d));
 };
 
 // Reads and validates a local JSON backup file. Rejects with `.code` set so the

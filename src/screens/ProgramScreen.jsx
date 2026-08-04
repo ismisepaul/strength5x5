@@ -4,6 +4,7 @@ import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '
 import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
 import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight, projectOnrampMcTop } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
+import { mergeMadcowGains } from '../programSwitch';
 import ProgramEditor from '../components/ProgramEditor';
 import WeightInput from '../components/WeightInput';
 import Segmented from '../components/Segmented';
@@ -66,7 +67,7 @@ const RampBars = ({ ex, day }) => {
 
 const ProgramScreen = ({
   isWorkoutActive, preset, program, onChangeProgram, weights, history,
-  mcTop, mcWeek, mcInterval, mcPress, onUpdateMcTop, onChangeMcInterval, onChangeMcPress,
+  mcTop, mcWeek, mcInterval, mcPress, mcSeeded, onUpdateMcTop, onChangeMcInterval, onChangeMcPress,
   onRecalculate, currentWorkoutType, mcNextDay, programSheet, setProgramSheet, onSwitchProgram,
   onOpenGuide,
 }) => {
@@ -467,25 +468,32 @@ const ProgramScreen = ({
       {programSheet?.step === 'confirm' && (() => {
         const target = programSheet.target;
         const toMadcow = target === 'madcow';
-        const previewTop = toMadcow ? seedMadcowTops(weights) : mcTop;
+        // A block already seeded resumes as-is (its saved top sets/week); only a
+        // brand-new block seeds a fresh on-ramp from the Standard weights below.
+        const resuming = toMadcow && mcSeeded;
+        const previewTop = toMadcow ? (resuming ? mcTop : seedMadcowTops(weights)) : mergeMadcowGains(weights, mcTop, mcPress);
         const pressId = mcPress === 'press' ? 'press' : 'incline';
         const rowIds = ['squat', 'bench', 'row', 'deadlift', pressId];
         // Existing users' saved `weights` predate the incline lift, so it may be
         // missing entirely -- fall back to the same bench-derived seed used to
         // build previewTop, so the "from" side is never undefined.
         const fromWeights = { ...weights, incline: weights.incline ?? seedInclineWeight(weights.bench) };
+        const titleKey = resuming ? 'program.confirm.toMadcowResumeTitle' : toMadcow ? 'program.confirm.toMadcowTitle' : 'program.confirm.toStandardTitle';
+        const bodyKey = resuming ? 'program.confirm.toMadcowResumeBody' : toMadcow ? 'program.confirm.toMadcowBody' : 'program.confirm.toStandardBody';
         return (
-          <div role="dialog" aria-modal="true" aria-label={t(toMadcow ? 'program.confirm.toMadcowTitle' : 'program.confirm.toStandardTitle')} className="fixed inset-0 z-[450] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
+          <div role="dialog" aria-modal="true" aria-label={t(titleKey)} className="fixed inset-0 z-[450] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
             <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
-              <h3 className="text-lg font-semibold mb-3">{t(toMadcow ? 'program.confirm.toMadcowTitle' : 'program.confirm.toStandardTitle')}</h3>
-              <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t(toMadcow ? 'program.confirm.toMadcowBody' : 'program.confirm.toStandardBody')}</p>
+              <h3 className="text-lg font-semibold mb-3">{t(titleKey)}</h3>
+              <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t(bodyKey, { week: mcWeek })}</p>
               <div className="space-y-2 mb-4 text-left">
                 {rowIds.map(id => (
                   <div key={id} className={`flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep`}>
                     <span className={`text-meta uppercase ${mutedClass}`}>{t('exercises.' + id)}</span>
                     <span className="text-[14px] tabular-nums">
                       {toMadcow
-                        ? t('program.confirm.topSetRow', { from: fromWeights[id], to: previewTop[id] })
+                        ? (resuming
+                          ? t('program.confirm.topSetOnlyRow', { weight: previewTop[id] })
+                          : t('program.confirm.topSetRow', { from: fromWeights[id], to: previewTop[id] }))
                         : t('program.confirm.flatRow', { weight: previewTop[id] })}
                     </span>
                   </div>

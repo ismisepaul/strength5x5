@@ -96,6 +96,17 @@ export function normalizeMcPending(raw) {
   return [...new Set(raw.filter(id => typeof id === 'string' && valid.has(id)))];
 }
 
+// Whether the current Madcow block has already been seeded from Standard's weights --
+// switchProgramState (programSwitch.js) reads this to tell "first switch to Madcow"
+// (seed the on-ramp) apart from "returning to Madcow" (resume mcTop/mcWeek as saved).
+// Saves from before this field existed have no `mcSeeded` key at all, so it's inferred
+// from state that could only exist after a real switch: already on Madcow, or (a saved
+// preset can drift back to Standard while mcWeek stays > 1) past week 1.
+export function normalizeMcSeeded(raw, saved = {}) {
+  if (raw === true) return true;
+  return normalizePreset(saved.preset) === 'madcow' || normalizeMcWeek(saved.mcWeek) > 1;
+}
+
 // Mirrors every Madcow top set into `weights` too, so Stats and any Standard-shaped
 // view of "the current weight" agree with Madcow's ramp -- see madcowTopsToWeights
 // for the reverse direction (Madcow -> Standard).
@@ -386,6 +397,7 @@ export function validateImportData(d) {
     mcPress: normalizeMcPress(d.mcPress),
     mcNextDay: normalizeMcNextDay(d.mcNextDay),
     mcPending: normalizeMcPending(d.mcPending),
+    mcSeeded: normalizeMcSeeded(d.mcSeeded, d),
   };
 }
 

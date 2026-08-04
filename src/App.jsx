@@ -10,8 +10,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, seedMadcowTops, madcowTopsToWeights, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
+import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
 import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
 import { getProgram } from './programs';
@@ -61,6 +62,7 @@ const App = () => {
   const {
     mcTop, setMcTop, mcWeek, setMcWeek, mcInterval, setMcInterval,
     mcPress, setMcPress, mcNextDay, setMcNextDay, mcPending, setMcPending,
+    mcSeeded, setMcSeeded,
     hydrate: hydrateMadcow,
   } = useMadcowState(saved);
   const {
@@ -113,7 +115,7 @@ const App = () => {
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,
     isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
-    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending,
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded,
   });
 
   useStorageSync(STORAGE_KEY, (updated) => {
@@ -136,7 +138,16 @@ const App = () => {
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
   }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
 
-  const big3Total = useMemo(() => (weights?.squat || 0) + (weights?.bench || 0) + (weights?.deadlift || 0), [weights]);
+  // Madcow trains a ramp, not a flat weight, so anything that renders a single "current
+  // weight" reads the top set instead. Kept derived rather than mirrored into `weights`
+  // -- mirroring is what let a program switch overwrite the Standard weights (see
+  // switchProgramState in programSwitch.js).
+  const displayWeights = useMemo(
+    () => getProgram(preset).ramped ? applyMcTopToWeights(weights, mcTop) : weights,
+    [preset, weights, mcTop],
+  );
+
+  const big3Total = useMemo(() => (displayWeights?.squat || 0) + (displayWeights?.bench || 0) + (displayWeights?.deadlift || 0), [displayWeights]);
 
   const best1RMs = useMemo(() => {
     const result = {};
@@ -151,8 +162,8 @@ const App = () => {
 
   const getAppState = useCallback(() => ({
     weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
-    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending,
-  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
+    preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded,
+  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded]);
 
   const exportData = useCallback((targetHistory) => {
     const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState(), history: targetHistory || history };
@@ -283,12 +294,11 @@ const App = () => {
       nextMcTop = outcome.nextTop;
       nextMcWeek = outcome.nextWeek;
       nextMcPending = outcome.nextPending;
-      nextWeights = applyMcTopToWeights(weights, nextMcTop);
       nextMcNextDay = MADCOW_DAYS[(MADCOW_DAYS.indexOf(currentWorkout.type) + 1) % MADCOW_DAYS.length];
       progressions = outcome.progressions;
       pendingDeloads = [];
       summaryNextValues = outcome.projectedTop;
-      setMcTop(nextMcTop); setMcWeek(nextMcWeek); setMcNextDay(nextMcNextDay); setMcPending(nextMcPending); setWeights(nextWeights);
+      setMcTop(nextMcTop); setMcWeek(nextMcWeek); setMcNextDay(nextMcNextDay); setMcPending(nextMcPending);
     } else {
       const outcome = evaluateWorkoutOutcome(currentWorkout, history, weights);
       nextWeights = outcome.nextWeights;
@@ -309,9 +319,9 @@ const App = () => {
     saveToDriveQuietly({
       weights: nextWeights, program, history: newHistory, nextType,
       isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
-      preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay, mcPending: nextMcPending,
+      preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay, mcPending: nextMcPending, mcSeeded,
     });
-  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending]);
+  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -344,33 +354,31 @@ const App = () => {
     initializeWorkout(weights);
   }, [history, weights, initializeWorkout, longBreakDeloadForDate, preset, t]);
 
-  // Switches the active program, converting weights each direction so Stats and the
-  // Program tab always agree with whatever's actually being trained.
+  // Switches the active program. weights (Standard's working weights) and Madcow's
+  // mcTop/mcWeek/etc are two separate slices of state now -- see switchProgramState in
+  // programSwitch.js for why: overwriting one with the other on every switch is what
+  // used to erase Standard's weights and re-seed Madcow's on-ramp from scratch on
+  // every trip.
   const switchProgram = useCallback((target) => {
     if (isWorkoutActive) cancelWorkout();
-    if (target === 'madcow') {
-      const seeded = seedMadcowTops(weights);
-      setMcTop(seeded);
-      setMcWeek(1);
-      setMcNextDay('A');
-      setMcPending([]);
-      setWeights(prev => applyMcTopToWeights(prev, seeded));
-    } else {
-      setWeights(prev => madcowTopsToWeights(prev, mcTop, mcPress));
-    }
+    const next = switchProgramState({ target, weights, mcTop, mcWeek, mcNextDay, mcPending, mcPress, mcSeeded });
+    setWeights(next.weights);
+    setMcTop(next.mcTop);
+    setMcWeek(next.mcWeek);
+    setMcNextDay(next.mcNextDay);
+    setMcPending(next.mcPending);
+    setMcSeeded(next.mcSeeded);
     setPreset(target);
     setProgramSheet(null);
-  }, [weights, mcTop, mcPress, isWorkoutActive, cancelWorkout]);
+  }, [weights, mcTop, mcWeek, mcNextDay, mcPending, mcPress, mcSeeded, isWorkoutActive, cancelWorkout]);
 
   // The one path every Madcow top-set edit goes through -- Program tab, Train's idle
-  // row, and Train's active-workout card -- so mcTop, the mirrored `weights`, and (if
-  // that lift is mid-session) its live ramp never drift apart. Each setter reads its
-  // own fresh `prev` rather than closing over mcTop/weights/currentWorkout, so this
-  // stays correct even if two taps land before a render lands between them.
+  // row, and Train's active-workout card -- so mcTop and (if that lift is mid-session)
+  // its live ramp never drift apart. Does not touch `weights`: Madcow's top set is
+  // its own state now, independent of Standard's working weight (see switchProgram).
   const updateMcTop = useCallback((liftId, nextTop) => {
     const clamped = clampMcTop(liftId, nextTop);
     setMcTop(prev => ({ ...prev, [liftId]: clamped }));
-    setWeights(prev => applyMcTopToWeights(prev, { [liftId]: clamped }));
     setCurrentWorkout(prev => reviseWorkoutTopSet(prev, liftId, clamped, mcInterval));
   }, [mcInterval]);
 
@@ -378,7 +386,7 @@ const App = () => {
     hydrateFromBackup(d, {
       setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
       setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
-      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending,
+      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending, setMcSeeded,
     });
     setActiveTab('workout'); setShowRestorePrompt(false);
     setPendingLocalImport(null);
@@ -393,7 +401,7 @@ const App = () => {
       language: d.language || i18n.language,
       preset: normalizePreset(d.preset), mcTop: normalizeMcTop(d.mcTop, d.weights), mcWeek: normalizeMcWeek(d.mcWeek),
       mcInterval: normalizeMcInterval(d.mcInterval), mcPress: normalizeMcPress(d.mcPress), mcNextDay: normalizeMcNextDay(d.mcNextDay),
-      mcPending: normalizeMcPending(d.mcPending),
+      mcPending: normalizeMcPending(d.mcPending), mcSeeded: normalizeMcSeeded(d.mcSeeded, d),
     });
   }, [currentWorkoutType, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, showToast, t]);
 
@@ -469,7 +477,7 @@ const App = () => {
     hydrateFromBackup(d, {
       setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
       setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
-      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending,
+      setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending, setMcSeeded,
     });
     setActiveTab('workout');
     showToast(t('toast.restoredFromDrive'), 'success');
@@ -651,7 +659,7 @@ const App = () => {
         {activeTab === 'progress' && (
           <StatsScreen
             history={history} statsView={statsView} setStatsView={setStatsView}
-            weights={weights} best1RMs={best1RMs} big3Total={big3Total}
+            weights={displayWeights} best1RMs={best1RMs} big3Total={big3Total}
             preset={preset} program={program} mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress}
           />
         )}
@@ -660,7 +668,7 @@ const App = () => {
           <ProgramScreen
             isWorkoutActive={isWorkoutActive} preset={preset}
             program={program} onChangeProgram={setProgram} weights={weights} history={history}
-            mcTop={mcTop} mcWeek={mcWeek} mcInterval={mcInterval} mcPress={mcPress}
+            mcTop={mcTop} mcWeek={mcWeek} mcInterval={mcInterval} mcPress={mcPress} mcSeeded={mcSeeded}
             onUpdateMcTop={updateMcTop} onChangeMcInterval={setMcInterval} onChangeMcPress={setMcPress}
             onRecalculate={() => setMcInterval(MADCOW_DEFAULT_INTERVAL)}
             currentWorkoutType={currentWorkoutType} mcNextDay={mcNextDay}

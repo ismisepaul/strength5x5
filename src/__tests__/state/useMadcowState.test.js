@@ -23,6 +23,25 @@ describe('useMadcowState', () => {
     expect(result.current.mcPending).toEqual([]);
   });
 
+  describe('mcSeeded', () => {
+    it('defaults to false for a brand-new save', () => {
+      const { result } = renderHook(() => useMadcowState({}));
+      expect(result.current.mcSeeded).toBe(false);
+    });
+
+    it('infers true for a legacy save already on Madcow (no mcSeeded key at all)', () => {
+      const { result } = renderHook(() => useMadcowState({ preset: 'madcow' }));
+      expect(result.current.mcSeeded).toBe(true);
+    });
+
+    it('setMcSeeded updates only that field', () => {
+      const { result } = renderHook(() => useMadcowState({}));
+      act(() => { result.current.setMcSeeded(true); });
+      expect(result.current.mcSeeded).toBe(true);
+      expect(result.current.mcWeek).toBe(1);
+    });
+  });
+
   describe('hydrate', () => {
     it('updates only the fields present in the payload', () => {
       const { result } = renderHook(() => useMadcowState({}));
@@ -50,6 +69,13 @@ describe('useMadcowState', () => {
       expect(result.current.mcWeek).toBe(5);
       act(() => { result.current.hydrate({ mcWeek: 0 }, {}); });
       expect(result.current.mcWeek).toBe(1);
+    });
+
+    it('updates mcSeeded when present in the payload', () => {
+      const { result } = renderHook(() => useMadcowState({}));
+      expect(result.current.mcSeeded).toBe(false);
+      act(() => { result.current.hydrate({ mcSeeded: true }, {}); });
+      expect(result.current.mcSeeded).toBe(true);
     });
   });
 });

@@ -9,6 +9,7 @@ const makeSetters = () => ({
   setIsDark: vi.fn(), setLocalBackup: vi.fn(), setPreferredRest: vi.fn(), setSoundEnabled: vi.fn(),
   setVibrationEnabled: vi.fn(), setLogGrouping: vi.fn(), setPreset: vi.fn(), setMcTop: vi.fn(),
   setMcWeek: vi.fn(), setMcInterval: vi.fn(), setMcPress: vi.fn(), setMcNextDay: vi.fn(), setMcPending: vi.fn(),
+  setMcSeeded: vi.fn(),
 });
 
 describe('hydrateFromBackup', () => {
@@ -53,6 +54,7 @@ describe('hydrateFromBackup', () => {
     expect(setters.setMcPress).toHaveBeenCalled();
     expect(setters.setMcNextDay).toHaveBeenCalled();
     expect(setters.setMcPending).toHaveBeenCalled();
+    expect(setters.setMcSeeded).toHaveBeenCalled();
   });
 });
 

@@ -1,5 +1,5 @@
 import { INITIAL_WEIGHTS, MADCOW_WEEKLY_INCREMENTS } from './constants';
-import { applyMcTopToWeights, buildMadcowLiftPlan, roundWeight } from './utils';
+import { buildMadcowLiftPlan, roundWeight } from './utils';
 
 // Floors at the lift's empty-bar weight and snaps to the plate grid, so a top set
 // can never end up stored (and later displayed) as something no barbell can load.
@@ -24,20 +24,4 @@ export function reviseWorkoutTopSet(currentWorkout, liftId, clampedTop, mcInterv
       return { ...e, setWeights, weight: plan.weight };
     }),
   };
-}
-
-// The single place a Madcow top set gets changed. The Program tab and Train's idle
-// row both funnel through this (directly, or via clampMcTop/reviseWorkoutTopSet
-// individually -- see App.jsx's updateMcTop), so persisted mcTop, the mirrored
-// `weights` snapshot, and (if a workout for that lift is mid-session) its remaining
-// ramp never drift apart from each other. Train's active-workout card does NOT use
-// this -- its per-set control (App.jsx's handleUpdateActiveSetWeight) only ever
-// touches the one rung in progress and never persists to mcTop.
-export function updateMadcowTopSet({ liftId, nextTop, mcTop, weights, mcInterval, currentWorkout }) {
-  const clamped = clampMcTop(liftId, nextTop);
-  const nextMcTop = { ...mcTop, [liftId]: clamped };
-  const nextWeights = applyMcTopToWeights(weights, nextMcTop);
-  const nextCurrentWorkout = reviseWorkoutTopSet(currentWorkout, liftId, clamped, mcInterval);
-
-  return { mcTop: nextMcTop, weights: nextWeights, currentWorkout: nextCurrentWorkout };
 }
