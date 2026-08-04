@@ -134,6 +134,8 @@
       "matchingNote": "Les séries maximales de cette semaine égalent les poids de votre arrivée.",
       "recordNote": "Chaque série maximale à partir d'ici est un record personnel.",
       "nextSession": "Prochaine séance · {{workout}} · {{mood}}",
+      "previewWeekAria": "Aperçu de la semaine {{week}}",
+      "backToCurrentWeek": "Retour à la semaine en cours",
       "moodMedium": "Moyen",
       "moodLight": "Léger",
       "moodHeavy": "Lourd",

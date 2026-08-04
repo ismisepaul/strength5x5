@@ -74,6 +74,7 @@ const ProgramScreen = ({
   const [selectedDay, setSelectedDay] = useState(mcNextDay);
   const [customiseOpen, setCustomiseOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
+  const [previewWeek, setPreviewWeek] = useState(null);
 
   const prog = getProgram(preset);
   const isMadcow = prog.ramped;
@@ -119,7 +120,12 @@ const ProgramScreen = ({
       <Kicker>{t(isMadcow ? 'program.kickerThisWeek' : 'program.kickerTheProgram')}</Kicker>
 
       {isMadcow ? (() => {
-        const phase = madcowPhase(mcWeek, MADCOW_ONRAMP_WEEKS);
+        // null = showing the live current week. Tapping a dot previews that on-ramp
+        // week's phase/note without touching mcWeek; tapping the live week's own dot
+        // (or the same dot again) returns to the live view.
+        const displayWeek = previewWeek ?? mcWeek;
+        const isPreviewing = previewWeek !== null && previewWeek !== mcWeek;
+        const phase = madcowPhase(displayWeek, MADCOW_ONRAMP_WEEKS);
         const dayExercises = prog.dayExercises(selectedDay, programState);
         const liftIds = prog.liftIds(selectedDay, programState);
         const volume = computeProjectedVolume(dayExercises).toLocaleString();
@@ -128,25 +134,39 @@ const ProgramScreen = ({
           <>
             <div className={cardClass}>
               <div className="flex justify-between items-center mb-2">
-                <p className="font-semibold text-[16px]">{t('program.madcow.weekLabel', { week: mcWeek })}</p>
+                <p className="font-semibold text-[16px]">{t('program.madcow.weekLabel', { week: displayWeek })}</p>
                 <Badge>{t(`program.madcow.phase${phase === 'onramp' ? 'Onramp' : phase === 'matching' ? 'Matching' : 'Record'}`)}</Badge>
               </div>
               <div className="flex items-center gap-1.5 mb-3">
                 {onrampDots.map(w => {
                   const isLast = w === MADCOW_ONRAMP_WEEKS;
-                  const filled = w <= mcWeek || phase === 'record';
-                  if (isLast) {
-                    return <div key={w} className={`h-2 w-6 rounded-full border ${filled ? 'bg-accent border-accent' : 'border-accent/50'}`} />;
-                  }
-                  return <div key={w} className={`h-2 w-2 rounded-full ${filled ? 'bg-accent' : ('bg-ink/15')}`} />;
+                  const filled = w <= mcWeek || madcowPhase(mcWeek, MADCOW_ONRAMP_WEEKS) === 'record';
+                  const selected = displayWeek === w;
+                  return (
+                    <button
+                      key={w}
+                      onClick={() => setPreviewWeek(w === mcWeek ? null : w)}
+                      aria-label={t('program.madcow.previewWeekAria', { week: w })}
+                      aria-pressed={selected}
+                      className={isLast
+                        ? `h-2 w-6 rounded-full border transition-shadow ${filled ? 'bg-accent border-accent' : 'border-accent/50'} ${selected ? 'ring-2 ring-accent/50 ring-offset-2 ring-offset-surface' : ''}`
+                        : `h-2 w-2 rounded-full transition-shadow ${filled ? 'bg-accent' : 'bg-ink/15'} ${selected ? 'ring-2 ring-accent/50 ring-offset-2 ring-offset-surface' : ''}`}
+                    />
+                  );
                 })}
               </div>
               <p className={`text-body leading-relaxed ${mutedClass}`}>
                 {t(`program.madcow.${phase === 'onramp' ? 'onrampNote' : phase === 'matching' ? 'matchingNote' : 'recordNote'}`)}
               </p>
-              <p className="text-[13px] mt-3 text-accent-300">
-                {t('program.madcow.nextSession', { workout: t(`workout.type${mcNextDay}`), mood: moodBadge(mcNextDay) })}
-              </p>
+              {isPreviewing ? (
+                <button onClick={() => setPreviewWeek(null)} className="text-[13px] mt-3 text-accent-300 active:scale-95">
+                  {t('program.madcow.backToCurrentWeek')}
+                </button>
+              ) : (
+                <p className="text-[13px] mt-3 text-accent-300">
+                  {t('program.madcow.nextSession', { workout: t(`workout.type${mcNextDay}`), mood: moodBadge(mcNextDay) })}
+                </p>
+              )}
             </div>
 
             <Segmented variant="medium" value={selectedDay} onChange={setSelectedDay} options={prog.days.map(d => ({ val: d, label: t(`workout.type${d}`) }))} />

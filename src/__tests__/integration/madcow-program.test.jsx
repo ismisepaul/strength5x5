@@ -152,6 +152,37 @@ describe('Stats under Madcow', () => {
   });
 });
 
+describe('Program tab week preview', () => {
+  it('lets the on-ramp dots preview weeks 1-4 without changing the live week', async () => {
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcWeek: 5, mcPress: 'incline' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+
+    // Past the on-ramp (week 5), the card shows the live week and the real next session.
+    expect(screen.getByText('Week 5')).toBeInTheDocument();
+    expect(screen.getByText('Record territory')).toBeInTheDocument();
+    expect(screen.getByText(/Next session/)).toBeInTheDocument();
+
+    // Tapping an earlier week's dot previews it -- the note updates, and the live
+    // "next session" line is replaced by a way back, not a stale claim about week 2.
+    await user.click(screen.getByLabelText('Preview week 2'));
+    expect(screen.getByText('Week 2')).toBeInTheDocument();
+    expect(screen.getByText('On-ramp')).toBeInTheDocument();
+    expect(screen.queryByText(/Next session/)).not.toBeInTheDocument();
+
+    // Nothing persisted -- this was only ever a preview.
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.mcWeek).toBe(5);
+
+    await user.click(screen.getByText('Back to current week'));
+    expect(screen.getByText('Week 5')).toBeInTheDocument();
+    expect(screen.getByText('Record territory')).toBeInTheDocument();
+    expect(screen.getByText(/Next session/)).toBeInTheDocument();
+  });
+});
+
 describe('Switching back to Standard', () => {
   it('carries the current top set back as the flat working weight', async () => {
     seedHistory({ preset: 'madcow', mcTop: { squat: 120, bench: 70, row: 75, deadlift: 130, press: 60, incline: 55 }, mcWeek: 5, mcPress: 'incline' });
