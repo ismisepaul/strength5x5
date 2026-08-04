@@ -176,6 +176,28 @@ describe('Train tab under Madcow', () => {
     expect(stored.mcNextDay).toBe('A');
   });
 
+  it('sizes the completion summary\'s 6-set Day C blocks to fit the row instead of overflowing it', async () => {
+    seedMadcow({ mcNextDay: 'C', mcPending: ['squat', 'bench', 'row'] });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Start workout'));
+    const setButtons = screen.getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
+    for (const btn of setButtons) {
+      await user.click(btn);
+    }
+    await user.click(screen.getByText('Finish workout'));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Workout complete' });
+    const squatContainer = within(dialog).getByText('Back Squat').closest('.p-3');
+    const blocks = squatContainer.querySelectorAll('.bg-surface');
+    expect(blocks).toHaveLength(6);
+    // jsdom normalizes `(100% - 30px) / 6` to `0.16666666666666666 * (100% - 30px)` --
+    // same value, different serialization. A fixed 5-slot width here (the pre-fix
+    // formula) would size these blocks past 100% of the row.
+    expect(blocks[0].style.width).toBe('calc(0.16666666666666666 * (100% - 30px))');
+  });
+
   it('lets the workout picker sheet switch which day is next', async () => {
     seedMadcow();
     const user = userEvent.setup();
