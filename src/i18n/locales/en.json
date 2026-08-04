@@ -35,6 +35,7 @@
     "trainedToday": "Trained today",
     "weekProgress": "{{count}} of 3 workouts this week",
     "weekProgress_other": "{{count}} of 3 workouts this week",
+    "plannedLoad": "Planned load",
     "setHint": "Tap to log {{count}} reps. Long-press to set exact count.",
     "missedNote": "Missed reps: keep weight at {{weight}}kg next session",
     "discardWorkout": "Discard workout",

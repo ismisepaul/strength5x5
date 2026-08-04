@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CaretDown, Play, Info } from '@phosphor-icons/react';
 import { INITIAL_WEIGHTS } from '../constants';
 import { getProgram, topWeightOf } from '../programs';
+import { plannedVolume } from '../utils';
 import WeightInput from '../components/WeightInput';
 import BarSetupDiagram from '../components/BarSetupDiagram';
 import PlateStrip from '../components/PlateStrip';
@@ -92,6 +93,10 @@ const TrainScreen = ({
                   </div>
                   );
                 })}</div>
+                <div className="flex justify-between items-baseline px-0.5 pb-3.5">
+                  <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-ink/45">{t('workout.plannedLoad')}</span>
+                  <span className="text-[20px] font-medium tabular-nums text-accent-300">{plannedVolume(dayExercises).toLocaleString()} <span className="text-meta text-ink/45">kg</span></span>
+                </div>
               </>
             );
           })()}
