@@ -18,10 +18,12 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
   const backoffIndex = hasBackoff ? ex.setWeights.length - 1 : -1;
   const topWeight = isRamped ? ex.setWeights[topIndex] : ex.weight;
   const bottomWeight = isRamped ? Math.min(...ex.setWeights) : ex.weight;
-  // The big +/- control tracks whichever set hasn't been logged yet -- once every set
-  // is done there's nothing left "in progress", so it settles on the last one.
+  // The big +/- control (and the bar setup diagram below) track whichever set hasn't
+  // been logged yet -- once every set is done there's nothing left "in progress", so
+  // both settle on the last one.
   const firstPendingIndex = ex.setsCompleted.findIndex(r => r === null);
   const currentSetIndex = firstPendingIndex === -1 ? ex.setsCompleted.length - 1 : firstPendingIndex;
+  const currentSetWeight = isRamped ? ex.setWeights[currentSetIndex] : ex.weight;
 
   const pressTimerRef = useRef(null);
   const longPressFiredRef = useRef(false);
@@ -201,7 +203,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
       )}
       {panel === 'bar' && (
         <div className={`mt-2 rounded-[9px] p-3.5 bg-ground/60`}>
-          <BarSetupDiagram weight={topWeight} />
+          <BarSetupDiagram weight={currentSetWeight} />
         </div>
       )}
     </div>
