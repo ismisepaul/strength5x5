@@ -17,7 +17,7 @@ export const parseWeightInput = (str) => {
   return Number.isFinite(n) ? n : null;
 };
 
-const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant = 'prominent', topSet = false }) => {
+const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant = 'prominent', topSet = false, caption }) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(null); // null while not editing; typed string while editing
   const cancelingRef = useRef(false);
@@ -25,9 +25,8 @@ const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant
   const mutedClass = 'text-ink/45';
   const displayValue = draft !== null ? draft : String(value);
   // A Madcow top set is never the day's flat working weight, so it gets its own aria
-  // wording everywhere -- and, in the prominent (headline-number) variant, a visible
-  // caption too, since Workout C's header number is the top set, not the day's
-  // heavier triple attempt shown under the sets below (see design-system.md §4).
+  // wording everywhere (see design-system.md §4). `caption` is independent of that --
+  // any prominent-variant control can carry a line above the number, not just a top set.
   const decreaseAriaKey = topSet ? 'workout.decreaseTopSetAria' : 'workout.decreaseWeightAria';
   const increaseAriaKey = topSet ? 'workout.increaseTopSetAria' : 'workout.increaseWeightAria';
   const inputAriaKey = topSet ? 'workout.topSetInputAria' : 'workout.weightInputAria';
@@ -51,8 +50,8 @@ const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant
 
   return (
     <div className="flex flex-col items-end gap-1 shrink-0">
-      {topSet && variant === 'prominent' && (
-        <span className={`text-kicker ${mutedClass}`}>{t('workout.topSetFieldLabel')}</span>
+      {caption && variant === 'prominent' && (
+        <span className={`text-kicker ${mutedClass}`}>{caption}</span>
       )}
       <div className="flex items-center gap-2">
         <StepperButton

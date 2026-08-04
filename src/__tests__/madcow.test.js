@@ -3,7 +3,7 @@ import { clampMcTop, reviseWorkoutTopSet, updateMadcowTopSet } from '../madcow';
 import { getMadcowDayExercises } from '../utils';
 import { MADCOW_DEFAULT_INTERVAL } from '../constants';
 
-const MC_TOP = { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 };
+const MC_TOP = { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 };
 
 function workoutFor(day, mcTop = MC_TOP) {
   const exercises = getMadcowDayExercises(day, mcTop, MADCOW_DEFAULT_INTERVAL, 'incline')

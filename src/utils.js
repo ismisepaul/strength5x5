@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL } from './constants';
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL, PLATE_WEIGHTS, MIN_WEIGHT_INCREMENT } from './constants';
 
 export function migrate(data, fromVersion) {
   let current = { ...data };
@@ -107,8 +107,15 @@ export function applyMcTopToWeights(weights, mcTop) {
 // A ramped heavy/light/medium week built around one weekly top set per lift, in
 // contrast to Standard's flat per-session weight.
 
-export function roundWeight(weight, increment = 2.5, floor = 20) {
-  return Math.max(floor, Math.round(weight / increment) * increment);
+// The single choke point every displayed/stored weight passes through. No caller may
+// round to a finer grid than MIN_WEIGHT_INCREMENT -- whatever `increment` it passes
+// (even a stale, corrupt, or non-finite one) gets rounded onto the nearest loadable
+// multiple first, so the app can never show a weight nobody could actually put on a
+// bar -- or, for a genuinely broken increment (NaN, 0, negative), silently show NaN.
+export function roundWeight(weight, increment = MIN_WEIGHT_INCREMENT, floor = 20) {
+  const safeIncrement = Number.isFinite(increment) && increment > 0 ? increment : MIN_WEIGHT_INCREMENT;
+  const step = Math.max(MIN_WEIGHT_INCREMENT, Math.round(safeIncrement / MIN_WEIGHT_INCREMENT) * MIN_WEIGHT_INCREMENT);
+  return Math.max(floor, Math.round(weight / step) * step);
 }
 
 export function seedInclineWeight(benchWeight) {
@@ -138,13 +145,17 @@ export function seedMadcowTops(weights, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
 }
 
 // Coerces/fills a persisted mcTop against a fresh seed, the same defend-on-load
-// pattern as normalizeProgram: every expected key ends up a finite number.
+// pattern as normalizeProgram: every expected key ends up a finite number, snapped
+// to the plate grid -- so a value saved before MIN_WEIGHT_INCREMENT was enforced
+// (or restored from an old backup) self-heals instead of displaying forever.
 export function normalizeMcTop(raw, weights) {
   const seeded = seedMadcowTops(weights);
   const result = {};
   for (const id of Object.keys(seeded)) {
     const val = raw?.[id];
-    result[id] = Number.isFinite(val) ? val : seeded[id];
+    const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? MIN_WEIGHT_INCREMENT;
+    const floor = INITIAL_WEIGHTS[id] ?? 20;
+    result[id] = Number.isFinite(val) ? roundWeight(val, increment, floor) : seeded[id];
   }
   return result;
 }
@@ -166,6 +177,25 @@ export function madcowPhase(week, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
   if (week < onrampWeeks) return 'onramp';
   if (week === onrampWeeks) return 'matching';
   return 'record';
+}
+
+// "Week 1: Starting weight. Week 2: add increment. Week 3: add another increment.
+// Week 4: match your previous 5-rep max" -- the on-ramp adds one fixed increment per
+// week regardless of performance (see evaluateMadcowOutcome's unconditional bump while
+// `week < onrampWeeks`), so any on-ramp week's top set is knowable in advance from any
+// other: just walk the fixed step the right number of times. Only valid while both
+// `week` and `targetWeek` are still inside the on-ramp -- once a lift is in weekly
+// (performance-gated) progression, its future top sets aren't arithmetic anymore.
+export function projectOnrampMcTop(mcTop, week, targetWeek, onrampWeeks = MADCOW_ONRAMP_WEEKS) {
+  if (week > onrampWeeks || targetWeek > onrampWeeks || targetWeek === week) return mcTop;
+  const delta = targetWeek - week;
+  const result = {};
+  for (const id of Object.keys(mcTop)) {
+    const increment = MADCOW_WEEKLY_INCREMENTS[id] ?? 2.5;
+    const floor = INITIAL_WEIGHTS[id] ?? 20;
+    result[id] = roundWeight(mcTop[id] + delta * increment, increment, floor);
+  }
+  return result;
 }
 
 // The i-th (1-indexed) of `count` ramp sets as a fraction of `top`, the last landing
@@ -378,23 +408,25 @@ export function calculateBest1RM(history, exerciseId) {
   return best;
 }
 
+const PLATE_WEIGHTS_DESC = [...PLATE_WEIGHTS].sort((a, b) => b - a);
+
 export function calculatePlates(totalWeight) {
   if (!totalWeight || totalWeight <= 20) return [];
   let side = (totalWeight - 20) / 2;
   const res = [];
-  for (const p of [25, 20, 15, 10, 5, 2.5, 1.25]) {
+  for (const p of PLATE_WEIGHTS_DESC) {
     while (side >= p) { res.push(p); side -= p; }
   }
   return res;
 }
 
 export function calculateWarmup(workingWeight) {
-  return Math.max(20, Math.round(workingWeight * 0.6 / 2.5) * 2.5);
+  return roundWeight(workingWeight * 0.6);
 }
 
 export function deloadWeightByPercent(weight, percent, exerciseId) {
   const floor = INITIAL_WEIGHTS[exerciseId] ?? 20;
-  return Math.max(floor, Math.round((weight * (1 - percent / 100)) / 2.5) * 2.5);
+  return roundWeight(weight * (1 - percent / 100), MIN_WEIGHT_INCREMENT, floor);
 }
 
 export function calculateDeload(weights, percent = 10) {

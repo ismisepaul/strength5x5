@@ -4,7 +4,7 @@ import { getProgramExercises, getMadcowDayExercises, getMadcowDayLiftIds, normal
 import { DEFAULT_PROGRAM, EXPECTED_WEIGHT_KEYS } from '../../constants';
 
 const weights = { squat: 115, bench: 67.5, row: 72.5, press: 55, deadlift: 125, incline: 50 };
-const mcTop = { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 };
+const mcTop = { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 };
 const program = normalizeProgram(DEFAULT_PROGRAM);
 const state = { program, weights, mcTop, mcInterval: 12.5, mcPress: 'incline' };
 

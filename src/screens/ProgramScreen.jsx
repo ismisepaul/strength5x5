@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, INITIAL_WEIGHTS } from '../constants';
-import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight } from '../utils';
+import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight, projectOnrampMcTop } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
 import ProgramEditor from '../components/ProgramEditor';
 import WeightInput from '../components/WeightInput';
 import Segmented from '../components/Segmented';
+
+// Minimum horizontal drag, in px, before a pointer up/down pair on the week card
+// counts as a swipe rather than a tap on something inside it (e.g. "back to current").
+const WEEK_SWIPE_THRESHOLD = 40;
 
 const Kicker = ({ children }) => (
   <div className="flex items-center gap-3">
@@ -74,6 +78,8 @@ const ProgramScreen = ({
   const [selectedDay, setSelectedDay] = useState(mcNextDay);
   const [customiseOpen, setCustomiseOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
+  const [previewWeek, setPreviewWeek] = useState(null);
+  const weekSwipeStartXRef = useRef(null);
 
   const prog = getProgram(preset);
   const isMadcow = prog.ramped;
@@ -119,34 +125,119 @@ const ProgramScreen = ({
       <Kicker>{t(isMadcow ? 'program.kickerThisWeek' : 'program.kickerTheProgram')}</Kicker>
 
       {isMadcow ? (() => {
-        const phase = madcowPhase(mcWeek, MADCOW_ONRAMP_WEEKS);
-        const dayExercises = prog.dayExercises(selectedDay, programState);
-        const liftIds = prog.liftIds(selectedDay, programState);
+        // null = showing the live current week. Swiping the card left/right previews
+        // an on-ramp week's phase/note without touching mcWeek; landing back on the
+        // live week (or tapping "back to current") returns to the live view.
+        const displayWeek = previewWeek ?? mcWeek;
+        const isPreviewing = previewWeek !== null && previewWeek !== mcWeek;
+        const phase = madcowPhase(displayWeek, MADCOW_ONRAMP_WEEKS);
+        // Swiping to another on-ramp week doesn't just relabel the badge -- the guide's
+        // fixed +1-increment-per-week on-ramp means each week really does load different
+        // plates, so the ramp below has to show that week's projected top set, not
+        // whatever's currently live (see projectOnrampMcTop).
+        const previewMcTop = projectOnrampMcTop(mcTop, mcWeek, displayWeek, MADCOW_ONRAMP_WEEKS);
+        const previewProgramState = { ...programState, mcTop: previewMcTop };
+        const dayExercises = prog.dayExercises(selectedDay, previewProgramState);
+        const liftIds = prog.liftIds(selectedDay, previewProgramState);
         const volume = computeProjectedVolume(dayExercises).toLocaleString();
         const onrampDots = Array.from({ length: MADCOW_ONRAMP_WEEKS }, (_, i) => i + 1);
+
+        // touch-action: pan-y hands horizontal drags to us instead of letting the
+        // browser's own gesture recognizer claim them for the page's vertical scroll --
+        // without it, the browser fires pointercancel mid-swipe (never pointerup) the
+        // moment it decides the touch is a scroll, so the gesture silently never lands.
+        // No pointer capture here: it would retarget the eventual click to this div,
+        // breaking the "back to current week" button nested inside it.
+        //
+        // The dots themselves stay non-interactive indicators (not buttons) -- arrow
+        // keys on the card are the keyboard/screen-reader path into the same preview,
+        // so keyboard users aren't locked out of a swipe-only gesture.
+        const goToWeek = (targetWeek) => {
+          const clamped = Math.min(MADCOW_ONRAMP_WEEKS, Math.max(1, targetWeek));
+          setPreviewWeek(clamped === mcWeek ? null : clamped);
+        };
+        const handleWeekPointerDown = (e) => { weekSwipeStartXRef.current = e.clientX; };
+        const handleWeekPointerUp = (e) => {
+          const startX = weekSwipeStartXRef.current;
+          weekSwipeStartXRef.current = null;
+          if (startX === null) return;
+          const deltaX = e.clientX - startX;
+          if (Math.abs(deltaX) < WEEK_SWIPE_THRESHOLD) return;
+          goToWeek(displayWeek + (deltaX < 0 ? 1 : -1));
+        };
+        const handleWeekKeyDown = (e) => {
+          if (e.key === 'ArrowLeft') { e.preventDefault(); goToWeek(displayWeek - 1); }
+          else if (e.key === 'ArrowRight') { e.preventDefault(); goToWeek(displayWeek + 1); }
+        };
+
         return (
           <>
-            <div className={cardClass}>
-              <div className="flex justify-between items-center mb-2">
-                <p className="font-semibold text-[16px]">{t('program.madcow.weekLabel', { week: mcWeek })}</p>
-                <Badge>{t(`program.madcow.phase${phase === 'onramp' ? 'Onramp' : phase === 'matching' ? 'Matching' : 'Record'}`)}</Badge>
+            <div
+              className={`${cardClass} touch-pan-y`}
+              onPointerDown={handleWeekPointerDown}
+              onPointerUp={handleWeekPointerUp}
+              onPointerCancel={() => { weekSwipeStartXRef.current = null; }}
+              onKeyDown={handleWeekKeyDown}
+              role="group"
+              tabIndex={0}
+              aria-label={t('program.madcow.weekSwipeAria')}
+            >
+              {/* select-none only here, not on the note text below -- the swipe
+                  gesture needs this row immune to accidental drag-selection, but the
+                  description text is worth letting people select/copy. */}
+              <div className="select-none">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="font-semibold text-[16px]">{t('program.madcow.weekLabel', { week: displayWeek })}</p>
+                  <Badge>{t(`program.madcow.phase${phase === 'onramp' ? 'Onramp' : phase === 'matching' ? 'Matching' : 'Record'}`)}</Badge>
+                </div>
+                {/* A pagination indicator, not a progress bar -- only whichever week is
+                    on screen right now is filled (and widens into a dash); every other
+                    week, past or future, stays a hollow dot. */}
+                <div className="flex items-center gap-1.5 mb-3">
+                  {onrampDots.map(w => {
+                    const selected = displayWeek === w;
+                    return (
+                      <div
+                        key={w}
+                        className={`h-2 rounded-full border transition-[width] ${selected ? 'w-6 bg-accent border-accent' : 'w-2 border-accent/50'}`}
+                      />
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 mb-3">
-                {onrampDots.map(w => {
-                  const isLast = w === MADCOW_ONRAMP_WEEKS;
-                  const filled = w <= mcWeek || phase === 'record';
-                  if (isLast) {
-                    return <div key={w} className={`h-2 w-6 rounded-full border ${filled ? 'bg-accent border-accent' : 'border-accent/50'}`} />;
-                  }
-                  return <div key={w} className={`h-2 w-2 rounded-full ${filled ? 'bg-accent' : ('bg-ink/15')}`} />;
-                })}
+              {/* All three notes stacked in the same grid cell so the row reserves
+                  height for the tallest one -- swiping between phases with different
+                  text lengths changes the words, never the card's height. Onramp's note
+                  also carries how many more automatic steps are left, so weeks 1-3
+                  read as distinct instead of three copies of the same sentence. */}
+              <div className="grid text-body leading-relaxed">
+                {['onramp', 'matching', 'record'].map(p => (
+                  <p
+                    key={p}
+                    className={`col-start-1 row-start-1 ${mutedClass} ${phase === p ? '' : 'invisible'}`}
+                    aria-hidden={phase !== p}
+                  >
+                    {p === 'onramp'
+                      ? t('program.madcow.onrampNote', { count: Math.max(1, MADCOW_ONRAMP_WEEKS - displayWeek) })
+                      : t(`program.madcow.${p === 'matching' ? 'matchingNote' : 'recordNote'}`)}
+                  </p>
+                ))}
               </div>
-              <p className={`text-body leading-relaxed ${mutedClass}`}>
-                {t(`program.madcow.${phase === 'onramp' ? 'onrampNote' : phase === 'matching' ? 'matchingNote' : 'recordNote'}`)}
-              </p>
-              <p className="text-[13px] mt-3 text-accent-300">
-                {t('program.madcow.nextSession', { workout: t(`workout.type${mcNextDay}`), mood: moodBadge(mcNextDay) })}
-              </p>
+              <div className="grid mt-3">
+                <button
+                  onClick={() => setPreviewWeek(null)}
+                  className={`col-start-1 row-start-1 text-left text-[13px] text-accent-300 active:scale-95 ${isPreviewing ? '' : 'invisible'}`}
+                  aria-hidden={!isPreviewing}
+                >
+                  {t('program.madcow.backToCurrentWeek')}
+                </button>
+                <p
+                  className={`col-start-1 row-start-1 text-[13px] text-accent-300 ${isPreviewing ? 'invisible' : ''}`}
+                  aria-hidden={isPreviewing}
+                >
+                  {t('program.madcow.nextSession', { workout: t(`workout.type${mcNextDay}`), mood: moodBadge(mcNextDay) })}
+                </p>
+              </div>
             </div>
 
             <Segmented variant="medium" value={selectedDay} onChange={setSelectedDay} options={prog.days.map(d => ({ val: d, label: t(`workout.type${d}`) }))} />

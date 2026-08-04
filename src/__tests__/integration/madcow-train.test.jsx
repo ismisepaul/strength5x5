@@ -13,7 +13,7 @@ beforeEach(() => {
 function seedMadcow(overrides = {}) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     version: 2,
-    weights: { squat: 107.5, bench: 63.75, row: 68.75, press: 55, deadlift: 117.5, incline: 50 },
+    weights: { squat: 107.5, bench: 65, row: 70, press: 55, deadlift: 117.5, incline: 50 },
     history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
     nextType: 'A',
     isDark: true,
@@ -22,7 +22,7 @@ function seedMadcow(overrides = {}) {
     soundEnabled: false,
     vibrationEnabled: false,
     preset: 'madcow',
-    mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 },
+    mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 },
     mcWeek: 5, // past the on-ramp, so progression is live
     mcInterval: 12.5,
     mcPress: 'incline',
@@ -74,31 +74,46 @@ describe('Train tab under Madcow', () => {
     // ramp and Friday's `top + increment` attempt both still need to read that same
     // number. The earned bump is queued and only lands at Friday's rollover.
     expect(stored.mcTop.squat).toBe(107.5);
-    expect(stored.mcTop.bench).toBe(63.75);
+    expect(stored.mcTop.bench).toBe(65);
     expect(stored.weights.squat).toBe(107.5);
     expect(stored.mcPending.sort()).toEqual(['bench', 'row', 'squat']);
     expect(stored.mcNextDay).toBe('B');
     expect(stored.history[0].preset).toBe('madcow');
   });
 
-  it('editing the top set mid-workout persists it and re-derives the remaining ramp', async () => {
+  it('tracks the in-progress set\'s weight, advancing as sets are logged, without touching next week\'s top set', async () => {
     seedMadcow();
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Start workout'));
-    expect(squatCard().getByText('107.5')).toBeInTheDocument();
 
-    await user.click(squatCard().getByLabelText('Increase Back Squat top set'));
+    // Before anything is logged, the control tracks set 1 -- the lightest ramp rung --
+    // not the top set.
+    expect(squatCard().getByDisplayValue('55')).toBeInTheDocument();
+    expect(squatCard().getByText('Set 1 of 5')).toBeInTheDocument();
 
-    // The active session's top-of-ramp set reflects the edit immediately.
-    expect(squatCard().getByDisplayValue('110')).toBeInTheDocument();
-    expect(squatCard().getByText('110')).toBeInTheDocument();
+    await user.click(squatCard().getByLabelText('Increase Back Squat weight'));
 
-    // And it's persisted the same as a Program-tab edit -- not just a session override.
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    expect(stored.mcTop.squat).toBe(110);
-    expect(stored.weights.squat).toBe(110);
+    // The edit only touches set 1's own weight, both in the control and the per-set
+    // readout beneath it -- it never reads or writes as a "top set".
+    expect(squatCard().getByDisplayValue('57.5')).toBeInTheDocument();
+    expect(squatCard().getAllByText('57.5').length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('Increase Back Squat top set')).not.toBeInTheDocument();
+
+    // It's a session-only nudge -- next week's programmed top set is untouched.
+    let stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.mcTop.squat).toBe(107.5);
+    expect(stored.weights.squat).toBe(107.5);
+
+    // Logging set 1 advances the control to track set 2 next.
+    const firstSquatSet = squatCard().getAllByLabelText('Set 1')[0];
+    await user.click(firstSquatSet);
+    expect(squatCard().getByDisplayValue('67.5')).toBeInTheDocument();
+    expect(squatCard().getByText('Set 2 of 5')).toBeInTheDocument();
+
+    stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.mcTop.squat).toBe(107.5);
   });
 
   it('shows the Madcow-specific missed-reps note instead of the Standard one', async () => {

@@ -54,7 +54,7 @@ describe('WeightInput', () => {
     expect(onChange).toHaveBeenCalledWith(100);
   });
 
-  it('commits a typed value snapped to a 1.25kg increment', async () => {
+  it('never snaps finer than the 2.5kg plate grid, even when a smaller increment is requested', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<WeightInput {...defaultProps} increment={1.25} min={20} onChange={onChange} />);
@@ -62,7 +62,7 @@ describe('WeightInput', () => {
     await user.clear(input);
     await user.type(input, '48.7');
     await user.tab();
-    expect(onChange).toHaveBeenCalledWith(48.75);
+    expect(onChange).toHaveBeenCalledWith(47.5);
   });
 
   it('accepts a comma decimal', async () => {
@@ -156,20 +156,26 @@ describe('WeightInput', () => {
       expect(screen.getByLabelText('Back Squat top set in kilograms')).toBeInTheDocument();
     });
 
-    it('shows a "Top set" caption in the prominent variant', () => {
-      render(<WeightInput {...defaultProps} topSet variant="prominent" />);
+    it('does not use top-set aria wording by default', () => {
+      render(<WeightInput {...defaultProps} />);
+      expect(screen.queryByLabelText('Increase Back Squat top set')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('caption', () => {
+    it('shows the given caption in the prominent variant', () => {
+      render(<WeightInput {...defaultProps} caption="Top set" variant="prominent" />);
       expect(screen.getByText('Top set')).toBeInTheDocument();
     });
 
     it('omits the caption in the compact variant, used inside already-labelled rows', () => {
-      render(<WeightInput {...defaultProps} topSet variant="compact" />);
+      render(<WeightInput {...defaultProps} caption="Top set" variant="compact" />);
       expect(screen.queryByText('Top set')).not.toBeInTheDocument();
     });
 
-    it('does not show the caption or top-set aria wording by default', () => {
+    it('shows no caption when none is given', () => {
       render(<WeightInput {...defaultProps} />);
       expect(screen.queryByText('Top set')).not.toBeInTheDocument();
-      expect(screen.queryByLabelText('Increase Back Squat top set')).not.toBeInTheDocument();
     });
   });
 });

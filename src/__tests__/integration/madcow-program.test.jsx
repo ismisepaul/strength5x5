@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY, ACTIVE_WORKOUT_KEY } from '../../constants';
@@ -44,7 +44,7 @@ describe('Switching to Madcow', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Switch to Madcow 5×5?' });
     expect(within(dialog).getByText('115kg → 107.5kg top set')).toBeInTheDocument();
-    expect(within(dialog).getByText('67.5kg → 63.75kg top set')).toBeInTheDocument();
+    expect(within(dialog).getByText('67.5kg → 60kg top set')).toBeInTheDocument();
 
     await user.click(within(dialog).getByText('Switch'));
 
@@ -116,7 +116,7 @@ describe('Switching to Madcow', () => {
 
 describe('Exercise guide under Madcow', () => {
   it('reaches Incline Bench technique from Workout B, unlike the old Customise-only flow', async () => {
-    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
     const user = userEvent.setup();
     render(<App />);
 
@@ -131,7 +131,7 @@ describe('Exercise guide under Madcow', () => {
 
 describe('Stats under Madcow', () => {
   it('lists Incline Bench instead of Overhead Press, and Standard exercises when active', async () => {
-    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcPress: 'incline' });
     const user = userEvent.setup();
     render(<App />);
 
@@ -149,6 +149,112 @@ describe('Stats under Madcow', () => {
     await user.click(screen.getByLabelText('Stats'));
     expect(screen.getByText('Overhead Press')).toBeInTheDocument();
     expect(screen.queryByText('Incline Bench')).not.toBeInTheDocument();
+  });
+});
+
+describe('Program tab week preview', () => {
+  it('lets swiping the week card preview weeks 1-4 without changing the live week', async () => {
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcWeek: 5, mcPress: 'incline' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+
+    // Past the on-ramp (week 5), the card shows the live week and the real next session.
+    // The "back to current week" link is always in the DOM too (both are, so the card
+    // never resizes between them), just hidden from sight and screen readers.
+    expect(screen.getByText('Week 5')).toBeInTheDocument();
+    expect(screen.getByText('Record territory')).toBeInTheDocument();
+    expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'false');
+    expect(screen.getByText('Back to current week')).toHaveAttribute('aria-hidden', 'true');
+
+    const weekCard = screen.getByLabelText('Week progress. Swipe left or right, or use the arrow keys, to preview weeks 1 to 4.');
+
+    // Swiping right (dragging toward an earlier week) previews week 4 -- the note
+    // updates, and the live "next session" line is replaced by a way back, not a
+    // stale claim about week 4.
+    fireEvent.pointerDown(weekCard, { clientX: 200 });
+    fireEvent.pointerUp(weekCard, { clientX: 260 });
+    expect(screen.getByText('Week 4')).toBeInTheDocument();
+    expect(screen.getByText('Matching your best')).toBeInTheDocument();
+    expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByText('Back to current week')).toHaveAttribute('aria-hidden', 'false');
+
+    // Nothing persisted -- this was only ever a preview.
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.mcWeek).toBe(5);
+
+    // A drag under the swipe threshold doesn't count as a swipe.
+    fireEvent.pointerDown(weekCard, { clientX: 200 });
+    fireEvent.pointerUp(weekCard, { clientX: 210 });
+    expect(screen.getByText('Week 4')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Back to current week'));
+    expect(screen.getByText('Week 5')).toBeInTheDocument();
+    expect(screen.getByText('Record territory')).toBeInTheDocument();
+    expect(screen.getByText(/Next session/)).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it("projects each on-ramp week's own top set into the ramp below, not just the badge", async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await switchToMadcow(user);
+
+    const squatBlock = () => screen.getByRole('button', { name: 'How to perform Back Squat' });
+    // Week 1's seeded top set, and its own (not weeks 2-3's) note copy.
+    expect(within(squatBlock()).getByText('107.5')).toBeInTheDocument();
+    expect(screen.getByText('Deliberately light. 3 more automatic steps before you match your old best in week 4.')).toBeInTheDocument();
+
+    const weekCard = screen.getByLabelText('Week progress. Swipe left or right, or use the arrow keys, to preview weeks 1 to 4.');
+    weekCard.focus();
+    await user.keyboard('{ArrowRight}');
+    await user.keyboard('{ArrowRight}');
+
+    // On-ramp weeks add one fixed increment per week regardless of performance, so
+    // week 3's top set is knowable in advance: 107.5 + 2 * 2.5 = 112.5.
+    expect(screen.getByText('Week 3')).toBeInTheDocument();
+    expect(within(squatBlock()).getByText('112.5')).toBeInTheDocument();
+    // The note's step count also moves, so weeks 1-3 read as distinct copy, not
+    // three repeats of the same sentence.
+    expect(screen.getByText('Deliberately light. One more automatic step and you match your old best in week 4.')).toBeInTheDocument();
+    expect(within(squatBlock()).queryByText('107.5')).not.toBeInTheDocument();
+  });
+
+  it('keeps the phase note selectable, unlike the swipeable week label/dots above it', async () => {
+    seedHistory();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await switchToMadcow(user);
+
+    const note = screen.getByText(/Deliberately light/);
+    expect(note.closest('.select-none')).toBeNull();
+
+    const weekLabel = screen.getByText('Week 1');
+    expect(weekLabel.closest('.select-none')).not.toBeNull();
+  });
+
+  it('lets keyboard users reach the same preview via arrow keys, since the dots themselves stay non-interactive', async () => {
+    seedHistory({ preset: 'madcow', mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 }, mcWeek: 5, mcPress: 'incline' });
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Program'));
+    const weekCard = screen.getByLabelText('Week progress. Swipe left or right, or use the arrow keys, to preview weeks 1 to 4.');
+
+    expect(weekCard).toHaveAttribute('tabindex', '0');
+
+    weekCard.focus();
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByText('Week 4')).toBeInTheDocument();
+
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByText('Week 3')).toBeInTheDocument();
+
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByText('Week 4')).toBeInTheDocument();
   });
 });
 

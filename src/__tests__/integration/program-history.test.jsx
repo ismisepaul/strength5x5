@@ -135,7 +135,7 @@ describe('Add workout always logs for the active program', () => {
   it('offers Madcow\'s A/B/C days and a read-only ramp when Madcow is active', async () => {
     seed({
       preset: 'madcow',
-      mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 },
+      mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 },
       mcWeek: 5,
       mcPress: 'incline',
       mcNextDay: 'A',
@@ -182,7 +182,7 @@ describe('Add workout always logs for the active program', () => {
     // still reachable by editing an old session logged before the last program switch.
     seed({
       preset: 'madcow',
-      mcTop: { squat: 107.5, bench: 63.75, row: 68.75, deadlift: 117.5, press: 55, incline: 50 },
+      mcTop: { squat: 107.5, bench: 65, row: 70, deadlift: 117.5, press: 55, incline: 50 },
       mcWeek: 5,
       mcPress: 'incline',
       history: [

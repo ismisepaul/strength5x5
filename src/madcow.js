@@ -1,8 +1,10 @@
-import { INITIAL_WEIGHTS } from './constants';
-import { applyMcTopToWeights, buildMadcowLiftPlan } from './utils';
+import { INITIAL_WEIGHTS, MADCOW_WEEKLY_INCREMENTS } from './constants';
+import { applyMcTopToWeights, buildMadcowLiftPlan, roundWeight } from './utils';
 
+// Floors at the lift's empty-bar weight and snaps to the plate grid, so a top set
+// can never end up stored (and later displayed) as something no barbell can load.
 export function clampMcTop(liftId, nextTop) {
-  return Math.max(INITIAL_WEIGHTS[liftId] ?? 20, nextTop);
+  return roundWeight(nextTop, MADCOW_WEEKLY_INCREMENTS[liftId], INITIAL_WEIGHTS[liftId] ?? 20);
 }
 
 // Re-derives one lift's ramp against a new (already-clamped) top set, without
@@ -24,11 +26,13 @@ export function reviseWorkoutTopSet(currentWorkout, liftId, clampedTop, mcInterv
   };
 }
 
-// The single place a Madcow top set gets changed. The Program tab, Train's idle
-// row, and Train's active-workout card all funnel through this (directly, or via
-// clampMcTop/reviseWorkoutTopSet individually -- see App.jsx's updateMcTop), so
-// persisted mcTop, the mirrored `weights` snapshot, and (if a workout for that
-// lift is mid-session) its remaining ramp never drift apart from each other.
+// The single place a Madcow top set gets changed. The Program tab and Train's idle
+// row both funnel through this (directly, or via clampMcTop/reviseWorkoutTopSet
+// individually -- see App.jsx's updateMcTop), so persisted mcTop, the mirrored
+// `weights` snapshot, and (if a workout for that lift is mid-session) its remaining
+// ramp never drift apart from each other. Train's active-workout card does NOT use
+// this -- its per-set control (App.jsx's handleUpdateActiveSetWeight) only ever
+// touches the one rung in progress and never persists to mcTop.
 export function updateMadcowTopSet({ liftId, nextTop, mcTop, weights, mcInterval, currentWorkout }) {
   const clamped = clampMcTop(liftId, nextTop);
   const nextMcTop = { ...mcTop, [liftId]: clamped };

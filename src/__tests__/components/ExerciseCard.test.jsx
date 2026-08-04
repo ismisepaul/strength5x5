@@ -137,6 +137,40 @@ describe('ExerciseCard', () => {
     expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
   });
 
+  describe('ramped (Madcow) exercise', () => {
+    const rampedEx = {
+      id: 'squat',
+      name: 'Back Squat',
+      sets: 3,
+      setWeights: [35, 45, 55],
+      setReps: [5, 5, 5],
+      increment: 2.5,
+      weight: 55,
+      setsCompleted: [null, null, null],
+    };
+    const rampedProps = { ...defaultProps, ex: rampedEx, setWeightMin: 20, onSetWeightChange: vi.fn() };
+
+    it('shows the bar setup for the set in progress, not the top set', async () => {
+      const user = userEvent.setup();
+      render(<ExerciseCard {...rampedProps} />);
+      await user.click(screen.getByText('Bar setup'));
+      expect(screen.getByText('Per side · 20 kg bar · 35 total')).toBeInTheDocument();
+    });
+
+    it('advances the bar setup to the next set once the current one is logged', async () => {
+      const user = userEvent.setup();
+      const { rerender } = render(<ExerciseCard {...rampedProps} />);
+      await user.click(screen.getByText('Bar setup'));
+      expect(screen.getByText('Per side · 20 kg bar · 35 total')).toBeInTheDocument();
+
+      // Re-render as the app would after set 1 is logged -- the panel stays open and
+      // should track set 2's weight without the user re-opening it.
+      const afterSet1 = { ...rampedEx, setsCompleted: [5, null, null] };
+      rerender(<ExerciseCard {...rampedProps} ex={afterSet1} />);
+      expect(screen.getByText('Per side · 20 kg bar · 45 total')).toBeInTheDocument();
+    });
+  });
+
   it('renders exactly 1 set target for a single-set exercise and no placeholder slots', () => {
     const deadliftEx = { ...baseEx, id: 'deadlift', name: 'Deadlift', sets: 1, setsCompleted: [null] };
     render(<ExerciseCard {...defaultProps} ex={deadliftEx} />);
