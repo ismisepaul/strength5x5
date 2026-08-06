@@ -1,8 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Stack, CalendarDots, Feather, TrendUp, Timer, Moon, Cloud, ArrowsLeftRight, CaretRight } from '@phosphor-icons/react';
+import { Barbell, Stack, CalendarDots, Feather, TrendUp, Timer, Moon, Cloud, ArrowsLeftRight, CaretRight } from '@phosphor-icons/react';
 import { getProgram } from '../../programs';
-import BarMark from '../BarMark';
 import Sheet from './Sheet';
 import { Z_TOP } from './zIndex';
 
@@ -16,7 +15,7 @@ const HelpSheet = ({ preset, onOpenProgram, onClose }) => {
           // What 5x5 is, then how this app runs it. The training ideas lead because the
           // sheet is the only place that explains the method itself -- the Program tab
           // below covers the per-program sets/reps/progression detail.
-          { Icon: BarMark, title: t('help.liftsTitle'), body: t('help.liftsBody') },
+          { Icon: Barbell, title: t('help.liftsTitle'), body: t('help.liftsBody') },
           { Icon: Stack, title: t('help.setsTitle'), body: t('help.setsBody') },
           { Icon: CalendarDots, title: t('help.frequencyTitle'), body: t('help.frequencyBody') },
           { Icon: Feather, title: t('help.startLightTitle'), body: t('help.startLightBody') },
@@ -37,7 +36,7 @@ const HelpSheet = ({ preset, onOpenProgram, onClose }) => {
         className="w-full flex items-center justify-between p-4 rounded-[10px] border mb-3 active:scale-[0.99] transition-transform bg-surface-deep border-ink/14"
       >
         <span className="flex items-center gap-2 text-[14.5px] font-medium">
-          <BarMark size={17} className="text-accent" /> {t('help.programLink')}
+          <Barbell weight="fill" size={17} className="text-accent" /> {t('help.programLink')}
         </span>
         <span className="flex items-center gap-1 text-body text-accent-300 shrink-0">
           {t(getProgram(preset).nameKey)} <CaretRight size={14} />

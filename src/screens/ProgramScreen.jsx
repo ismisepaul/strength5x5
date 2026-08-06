@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
-import BarMark from '../components/BarMark';
+import { Barbell, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { DEFAULT_PROGRAM, MADCOW_ONRAMP_WEEKS, MADCOW_INTERVAL_OPTIONS, MADCOW_PRESS_OPTIONS, MAX_SETS, INITIAL_WEIGHTS } from '../constants';
 import { computeProjectedVolume, wentUpLastTime, madcowPhase, targetReps, seedMadcowTops, seedInclineWeight, projectOnrampMcTop } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds, topWeightOf } from '../programs';
@@ -129,7 +128,7 @@ const ProgramScreen = ({
         aria-label={t('program.picker.title')}
         className="w-full flex items-center gap-3 p-4 rounded-[10px] border border-accent bg-accent-900 text-left active:scale-[0.99] transition-transform"
       >
-        <BarMark size={20} className="text-accent-300 shrink-0" />
+        <Barbell weight="fill" size={20} className="text-accent-300 shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[16px] truncate">{t(prog.nameKey)}</p>
           <p className={`text-[12.5px] text-ink/78`}>{t(prog.subKey)}</p>

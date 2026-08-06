@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  ListChecks, Gear, Play,
+  Barbell, ListChecks, Gear, Play,
   Question,
   CaretRight,
   Flame,
@@ -752,7 +752,7 @@ const App = () => {
 
       <nav className={`flex-none border-t flex justify-between px-2 pt-1.5 nav-safe bg-surface-nav border-ink/14`}>
         {[
-          { id: 'workout', label: t('tabs.train'), icon: BarMark },
+          { id: 'workout', label: t('tabs.train'), icon: Barbell },
           { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
           { id: 'history', label: t('tabs.log'), icon: ListChecks },
           { id: 'progress', label: t('tabs.stats'), icon: ChartLineUp },
