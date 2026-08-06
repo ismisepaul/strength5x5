@@ -66,7 +66,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
   const mutedClass = 'text-ink/62';
   // Recharts consumes these as literal prop values (SVG attrs / inline styles), not
   // Tailwind classNames, so they can't re-theme via the CSS custom properties alone.
-  const axisColor = isDark ? 'rgba(236,233,226,.4)' : 'rgba(25,22,18,.4)';
+  const axisColor = isDark ? 'rgba(236,233,226,.55)' : 'rgba(25,22,18,.55)';
   const weightColor = isDark ? '#c8663a' : '#b4552b';
   const e1rmColor = isDark ? '#eda175' : '#93401d';
 
@@ -116,7 +116,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
             )}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(236,233,226,.07)' : 'rgba(25,22,18,.07)'} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(236,233,226,.1)' : 'rgba(25,22,18,.1)'} />
                 <XAxis
                   dataKey="date"
                   tickFormatter={formatDate}
@@ -136,7 +136,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
                 <Tooltip
                   contentStyle={{
                     backgroundColor: isDark ? '#1f1d18' : '#ffffff',
-                    border: `1px solid ${isDark ? 'rgba(236,233,226,.1)' : 'rgba(25,22,18,.1)'}`,
+                    border: `1px solid ${isDark ? 'rgba(236,233,226,.14)' : 'rgba(25,22,18,.14)'}`,
                     borderRadius: '8px',
                     fontSize: 13.5,
                   }}
