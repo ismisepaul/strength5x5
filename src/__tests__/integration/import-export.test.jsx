@@ -301,7 +301,7 @@ describe('StrongLifts CSV Import', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByText('Options'));
-    expect(screen.getByText('Import from StrongLifts')).toBeTruthy();
+    expect(screen.getByText('Import')).toBeTruthy();
   });
 
   it('opens confirmation modal with session count after selecting a CSV file', async () => {

@@ -134,18 +134,18 @@ const SettingsScreen = ({
           );
         })()}
 
-        <div className={`${lastRowClass} flex-col items-stretch gap-3`}>
-          <div className="grid grid-cols-2 gap-3">
+        <div className={lastRowClass}>
+          <div className="grid grid-cols-3 gap-2 w-full">
             <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform">
               <DownloadSimple size={20} /> {t('options.backupToDevice')}
             </button>
             <button onClick={() => fileInputRef.current?.click()} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
               <UploadSimple size={20} /> {t('options.restore')}
             </button>
+            <button onClick={() => csvInputRef.current?.click()} aria-label={t('options.importStronglifts')} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
+              <FileCsv size={20} /> {t('options.importCsv')}
+            </button>
           </div>
-          <button onClick={() => csvInputRef.current?.click()} className="w-full py-3.5 rounded-lg border flex items-center justify-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
-            <FileCsv size={20} /> {t('options.importStronglifts')}
-          </button>
         </div>
       </div>
 

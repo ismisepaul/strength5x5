@@ -285,6 +285,7 @@
     "localBackupDesc": "Download to device after every workout",
     "backupToDevice": "Backup",
     "restore": "Restore",
+    "importCsv": "Import",
     "importStronglifts": "Import from StrongLifts",
     "importStrongliftsDesc": "Upload your StrongLifts 5x5 CSV export",
     "language": "Language",

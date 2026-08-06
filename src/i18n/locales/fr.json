@@ -285,6 +285,7 @@
     "localBackupDesc": "Télécharger après chaque séance",
     "backupToDevice": "Sauvegarder",
     "restore": "Restaurer",
+    "importCsv": "Importer",
     "importStronglifts": "Importer de StrongLifts",
     "importStrongliftsDesc": "Téléverser votre export CSV StrongLifts 5x5",
     "language": "Langue",
