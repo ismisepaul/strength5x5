@@ -251,7 +251,9 @@
     "allReps": "Toutes les répétitions",
     "miss_one": "{{count}} manquée",
     "miss_other": "{{count}} manquées",
-    "tonnage": "kg soulevés"
+    "tonnage": "kg soulevés",
+    "sessionCount_one": "{{count}} séance",
+    "sessionCount_other": "{{count}} séances"
   },
   "stats": {
     "title": "Statistiques",

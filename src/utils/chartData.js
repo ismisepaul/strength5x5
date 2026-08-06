@@ -21,6 +21,17 @@ export function sessionTonnage(session) {
   }, 0);
 }
 
+// Session counts bucketed by calendar month (index 0-11) -- the Year view's
+// twelve-month bar strip. Callers pass one year's worth of sessions (e.g. a
+// groupHistory('year', ...) band's entries) so the buckets mean something.
+export function monthlySessionCounts(sessions) {
+  const counts = new Array(12).fill(0);
+  for (const s of sessions) {
+    counts[new Date(s.date).getMonth()]++;
+  }
+  return counts;
+}
+
 export function buildExerciseTimeline(history, exerciseId) {
   const points = [];
   for (let i = history.length - 1; i >= 0; i--) {

@@ -251,7 +251,9 @@
     "allReps": "All reps",
     "miss_one": "{{count}} miss",
     "miss_other": "{{count}} misses",
-    "tonnage": "kg moved"
+    "tonnage": "kg moved",
+    "sessionCount_one": "{{count}} session",
+    "sessionCount_other": "{{count}} sessions"
   },
   "stats": {
     "title": "Stats",

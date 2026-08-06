@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -351,5 +351,30 @@ describe('sessionTonnage', () => {
     const s = session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]);
     s.exercises[0].setWeights = [30, 37.5, 42.5, 47.5, 50];
     expect(sessionTonnage(s)).toBe((30 + 37.5 + 42.5 + 47.5 + 50) * 5);
+  });
+});
+
+describe('monthlySessionCounts', () => {
+  it('buckets sessions into their calendar month', () => {
+    const sessions = [
+      session('2024-01-05', 'A', [['squat', 50, [5]]]),
+      session('2024-01-20', 'A', [['squat', 50, [5]]]),
+      session('2024-03-10', 'A', [['squat', 50, [5]]]),
+    ];
+    const counts = monthlySessionCounts(sessions);
+    expect(counts).toHaveLength(12);
+    expect(counts[0]).toBe(2);
+    expect(counts[2]).toBe(1);
+    expect(counts[1]).toBe(0);
+  });
+
+  it('returns all zeros for an empty year', () => {
+    expect(monthlySessionCounts([])).toEqual(new Array(12).fill(0));
+  });
+
+  it('counts every session in a year with sessions in every month', () => {
+    const sessions = Array.from({ length: 12 }, (_, m) => session(`2024-${String(m + 1).padStart(2, '0')}-15`, 'A', [['squat', 50, [5]]]));
+    const counts = monthlySessionCounts(sessions);
+    expect(counts).toEqual(new Array(12).fill(1));
   });
 });

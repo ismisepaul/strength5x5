@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, CaretDown, CaretRight, PencilSimple, Trash } from '@phosphor-icons/react';
 import { formatDuration, targetReps } from '../utils';
 import { getProgram } from '../programs';
-import { getWorkoutStats, groupHistory, sessionTonnage } from '../utils/chartData';
+import { getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts } from '../utils/chartData';
 import Segmented from '../components/Segmented';
 
 // A session's day+date sits in a fixed left column, program/workout/meta in the middle,
@@ -168,6 +168,18 @@ const LogScreen = ({
               </div>
               <span className={`text-body px-2.5 py-1 rounded-lg bg-surface-deep whitespace-nowrap ${mutedClass}`}>{group.entries.length} · {groupTonnage.toLocaleString()} {t('log.tonnage')}</span>
             </button>
+            {logGrouping === 'year' && (
+              <div className="flex gap-1 px-1 mt-2">
+                {monthlySessionCounts(group.entries.map(({ session: s }) => s)).map((count, m) => (
+                  <div
+                    key={m}
+                    role="img"
+                    aria-label={`${new Date(2000, m, 1).toLocaleDateString(undefined, { month: 'long' })}: ${t('log.sessionCount', { count })}`}
+                    className={`flex-1 aspect-[1.35] rounded-[6px] ${count > 0 ? 'border border-accent bg-accent-900' : 'border border-ink/26'}`}
+                  />
+                ))}
+              </div>
+            )}
             {expandedGroups[group.key] && (
               <div className="space-y-3 mt-3 ml-2">
                 {group.entries.map(({ session: s, originalIndex }) => renderEntry(s, originalIndex, originalIndex))}
