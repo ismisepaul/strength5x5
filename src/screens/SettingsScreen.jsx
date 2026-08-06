@@ -21,7 +21,7 @@ const SettingsScreen = ({
       <div className={cardClass}>
         <div className="mb-4">
           <p className="text-card font-semibold">{t('options.restInterval')}</p>
-          <p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
+          <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
         </div>
         <Segmented
           options={[{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }]}
@@ -32,18 +32,18 @@ const SettingsScreen = ({
 
       <div className={cardClass}>
         <div className={`flex items-center justify-between pb-4 mb-4 ${innerRowClass}`}>
-          <div><p className="text-card font-semibold">{t('options.soundAlert')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
+          <div><p className="text-card font-semibold">{t('options.soundAlert')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
           <Switch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} ariaLabel="Sound alert" />
         </div>
         <div className="flex items-center justify-between">
-          <div><p className="text-card font-semibold">{t('options.vibration')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>
+          <div><p className="text-card font-semibold">{t('options.vibration')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>
           <Switch checked={vibrationEnabled} onChange={() => setVibrationEnabled(!vibrationEnabled)} ariaLabel="Vibration" />
         </div>
       </div>
 
       <div className={cardClass}>
         <div className="flex items-center justify-between">
-          <div><p className="text-card font-semibold">{t('options.darkMode')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.darkModeDesc')}</p></div>
+          <div><p className="text-card font-semibold">{t('options.darkMode')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.darkModeDesc')}</p></div>
           <Switch checked={isDark} onChange={() => setIsDark(!isDark)} ariaLabel="Dark mode" />
         </div>
       </div>
@@ -52,7 +52,7 @@ const SettingsScreen = ({
       <div className={cardClass}>
         <div className={`pb-4 mb-4 ${innerRowClass}`}>
           <p className="text-card font-semibold">{t('options.backupSync')}</p>
-          <p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.backupSyncDesc')}</p>
+          <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.backupSyncDesc')}</p>
         </div>
 
         {/* Local Backup toggle */}
@@ -104,7 +104,7 @@ const SettingsScreen = ({
 
       <div className={cardClass}>
         <div className="flex items-center justify-between">
-          <div><p className="text-card font-semibold">{t('options.language')}</p><p className={`text-meta uppercase leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
+          <div><p className="text-card font-semibold">{t('options.language')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
           <div className="w-24">
             <Segmented
               options={[{ label: 'EN', val: 'en' }, { label: 'FR', val: 'fr' }]}

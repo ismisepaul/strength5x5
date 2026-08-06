@@ -62,7 +62,7 @@ const StatsScreen = ({
                   <div className="min-w-0 pr-2 text-left">
                     <p className="text-card font-medium truncate">{t('exercises.' + id)}</p>
                     {hasData ? (
-                      <p className={`text-meta uppercase leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
+                      <p className={`text-meta leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
                     ) : (
                       <p className={`text-meta leading-snug mt-1 ${mutedClass}`}>{t('stats.noSessionsForLift')}</p>
                     )}

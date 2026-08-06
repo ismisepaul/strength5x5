@@ -501,7 +501,7 @@ const ProgramScreen = ({
               <div className="space-y-2 mb-4 text-left">
                 {rowIds.map(id => (
                   <div key={id} className={`flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep`}>
-                    <span className={`text-meta uppercase ${mutedClass}`}>{t('exercises.' + id)}</span>
+                    <span className={`text-meta ${mutedClass}`}>{t('exercises.' + id)}</span>
                     <span className="text-[14px] tabular-nums">
                       {toMadcow
                         ? (resuming

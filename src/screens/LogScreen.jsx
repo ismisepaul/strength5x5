@@ -15,7 +15,7 @@ const LogEntry = ({ session: s, onClick, mutedClass, t }) => (
     <p className="text-card font-semibold mb-3">{t(`workout.type${s.type}`)}</p>
     <div className="space-y-2">{s.exercises.map(ex => (
       <div key={ex.id} className="flex justify-between text-card items-center">
-        <span className={`text-meta uppercase ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
+        <span className={`text-meta ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
         <div className="flex items-center gap-3">
           <span className="tabular-nums">{ex.weight}kg</span>
           <div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (
