@@ -266,7 +266,8 @@
     "noDataForRange": "Aucune donnée pour cette période",
     "minTwoWorkouts": "Complétez au moins 2 séances pour voir les tendances",
     "noSessionsForLift": "Aucune séance enregistrée pour cet exercice.",
-    "fromProgram": "Depuis {{program}}"
+    "fromProgram": "Depuis {{program}}",
+    "held": "Maintenu"
   },
   "options": {
     "title": "Options",

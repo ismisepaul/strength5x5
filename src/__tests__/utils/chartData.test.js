@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -376,5 +376,21 @@ describe('monthlySessionCounts', () => {
     const sessions = Array.from({ length: 12 }, (_, m) => session(`2024-${String(m + 1).padStart(2, '0')}-15`, 'A', [['squat', 50, [5]]]));
     const counts = monthlySessionCounts(sessions);
     expect(counts).toEqual(new Array(12).fill(1));
+  });
+});
+
+describe('getWeightDelta', () => {
+  it('returns null with fewer than two points', () => {
+    expect(getWeightDelta([])).toBeNull();
+    expect(getWeightDelta([{ weight: 50 }])).toBeNull();
+  });
+
+  it('returns 0 when the two most recent points are held at the same weight', () => {
+    expect(getWeightDelta([{ weight: 50 }, { weight: 50 }])).toBe(0);
+  });
+
+  it('returns the signed kg delta between the two most recent points', () => {
+    expect(getWeightDelta([{ weight: 50 }, { weight: 52.5 }])).toBe(2.5);
+    expect(getWeightDelta([{ weight: 60 }, { weight: 55 }])).toBe(-5);
   });
 });

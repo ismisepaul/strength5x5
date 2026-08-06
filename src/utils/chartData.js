@@ -49,6 +49,17 @@ export function buildExerciseTimeline(history, exerciseId) {
   return points;
 }
 
+// Change between a timeline's two most recent points -- null with fewer than two,
+// 0 for "held", otherwise the signed kg delta. Takes an already-built timeline
+// (buildExerciseTimeline or buildBig3Timeline output) rather than history+id so it
+// works for both a single lift and the Big-3 sum.
+export function getWeightDelta(timeline) {
+  if (timeline.length < 2) return null;
+  const last = timeline[timeline.length - 1].weight;
+  const prev = timeline[timeline.length - 2].weight;
+  return last - prev;
+}
+
 export function buildBig3Timeline(history) {
   const latest = { squat: null, bench: null, deadlift: null };
   const latest1rm = { squat: null, bench: null, deadlift: null };

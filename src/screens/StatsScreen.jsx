@@ -4,7 +4,8 @@ import { TrendUp, TrendDown, ArrowRight, CaretRight } from '@phosphor-icons/reac
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
 import { normalizePreset } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds } from '../programs';
-import { getExerciseTrend, getBig3Trend } from '../utils/chartData';
+import { buildExerciseTimeline, getBig3Trend, getWeightDelta } from '../utils/chartData';
+import Sparkline from '../components/Sparkline';
 import StatsChart from '../components/StatsChart';
 
 const StatsScreen = ({
@@ -53,10 +54,10 @@ const StatsScreen = ({
             );
             const otherProgramName = t(getProgram(PROGRAM_IDS.find(id => id !== normalizePreset(preset))).nameKey);
             return [...activeIds, ...extraIds].map(id => {
-              const trend = getExerciseTrend(history, id);
-              const { Icon: TrendIcon, className: trendClass } = trendIconFor(trend);
               const hasData = history.some(s => s.exercises?.some(e => e.id === id));
               const isExtra = extraIds.includes(id);
+              const timeline = hasData ? buildExerciseTimeline(history, id) : [];
+              const delta = hasData ? getWeightDelta(timeline) : null;
               return (
                 <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
                   <div className="min-w-0 pr-2 text-left">
@@ -70,9 +71,14 @@ const StatsScreen = ({
                       <p className={`text-tab uppercase tracking-wide mt-0.5 ${mutedClass}`}>{t('stats.fromProgram', { program: otherProgramName })}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {trend && <TrendIcon size={18} className={trendClass} />}
-                    <span className="text-accent-300 tabular-nums">{weights[id]}kg</span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {hasData && <Sparkline values={timeline.map(p => p.weight)} width={48} height={20} className="text-accent-300" />}
+                    <div className="text-right">
+                      <p className="text-[17px] font-medium tabular-nums text-accent-300">{weights[id]}kg</p>
+                      {delta !== null && (
+                        <p className={`text-tab ${mutedClass}`}>{delta === 0 ? t('stats.held') : `${delta > 0 ? '+' : ''}${delta}kg`}</p>
+                      )}
+                    </div>
                     <CaretRight size={18} className={mutedClass} />
                   </div>
                 </button>
