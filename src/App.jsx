@@ -84,6 +84,7 @@ const App = () => {
   const [statsView, setStatsView] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [expandedLogEntry, setExpandedLogEntry] = useState(null);
   const [expandedBarSetup, setExpandedBarSetup] = useState({});
   const [completionSummary, setCompletionSummary] = useState(null);
   const [showResumePrompt, setShowResumePrompt] = useState(() => !!saved.activeSession);
@@ -660,6 +661,7 @@ const App = () => {
             getCurrentDay={getCurrentDay} setEditingEntry={setEditingEntry}
             logGrouping={logGrouping} setLogGrouping={setLogGrouping}
             expandedGroups={expandedGroups} setExpandedGroups={setExpandedGroups}
+            expandedLogEntry={expandedLogEntry} setExpandedLogEntry={setExpandedLogEntry}
           />
         )}
 

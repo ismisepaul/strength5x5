@@ -314,7 +314,7 @@ describe('Log entry editing', () => {
     vibrationEnabled: false,
   };
 
-  it('tapping a log entry opens the edit modal', async () => {
+  it('tapping a log entry expands it in place, and Edit opens the edit modal', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
     const user = userEvent.setup();
     render(<App />);
@@ -323,9 +323,25 @@ describe('Log entry editing', () => {
     const cards = screen.getAllByText(/Workout [AB]/);
     await user.click(cards[0].closest('button'));
 
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByText('Edit workout'));
+
     expect(screen.getByLabelText('Edit workout')).toBeInTheDocument();
-    expect(screen.getByText('Edit workout')).toBeInTheDocument();
     expect(screen.getByText('Save Changes')).toBeInTheDocument();
+  });
+
+  it('collapses an expanded entry on a second tap', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const card = screen.getAllByText(/Workout [AB]/)[0].closest('button');
+    await user.click(card);
+    expect(screen.getByText('Edit workout')).toBeInTheDocument();
+
+    await user.click(card);
+    expect(screen.queryByText('Edit workout')).not.toBeInTheDocument();
   });
 
   it('changing weight and saving persists the change', async () => {
@@ -336,6 +352,7 @@ describe('Log entry editing', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/);
     await user.click(cards[0].closest('button'));
+    await user.click(screen.getByText('Edit workout'));
 
     const increaseButtons = screen.getAllByLabelText(/Increase .+ weight/);
     await user.click(increaseButtons[0]);
@@ -357,6 +374,7 @@ describe('Log entry editing', () => {
     expect(cardsBefore).toHaveLength(2);
 
     await user.click(cardsBefore[0].closest('button'));
+    await user.click(screen.getByText('Edit workout'));
     await user.click(screen.getByText('Delete Workout'));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
@@ -373,6 +391,7 @@ describe('Log entry editing', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/);
     await user.click(cards[0].closest('button'));
+    await user.click(screen.getByText('Edit workout'));
 
     const increaseButtons = screen.getAllByLabelText(/Increase .+ weight/);
     await user.click(increaseButtons[0]);
@@ -503,6 +522,7 @@ describe('Same-day workout prevention', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[1]);
+    await user.click(screen.getByText('Edit workout'));
 
     const dialog = screen.getByRole('dialog');
     const dateInput = dialog.querySelector('input[type="date"]');
@@ -521,6 +541,7 @@ describe('Same-day workout prevention', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[0]);
+    await user.click(screen.getByText('Edit workout'));
 
     const dialog = screen.getByRole('dialog');
     const dateInput = dialog.querySelector('input[type="date"]');
@@ -540,6 +561,7 @@ describe('Same-day workout prevention', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[0]);
+    await user.click(screen.getByText('Edit workout'));
 
     expect(screen.queryByText('A workout already exists on this date')).not.toBeInTheDocument();
     const saveBtn = screen.getByText('Save Changes').closest('button');

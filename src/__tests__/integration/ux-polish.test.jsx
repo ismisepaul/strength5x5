@@ -56,6 +56,7 @@ describe('Toast notifications', () => {
     await user.click(screen.getByText('Log'));
     const workoutCards = screen.getAllByText(/Workout A/i);
     await user.click(workoutCards[0].closest('button'));
+    await user.click(screen.getByText('Edit workout'));
 
     const dialog = screen.getByRole('dialog');
     const saveBtn = dialog.querySelector('button');
@@ -76,6 +77,7 @@ describe('Toast notifications', () => {
     await user.click(screen.getByText('Log'));
     const workoutCards = screen.getAllByText(/Workout A/i);
     await user.click(workoutCards[0].closest('button'));
+    await user.click(screen.getByText('Edit workout'));
 
     await user.click(screen.getByText('Delete Workout'));
     const deleteBtn = screen.getByRole('button', { name: /^Delete$/i });
