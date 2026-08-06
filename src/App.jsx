@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
-  Barbell, ListChecks, Gear, Play,
+  ListChecks, Gear, Play,
   Question,
   CaretRight,
   Flame,
   SlidersHorizontal, ChartLineUp
 } from '@phosphor-icons/react';
+import BarMark from './components/BarMark';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
@@ -639,7 +640,7 @@ const App = () => {
       {!isMidWorkout && (
         <header className="flex-none header-safe px-5 pb-2.5 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Barbell weight="fill" size={20} className="text-accent" />
+            <BarMark size={20} className="text-accent" />
             <h1 className="text-[17px] font-semibold">{t('app.title')}</h1>
           </div>
           <div className="flex items-center gap-3">
@@ -751,7 +752,7 @@ const App = () => {
 
       <nav className={`flex-none border-t flex justify-between px-2 pt-1.5 nav-safe bg-surface-nav border-ink/14`}>
         {[
-          { id: 'workout', label: t('tabs.train'), icon: Barbell },
+          { id: 'workout', label: t('tabs.train'), icon: BarMark },
           { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
           { id: 'history', label: t('tabs.log'), icon: ListChecks },
           { id: 'progress', label: t('tabs.stats'), icon: ChartLineUp },
