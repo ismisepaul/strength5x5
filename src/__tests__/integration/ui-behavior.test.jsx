@@ -259,6 +259,9 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
+    // Fixture dates are long past any recent range -- widen it so the sparklines
+    // being tested here actually have points to draw from.
+    await user.click(screen.getByText('All'));
 
     const squatRow = screen.getByText('Back Squat', { selector: 'p.text-card' }).closest('button');
     expect(squatRow.querySelector('polyline')).toBeTruthy();
@@ -301,6 +304,22 @@ describe('Stats charts', () => {
     expect(screen.getByText('6M')).toBeInTheDocument();
     expect(screen.getByText('1Y')).toBeInTheDocument();
     expect(screen.getByText('All')).toBeInTheDocument();
+  });
+
+  it('keeps the chosen range selected across the list-to-detail transition', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('1Y'));
+    expect(screen.getByText('1Y').closest('button').className).toContain('bg-accent-900');
+
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
+    expect(screen.getByText('1Y').closest('button').className).toContain('bg-accent-900');
+
+    await user.click(screen.getByLabelText('Back to stats'));
+    expect(screen.getByText('1Y').closest('button').className).toContain('bg-accent-900');
   });
 });
 

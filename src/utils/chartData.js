@@ -32,6 +32,24 @@ export function monthlySessionCounts(sessions) {
   return counts;
 }
 
+// Shared by the Stats list (sparklines) and the detail chart, so both read the same
+// range -- picking a range in one place keeps it selected everywhere else that shows one.
+export const STATS_RANGES = [
+  { label: '1M', days: 30 },
+  { label: '3M', days: 90 },
+  { label: '6M', days: 180 },
+  { label: '1Y', days: 365 },
+  { label: 'All', days: null },
+];
+
+export function filterByRange(timeline, rangeLabel) {
+  const rangeDef = STATS_RANGES.find(r => r.label === rangeLabel);
+  if (!rangeDef?.days) return timeline;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - rangeDef.days);
+  return timeline.filter(p => new Date(p.date) >= cutoff);
+}
+
 export function buildExerciseTimeline(history, exerciseId) {
   const points = [];
   for (let i = history.length - 1; i >= 0; i--) {

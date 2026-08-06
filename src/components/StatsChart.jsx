@@ -3,25 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
-import { buildExerciseTimeline, buildBig3Timeline } from '../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, filterByRange } from '../utils/chartData';
 import { useTheme } from '../hooks/useTheme';
 
-const RANGES = [
-  { label: '1M', days: 30 },
-  { label: '3M', days: 90 },
-  { label: '6M', days: 180 },
-  { label: '1Y', days: 365 },
-  { label: 'All', days: null },
-];
-
-const RANGE_STORAGE_KEY = 'strength5x5_stats_range';
-
-const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
+// range is owned by StatsScreen and shared with the lift-row sparklines -- this
+// component only reads it, so the same range stays selected across the
+// list-to-detail transition instead of two independent pickers drifting apart.
+const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const [range, setRange] = useState(() => {
-    try { return localStorage.getItem(RANGE_STORAGE_KEY) || '6M'; } catch { return '6M'; }
-  });
   const [showWeight, setShowWeight] = useState(true);
   const [showE1rm, setShowE1rm] = useState(false);
 
@@ -40,13 +30,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
       : buildExerciseTimeline(history, exerciseId);
   }, [history, exerciseId, isBig3]);
 
-  const filteredData = useMemo(() => {
-    const rangeDef = RANGES.find(r => r.label === range);
-    if (!rangeDef?.days) return fullTimeline;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - rangeDef.days);
-    return fullTimeline.filter(p => new Date(p.date) >= cutoff);
-  }, [fullTimeline, range]);
+  const filteredData = useMemo(() => filterByRange(fullTimeline, range), [fullTimeline, range]);
 
   const toggleWeight = () => {
     if (showWeight && !showE1rm) return;
@@ -91,18 +75,6 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
       </div>
 
       <div className="p-4 rounded-[10px] border bg-surface border-ink/14">
-        <div className="flex rounded-lg border overflow-hidden mb-4 border-ink/10">
-          {RANGES.map((r, i) => (
-            <button
-              key={r.label}
-              onClick={() => { setRange(r.label); try { localStorage.setItem(RANGE_STORAGE_KEY, r.label); } catch {} }}
-              className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_var(--color-accent)]' : mutedClass}`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-
         {filteredData.length === 0 ? (
           <div className="py-16 text-center">
             <p className={`text-card ${mutedClass}`}>{t('stats.noDataForRange')}</p>

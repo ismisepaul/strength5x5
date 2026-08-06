@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -392,5 +392,33 @@ describe('getWeightDelta', () => {
   it('returns the signed kg delta between the two most recent points', () => {
     expect(getWeightDelta([{ weight: 50 }, { weight: 52.5 }])).toBe(2.5);
     expect(getWeightDelta([{ weight: 60 }, { weight: 55 }])).toBe(-5);
+  });
+});
+
+describe('filterByRange', () => {
+  const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
+  const timeline = [
+    { date: daysAgo(400), weight: 40 },
+    { date: daysAgo(200), weight: 45 },
+    { date: daysAgo(60), weight: 50 },
+    { date: daysAgo(5), weight: 55 },
+  ];
+
+  it('returns everything for "All"', () => {
+    expect(filterByRange(timeline, 'All')).toHaveLength(4);
+  });
+
+  it('keeps only points within the last 90 days for "3M"', () => {
+    const result = filterByRange(timeline, '3M');
+    expect(result.map(p => p.weight)).toEqual([50, 55]);
+  });
+
+  it('keeps only points within the last 365 days for "1Y"', () => {
+    const result = filterByRange(timeline, '1Y');
+    expect(result.map(p => p.weight)).toEqual([45, 50, 55]);
+  });
+
+  it('falls back to the full timeline for an unknown range label', () => {
+    expect(filterByRange(timeline, 'bogus')).toHaveLength(4);
   });
 });
