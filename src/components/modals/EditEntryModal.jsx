@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash, X } from '@phosphor-icons/react';
+import { X } from '@phosphor-icons/react';
 import { targetReps } from '../../utils';
 import { evaluateWorkoutOutcome } from '../../progression';
 import { getProgram, topWeightOf } from '../../programs';
@@ -8,17 +8,16 @@ import WeightInput from '../WeightInput';
 import Sheet from './Sheet';
 import { Z_EDIT_ENTRY } from './zIndex';
 
-// The Log's add/edit-entry sheet -- carries more logic than the other modals
-// (date-conflict/future-date validation, progression-on-save, delete confirm)
-// because editing a logged session is where those all meet. showDeleteConfirm is
-// local since nothing outside this modal reads or writes it.
+// The Log's add/edit-entry sheet -- carries date-conflict/future-date validation and
+// progression-on-save, since editing a logged session is where those meet. Deleting a
+// session no longer routes through here -- it has its own direct confirm+undo flow
+// from the Log row's expansion (DeleteEntryConfirmSheet).
 const EditEntryModal = ({
   editingEntry, setEditingEntry, history, historyDateSet, preset, currentWorkoutType,
   weights, program, mcTop, mcInterval, mcPress,
-  setWeights, setCurrentWorkoutType, setHistory, showToast, handleManualLogSave, saveToDriveQuietly, getAppState,
+  setWeights, setCurrentWorkoutType, setHistory, showToast, handleManualLogSave,
 }) => {
   const { t } = useTranslation();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isNewEntry = editingEntry.index === -1;
   const entryProg = getProgram(editingEntry.session.preset);
@@ -36,7 +35,7 @@ const EditEntryModal = ({
   const dateConflict = selectedDate !== originalDate && historyDateSet.has(selectedDate);
   const isFutureDate = selectedDate > new Date().toISOString().slice(0, 10);
 
-  const handleClose = () => { setEditingEntry(null); setShowDeleteConfirm(false); };
+  const handleClose = () => setEditingEntry(null);
 
   return (
     <Sheet ariaLabel={isNewEntry ? 'Add workout' : 'Edit workout'} z={Z_EDIT_ENTRY} onClose={handleClose}>
@@ -169,38 +168,8 @@ const EditEntryModal = ({
           setEditingEntry(null);
           handleManualLogSave({ history: newHistory, weights: nextWeights, nextType });
         }}
-        className={`w-full h-12 flex items-center justify-center rounded-lg border text-[14.5px] font-medium mb-6 ${dateConflict || isFutureDate ? 'border-ink/12 text-ink/30' : 'border-accent text-accent active:scale-95'}`}
+        className={`w-full h-12 flex items-center justify-center rounded-lg border text-[14.5px] font-medium ${dateConflict || isFutureDate ? 'border-ink/12 text-ink/30' : 'border-accent text-accent active:scale-95'}`}
       >{isNewEntry ? t('modals.addWorkout') : t('modals.saveChanges')}</button>
-
-      {!isNewEntry && (
-        !showDeleteConfirm ? (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="w-full min-h-[44px] flex items-center justify-center gap-2 text-card active:scale-90 text-ink/62"
-          ><Trash size={14} /> {t('modals.deleteWorkout')}</button>
-        ) : (
-          <div className="p-4 rounded-lg border border-dashed border-ink/30">
-            <p className="text-body text-center mb-3">{t('modals.deleteConfirm')}</p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  const newHistory = history.filter((_, idx) => idx !== editingEntry.index);
-                  setHistory(newHistory);
-                  setEditingEntry(null);
-                  setShowDeleteConfirm(false);
-                  showToast(t('toast.workoutDeleted'), 'success');
-                  saveToDriveQuietly({ ...getAppState(), history: newHistory });
-                }}
-                className="flex-1 h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/26 text-ink"
-              >{t('modals.delete')}</button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 h-[46px] flex items-center justify-center text-[14px] active:scale-95 text-ink/62"
-              >{t('modals.cancel')}</button>
-            </div>
-          </div>
-        )
-      )}
     </div>
     </Sheet>
   );

@@ -77,11 +77,9 @@ describe('Toast notifications', () => {
     await user.click(screen.getByText('Log'));
     const workoutCards = screen.getAllByText(/Workout A/i);
     await user.click(workoutCards[0].closest('button'));
-    await user.click(screen.getByText('Edit workout'));
 
     await user.click(screen.getByText('Delete Workout'));
-    const deleteBtn = screen.getByRole('button', { name: /^Delete$/i });
-    await user.click(deleteBtn);
+    await user.click(screen.getByText('Delete anyway'));
 
     await waitFor(() => {
       expect(screen.getByText('Workout deleted')).toBeInTheDocument();

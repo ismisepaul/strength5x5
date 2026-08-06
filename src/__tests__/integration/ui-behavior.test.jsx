@@ -364,7 +364,7 @@ describe('Log entry editing', () => {
     expect(stored.history[0].exercises[0].weight).toBe(57.5);
   });
 
-  it('deleting an entry removes it from history', async () => {
+  it('deleting an entry removes it from history, directly from the row expansion', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
     const user = userEvent.setup();
     render(<App />);
@@ -374,13 +374,45 @@ describe('Log entry editing', () => {
     expect(cardsBefore).toHaveLength(2);
 
     await user.click(cardsBefore[0].closest('button'));
-    await user.click(screen.getByText('Edit workout'));
     await user.click(screen.getByText('Delete Workout'));
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
 
-    expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
+    expect(screen.getByText('Keep session')).toBeInTheDocument();
+    await user.click(screen.getByText('Delete anyway'));
+
+    expect(screen.queryByText('Keep session')).not.toBeInTheDocument();
     const cardsAfter = screen.getAllByText(/Workout [AB]/);
     expect(cardsAfter).toHaveLength(1);
+  });
+
+  it('keeping a session dismisses the delete confirm without deleting anything', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getAllByText(/Workout [AB]/)[0].closest('button'));
+    await user.click(screen.getByText('Delete Workout'));
+
+    await user.click(screen.getByText('Keep session'));
+
+    expect(screen.queryByText('Keep session')).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Workout [AB]/)).toHaveLength(2);
+  });
+
+  it('undoing a delete restores the session', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getAllByText(/Workout [AB]/)[0].closest('button'));
+    await user.click(screen.getByText('Delete Workout'));
+    await user.click(screen.getByText('Delete anyway'));
+
+    expect(screen.getAllByText(/Workout [AB]/)).toHaveLength(1);
+    await user.click(screen.getByText('Undo'));
+
+    expect(screen.getAllByText(/Workout [AB]/)).toHaveLength(2);
   });
 
   it('cancelling edit discards changes', async () => {

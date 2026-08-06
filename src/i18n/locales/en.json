@@ -344,8 +344,9 @@
     "futureDate": "Date cannot be in the future",
     "saveChanges": "Save Changes",
     "deleteWorkout": "Delete Workout",
-    "deleteConfirm": "Delete this workout? This cannot be undone.",
-    "delete": "Delete",
+    "deleteConfirmNamed": "Delete {{program}} {{workout}}? You'll be able to undo it for a few seconds after.",
+    "keepSession": "Keep session",
+    "deleteAnyway": "Delete anyway",
     "dataConflictTitle": "Data Conflict",
     "dataConflictBody": "Drive has {{driveCount}} workouts (latest: {{cloudDate}}). Local has {{localCount}} workouts (latest: {{localDate}}).",
     "useDriveData": "Use Drive Data",
@@ -397,6 +398,7 @@
     "return": "Return"
   },
   "toast": {
+    "undo": "Undo",
     "fileTooLarge": "File exceeds 5MB limit",
     "invalidBackup": "Invalid backup file",
     "backupRestored": "Backup restored",

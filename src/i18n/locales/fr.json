@@ -344,8 +344,9 @@
     "futureDate": "La date ne peut pas être dans le futur",
     "saveChanges": "Enregistrer",
     "deleteWorkout": "Supprimer la séance",
-    "deleteConfirm": "Supprimer cette séance ? Action irréversible.",
-    "delete": "Supprimer",
+    "deleteConfirmNamed": "Supprimer {{workout}} {{program}} ? Vous pourrez annuler pendant quelques secondes après.",
+    "keepSession": "Garder la séance",
+    "deleteAnyway": "Supprimer quand même",
     "dataConflictTitle": "Conflit de données",
     "dataConflictBody": "Drive contient {{driveCount}} séances (dernière : {{cloudDate}}). En local : {{localCount}} séances (dernière : {{localDate}}).",
     "useDriveData": "Utiliser les données Drive",
@@ -397,6 +398,7 @@
     "return": "Retour"
   },
   "toast": {
+    "undo": "Annuler",
     "fileTooLarge": "Le fichier dépasse 5 Mo",
     "invalidBackup": "Fichier de sauvegarde invalide",
     "backupRestored": "Sauvegarde restaurée",

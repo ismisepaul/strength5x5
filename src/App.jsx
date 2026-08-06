@@ -46,6 +46,7 @@ import SyncConflictModal from './components/modals/SyncConflictModal';
 import WorkoutPickerSheet from './components/modals/WorkoutPickerSheet';
 import CompletionSummaryModal from './components/modals/CompletionSummaryModal';
 import EditEntryModal from './components/modals/EditEntryModal';
+import DeleteEntryConfirmSheet from './components/modals/DeleteEntryConfirmSheet';
 
 const LONG_BREAK_DELOAD_KEY = 'strength5x5_long_break_deload_for_date';
 
@@ -83,6 +84,7 @@ const App = () => {
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [deletingEntry, setDeletingEntry] = useState(null);
   const [expandedGroups, setExpandedGroups] = useState({});
   const [expandedLogEntry, setExpandedLogEntry] = useState(null);
   const [expandedBarSetup, setExpandedBarSetup] = useState({});
@@ -571,6 +573,29 @@ const App = () => {
     saveToDriveQuietly(nextState);
   }, [getAppState, saveToDriveQuietly]);
 
+  // Optimistic delete: history drops the session immediately (so every other reader --
+  // Stats, Drive autosave -- sees the same single source of truth right away), and the
+  // toast's Undo re-inserts the exact session back at its original index.
+  const handleDeleteEntry = useCallback((index) => {
+    const deletedSession = history[index];
+    const newHistory = history.filter((_, i) => i !== index);
+    setHistory(newHistory);
+    setDeletingEntry(null);
+    // Row identity in the Log is index-based, and indices shift once an earlier
+    // session is removed -- collapse rather than risk a stale expansion.
+    setExpandedLogEntry(null);
+    showToast(t('toast.workoutDeleted'), 'success', undefined, {
+      actionLabel: t('toast.undo'),
+      onAction: () => {
+        const restored = [...newHistory];
+        restored.splice(index, 0, deletedSession);
+        setHistory(restored);
+        saveToDriveQuietly({ ...getAppState(), history: restored });
+      },
+    });
+    saveToDriveQuietly({ ...getAppState(), history: newHistory });
+  }, [history, setHistory, showToast, t, saveToDriveQuietly, getAppState]);
+
   const formatLastSaved = useCallback((date) => {
     if (!date) return null;
     const now = new Date();
@@ -658,7 +683,7 @@ const App = () => {
           <LogScreen
             history={history} preset={preset} program={program} weights={weights}
             mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress}
-            getCurrentDay={getCurrentDay} setEditingEntry={setEditingEntry}
+            getCurrentDay={getCurrentDay} setEditingEntry={setEditingEntry} setDeletingEntry={setDeletingEntry}
             logGrouping={logGrouping} setLogGrouping={setLogGrouping}
             expandedGroups={expandedGroups} setExpandedGroups={setExpandedGroups}
             expandedLogEntry={expandedLogEntry} setExpandedLogEntry={setExpandedLogEntry}
@@ -855,8 +880,14 @@ const App = () => {
           setHistory={setHistory}
           showToast={showToast}
           handleManualLogSave={handleManualLogSave}
-          saveToDriveQuietly={saveToDriveQuietly}
-          getAppState={getAppState}
+        />
+      )}
+
+      {deletingEntry && (
+        <DeleteEntryConfirmSheet
+          session={deletingEntry.session}
+          onKeep={() => setDeletingEntry(null)}
+          onDelete={() => handleDeleteEntry(deletingEntry.index)}
         />
       )}
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, CaretDown, CaretRight, PencilSimple } from '@phosphor-icons/react';
+import { Plus, CaretDown, CaretRight, PencilSimple, Trash } from '@phosphor-icons/react';
 import { formatDuration, targetReps } from '../utils';
 import { getProgram } from '../programs';
 import { getWorkoutStats, groupHistory, sessionTonnage } from '../utils/chartData';
@@ -10,7 +10,7 @@ import Segmented from '../components/Segmented';
 // and the outcome (all reps, or a dashed miss chip -- shape, not hue) on the right.
 // Tapping the row expands it in place, showing each exercise's sets as the same
 // set-target rectangles Train uses, with Edit on the right where a thumb lands.
-const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, mutedClass, t }) => {
+const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedClass, t }) => {
   const date = new Date(s.date);
   const missCount = s.exercises.reduce((n, ex) => n + ex.setsCompleted.filter((r, i) => r !== targetReps(ex, i)).length, 0);
   const tonnage = Math.round(sessionTonnage(s));
@@ -63,7 +63,11 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, mutedClass, t }) =
               </div>
             </div>
           ))}
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onDelete}
+              className={`flex items-center gap-1.5 h-10 px-4 rounded-lg text-body active:scale-95 ${mutedClass}`}
+            ><Trash size={15} /> {t('modals.deleteWorkout')}</button>
             <button
               onClick={onEdit}
               className="flex items-center gap-1.5 h-10 px-4 rounded-lg border border-ink/26 text-ink text-body active:scale-95"
@@ -76,18 +80,19 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, mutedClass, t }) =
 };
 
 const LogScreen = ({
-  history, preset, program, weights, mcTop, mcInterval, mcPress, getCurrentDay, setEditingEntry,
+  history, preset, program, weights, mcTop, mcInterval, mcPress, getCurrentDay, setEditingEntry, setDeletingEntry,
   logGrouping, setLogGrouping, expandedGroups, setExpandedGroups, expandedLogEntry, setExpandedLogEntry,
 }) => {
   const { t } = useTranslation();
   const mutedClass = 'text-ink/62';
-  const renderEntry = (s, key, onEdit) => (
+  const renderEntry = (s, key, originalIndex) => (
     <LogEntry
       key={key}
       session={s}
       isExpanded={expandedLogEntry === key}
       onToggle={() => setExpandedLogEntry(prev => prev === key ? null : key)}
-      onEdit={onEdit}
+      onEdit={() => setEditingEntry({ index: originalIndex, session: JSON.parse(JSON.stringify(s)) })}
+      onDelete={() => setDeletingEntry({ index: originalIndex, session: s })}
       mutedClass={mutedClass}
       t={t}
     />
@@ -145,7 +150,7 @@ const LogScreen = ({
       {history.length === 0 ? (
         <p className={`py-20 text-center ${mutedClass}`}>{t('log.noHistory')}</p>
       ) : logGrouping === 'all' ? (
-        history.map((s, i) => renderEntry(s, i, () => setEditingEntry({ index: i, session: JSON.parse(JSON.stringify(s)) })))
+        history.map((s, i) => renderEntry(s, i, i))
       ) : (
         groupHistory(history, logGrouping, 0).map((group) => (
           <div key={group.key}>
@@ -162,7 +167,7 @@ const LogScreen = ({
             </button>
             {expandedGroups[group.key] && (
               <div className="space-y-3 mt-3 ml-2">
-                {group.entries.map(({ session: s, originalIndex }) => renderEntry(s, originalIndex, () => setEditingEntry({ index: originalIndex, session: JSON.parse(JSON.stringify(s)) })))}
+                {group.entries.map(({ session: s, originalIndex }) => renderEntry(s, originalIndex, originalIndex))}
               </div>
             )}
           </div>
