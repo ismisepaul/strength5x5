@@ -267,7 +267,11 @@
     "minTwoWorkouts": "Complétez au moins 2 séances pour voir les tendances",
     "noSessionsForLift": "Aucune séance enregistrée pour cet exercice.",
     "fromProgram": "Depuis {{program}}",
-    "held": "Maintenu"
+    "held": "Maintenu",
+    "since": "Depuis le {{date}}",
+    "bestSet": "Meilleure série",
+    "volume": "Volume",
+    "misses": "Échecs"
   },
   "options": {
     "title": "Options",

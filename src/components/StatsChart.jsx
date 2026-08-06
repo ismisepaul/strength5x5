@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
-import { buildExerciseTimeline, buildBig3Timeline, filterByRange } from '../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, filterByRange, getExerciseRangeStats } from '../utils/chartData';
 import { useTheme } from '../hooks/useTheme';
 
 // range is owned by StatsScreen and shared with the lift-row sparklines -- this
@@ -31,6 +31,9 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
   }, [history, exerciseId, isBig3]);
 
   const filteredData = useMemo(() => filterByRange(fullTimeline, range), [fullTimeline, range]);
+  const maxWeightInRange = filteredData.length > 0 ? Math.max(...filteredData.map(p => p.weight)) : null;
+  const sinceDelta = filteredData.length >= 2 ? filteredData[filteredData.length - 1].weight - filteredData[0].weight : null;
+  const rangeStats = !isBig3 && filteredData.length > 0 ? getExerciseRangeStats(history, exerciseId, range) : null;
 
   const toggleWeight = () => {
     if (showWeight && !showE1rm) return;
@@ -71,6 +74,11 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
             {showWeight && showE1rm && <span className={mutedClass}> / </span>}
             {showE1rm && <span className="text-accent-300">{t('stats.est1rmValue', { value: currentE1rm })}</span>}
           </p>
+          {sinceDelta !== null && (
+            <p className={`text-meta mt-0.5 ${mutedClass}`}>
+              {t('stats.since', { date: new Date(filteredData[0].date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })} · {sinceDelta > 0 ? '+' : ''}{sinceDelta}kg
+            </p>
+          )}
         </div>
       </div>
 
@@ -121,7 +129,13 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
                     dataKey="weight"
                     stroke={weightColor}
                     strokeWidth={2}
-                    dot={{ r: 3, fill: weightColor, strokeWidth: 0 }}
+                    dot={(dotProps) => {
+                      const { cx, cy, payload, index } = dotProps;
+                      const isPR = payload.weight === maxWeightInRange;
+                      return isPR
+                        ? <circle key={`pr-${index}`} cx={cx} cy={cy} r={5} fill="none" stroke={weightColor} strokeWidth={2} />
+                        : <circle key={`dot-${index}`} cx={cx} cy={cy} r={3} fill={weightColor} strokeWidth={0} />;
+                    }}
                     activeDot={{ r: 5, fill: weightColor, strokeWidth: 2, stroke: isDark ? '#141310' : '#ffffff' }}
                   />
                 )}
@@ -160,6 +174,23 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
             {t('stats.est1rm')}
           </button>
         </div>
+
+        {rangeStats && (
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 rule-fade-top text-center">
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.bestSet')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{rangeStats.bestSet ? `${rangeStats.bestSet.weight}kg × ${rangeStats.bestSet.reps}` : '—'}</p>
+            </div>
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.volume')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{Math.round(rangeStats.volume).toLocaleString()}kg</p>
+            </div>
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.misses')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{rangeStats.misses}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange, getExerciseRangeStats } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -420,5 +420,52 @@ describe('filterByRange', () => {
 
   it('falls back to the full timeline for an unknown range label', () => {
     expect(filterByRange(timeline, 'bogus')).toHaveLength(4);
+  });
+});
+
+describe('getExerciseRangeStats', () => {
+  const daysAgoISO = (n) => new Date(Date.now() - n * 86400000).toISOString();
+
+  it('finds the heaviest completed set, sums volume, and counts misses', () => {
+    const h = [
+      session('2024-01-01', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+      session('2024-01-08', 'A', [['squat', 55, [5, 5, 3, 3, 2]]]),
+    ];
+    const { bestSet, volume, misses } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(bestSet).toEqual({ weight: 55, reps: 5 });
+    expect(volume).toBe(50 * 25 + 55 * (5 + 5 + 3 + 3 + 2));
+    expect(misses).toBe(3);
+  });
+
+  it('ignores unlogged sets and lifts with no matching exercise', () => {
+    const h = [
+      session('2024-01-01', 'A', [['squat', 50, [5, 5, null, null, null]]]),
+      session('2024-01-02', 'A', [['bench', 40, [5, 5, 5, 5, 5]]]),
+    ];
+    const { bestSet, volume, misses } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(bestSet).toEqual({ weight: 50, reps: 5 });
+    expect(volume).toBe(50 * 10);
+    expect(misses).toBe(0);
+  });
+
+  it('uses per-set weights for ramped lifts when picking the best set', () => {
+    const h = [session('2024-01-01', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    h[0].exercises[0].setWeights = [30, 37.5, 42.5, 47.5, 50];
+    h[0].exercises[0].setReps = [5, 5, 5, 5, 5];
+    const { bestSet } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(bestSet).toEqual({ weight: 50, reps: 5 });
+  });
+
+  it('excludes sessions before the range cutoff', () => {
+    const h = [
+      session(daysAgoISO(400), 'A', [['squat', 60, [5, 5, 5, 5, 5]]]),
+      session(daysAgoISO(5), 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+    ];
+    const { bestSet } = getExerciseRangeStats(h, 'squat', '3M');
+    expect(bestSet).toEqual({ weight: 50, reps: 5 });
+  });
+
+  it('returns a null bestSet and zeroed stats when nothing matches', () => {
+    expect(getExerciseRangeStats([], 'squat', 'All')).toEqual({ bestSet: null, volume: 0, misses: 0 });
   });
 });

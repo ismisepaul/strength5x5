@@ -306,6 +306,23 @@ describe('Stats charts', () => {
     expect(screen.getByText('All')).toBeInTheDocument();
   });
 
+  it('shows the since/delta summary and the best-set/volume/misses row', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('All'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
+
+    expect(screen.getByText(/^Since /)).toBeInTheDocument();
+    expect(screen.getByText('Best set')).toBeInTheDocument();
+    expect(screen.getByText('55kg × 5')).toBeInTheDocument();
+    expect(screen.getByText('Volume')).toBeInTheDocument();
+    expect(screen.getByText('Misses')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+  });
+
   it('keeps the chosen range selected across the list-to-detail transition', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
     const user = userEvent.setup();

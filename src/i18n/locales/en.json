@@ -267,7 +267,11 @@
     "minTwoWorkouts": "Complete at least 2 workouts to see trends",
     "noSessionsForLift": "No sessions logged for this lift yet.",
     "fromProgram": "From {{program}}",
-    "held": "Held"
+    "held": "Held",
+    "since": "Since {{date}}",
+    "bestSet": "Best set",
+    "volume": "Volume",
+    "misses": "Misses"
   },
   "options": {
     "title": "Options",

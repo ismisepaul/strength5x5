@@ -1,4 +1,4 @@
-import { calculate1RM } from '../utils';
+import { calculate1RM, targetReps } from '../utils';
 
 function bestRepsFor(ex) {
   let best = 0;
@@ -42,12 +42,47 @@ export const STATS_RANGES = [
   { label: 'All', days: null },
 ];
 
-export function filterByRange(timeline, rangeLabel) {
+function rangeCutoffDate(rangeLabel) {
   const rangeDef = STATS_RANGES.find(r => r.label === rangeLabel);
-  if (!rangeDef?.days) return timeline;
+  if (!rangeDef?.days) return null;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - rangeDef.days);
+  return cutoff;
+}
+
+export function filterByRange(timeline, rangeLabel) {
+  const cutoff = rangeCutoffDate(rangeLabel);
+  if (!cutoff) return timeline;
   return timeline.filter(p => new Date(p.date) >= cutoff);
+}
+
+// Best single set, total volume, and missed-rep count for one lift within a range --
+// unlike the timeline builders above, this reads every set directly (not just the
+// per-session weight/e1rm reduction), since "best set" and "misses" need per-set detail.
+export function getExerciseRangeStats(history, exerciseId, rangeLabel) {
+  const cutoff = rangeCutoffDate(rangeLabel);
+  let bestSet = null;
+  let volume = 0;
+  let misses = 0;
+
+  for (const session of history) {
+    if (cutoff && new Date(session.date) < cutoff) continue;
+    const ex = session.exercises.find(e => e.id === exerciseId);
+    if (!ex) continue;
+    const isRamped = Array.isArray(ex.setWeights);
+
+    ex.setsCompleted.forEach((reps, i) => {
+      if (reps === null) return;
+      const weight = isRamped ? ex.setWeights[i] : ex.weight;
+      volume += weight * reps;
+      if (!bestSet || weight > bestSet.weight || (weight === bestSet.weight && reps > bestSet.reps)) {
+        bestSet = { weight, reps };
+      }
+      if (reps !== targetReps(ex, i)) misses++;
+    });
+  }
+
+  return { bestSet, volume, misses };
 }
 
 export function buildExerciseTimeline(history, exerciseId) {
