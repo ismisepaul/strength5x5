@@ -52,7 +52,14 @@ const SettingsScreen = ({
         <SectionHeader>{t('options.appearanceSection')}</SectionHeader>
         <div className={rowClass}>
           <div><p className="text-card font-semibold">{t('options.darkMode')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.darkModeDesc')}</p></div>
-          <Switch checked={isDark} onChange={() => setIsDark(!isDark)} ariaLabel="Dark mode" />
+          <div className="w-32">
+            <Segmented
+              options={[{ label: t('options.dark'), val: true }, { label: t('options.light'), val: false }]}
+              value={isDark}
+              onChange={setIsDark}
+              variant="medium"
+            />
+          </div>
         </div>
         <div className={lastRowClass}>
           <div><p className="text-card font-semibold">{t('options.language')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
