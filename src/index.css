@@ -21,7 +21,7 @@
   */
   --text-kicker: 10.5px;
   --text-tab:    11px;
-  --text-meta:   12px;
+  --text-meta:   13px;
   --text-body:   13.5px;
   --text-card:   15px;
   --text-title:  24px;
@@ -53,7 +53,7 @@
   without a second `-lt` class. Stamped on <html> by App.jsx's isDark effect.
 */
 :root[data-theme='light'] {
-  --color-ground:       #f7f4ef;
+  --color-ground:       #f2eee7;
   --color-surface:      #ffffff;
   --color-surface-deep: #ece6dd;
   --color-surface-nav:  #ffffff;
