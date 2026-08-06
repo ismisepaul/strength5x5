@@ -52,7 +52,7 @@ const LONG_BREAK_DELOAD_KEY = 'strength5x5_long_break_deload_for_date';
 const App = () => {
   const { t } = useTranslation();
   const saved = useLoadSaved();
-  const { toasts, showToast } = useToast();
+  const { toasts, showToast, dismiss: dismissToast } = useToast();
 
   const [weights, setWeights] = useState(saved.weights ?? INITIAL_WEIGHTS);
   const [program, setProgram] = useState(() => normalizeProgram(saved.program));
@@ -939,7 +939,7 @@ const App = () => {
         />
       )}
 
-      <Toast toasts={toasts} />
+      <Toast toasts={toasts} dismiss={dismissToast} />
       <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
       <input type="file" ref={csvInputRef} onChange={handleStrongliftsImport} accept=".csv" className="hidden" />
     </div>
