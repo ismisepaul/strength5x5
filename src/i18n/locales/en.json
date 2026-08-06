@@ -264,6 +264,11 @@
   },
   "options": {
     "title": "Options",
+    "sessionSection": "Session",
+    "appearanceSection": "Appearance",
+    "yourDataSection": "Your data",
+    "aboutSection": "About",
+    "aboutPrivacy": "Nothing leaves your phone unless you connect Google Drive.",
     "restInterval": "Rest interval",
     "restIntervalDesc": "Countdown between sets",
     "soundAlert": "Sound alert",
