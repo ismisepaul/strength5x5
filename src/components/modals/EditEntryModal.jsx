@@ -5,7 +5,7 @@ import { targetReps } from '../../utils';
 import { evaluateWorkoutOutcome } from '../../progression';
 import { getProgram, topWeightOf } from '../../programs';
 import WeightInput from '../WeightInput';
-import Modal from './Modal';
+import Sheet from './Sheet';
 import { Z_EDIT_ENTRY } from './zIndex';
 
 // The Log's add/edit-entry sheet -- carries more logic than the other modals
@@ -39,7 +39,8 @@ const EditEntryModal = ({
   const handleClose = () => { setEditingEntry(null); setShowDeleteConfirm(false); };
 
   return (
-    <Modal ariaLabel={isNewEntry ? 'Add workout' : 'Edit workout'} z={Z_EDIT_ENTRY} align="start" scrollable cardClassName="max-w-md mx-auto my-6 p-6">
+    <Sheet ariaLabel={isNewEntry ? 'Add workout' : 'Edit workout'} z={Z_EDIT_ENTRY} onClose={handleClose}>
+    <div className="max-h-[75vh] overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-lg font-semibold">{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
         <button onClick={handleClose} aria-label="Close edit modal" className="w-10 h-10 rounded-lg border flex items-center justify-center border-ink/15 text-ink"><X size={18} /></button>
@@ -200,7 +201,8 @@ const EditEntryModal = ({
           </div>
         )
       )}
-    </Modal>
+    </div>
+    </Sheet>
   );
 };
 
