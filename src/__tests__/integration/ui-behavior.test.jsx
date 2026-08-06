@@ -208,7 +208,7 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
 
     expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
     expect(screen.getByText('Weight')).toBeInTheDocument();
@@ -221,7 +221,7 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
     await user.click(screen.getByLabelText('Back to stats'));
 
     expect(screen.getByRole('heading', { name: 'Stats' })).toBeInTheDocument();
@@ -239,7 +239,7 @@ describe('Stats charts', () => {
     expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
   });
 
-  it('shows trend arrows on exercise cards', async () => {
+  it('every exercise card stays tappable into its chart view', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
     const user = userEvent.setup();
     render(<App />);
@@ -248,9 +248,23 @@ describe('Stats charts', () => {
 
     const exerciseNames = ['Back Squat', 'Bench Press', 'Barbell Row', 'Overhead Press', 'Deadlift'];
     for (const name of exerciseNames) {
-      const row = screen.getByText(name).closest('button');
+      const row = screen.getByText(name, { selector: 'p.text-card' }).closest('button');
       expect(row.querySelector('svg')).toBeTruthy();
     }
+  });
+
+  it('renders a sparkline only for lifts with at least two logged sessions', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+
+    const squatRow = screen.getByText('Back Squat', { selector: 'p.text-card' }).closest('button');
+    expect(squatRow.querySelector('polyline')).toBeTruthy();
+
+    const benchRow = screen.getByText('Bench Press', { selector: 'p.text-card' }).closest('button');
+    expect(benchRow.querySelector('polyline')).toBeFalsy();
   });
 
   it('Weight toggle is on by default and Est. 1RM can be toggled on independently', async () => {
@@ -259,7 +273,7 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
 
     const weightBtn = screen.getByText('Weight').closest('button');
     const e1rmBtn = screen.getByText('Est. 1RM').closest('button');
@@ -280,7 +294,7 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
 
     expect(screen.getByText('1M')).toBeInTheDocument();
     expect(screen.getByText('3M')).toBeInTheDocument();

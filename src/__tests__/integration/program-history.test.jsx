@@ -110,7 +110,7 @@ describe('Stats surfaces lifts trained under the other program', () => {
 
     await user.click(screen.getByLabelText('Stats'));
 
-    const squatCard = screen.getByText('Back Squat').closest('button');
+    const squatCard = screen.getByText('Back Squat', { selector: 'p.text-card' }).closest('button');
     expect(within(squatCard).queryByText(/^From /)).not.toBeInTheDocument();
   });
 });

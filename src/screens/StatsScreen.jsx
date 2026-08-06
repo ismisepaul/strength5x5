@@ -1,12 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TrendUp, TrendDown, ArrowRight, CaretRight } from '@phosphor-icons/react';
+import { CaretRight } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
 import { normalizePreset } from '../utils';
 import { getProgram, PROGRAM_IDS, programAllLiftIds } from '../programs';
-import { buildExerciseTimeline, getBig3Trend, getWeightDelta } from '../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getWeightDelta } from '../utils/chartData';
 import Sparkline from '../components/Sparkline';
 import StatsChart from '../components/StatsChart';
+
+const BIG3_IDS = ['squat', 'bench', 'deadlift'];
 
 const StatsScreen = ({
   history, statsView, setStatsView, weights, best1RMs, big3Total,
@@ -15,7 +17,6 @@ const StatsScreen = ({
   const { t } = useTranslation();
   const mutedClass = 'text-ink/62';
   const cardClass = 'w-full p-4 rounded-[10px] border flex justify-between items-center active:scale-[0.98] transition-transform bg-surface border-ink/14';
-  const trendIconFor = (trend) => trend === 'up' ? { Icon: TrendUp, className: 'text-accent' } : trend === 'down' ? { Icon: TrendDown, className: mutedClass } : { Icon: ArrowRight, className: 'text-ink/40' };
 
   return (
     <div className="space-y-6">
@@ -30,17 +31,34 @@ const StatsScreen = ({
         <>
           <h2 className="text-title font-medium mb-4">{t('stats.title')}</h2>
           {(() => {
-            const big3Trend = getBig3Trend(history);
-            const { Icon: TrendIcon, className: trendClass } = trendIconFor(big3Trend);
+            const big3Timeline = buildBig3Timeline(history);
+            const big3Delta = getWeightDelta(big3Timeline);
             return (
-              <button onClick={() => setStatsView('big3')} className={cardClass}>
-                <div className="text-left">
-                  <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-1">{t('stats.big3Total')}</p>
-                  <p className="text-title font-medium tabular-nums">{big3Total}kg</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {big3Trend && <TrendIcon size={18} className={trendClass} />}
+              <button onClick={() => setStatsView('big3')} className="w-full p-4 rounded-[10px] border text-left active:scale-[0.98] transition-transform bg-surface border-ink/14">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300">{t('stats.big3Total')}</p>
                   <CaretRight size={18} className={mutedClass} />
+                </div>
+                <div className="flex items-end justify-between gap-3 mb-4">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-hero font-medium tabular-nums">{big3Total}kg</p>
+                    {big3Delta !== null && (
+                      <span className={`text-meta px-2 py-0.5 rounded-md whitespace-nowrap ${big3Delta === 0 ? mutedClass : 'text-accent-300 bg-accent-900'}`}>
+                        {big3Delta === 0 ? t('stats.held') : `${big3Delta > 0 ? '+' : ''}${big3Delta}kg`}
+                      </span>
+                    )}
+                  </div>
+                  {big3Timeline.length >= 2 && (
+                    <Sparkline values={big3Timeline.map(p => p.weight)} width={96} height={32} className="text-accent-300 shrink-0" />
+                  )}
+                </div>
+                <div className="flex items-center gap-4 pt-3 rule-fade-top">
+                  {BIG3_IDS.map(id => (
+                    <div key={id} className="flex-1 min-w-0">
+                      <p className={`text-tab uppercase tracking-wide truncate ${mutedClass}`}>{t('exercises.' + id)}</p>
+                      <p className="text-body font-medium tabular-nums">{weights[id]}kg</p>
+                    </div>
+                  ))}
                 </div>
               </button>
             );

@@ -163,7 +163,7 @@ describe('Stats under Madcow', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Stats'));
-    const squatCard = screen.getByText('Back Squat').closest('button');
+    const squatCard = screen.getByText('Back Squat', { selector: 'p.text-card' }).closest('button');
     expect(within(squatCard).getByText('107.5kg')).toBeInTheDocument();
   });
 });
