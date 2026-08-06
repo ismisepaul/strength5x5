@@ -17,7 +17,7 @@ describe('RestTimer', () => {
 
   it('renders the in-session state with no skip button when no timer is running', () => {
     render(<RestTimer {...defaultProps} />);
-    expect(screen.getByText('In session')).toBeInTheDocument();
+    expect(screen.getByText('In workout')).toBeInTheDocument();
     expect(screen.queryByLabelText('Skip rest')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Dismiss')).not.toBeInTheDocument();
   });

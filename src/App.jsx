@@ -650,7 +650,7 @@ const App = () => {
             <button
               onClick={() => setShowHelp(true)}
               aria-label="How it works"
-              className={`w-9 h-9 rounded-lg border flex items-center justify-center border-ink/15 text-ink`}
+              className={`w-10 h-10 rounded-lg border flex items-center justify-center border-ink/26 text-ink`}
             ><Question size={18} /></button>
           </div>
         </header>

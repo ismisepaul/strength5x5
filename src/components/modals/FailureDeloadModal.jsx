@@ -27,7 +27,7 @@ const FailureDeloadModal = ({ pendingFailureDeloads, deloadPercent, onDeloadPerc
           </div>
         ))}
       </div>
-      <button onClick={() => onConfirm(previewDeloads)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.confirmDeload')}</button>
+      <button onClick={() => onConfirm(previewDeloads)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent-300 font-medium text-[14.5px] active:scale-95 mb-6">{t('modals.confirmDeload')}</button>
       <button onClick={onSkip} className="w-full min-h-[44px] flex items-center justify-center text-card active:scale-90 text-ink/62">{t('modals.skipDeload')}</button>
     </Modal>
   );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/index.js';
-import { DownloadSimple, UploadSimple, FileCsv } from '@phosphor-icons/react';
+import { DownloadSimple, UploadSimple, FileCsv, ArrowsClockwise } from '@phosphor-icons/react';
 import Switch from '../components/Switch';
 import Segmented from '../components/Segmented';
 import { formatBytes, countSessionsSince } from '../utils';
@@ -16,7 +16,7 @@ const DriveDot = ({ state }) => (
   <span className={
     state === 'connected' ? 'w-2 h-2 rounded-full bg-accent shrink-0'
       : state === 'expired' ? 'w-2 h-2 rounded-full border border-dashed border-ink/50 shrink-0'
-        : 'w-2 h-2 rounded-full border border-ink/40 shrink-0'
+        : 'w-2 h-2 rounded-full border border-ink/50 shrink-0'
   } />
 );
 
@@ -88,29 +88,20 @@ const SettingsScreen = ({
       {/* Your data */}
       <div>
         <SectionHeader>{t('options.yourDataSection')}</SectionHeader>
-        <div className={rowClass}>
-          <div><p className="text-body font-medium">{t('options.localBackup')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.localBackupDesc')}</p></div>
-          <Switch checked={localBackup} onChange={() => setLocalBackup(!localBackup)} ariaLabel="Local backup" />
-        </div>
-
-        {driveConfigured && (() => {
-          const driveState = gdrive.isConnected ? 'connected' : gdrive.hasEverConnected ? 'expired' : 'notConnected';
-          const unsavedCount = countSessionsSince(history, gdrive.lastSavedAt);
-          return (
-            <div className={rowClass}>
-              <div className="w-full">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <DriveDot state={driveState} />
-                    <p className="text-body font-medium truncate">{t('options.googleDrive')}</p>
-                  </div>
-                  {driveState === 'connected' ? (
-                    <button onClick={handleDriveSave} disabled={gdrive.isLoading} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 border-ink/26 text-ink shrink-0">{t('options.syncNow')}</button>
-                  ) : (
-                    <button onClick={handleConnect} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 border-ink/26 text-ink shrink-0">{driveState === 'expired' ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
-                  )}
+        <div className="p-4 rounded-[10px] border bg-surface border-ink/14">
+          {driveConfigured && (() => {
+            const driveState = gdrive.isConnected ? 'connected' : gdrive.hasEverConnected ? 'expired' : 'notConnected';
+            const unsavedCount = countSessionsSince(history, gdrive.lastSavedAt);
+            const statusLabel = driveState === 'connected' ? t('options.driveConnectedLabel') : driveState === 'expired' ? t('options.driveExpiredLabel') : t('options.driveNotConnectedLabel');
+            return (
+              <>
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <p className="text-[17px] font-semibold truncate">{t('options.googleDrive')}</p>
+                  <span className={`flex items-center gap-1.5 shrink-0 text-meta font-medium ${driveState === 'connected' ? 'text-accent-300' : mutedClass}`}>
+                    <DriveDot state={driveState} /> {statusLabel}
+                  </span>
                 </div>
-                <div className="pl-4 mt-1 space-y-1">
+                <div className="mb-3 space-y-0.5">
                   {driveState === 'connected' && (
                     gdrive.saveFailed ? (
                       <button onClick={handleDriveSave} className={`text-meta text-left active:scale-95 ${mutedClass}`}>{t('options.saveFailed')}</button>
@@ -129,23 +120,33 @@ const SettingsScreen = ({
                     <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.driveOfflineNote')}</p>
                   )}
                 </div>
-              </div>
-            </div>
-          );
-        })()}
-
-        <div className={lastRowClass}>
-          <div className="grid grid-cols-3 gap-2 w-full">
-            <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform">
-              <DownloadSimple size={20} /> {t('options.backupToDevice')}
-            </button>
-            <button onClick={() => fileInputRef.current?.click()} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
-              <UploadSimple size={20} /> {t('options.restore')}
-            </button>
-            <button onClick={() => csvInputRef.current?.click()} aria-label={t('options.importStronglifts')} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
-              <FileCsv size={20} /> {t('options.importCsv')}
-            </button>
+                <button
+                  onClick={driveState === 'connected' ? handleDriveSave : handleConnect}
+                  disabled={driveState === 'connected' && gdrive.isLoading}
+                  className="w-full h-11 rounded-lg border border-accent text-accent-300 font-medium flex items-center justify-center gap-2 active:scale-95 disabled:opacity-35"
+                >
+                  <ArrowsClockwise size={16} /> {driveState === 'connected' ? t('options.syncNow') : driveState === 'expired' ? t('options.reconnectDrive') : t('options.connectDrive')}
+                </button>
+                <div className="my-4 border-t border-ink/14" />
+              </>
+            );
+          })()}
+          <div className="flex items-center justify-between gap-3">
+            <div><p className="text-card font-semibold">{t('options.localBackup')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.localBackupDesc')}</p></div>
+            <Switch checked={localBackup} onChange={() => setLocalBackup(!localBackup)} ariaLabel="Local backup" />
           </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mt-3">
+          <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent-300 flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform">
+            <DownloadSimple size={20} /> {t('options.backupToDevice')}
+          </button>
+          <button onClick={() => fileInputRef.current?.click()} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
+            <UploadSimple size={20} /> {t('options.restore')}
+          </button>
+          <button onClick={() => csvInputRef.current?.click()} aria-label={t('options.importStronglifts')} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
+            <FileCsv size={20} /> {t('options.importCsv')}
+          </button>
         </div>
       </div>
 

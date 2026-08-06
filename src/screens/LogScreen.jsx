@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, CaretDown, CaretRight, PencilSimple, Trash } from '@phosphor-icons/react';
 import { formatDuration, targetReps } from '../utils';
+import { MAX_SETS } from '../constants';
 import { getProgram } from '../programs';
 import { getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts } from '../utils/chartData';
 import Segmented from '../components/Segmented';
@@ -19,21 +20,21 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedCla
     <div>
       <button onClick={onToggle} aria-expanded={isExpanded} className="w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/14 flex gap-3 items-start">
         <div className="flex flex-col items-center w-10 shrink-0 pt-0.5">
-          <span className={`text-tab uppercase tracking-wide ${mutedClass}`}>{date.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+          <span className={`text-[12.5px] ${mutedClass}`}>{date.toLocaleDateString(undefined, { weekday: 'short' })}</span>
           <span className="text-card font-semibold tabular-nums">{date.getDate()}</span>
-          <span className={`text-tab uppercase tracking-wide ${mutedClass}`}>{date.toLocaleDateString(undefined, { month: 'short' })}</span>
         </div>
         <div className="flex-1 min-w-0">
           <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300">{t(getProgram(s.preset).nameKey)}</span>
           <p className="text-card font-semibold mt-0.5">{t(`workout.type${s.type}`)}</p>
           <p className={`text-meta mt-0.5 ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{tonnage.toLocaleString()} {t('log.tonnage')}</p>
         </div>
-        <div className="shrink-0 pt-0.5">
+        <div className="flex items-center gap-2 shrink-0 pt-0.5">
           {missCount === 0 ? (
             <span className={`text-meta whitespace-nowrap ${mutedClass}`}>{t('log.allReps')}</span>
           ) : (
             <span className="text-meta whitespace-nowrap px-2 py-1 rounded-md border border-dashed border-ink/40 text-ink/62">{t('log.miss', { count: missCount })}</span>
           )}
+          {isExpanded ? <CaretDown size={17} className={mutedClass} /> : <CaretRight size={17} className={mutedClass} />}
         </div>
       </button>
       {isExpanded && (
@@ -53,9 +54,13 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedCla
                     ? 'border border-accent bg-accent-900 text-accent-300'
                     : missed
                       ? 'border border-dashed border-ink/50 bg-neutral-tint text-ink'
-                      : 'border border-ink/26 text-ink/40';
+                      : 'border border-ink/26 text-ink/62';
                   return (
-                    <div key={ri} className={`flex-1 aspect-[1.35] rounded-[10px] flex items-center justify-center ${stateClass}`}>
+                    <div
+                      key={ri}
+                      style={{ width: `calc((100% - ${6 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
+                      className={`aspect-[1.35] rounded-[10px] flex items-center justify-center ${stateClass}`}
+                    >
                       <span className="text-[13px] font-semibold">{r !== null ? r : target}</span>
                     </div>
                   );
@@ -66,7 +71,7 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedCla
           <div className="flex items-center justify-between">
             <button
               onClick={onDelete}
-              className={`flex items-center gap-1.5 h-10 px-4 rounded-lg text-body active:scale-95 ${mutedClass}`}
+              className="flex items-center gap-1.5 h-10 px-4 rounded-lg border border-ink/26 text-ink text-body active:scale-95"
             ><Trash size={15} /> {t('modals.deleteWorkout')}</button>
             <button
               onClick={onEdit}
@@ -99,33 +104,45 @@ const LogScreen = ({
   );
   const stats = getWorkoutStats(history);
 
+  // Defaults to whatever program/day you're actually on -- the modal lets
+  // you pick a different program and day before saving.
+  const handleAddWorkout = () => {
+    const prog = getProgram(preset);
+    const day = getCurrentDay(prog.id);
+    const exercises = prog.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
+      .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
+    setEditingEntry({ index: -1, session: { date: new Date().toISOString(), type: day, preset: prog.id, exercises } });
+  };
+
+  const addWorkoutButton = (
+    <button
+      onClick={handleAddWorkout}
+      aria-label={t('modals.addWorkout')}
+      className="h-10 px-3.5 rounded-lg border border-accent text-accent-300 text-[13.5px] font-medium flex items-center gap-1.5 active:scale-95 transition-transform"
+    ><Plus size={16} /> {t('modals.addWorkout')}</button>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-title font-medium">{t('log.title')}</h2>
-        <button
-          onClick={() => {
-            // Defaults to whatever program/day you're actually on -- the modal lets
-            // you pick a different program and day before saving.
-            const prog = getProgram(preset);
-            const day = getCurrentDay(prog.id);
-            const exercises = prog.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
-              .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
-            setEditingEntry({ index: -1, session: { date: new Date().toISOString(), type: day, preset: prog.id, exercises } });
-          }}
-          aria-label="Add workout"
-          className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-90 transition-transform border-ink/26 text-ink"
-        ><Plus size={18} /></button>
+        {addWorkoutButton}
       </div>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex gap-1.5 shrink-0">
-          {[0, 1, 2].map(i => (
-            <div key={i} className={`w-7 aspect-[1.35] rounded-[10px] ${i < stats.thisWeek ? 'border border-accent bg-accent-900' : 'border border-ink/26'}`} />
-          ))}
-        </div>
-        <div className="min-w-0">
-          <p className="text-body font-medium">{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</p>
-          <p className={`text-meta ${mutedClass}`}>{stats.total} {t('log.total')} · {t('header.streak', { count: stats.streak })}</p>
+      <div className="p-4 rounded-[10px] border bg-surface border-ink/14">
+        <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-2.5">{t('log.thisWeek')}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex gap-1.5 shrink-0">
+              {[0, 1, 2].map(i => (
+                <div key={i} className={`w-7 aspect-[1.35] rounded-[10px] ${i < stats.thisWeek ? 'border border-accent bg-accent-900' : 'border border-ink/26'}`} />
+              ))}
+            </div>
+            <p className="text-body font-medium">{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[20px] font-medium tabular-nums">{stats.total}</p>
+            <p className={`text-tab ${mutedClass}`}>{t('log.total')}</p>
+          </div>
         </div>
       </div>
 
@@ -136,9 +153,9 @@ const LogScreen = ({
           onChange={(val) => {
             setLogGrouping(val);
             setExpandedLogEntry(null);
-            // Month bands start collapsed -- a year of months at a glance is the point
-            // of that view. Week/Year keep today's behavior of opening the first band.
-            if (val !== 'all' && val !== 'month') {
+            // Every grouped view opens its first (most recent) band by default --
+            // a collapsed Month band with nothing but a header row reads as blank.
+            if (val !== 'all') {
               const groups = groupHistory(history, val, 0);
               setExpandedGroups(groups.length > 0 ? { [groups[0].key]: true } : {});
             } else {
@@ -149,7 +166,10 @@ const LogScreen = ({
       )}
 
       {history.length === 0 ? (
-        <p className={`py-20 text-center ${mutedClass}`}>{t('log.noHistory')}</p>
+        <div className="py-20 text-center">
+          <p className={`mb-4 ${mutedClass}`}>{t('log.noHistory')}</p>
+          <div className="flex justify-center">{addWorkoutButton}</div>
+        </div>
       ) : logGrouping === 'all' ? (
         history.map((s, i) => renderEntry(s, i, i))
       ) : (
@@ -160,23 +180,26 @@ const LogScreen = ({
             <button
               onClick={() => setExpandedGroups(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
               aria-label={`Toggle ${group.key}`}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-[10px] border transition-all active:scale-[0.99] bg-surface border-ink/14"
+              className="w-full flex items-center justify-between px-1 py-2.5 active:scale-[0.99] transition-all"
             >
-              <div className="flex items-center gap-3">
-                {expandedGroups[group.key] ? <CaretDown size={18} className={mutedClass} /> : <CaretRight size={18} className={mutedClass} />}
-                <span className="text-card font-medium">{group.key}</span>
+              <div className="flex items-center gap-2.5">
+                {expandedGroups[group.key] ? <CaretDown size={16} className={mutedClass} /> : <CaretRight size={16} className={mutedClass} />}
+                <span className="text-[13.5px] font-semibold">{group.key}</span>
               </div>
-              <span className={`text-body px-2.5 py-1 rounded-lg bg-surface-deep whitespace-nowrap ${mutedClass}`}>{group.entries.length} · {groupTonnage.toLocaleString()} {t('log.tonnage')}</span>
+              <span className={`text-meta whitespace-nowrap ${mutedClass}`}>{t('log.sessionCount', { count: group.entries.length })} · {(groupTonnage / 1000).toFixed(1)} t</span>
             </button>
             {logGrouping === 'year' && (
-              <div className="flex gap-1 px-1 mt-2">
+              <div className="flex items-end gap-[5px] px-1 mt-2">
                 {monthlySessionCounts(group.entries.map(({ session: s }) => s)).map((count, m) => (
-                  <div
-                    key={m}
-                    role="img"
-                    aria-label={`${new Date(2000, m, 1).toLocaleDateString(undefined, { month: 'long' })}: ${t('log.sessionCount', { count })}`}
-                    className={`flex-1 aspect-[1.35] rounded-[6px] ${count > 0 ? 'border border-accent bg-accent-900' : 'border border-ink/26'}`}
-                  />
+                  <div key={m} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      role="img"
+                      aria-label={`${new Date(2000, m, 1).toLocaleDateString(undefined, { month: 'long' })}: ${t('log.sessionCount', { count })}`}
+                      style={{ height: `${7 + count * 5}px` }}
+                      className={`w-full rounded-t-[3px] ${count > 0 ? 'border border-accent bg-accent-900' : 'border border-ink/26'}`}
+                    />
+                    <span className={`text-[10px] ${mutedClass}`}>{new Date(2000, m, 1).toLocaleDateString(undefined, { month: 'narrow' })}</span>
+                  </div>
                 ))}
               </div>
             )}

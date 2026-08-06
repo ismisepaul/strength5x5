@@ -275,7 +275,7 @@ const ProgramScreen = ({
                   >
                     <div className="flex justify-between items-baseline gap-3">
                       <span className="text-body font-medium">{t('exercises.' + liftIds[i])}</span>
-                      <span className={`text-[11.5px] shrink-0 text-ink/40`}>
+                      <span className={`text-meta shrink-0 text-ink/62`}>
                         {selectedDay === 'C' ? t('program.madcow.dayCLabel') : t('program.madcow.rampLabel', { sets: ex.sets })}
                       </span>
                     </div>
@@ -339,7 +339,7 @@ const ProgramScreen = ({
                     >
                       <div className="flex justify-between items-baseline gap-3">
                         <span className="text-body font-medium">{t('exercises.' + ex.id)}</span>
-                        <span className={`text-[11.5px] shrink-0 text-ink/40`}>
+                        <span className={`text-meta shrink-0 text-ink/62`}>
                           {t('program.standard.setsRepsShort', { sets: ex.sets, reps: target })}
                           {wentUp ? ` · ${t('program.standard.wentUpLastTime')}` : ''}
                         </span>
@@ -454,7 +454,7 @@ const ProgramScreen = ({
                   <button
                     key={id}
                     onClick={() => selectProgram(id)}
-                    className={`w-full text-left p-4 rounded-[10px] border transition-colors ${active ? 'border-accent bg-accent-900' : ('border-ink/12')}`}
+                    className={`w-full text-left p-4 rounded-[10px] border transition-colors ${active ? 'border-accent bg-accent-900' : ('border-ink/14')}`}
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <span className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center shrink-0 ${active ? 'border-accent' : ('border-ink/30')}`}>
@@ -515,7 +515,7 @@ const ProgramScreen = ({
               {isWorkoutActive && (
                 <p className={`text-[13px] mb-6 ${mutedClass}`}>{t('program.confirm.endsWorkout')}</p>
               )}
-              <button onClick={() => onSwitchProgram(target)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('program.confirm.switch')}</button>
+              <button onClick={() => onSwitchProgram(target)} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent-300 font-medium text-[14.5px] active:scale-95 mb-3">{t('program.confirm.switch')}</button>
               <button onClick={() => setProgramSheet(null)} className={`text-card active:scale-90 ${mutedClass}`}>{t('program.confirm.cancel')}</button>
             </div>
           </div>

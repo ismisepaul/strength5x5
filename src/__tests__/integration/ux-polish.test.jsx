@@ -293,7 +293,7 @@ describe('Log band default expansion', () => {
     expect(screen.getAllByText(/Workout A/i).length).toBeGreaterThan(0);
   });
 
-  it('starts every band collapsed in Month view', async () => {
+  it('opens the first band by default in Month view too, not just Week/Year', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(twoMonthData));
     const user = userEvent.setup();
     render(<App />);
@@ -301,6 +301,8 @@ describe('Log band default expansion', () => {
     await user.click(screen.getByText('Log'));
     await user.click(screen.getByText('Month'));
 
-    expect(screen.queryAllByText(/Workout A/i)).toHaveLength(0);
+    // A collapsed Month band would show nothing but two header rows -- open the
+    // current month by default so the view isn't blank on first render.
+    expect(screen.getAllByText(/Workout A/i).length).toBeGreaterThan(0);
   });
 });

@@ -61,12 +61,15 @@ const StatsScreen = ({
                       <CaretRight size={18} className={mutedClass} />
                     </div>
                     <div className="flex items-end justify-between gap-3 mb-4">
-                      <div className="flex items-baseline gap-2">
+                      <div className="flex items-baseline gap-2 flex-wrap">
                         <p className="text-hero font-medium tabular-nums">{big3Total}kg</p>
                         {big3Delta !== null && (
-                          <span className={`text-meta px-2 py-0.5 rounded-md whitespace-nowrap ${big3Delta === 0 ? mutedClass : 'text-accent-300 bg-accent-900'}`}>
-                            {big3Delta === 0 ? t('stats.held') : `${big3Delta > 0 ? '+' : ''}${big3Delta}kg`}
-                          </span>
+                          <>
+                            <span className={`text-meta px-2 py-0.5 rounded-md whitespace-nowrap ${big3Delta === 0 ? mutedClass : 'text-accent-300 bg-accent-900'}`}>
+                              {big3Delta === 0 ? t('stats.held') : `${big3Delta > 0 ? '+' : ''}${big3Delta}kg`}
+                            </span>
+                            <span className={`text-tab whitespace-nowrap ${mutedClass}`}>{t('stats.vsLastWorkout')}</span>
+                          </>
                         )}
                       </div>
                       {rangedBig3.length >= 2 && (
@@ -116,7 +119,10 @@ const StatsScreen = ({
                         <div className="text-right">
                           <p className="text-[17px] font-medium tabular-nums text-accent-300">{weights[id]}kg</p>
                           {delta !== null && (
-                            <p className={`text-tab ${mutedClass}`}>{delta === 0 ? t('stats.held') : `${delta > 0 ? '+' : ''}${delta}kg`}</p>
+                            <>
+                              <p className={`text-tab ${mutedClass}`}>{delta === 0 ? t('stats.held') : `${delta > 0 ? '+' : ''}${delta}kg`}</p>
+                              <p className={`text-tab ${mutedClass}`}>{t('stats.vsLastWorkout')}</p>
+                            </>
                           )}
                         </div>
                         <CaretRight size={18} className={mutedClass} />

@@ -67,7 +67,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
           );
         })}
       </div>
-      <button onClick={onDone} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95">{t('completion.done')}</button>
+      <button onClick={onDone} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent-300 font-medium text-[14.5px] active:scale-95">{t('completion.done')}</button>
     </Modal>
   );
 };

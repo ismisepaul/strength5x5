@@ -67,7 +67,7 @@ describe('Skip button behavior', () => {
 
     expect(screen.queryByText('Movement finished')).not.toBeInTheDocument();
     expect(screen.queryByText('Lifting')).not.toBeInTheDocument();
-    expect(screen.getByText('In session')).toBeInTheDocument();
+    expect(screen.getByText('In workout')).toBeInTheDocument();
   });
 });
 
@@ -394,6 +394,20 @@ describe('Log entry editing', () => {
     expect(screen.queryByText('Edit workout')).not.toBeInTheDocument();
   });
 
+  it('renders each exercise\'s weight in the expanded row', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const card = screen.getAllByText(/Workout [AB]/)[0].closest('button');
+    await user.click(card);
+
+    expect(screen.getByText('55kg')).toBeInTheDocument();
+    expect(screen.getByText('30kg')).toBeInTheDocument();
+    expect(screen.getByText('65kg')).toBeInTheDocument();
+  });
+
   it('changing weight and saving persists the change', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
     const user = userEvent.setup();
@@ -426,10 +440,10 @@ describe('Log entry editing', () => {
     await user.click(cardsBefore[0].closest('button'));
     await user.click(screen.getByText('Delete Workout'));
 
-    expect(screen.getByText('Keep session')).toBeInTheDocument();
+    expect(screen.getByText('Keep workout')).toBeInTheDocument();
     await user.click(screen.getByText('Delete anyway'));
 
-    expect(screen.queryByText('Keep session')).not.toBeInTheDocument();
+    expect(screen.queryByText('Keep workout')).not.toBeInTheDocument();
     const cardsAfter = screen.getAllByText(/Workout [AB]/);
     expect(cardsAfter).toHaveLength(1);
   });
@@ -443,9 +457,9 @@ describe('Log entry editing', () => {
     await user.click(screen.getAllByText(/Workout [AB]/)[0].closest('button'));
     await user.click(screen.getByText('Delete Workout'));
 
-    await user.click(screen.getByText('Keep session'));
+    await user.click(screen.getByText('Keep workout'));
 
-    expect(screen.queryByText('Keep session')).not.toBeInTheDocument();
+    expect(screen.queryByText('Keep workout')).not.toBeInTheDocument();
     expect(screen.getAllByText(/Workout [AB]/)).toHaveLength(2);
   });
 

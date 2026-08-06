@@ -76,11 +76,12 @@ describe('useToast', () => {
     expect(result.current.toasts[0].actionLabel).toBe('Undo');
     expect(result.current.toasts[0].onAction).toBe(onAction);
 
-    // Longer than the plain success duration (2s) since it now has to be tappable.
-    act(() => vi.advanceTimersByTime(2000));
+    // Longer than the plain success duration (2s) since it now has to be tappable --
+    // 8s, not 5s, so there's actually time to read and tap it mid-set at the gym.
+    act(() => vi.advanceTimersByTime(7999));
     expect(result.current.toasts).toHaveLength(1);
 
-    act(() => vi.advanceTimersByTime(3000));
+    act(() => vi.advanceTimersByTime(1));
     expect(result.current.toasts).toHaveLength(0);
     expect(onAction).not.toHaveBeenCalled();
   });

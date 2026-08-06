@@ -85,6 +85,25 @@ export function getExerciseRangeStats(history, exerciseId, rangeLabel) {
   return { bestSet, volume, misses };
 }
 
+// Big-3 volume within a range -- unlike getExerciseRangeStats, this sums across all
+// three lifts rather than one, since "best set" and "misses" don't mean anything
+// summed across different lifts but total kg moved still does.
+export function getBig3Volume(history, rangeLabel) {
+  const cutoff = rangeCutoffDate(rangeLabel);
+  let volume = 0;
+  for (const session of history) {
+    if (cutoff && new Date(session.date) < cutoff) continue;
+    for (const ex of session.exercises) {
+      if (!['squat', 'bench', 'deadlift'].includes(ex.id)) continue;
+      ex.setsCompleted.forEach((reps, i) => {
+        if (reps === null) return;
+        volume += (Array.isArray(ex.setWeights) ? ex.setWeights[i] : ex.weight) * reps;
+      });
+    }
+  }
+  return volume;
+}
+
 export function buildExerciseTimeline(history, exerciseId) {
   const points = [];
   for (let i = history.length - 1; i >= 0; i--) {

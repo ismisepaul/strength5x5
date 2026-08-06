@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 
 const DEFAULT_DURATIONS = { success: 2000, error: 4000, info: 3000 };
-const ACTION_DURATION = 5000;
+const ACTION_DURATION = 8000;
 const MAX_TOASTS = 3;
 
 export function useToast() {

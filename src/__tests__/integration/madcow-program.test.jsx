@@ -138,7 +138,7 @@ describe('Stats under Madcow', () => {
 
     await user.click(screen.getByLabelText('Stats'));
     const inclineCard = within(screen.getByText('Incline Bench').closest('.border'));
-    expect(inclineCard.getByText('No sessions logged for this lift yet.')).toBeInTheDocument();
+    expect(inclineCard.getByText('No workouts logged for this lift yet.')).toBeInTheDocument();
     expect(screen.queryByText('Overhead Press')).not.toBeInTheDocument();
   });
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
-import { buildExerciseTimeline, buildBig3Timeline, filterByRange, getExerciseRangeStats } from '../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, filterByRange, getExerciseRangeStats, getBig3Volume } from '../utils/chartData';
 import { useTheme } from '../hooks/useTheme';
 
 // range is owned by StatsScreen and shared with the lift-row sparklines -- this
@@ -34,6 +34,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
   const maxWeightInRange = filteredData.length > 0 ? Math.max(...filteredData.map(p => p.weight)) : null;
   const sinceDelta = filteredData.length >= 2 ? filteredData[filteredData.length - 1].weight - filteredData[0].weight : null;
   const rangeStats = !isBig3 && filteredData.length > 0 ? getExerciseRangeStats(history, exerciseId, range) : null;
+  const big3Volume = isBig3 && filteredData.length > 0 ? getBig3Volume(history, range) : null;
 
   const toggleWeight = () => {
     if (showWeight && !showE1rm) return;
@@ -160,7 +161,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
           <button
             onClick={toggleWeight}
             aria-pressed={showWeight}
-            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/26 text-ink/62'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent-300' : 'border-ink/26 text-ink/62'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: weightColor }} />
             {t('stats.weight')}
@@ -168,7 +169,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
           <button
             onClick={toggleE1rm}
             aria-pressed={showE1rm}
-            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/26 text-ink/62'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent-300' : 'border-ink/26 text-ink/62'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: e1rmColor }} />
             {t('stats.est1rm')}
@@ -188,6 +189,18 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
             <div>
               <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.misses')}</p>
               <p className="text-body font-medium tabular-nums mt-0.5">{rangeStats.misses}</p>
+            </div>
+          </div>
+        )}
+        {big3Volume !== null && (
+          <div className="grid grid-cols-2 gap-2 mt-4 pt-4 rule-fade-top text-center">
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.workoutsInRange')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{filteredData.length}</p>
+            </div>
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.volume')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{Math.round(big3Volume).toLocaleString()}kg</p>
             </div>
           </div>
         )}

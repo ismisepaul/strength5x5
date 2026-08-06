@@ -58,7 +58,7 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
           <p className={`text-[16px] tabular-nums leading-none text-ink/60`}>{formatClock(sessionElapsed * 1000)}</p>
         </div>
       </div>
-      <div className={`h-[3px] w-full mt-2.5 bg-ink/8 overflow-hidden`}>
+      <div className={`h-[3px] w-full mt-2.5 bg-ink/14 overflow-hidden`}>
         <div
           className="h-full"
           style={{

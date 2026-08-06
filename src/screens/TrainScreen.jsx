@@ -128,7 +128,7 @@ const TrainScreen = ({
               const allDone = currentWorkout?.exercises.every(ex => ex.setsCompleted.every(s => s !== null));
               return (
                 <>
-                  <button onClick={finishWorkout} disabled={!allDone} className={`w-full h-[52px] rounded-lg border font-medium text-[15.5px] ${allDone ? 'border-accent text-accent active:scale-[0.98]' : 'border-ink/12 text-ink/30'}`}>{t('workout.finishWorkout')}</button>
+                  <button onClick={finishWorkout} disabled={!allDone} className={`w-full h-[52px] rounded-lg border font-medium text-[15.5px] ${allDone ? 'border-accent text-accent-300 active:scale-[0.98]' : 'border-ink/12 text-ink/30'}`}>{t('workout.finishWorkout')}</button>
                   {!allDone && <p className="text-meta text-center mt-3 text-ink/62">{t('workout.completeAllSets')}</p>}
                 </>
               );

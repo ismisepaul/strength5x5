@@ -100,7 +100,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
           let stateClass;
           if (passed) stateClass = 'border border-accent bg-accent-900 text-accent-300';
           else if (missed) stateClass = 'border-[1.5px] border-dashed border-ink/50 bg-neutral-tint text-ink';
-          else stateClass = 'border border-ink/26 text-ink/40';
+          else stateClass = 'border border-ink/26 text-ink/62';
           return (
             <div key={ri} className="flex flex-col items-center gap-1" style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}>
               <button

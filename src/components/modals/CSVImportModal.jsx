@@ -18,7 +18,7 @@ const CSVImportModal = ({ pendingCSVImport, onImport, onCancel }) => {
           </div>
         ))}
       </div>
-      <button onClick={onImport} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.import')}</button>
+      <button onClick={onImport} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent-300 font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.import')}</button>
       <button onClick={onCancel} className="text-card active:scale-90 text-ink/62">{t('modals.cancel')}</button>
     </Modal>
   );
