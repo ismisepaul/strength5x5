@@ -32,7 +32,7 @@ const TrainScreen = ({
             return (
               <>
                 <div className="mb-4">
-                  <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-1">{isMadcow ? t('workout.madcowKicker', { week: mcWeek }) : t('workout.standardKicker')}</p>
+                  <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-1">{isMadcow ? t('workout.madcowKicker', { week: mcWeek }) : t('workout.standardKicker')}</p>
                   <div className="flex items-center gap-[10px]">
                     <h2 className="text-hero font-medium leading-tight">{t(`workout.type${day}`)}</h2>
                     <button

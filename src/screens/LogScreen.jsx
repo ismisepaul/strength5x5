@@ -9,7 +9,7 @@ import Segmented from '../components/Segmented';
 const LogEntry = ({ session: s, onClick, mutedClass, t }) => (
   <button onClick={onClick} className="w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/14">
     <div className="flex justify-between items-center mb-1">
-      <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent">{t(getProgram(s.preset).nameKey)}</span>
+      <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300">{t(getProgram(s.preset).nameKey)}</span>
       <span className={`text-body ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
     </div>
     <p className="text-card font-semibold mb-3">{t(`workout.type${s.type}`)}</p>

@@ -34,7 +34,7 @@ const StatsScreen = ({
             return (
               <button onClick={() => setStatsView('big3')} className={cardClass}>
                 <div className="text-left">
-                  <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-1">{t('stats.big3Total')}</p>
+                  <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-1">{t('stats.big3Total')}</p>
                   <p className="text-title font-medium tabular-nums">{big3Total}kg</p>
                 </div>
                 <div className="flex items-center gap-2">

@@ -723,7 +723,7 @@ const App = () => {
           { id: 'settings', label: t('tabs.options'), icon: Gear },
         ].map(tab => {
           const isActive = activeTab === tab.id;
-          const colorClass = isActive ? 'text-accent-300' : ('text-ink/35');
+          const colorClass = isActive ? 'text-accent-300' : ('text-ink/50');
           return (
             <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex-1 flex flex-col items-center gap-1 py-1.5 px-2.5 transition-all active:scale-95 ${colorClass}`}>
               <tab.icon size={23} weight={isActive ? 'fill' : 'regular'} />

@@ -15,7 +15,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
   const totalTime = formatClock(completionSummary.workout.duration);
   return (
     <Modal ariaLabel="Workout complete" z={Z_TOP} cardClassName="max-w-sm p-6">
-      <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-4">{t('completion.kicker')}</p>
+      <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-4">{t('completion.kicker')}</p>
       {totalTime && (
         <div className="flex items-center justify-between px-4 py-2.5 rounded-lg mb-5 bg-surface-deep">
           <span className="text-meta uppercase text-ink/62">{t('completion.totalTime')}</span>

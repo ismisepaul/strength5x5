@@ -83,7 +83,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
         <div className="flex-1">
           <h2 className="text-lg font-semibold">{title}</h2>
           <p className="text-card tabular-nums">
-            {showWeight && <span className="text-accent">{currentWeight}kg</span>}
+            {showWeight && <span className="text-accent-300">{currentWeight}kg</span>}
             {showWeight && showE1rm && <span className={mutedClass}> / </span>}
             {showE1rm && <span className="text-accent-300">{t('stats.est1rmValue', { value: currentE1rm })}</span>}
           </p>

@@ -15,7 +15,7 @@ const WEEK_SWIPE_THRESHOLD = 40;
 
 const Kicker = ({ children }) => (
   <div className="flex items-center gap-3">
-    <span className="text-tab font-semibold uppercase tracking-[0.14em] text-accent shrink-0">{children}</span>
+    <span className="text-tab font-semibold uppercase tracking-[0.14em] text-accent-300 shrink-0">{children}</span>
     <div className={`flex-1 h-px bg-gradient-to-r from-ink/15 to-transparent`} />
   </div>
 );
