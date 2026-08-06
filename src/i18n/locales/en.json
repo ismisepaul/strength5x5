@@ -252,7 +252,7 @@
     "allReps": "All reps",
     "miss_one": "{{count}} miss",
     "miss_other": "{{count}} misses",
-    "tonnage": "kg moved",
+    "tonnage": "kg lifted",
     "sessionCount_one": "{{count}} workout",
     "sessionCount_other": "{{count}} workouts"
   },
