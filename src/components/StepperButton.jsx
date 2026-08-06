@@ -7,7 +7,7 @@ const StepperButton = ({ onClick, onMouseDown, ariaLabel, icon: Icon, size = 40,
     onClick={onClick}
     onMouseDown={onMouseDown}
     aria-label={ariaLabel}
-    className={`${SIZE_CLASSES[size]} rounded-lg border flex items-center justify-center shrink-0 active:scale-90 border-ink/18 text-ink/60`}
+    className={`${SIZE_CLASSES[size]} rounded-lg border flex items-center justify-center shrink-0 active:scale-90 border-ink/26 text-ink/60`}
   >
     <Icon size={iconSize} />
   </button>

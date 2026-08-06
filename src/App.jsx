@@ -612,7 +612,7 @@ const App = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <Flame size={15} weight="fill" className="text-accent" />
-              <span className={`text-[12.5px] text-ink/55`}>{t('header.streak', { count: workoutStats.streak })}</span>
+              <span className={`text-[12.5px] text-ink/78`}>{t('header.streak', { count: workoutStats.streak })}</span>
             </div>
             <button
               onClick={() => setShowHelp(true)}
@@ -714,7 +714,7 @@ const App = () => {
         );
       })()}
 
-      <nav className={`flex-none border-t flex justify-between px-2 pt-1.5 nav-safe bg-surface-nav border-ink/8`}>
+      <nav className={`flex-none border-t flex justify-between px-2 pt-1.5 nav-safe bg-surface-nav border-ink/14`}>
         {[
           { id: 'workout', label: t('tabs.train'), icon: Barbell },
           { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },

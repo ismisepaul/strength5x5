@@ -12,7 +12,7 @@ const SettingsScreen = ({
 }) => {
   const { t } = useTranslation();
   const mutedClass = 'text-ink/62';
-  const cardClass = 'p-4 rounded-[10px] border bg-surface border-ink/8';
+  const cardClass = 'p-4 rounded-[10px] border bg-surface border-ink/14';
   const innerRowClass = 'rule-fade';
 
   return (
@@ -69,7 +69,7 @@ const SettingsScreen = ({
               {gdrive.isConnected ? (
                 <span className="text-meta uppercase px-2.5 py-1.5 rounded-lg text-accent-300 bg-accent-900">{t('options.connectedToDrive')}</span>
               ) : (
-                <button onClick={handleConnect} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 border-ink/18 text-ink">{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
+                <button onClick={handleConnect} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 border-ink/26 text-ink">{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
               )}
             </div>
             {(gdrive.isConnected || gdrive.hasEverConnected) && (
@@ -81,7 +81,7 @@ const SettingsScreen = ({
                   ) : gdrive.lastSavedAt ? (
                     <p className="text-meta text-accent">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
                   ) : <span />}
-                  <button onClick={handleDriveSave} disabled={gdrive.isLoading} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 border-ink/18 text-ink">{t('options.syncNow')}</button>
+                  <button onClick={handleDriveSave} disabled={gdrive.isLoading} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 border-ink/26 text-ink">{t('options.syncNow')}</button>
                 </div>
               </div>
             )}
@@ -93,11 +93,11 @@ const SettingsScreen = ({
           <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform">
             <DownloadSimple size={20} /> {t('options.backupToDevice')}
           </button>
-          <button onClick={() => fileInputRef.current?.click()} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/18 text-ink">
+          <button onClick={() => fileInputRef.current?.click()} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
             <UploadSimple size={20} /> {t('options.restore')}
           </button>
         </div>
-        <button onClick={() => csvInputRef.current?.click()} className="w-full py-3.5 rounded-lg border flex items-center justify-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/18 text-ink">
+        <button onClick={() => csvInputRef.current?.click()} className="w-full py-3.5 rounded-lg border flex items-center justify-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
           <FileCsv size={20} /> {t('options.importStronglifts')}
         </button>
       </div>

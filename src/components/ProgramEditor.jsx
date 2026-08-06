@@ -22,7 +22,7 @@ const ProgramEditor = ({ program, onChange }) => {
       {EXPECTED_WEIGHT_KEYS.map(id => {
         const { sets, reps } = program[id];
         return (
-          <div key={id} className={`p-4 rounded-[10px] border bg-surface border-ink/8`}>
+          <div key={id} className={`p-4 rounded-[10px] border bg-surface border-ink/14`}>
             <div className="flex justify-between items-center mb-4">
               <p className="text-card font-semibold">{t('exercises.' + id)}</p>
               <p className={`text-[12.5px] text-ink/50`}>

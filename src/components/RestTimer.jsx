@@ -49,7 +49,7 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             <button
               onClick={onSkip}
               aria-label={isExerciseComplete ? 'Dismiss' : 'Skip rest'}
-              className={`w-[34px] h-[34px] rounded-[7px] border flex items-center justify-center shrink-0 border-ink/18`}
+              className={`w-[34px] h-[34px] rounded-[7px] border flex items-center justify-center shrink-0 border-ink/26`}
             ><SkipForward size={14} weight="fill" /></button>
           )}
         </div>

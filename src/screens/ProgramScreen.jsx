@@ -25,7 +25,7 @@ const Badge = ({ children }) => (
 );
 
 const Chip = ({ children }) => (
-  <span className={`text-tab px-2.5 py-1 rounded-lg border border-ink/18 text-ink/60`}>{children}</span>
+  <span className={`text-tab px-2.5 py-1 rounded-lg border border-ink/26 text-ink/60`}>{children}</span>
 );
 
 // A read-only readout, not a control: thin flat bars, height proportional to
@@ -86,7 +86,7 @@ const ProgramScreen = ({
 }) => {
   const { t } = useTranslation();
   const mutedClass = 'text-ink/62';
-  const cardClass = `p-4 rounded-[10px] border bg-surface border-ink/8`;
+  const cardClass = `p-4 rounded-[10px] border bg-surface border-ink/14`;
 
   const [selectedWorkout, setSelectedWorkout] = useState(currentWorkoutType);
   const [selectedDay, setSelectedDay] = useState(mcNextDay);
@@ -118,7 +118,7 @@ const ProgramScreen = ({
         {showReset && (
           <button
             onClick={isMadcow ? onRecalculate : () => onChangeProgram(() => JSON.parse(JSON.stringify(DEFAULT_PROGRAM)))}
-            className={`flex items-center gap-1.5 text-meta uppercase px-3 py-2 rounded-lg border active:scale-95 transition-transform shrink-0 border-ink/18 text-ink/60`}
+            className={`flex items-center gap-1.5 text-meta uppercase px-3 py-2 rounded-lg border active:scale-95 transition-transform shrink-0 border-ink/26 text-ink/60`}
           ><ArrowCounterClockwise size={14} /> {t(isMadcow ? 'program.recalculate' : 'program.resetToDefault')}</button>
         )}
       </div>
@@ -131,7 +131,7 @@ const ProgramScreen = ({
         <Barbell weight="fill" size={20} className="text-accent-300 shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[16px] truncate">{t(prog.nameKey)}</p>
-          <p className={`text-[12.5px] text-ink/55`}>{t(prog.subKey)}</p>
+          <p className={`text-[12.5px] text-ink/78`}>{t(prog.subKey)}</p>
         </div>
         <span className="flex items-center gap-1 text-body text-accent-300 shrink-0">{t('program.strip.change')} <CaretRight size={14} /></span>
       </button>
@@ -473,7 +473,7 @@ const ProgramScreen = ({
                 );
               })}
             </div>
-            <button onClick={() => setProgramSheet(null)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink`}>{t('program.picker.cancel')}</button>
+            <button onClick={() => setProgramSheet(null)} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/26 text-ink`}>{t('program.picker.cancel')}</button>
           </div>
         </div>
       )}
@@ -495,7 +495,7 @@ const ProgramScreen = ({
         const bodyKey = resuming ? 'program.confirm.toMadcowResumeBody' : toMadcow ? 'program.confirm.toMadcowBody' : 'program.confirm.toStandardBody';
         return (
           <div role="dialog" aria-modal="true" aria-label={t(titleKey)} className="fixed inset-0 z-[450] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
-            <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/8`}>
+            <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/14`}>
               <h3 className="text-lg font-semibold mb-3">{t(titleKey)}</h3>
               <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t(bodyKey, { week: mcWeek })}</p>
               <div className="space-y-2 mb-4 text-left">

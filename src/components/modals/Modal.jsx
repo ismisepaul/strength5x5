@@ -13,7 +13,7 @@ const Modal = ({ ariaLabel, z, align = 'center', scrollable = false, onBackdropC
     className={`fixed inset-0 ${z} flex ${align === 'start' ? 'items-start' : 'items-center'} justify-center ${scrollable ? 'overflow-y-auto overscroll-contain' : ''} ${align === 'center' ? 'p-6 text-center' : ''} backdrop-blur-sm bg-[rgba(15,16,25,.75)]`}
   >
     <div
-      className={`w-full rounded-modal border bg-surface border-ink/8 ${cardClassName}`}
+      className={`w-full rounded-modal border bg-surface border-ink/14 ${cardClassName}`}
       onClick={onBackdropClick ? (e) => e.stopPropagation() : undefined}
     >
       {children}

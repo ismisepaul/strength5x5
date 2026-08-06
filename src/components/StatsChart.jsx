@@ -76,7 +76,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
         <button
           onClick={onBack}
           aria-label="Back to stats"
-          className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-95 border-ink/18 text-ink/60"
+          className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-95 border-ink/26 text-ink/60"
         >
           <ArrowLeft size={20} />
         </button>
@@ -90,7 +90,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
         </div>
       </div>
 
-      <div className="p-4 rounded-[10px] border bg-surface border-ink/8">
+      <div className="p-4 rounded-[10px] border bg-surface border-ink/14">
         <div className="flex rounded-lg border overflow-hidden mb-4 border-ink/10">
           {RANGES.map((r, i) => (
             <button
@@ -174,7 +174,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
           <button
             onClick={toggleWeight}
             aria-pressed={showWeight}
-            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/18 text-ink/62'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/26 text-ink/62'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: weightColor }} />
             {t('stats.weight')}
@@ -182,7 +182,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
           <button
             onClick={toggleE1rm}
             aria-pressed={showE1rm}
-            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/18 text-ink/62'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/26 text-ink/62'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: e1rmColor }} />
             {t('stats.est1rm')}

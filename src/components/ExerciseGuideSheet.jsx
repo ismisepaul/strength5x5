@@ -20,7 +20,7 @@ const ExerciseGuideSheet = ({ liftId, onClose }) => {
             </div>
           ))}
         </div>
-        <button autoFocus onClick={onClose} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink`}>{t('technique.close')}</button>
+        <button autoFocus onClick={onClose} className={`w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/26 text-ink`}>{t('technique.close')}</button>
       </div>
     </div>
   );

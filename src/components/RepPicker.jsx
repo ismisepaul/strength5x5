@@ -20,14 +20,14 @@ const RepPicker = ({ ex, setIdx, onSelect, onClose }) => {
               key={r}
               onClick={() => onSelect(r)}
               aria-label={`${r} reps`}
-              className={`w-[50px] h-[50px] rounded-full flex items-center justify-center text-[17px] font-semibold active:scale-90 transition-transform border ${r === target ? 'border-accent text-accent-300 bg-accent-900' : ('border-ink/18 text-ink/60')}`}
+              className={`w-[50px] h-[50px] rounded-full flex items-center justify-center text-[17px] font-semibold active:scale-90 transition-transform border ${r === target ? 'border-accent text-accent-300 bg-accent-900' : ('border-ink/26 text-ink/60')}`}
             >{r}</button>
           ))}
         </div>
         <p className={`text-center text-[12.5px] mb-6 text-ink/62`}>{t('modals.repPickerNote', { count: target })}</p>
         <div className="flex gap-4">
-          <button onClick={() => onSelect(null)} className={`flex-1 h-[46px] rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink`}>{t('modals.clearSet')}</button>
-          <button onClick={onClose} className={`flex-1 h-[46px] rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink`}>{t('modals.cancel')}</button>
+          <button onClick={() => onSelect(null)} className={`flex-1 h-[46px] rounded-lg border text-[14px] font-medium active:scale-95 border-ink/26 text-ink`}>{t('modals.clearSet')}</button>
+          <button onClick={onClose} className={`flex-1 h-[46px] rounded-lg border text-[14px] font-medium active:scale-95 border-ink/26 text-ink`}>{t('modals.cancel')}</button>
         </div>
       </div>
     </div>

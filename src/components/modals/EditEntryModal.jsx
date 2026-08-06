@@ -56,7 +56,7 @@ const EditEntryModal = ({
               <button
                 key={wt}
                 onClick={() => setEditingEntry(prev => ({ ...prev, session: { ...prev.session, ...rebuildEntryFor(wt) } }))}
-                className={`flex-1 py-3 rounded-lg text-card font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : 'border-ink/18 text-ink/60'}`}
+                className={`flex-1 py-3 rounded-lg text-card font-medium transition-all border ${editingEntry.session.type === wt ? 'border-accent text-accent bg-accent-900' : 'border-ink/26 text-ink/60'}`}
               >{t(`workout.type${wt}`)}</button>
             ))}
           </div>
@@ -74,7 +74,7 @@ const EditEntryModal = ({
             newDate.setHours(12, 0, 0, 0);
             setEditingEntry(prev => ({ ...prev, session: { ...prev.session, date: newDate.toISOString() } }));
           }}
-          className={`w-full p-3 rounded-lg text-card border ${dateConflict || isFutureDate ? 'border-dashed border-ink/50' : 'border-ink/18'} bg-surface-deep text-ink`}
+          className={`w-full p-3 rounded-lg text-card border ${dateConflict || isFutureDate ? 'border-dashed border-ink/50' : 'border-ink/26'} bg-surface-deep text-ink`}
         />
         {dateConflict && <p className="text-body mt-2 text-ink/60">{t('modals.dateConflict')}</p>}
         {isFutureDate && <p className="text-body mt-2 text-ink/60">{t('modals.futureDate')}</p>}
@@ -82,7 +82,7 @@ const EditEntryModal = ({
 
       <div className="space-y-3 mb-6">
         {editingEntry.session.exercises.map((ex, exIdx) => (
-          <div key={ex.id} className="p-4 rounded-lg border bg-surface-deep border-ink/8">
+          <div key={ex.id} className="p-4 rounded-lg border bg-surface-deep border-ink/14">
             <p className="text-body font-medium mb-3">{t('exercises.' + ex.id)}</p>
             <div className="flex justify-between items-center mb-3">
               <span className="text-meta uppercase text-ink/62">{t('modals.weightLabel')}</span>
@@ -109,7 +109,7 @@ const EditEntryModal = ({
                 {ex.setsCompleted.map((reps, setIdx) => {
                   const target = targetReps(ex, setIdx);
                   const stateClass = reps === null
-                    ? 'border border-ink/18 text-ink/40'
+                    ? 'border border-ink/26 text-ink/40'
                     : reps === target
                       ? 'border border-accent bg-accent-900 text-accent-300'
                       : 'border border-dashed border-ink/50 bg-neutral-tint text-ink';
@@ -190,7 +190,7 @@ const EditEntryModal = ({
                   showToast(t('toast.workoutDeleted'), 'success');
                   saveToDriveQuietly({ ...getAppState(), history: newHistory });
                 }}
-                className="flex-1 h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink"
+                className="flex-1 h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/26 text-ink"
               >{t('modals.delete')}</button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}

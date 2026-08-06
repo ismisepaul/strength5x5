@@ -13,9 +13,9 @@ const RestoreBackupModal = ({ driveConfigured, onRestoreFile, onConnectDrive, on
       <div className="space-y-3">
         <button onClick={onRestoreFile} className="w-full h-12 rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 flex items-center justify-center gap-2"><UploadSimple size={18} /> {t('modals.restoreBackup')}</button>
         {driveConfigured && (
-          <button onClick={onConnectDrive} className="w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/18 text-ink"><Cloud size={18} /> {t('modals.restoreFromDrive')}</button>
+          <button onClick={onConnectDrive} className="w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/26 text-ink"><Cloud size={18} /> {t('modals.restoreFromDrive')}</button>
         )}
-        <button onClick={onImportCSV} className="w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/18 text-ink"><FileCsv size={18} /> {t('options.importStronglifts')}</button>
+        <button onClick={onImportCSV} className="w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/26 text-ink"><FileCsv size={18} /> {t('options.importStronglifts')}</button>
         <button onClick={onSkip} className="text-card mt-4 block mx-auto text-ink/62">{t('modals.skipAndStart')}</button>
       </div>
     </Modal>

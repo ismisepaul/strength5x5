@@ -36,7 +36,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
           // that (Madcow Day C's 6) shrinks its blocks to fit instead of overflowing.
           const setColumns = Math.max(ex.setsCompleted.length, MAX_SETS);
           return (
-            <div key={ex.id} className="p-3 rounded-lg border bg-surface-deep border-ink/8">
+            <div key={ex.id} className="p-3 rounded-lg border bg-surface-deep border-ink/14">
               <div className="flex items-center justify-between">
                 <span className="text-card font-medium">{t('exercises.' + ex.id)}</span>
                 {progressed ? (

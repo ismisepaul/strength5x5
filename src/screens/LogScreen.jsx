@@ -7,7 +7,7 @@ import { getWorkoutStats, groupHistory } from '../utils/chartData';
 import Segmented from '../components/Segmented';
 
 const LogEntry = ({ session: s, onClick, mutedClass, t }) => (
-  <button onClick={onClick} className="w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/8">
+  <button onClick={onClick} className="w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/14">
     <div className="flex justify-between items-center mb-1">
       <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent">{t(getProgram(s.preset).nameKey)}</span>
       <span className={`text-body ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
@@ -51,7 +51,7 @@ const LogScreen = ({
             setEditingEntry({ index: -1, session: { date: new Date().toISOString(), type: day, preset: prog.id, exercises } });
           }}
           aria-label="Add workout"
-          className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-90 transition-transform border-ink/18 text-ink"
+          className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-90 transition-transform border-ink/26 text-ink"
         ><Plus size={18} /></button>
       </div>
       <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -93,7 +93,7 @@ const LogScreen = ({
             <button
               onClick={() => setExpandedGroups(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
               aria-label={`Toggle ${group.key}`}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-[10px] border transition-all active:scale-[0.99] bg-surface border-ink/8"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-[10px] border transition-all active:scale-[0.99] bg-surface border-ink/14"
             >
               <div className="flex items-center gap-3">
                 {expandedGroups[group.key] ? <CaretDown size={18} className={mutedClass} /> : <CaretRight size={18} className={mutedClass} />}

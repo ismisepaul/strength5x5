@@ -38,7 +38,7 @@ const TrainScreen = ({
                     <button
                       onClick={() => setWorkoutPicker(true)}
                       aria-label={t('workout.chooseWorkoutAria')}
-                      className="w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 border-ink/18 text-ink"
+                      className="w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 border-ink/26 text-ink"
                     ><CaretDown size={16} /></button>
                   </div>
                   <p className="text-body mt-1 text-ink/62">
@@ -101,7 +101,7 @@ const TrainScreen = ({
             );
           })()}
           <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
-          <p className="text-meta text-center mt-3 text-ink/38">{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
+          <p className="text-meta text-center mt-3 text-ink/50">{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
         </div>
       ) : (
         <div className="space-y-6">

@@ -26,7 +26,7 @@ const SyncConflictModal = ({ connectSyncPrompt, onUseDriveData, onUseLocalData, 
         </button>
         <button
           onClick={onUseLocalData}
-          className="w-full h-[46px] flex items-center justify-center rounded-lg font-medium text-[14px] active:scale-95 border border-ink/18 text-ink"
+          className="w-full h-[46px] flex items-center justify-center rounded-lg font-medium text-[14px] active:scale-95 border border-ink/26 text-ink"
         >
           {t('modals.useLocalData')}
         </button>
