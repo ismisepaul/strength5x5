@@ -68,6 +68,22 @@ describe('useToast', () => {
     expect(result.current.toasts.map(t => t.message)).toEqual(['B', 'C', 'D']);
   });
 
+  it('clears the evicted toast\'s timer instead of leaving it pending', () => {
+    const { result } = renderHook(() => useToast());
+
+    act(() => {
+      result.current.showToast('A', 'info', 10000);
+      result.current.showToast('B', 'info', 10000);
+      result.current.showToast('C', 'info', 10000);
+    });
+    expect(vi.getTimerCount()).toBe(3);
+
+    // Evicting A should clear its timer along with dropping it from state --
+    // otherwise it fires 10s later against an id nothing is tracking anymore.
+    act(() => result.current.showToast('D', 'info', 10000));
+    expect(vi.getTimerCount()).toBe(3);
+  });
+
   it('carries an action label/callback and defaults to a longer duration', () => {
     const onAction = vi.fn();
     const { result } = renderHook(() => useToast());

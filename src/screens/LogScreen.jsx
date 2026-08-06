@@ -13,7 +13,7 @@ import Segmented from '../components/Segmented';
 // set-target rectangles Train uses, with Edit on the right where a thumb lands.
 const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedClass, t }) => {
   const date = new Date(s.date);
-  const missCount = s.exercises.reduce((n, ex) => n + ex.setsCompleted.filter((r, i) => r !== targetReps(ex, i)).length, 0);
+  const missCount = s.exercises.reduce((n, ex) => n + ex.setsCompleted.filter((r, i) => r !== null && r < targetReps(ex, i)).length, 0);
   const tonnage = Math.round(sessionTonnage(s));
 
   return (
@@ -49,7 +49,7 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedCla
                 {ex.setsCompleted.map((r, ri) => {
                   const target = targetReps(ex, ri);
                   const passed = r !== null && r === target;
-                  const missed = r !== null && r !== target;
+                  const missed = r !== null && r < target;
                   const stateClass = passed
                     ? 'border border-accent bg-accent-900 text-accent-300'
                     : missed

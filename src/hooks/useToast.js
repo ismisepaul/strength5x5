@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 const DEFAULT_DURATIONS = { success: 2000, error: 4000, info: 3000 };
 const ACTION_DURATION = 8000;
@@ -34,6 +34,19 @@ export function useToast() {
     const timer = setTimeout(() => dismiss(id), ms);
     timersRef.current.set(id, timer);
   }, [dismiss]);
+
+  // Eviction (see showToast) drops toasts without going through dismiss, so their
+  // timers would otherwise fire against an id that's already gone. Reconciling here
+  // covers every removal path, not just that one.
+  useEffect(() => {
+    const live = new Set(toasts.map(t => t.id));
+    for (const [id, timer] of timersRef.current) {
+      if (!live.has(id)) {
+        clearTimeout(timer);
+        timersRef.current.delete(id);
+      }
+    }
+  }, [toasts]);
 
   return { toasts, showToast, dismiss };
 }

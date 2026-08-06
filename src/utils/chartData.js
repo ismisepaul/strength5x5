@@ -73,12 +73,12 @@ export function getExerciseRangeStats(history, exerciseId, rangeLabel) {
 
     ex.setsCompleted.forEach((reps, i) => {
       if (reps === null) return;
-      const weight = isRamped ? ex.setWeights[i] : ex.weight;
+      const weight = isRamped ? (ex.setWeights[i] ?? ex.weight) : ex.weight;
       volume += weight * reps;
       if (!bestSet || weight > bestSet.weight || (weight === bestSet.weight && reps > bestSet.reps)) {
         bestSet = { weight, reps };
       }
-      if (reps !== targetReps(ex, i)) misses++;
+      if (reps < targetReps(ex, i)) misses++;
     });
   }
 
@@ -97,7 +97,7 @@ export function getBig3Volume(history, rangeLabel) {
       if (!['squat', 'bench', 'deadlift'].includes(ex.id)) continue;
       ex.setsCompleted.forEach((reps, i) => {
         if (reps === null) return;
-        volume += (Array.isArray(ex.setWeights) ? ex.setWeights[i] : ex.weight) * reps;
+        volume += (Array.isArray(ex.setWeights) ? (ex.setWeights[i] ?? ex.weight) : ex.weight) * reps;
       });
     }
   }

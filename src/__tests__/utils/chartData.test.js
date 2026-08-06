@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange, getExerciseRangeStats } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange, getExerciseRangeStats, getBig3Volume } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -467,5 +467,30 @@ describe('getExerciseRangeStats', () => {
 
   it('returns a null bestSet and zeroed stats when nothing matches', () => {
     expect(getExerciseRangeStats([], 'squat', 'All')).toEqual({ bestSet: null, volume: 0, misses: 0 });
+  });
+
+  it('falls back to ex.weight when a ramped setWeights entry is missing (malformed import)', () => {
+    const h = [session('2024-01-01', 'A', [['squat', 50, [5, 5, 5]]])];
+    h[0].exercises[0].setWeights = [30, 37.5];
+    const { bestSet, volume } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(bestSet).toEqual({ weight: 50, reps: 5 });
+    expect(volume).toBe(30 * 5 + 37.5 * 5 + 50 * 5);
+  });
+
+  it('does not count reps above target as a miss', () => {
+    const h = [session('2024-01-01', 'A', [['squat', 50, [6, 5, 5, 5, 5]]])];
+    const { misses } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(misses).toBe(0);
+  });
+});
+
+describe('getBig3Volume', () => {
+  it('sums volume across squat/bench/deadlift only, and falls back to ex.weight for a missing ramped setWeights entry', () => {
+    const h = [session('2024-01-01', 'A', [
+      ['squat', 50, [5, 5]],
+      ['press', 30, [5, 5]],
+    ])];
+    h[0].exercises[0].setWeights = [45];
+    expect(getBig3Volume(h, 'All')).toBe(45 * 5 + 50 * 5);
   });
 });
