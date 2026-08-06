@@ -247,7 +247,11 @@
     "weekDone": "Week done",
     "toGo_one": "{{count}} to go this week",
     "toGo_other": "{{count}} to go this week",
-    "total": "total"
+    "total": "total",
+    "allReps": "All reps",
+    "miss_one": "{{count}} miss",
+    "miss_other": "{{count}} misses",
+    "tonnage": "kg moved"
   },
   "stats": {
     "title": "Stats",

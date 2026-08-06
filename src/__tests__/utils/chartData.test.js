@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -333,5 +333,23 @@ describe('groupHistory', () => {
     expect(monthGroups[0].entries[0].session.date).toContain('2026-03');
     expect(monthGroups[1].entries[0].session.date).toContain('2026-02');
     expect(monthGroups[2].entries[0].session.date).toContain('2026-01');
+  });
+});
+
+describe('sessionTonnage', () => {
+  it('sums weight times completed reps across a flat-weight session', () => {
+    const s = session('2024-01-15', 'B', [['squat', 50, [5, 5, 5, 5, 5]], ['deadlift', 70, [5]]]);
+    expect(sessionTonnage(s)).toBe(50 * 25 + 70 * 5);
+  });
+
+  it('ignores unlogged (null) sets', () => {
+    const s = session('2024-01-15', 'B', [['squat', 50, [5, 5, null, null, null]]]);
+    expect(sessionTonnage(s)).toBe(50 * 10);
+  });
+
+  it('uses per-set weights for ramped exercises instead of the flat weight', () => {
+    const s = session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]);
+    s.exercises[0].setWeights = [30, 37.5, 42.5, 47.5, 50];
+    expect(sessionTonnage(s)).toBe((30 + 37.5 + 42.5 + 47.5 + 50) * 5);
   });
 });

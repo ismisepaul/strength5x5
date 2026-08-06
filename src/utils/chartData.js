@@ -8,6 +8,19 @@ function bestRepsFor(ex) {
   return best;
 }
 
+// Total kg moved in a session. Ramped lifts (Madcow) log a per-set weight in
+// setWeights; everything else is one flat weight across all sets.
+export function sessionTonnage(session) {
+  return session.exercises.reduce((total, ex) => {
+    const reps = ex.setsCompleted || [];
+    if (Array.isArray(ex.setWeights)) {
+      return total + reps.reduce((sum, r, i) => sum + (typeof r === 'number' ? r * (ex.setWeights[i] ?? ex.weight) : 0), 0);
+    }
+    const totalReps = reps.reduce((sum, r) => sum + (typeof r === 'number' ? r : 0), 0);
+    return total + ex.weight * totalReps;
+  }, 0);
+}
+
 export function buildExerciseTimeline(history, exerciseId) {
   const points = [];
   for (let i = history.length - 1; i >= 0; i--) {

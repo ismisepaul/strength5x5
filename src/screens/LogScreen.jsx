@@ -3,29 +3,40 @@ import { useTranslation } from 'react-i18next';
 import { Plus, CaretDown, CaretRight } from '@phosphor-icons/react';
 import { formatDuration, targetReps } from '../utils';
 import { getProgram } from '../programs';
-import { getWorkoutStats, groupHistory } from '../utils/chartData';
+import { getWorkoutStats, groupHistory, sessionTonnage } from '../utils/chartData';
 import Segmented from '../components/Segmented';
 
-const LogEntry = ({ session: s, onClick, mutedClass, t }) => (
-  <button onClick={onClick} className="w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/14">
-    <div className="flex justify-between items-center mb-1">
-      <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300">{t(getProgram(s.preset).nameKey)}</span>
-      <span className={`text-body ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{new Date(s.date).toLocaleDateString()}</span>
-    </div>
-    <p className="text-card font-semibold mb-3">{t(`workout.type${s.type}`)}</p>
-    <div className="space-y-2">{s.exercises.map(ex => (
-      <div key={ex.id} className="flex justify-between text-card items-center">
-        <span className={`text-meta ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
-        <div className="flex items-center gap-3">
-          <span className="tabular-nums">{ex.weight}kg</span>
-          <div className="flex gap-0.5">{ex.setsCompleted.map((r, ri) => (
-            <div key={ri} className={r === targetReps(ex, ri) ? 'w-1.5 h-1.5 rounded-full bg-accent' : 'w-1.5 h-1.5 rounded-full border border-ink/30'} />
-          ))}</div>
-        </div>
+// A session's day+date sits in a fixed left column, program/workout/meta in the middle,
+// and the outcome (all reps, or a dashed miss chip -- shape, not hue) on the right. This
+// is the collapsed row; tapping it still opens the edit flow directly for now (that
+// becomes an inline expansion in a later commit).
+const LogEntry = ({ session: s, onClick, mutedClass, t }) => {
+  const date = new Date(s.date);
+  const missCount = s.exercises.reduce((n, ex) => n + ex.setsCompleted.filter((r, i) => r !== targetReps(ex, i)).length, 0);
+  const tonnage = Math.round(sessionTonnage(s));
+
+  return (
+    <button onClick={onClick} className="w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/14 flex gap-3 items-start">
+      <div className="flex flex-col items-center w-10 shrink-0 pt-0.5">
+        <span className={`text-tab uppercase tracking-wide ${mutedClass}`}>{date.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+        <span className="text-card font-semibold tabular-nums">{date.getDate()}</span>
+        <span className={`text-tab uppercase tracking-wide ${mutedClass}`}>{date.toLocaleDateString(undefined, { month: 'short' })}</span>
       </div>
-    ))}</div>
-  </button>
-);
+      <div className="flex-1 min-w-0">
+        <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300">{t(getProgram(s.preset).nameKey)}</span>
+        <p className="text-card font-semibold mt-0.5">{t(`workout.type${s.type}`)}</p>
+        <p className={`text-meta mt-0.5 ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{tonnage.toLocaleString()} {t('log.tonnage')}</p>
+      </div>
+      <div className="shrink-0 pt-0.5">
+        {missCount === 0 ? (
+          <span className={`text-meta whitespace-nowrap ${mutedClass}`}>{t('log.allReps')}</span>
+        ) : (
+          <span className="text-meta whitespace-nowrap px-2 py-1 rounded-md border border-dashed border-ink/40 text-ink/62">{t('log.miss', { count: missCount })}</span>
+        )}
+      </div>
+    </button>
+  );
+};
 
 const LogScreen = ({
   history, preset, program, weights, mcTop, mcInterval, mcPress, getCurrentDay, setEditingEntry,

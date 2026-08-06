@@ -343,7 +343,8 @@ describe('Log entry editing', () => {
     await user.click(screen.getByText('Save Changes'));
 
     expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
-    expect(screen.getByText('57.5kg')).toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.history[0].exercises[0].weight).toBe(57.5);
   });
 
   it('deleting an entry removes it from history', async () => {
@@ -379,8 +380,8 @@ describe('Log entry editing', () => {
     await user.click(screen.getByLabelText('Close edit modal'));
 
     expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
-    expect(screen.getByText('55kg')).toBeInTheDocument();
-    expect(screen.queryByText('57.5kg')).not.toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.history[0].exercises[0].weight).toBe(55);
   });
 });
 

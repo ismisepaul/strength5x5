@@ -247,7 +247,11 @@
     "weekDone": "Semaine terminée",
     "toGo_one": "{{count}} restante cette semaine",
     "toGo_other": "{{count}} restantes cette semaine",
-    "total": "total"
+    "total": "total",
+    "allReps": "Toutes les répétitions",
+    "miss_one": "{{count}} manquée",
+    "miss_other": "{{count}} manquées",
+    "tonnage": "kg soulevés"
   },
   "stats": {
     "title": "Statistiques",
