@@ -8,7 +8,7 @@ import StepperButton from './StepperButton';
 // sets and reps" disclosure. Standard-only -- Madcow derives everything from top sets.
 const ProgramEditor = ({ program, onChange }) => {
   const { t } = useTranslation();
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
 
   const update = (id, field, delta, min, max) => {
     onChange(prev => ({

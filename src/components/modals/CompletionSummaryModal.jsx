@@ -18,7 +18,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
       <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-4">{t('completion.kicker')}</p>
       {totalTime && (
         <div className="flex items-center justify-between px-4 py-2.5 rounded-lg mb-5 bg-surface-deep">
-          <span className="text-meta uppercase text-ink/45">{t('completion.totalTime')}</span>
+          <span className="text-meta uppercase text-ink/62">{t('completion.totalTime')}</span>
           <span className="text-card tabular-nums">{totalTime}</span>
         </div>
       )}
@@ -27,7 +27,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
           const passed = isExercisePassed(ex);
           const progressed = completionSummary.progressions.includes(ex.id);
           const nextWeight = completionSummary.nextWeights?.[ex.id];
-          const mutedColor = 'text-ink/45';
+          const mutedColor = 'text-ink/62';
           const setDurations = ex.setDurations ?? [];
           const logged = setDurations.filter(d => typeof d === 'number');
           const hasSplits = logged.length > 0;

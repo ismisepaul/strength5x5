@@ -35,7 +35,7 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
     progress = 0;
   }
 
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
 
   return (
     <div className={`flex-none pt-4 px-5 pb-3 bg-surface-deep`}>

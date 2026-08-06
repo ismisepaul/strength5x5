@@ -32,14 +32,14 @@ const WorkoutPickerSheet = ({ preset, program, weights, mcTop, mcInterval, mcPre
                   {mood && <span className="text-kicker uppercase tracking-wide px-2 py-0.5 rounded-lg text-accent-300 bg-accent-900">{mood}</span>}
                 </div>
                 <p className="text-[12.5px] truncate text-ink/50">{liftIds.map(id => t('exercises.' + id)).join(' · ')}</p>
-                <p className="text-meta tabular-nums text-ink/45">{dayWeights.join(' · ')} kg</p>
+                <p className="text-meta tabular-nums text-ink/62">{dayWeights.join(' · ')} kg</p>
               </div>
               {isCurrent && <Check size={18} className="text-accent-300 shrink-0" />}
             </button>
           );
         })}
       </div>
-      <p className="text-meta text-center mb-5 text-ink/45">{t('workout.scheduledNote')}</p>
+      <p className="text-meta text-center mb-5 text-ink/62">{t('workout.scheduledNote')}</p>
       <button onClick={onClose} className="w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink">{t('modals.cancel')}</button>
     </Sheet>
   );

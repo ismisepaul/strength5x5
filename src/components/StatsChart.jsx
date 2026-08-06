@@ -63,7 +63,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
     return `${d.getDate()}/${d.getMonth() + 1}`;
   };
 
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
   // Recharts consumes these as literal prop values (SVG attrs / inline styles), not
   // Tailwind classNames, so they can't re-theme via the CSS custom properties alone.
   const axisColor = isDark ? 'rgba(236,233,226,.4)' : 'rgba(25,22,18,.4)';
@@ -174,7 +174,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
           <button
             onClick={toggleWeight}
             aria-pressed={showWeight}
-            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/18 text-ink/62'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: weightColor }} />
             {t('stats.weight')}
@@ -182,7 +182,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
           <button
             onClick={toggleE1rm}
             aria-pressed={showE1rm}
-            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/18 text-ink/62'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: e1rmColor }} />
             {t('stats.est1rm')}

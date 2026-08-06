@@ -22,7 +22,7 @@ const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant
   const [draft, setDraft] = useState(null); // null while not editing; typed string while editing
   const cancelingRef = useRef(false);
   const { size, iconSize, valueClass, width } = VARIANTS[variant];
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
   const displayValue = draft !== null ? draft : String(value);
   // A Madcow top set is never the day's flat working weight, so it gets its own aria
   // wording everywhere (see design-system.md §4). `caption` is independent of that --

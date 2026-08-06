@@ -51,7 +51,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
     onToggleSet(exIdx, setIdx);
   };
 
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
 
   return (
     <div className={`p-4 rounded-[10px] border bg-surface border-ink/8`}>

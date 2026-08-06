@@ -48,8 +48,8 @@ const EditEntryModal = ({
       {isNewEntry && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-meta uppercase tracking-[0.12em] text-ink/45">{t('modals.workoutType')}</label>
-            <span className="text-meta text-ink/45">{t(entryProg.nameKey)}</span>
+            <label className="text-meta uppercase tracking-[0.12em] text-ink/62">{t('modals.workoutType')}</label>
+            <span className="text-meta text-ink/62">{t(entryProg.nameKey)}</span>
           </div>
           <div className="flex gap-2">
             {entryProg.days.map(wt => (
@@ -64,7 +64,7 @@ const EditEntryModal = ({
       )}
 
       <div className="mb-6">
-        <label className="text-meta uppercase tracking-[0.12em] block mb-2 text-ink/45">{t('modals.date')}</label>
+        <label className="text-meta uppercase tracking-[0.12em] block mb-2 text-ink/62">{t('modals.date')}</label>
         <input
           type="date"
           value={editingEntry.session.date.slice(0, 10)}
@@ -85,7 +85,7 @@ const EditEntryModal = ({
           <div key={ex.id} className="p-4 rounded-lg border bg-surface-deep border-ink/8">
             <p className="text-body font-medium mb-3">{t('exercises.' + ex.id)}</p>
             <div className="flex justify-between items-center mb-3">
-              <span className="text-meta uppercase text-ink/45">{t('modals.weightLabel')}</span>
+              <span className="text-meta uppercase text-ink/62">{t('modals.weightLabel')}</span>
               {entryProg.ramped ? (
                 <span className="text-card tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
               ) : (
@@ -104,7 +104,7 @@ const EditEntryModal = ({
               )}
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-meta uppercase text-ink/45">{t('modals.setsLabel')}</span>
+              <span className="text-meta uppercase text-ink/62">{t('modals.setsLabel')}</span>
               <div className="flex gap-2">
                 {ex.setsCompleted.map((reps, setIdx) => {
                   const target = targetReps(ex, setIdx);
@@ -175,7 +175,7 @@ const EditEntryModal = ({
         !showDeleteConfirm ? (
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="w-full min-h-[44px] flex items-center justify-center gap-2 text-card active:scale-90 text-ink/45"
+            className="w-full min-h-[44px] flex items-center justify-center gap-2 text-card active:scale-90 text-ink/62"
           ><Trash size={14} /> {t('modals.deleteWorkout')}</button>
         ) : (
           <div className="p-4 rounded-lg border border-dashed border-ink/30">
@@ -194,7 +194,7 @@ const EditEntryModal = ({
               >{t('modals.delete')}</button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 h-[46px] flex items-center justify-center text-[14px] active:scale-95 text-ink/45"
+                className="flex-1 h-[46px] flex items-center justify-center text-[14px] active:scale-95 text-ink/62"
               >{t('modals.cancel')}</button>
             </div>
           </div>

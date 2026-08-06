@@ -31,7 +31,7 @@ const SyncConflictModal = ({ connectSyncPrompt, onUseDriveData, onUseLocalData, 
           {t('modals.useLocalData')}
         </button>
       </div>
-      <button onClick={onCancel} className="text-card active:scale-90 text-ink/45">{t('modals.cancel')}</button>
+      <button onClick={onCancel} className="text-card active:scale-90 text-ink/62">{t('modals.cancel')}</button>
     </Modal>
   );
 };

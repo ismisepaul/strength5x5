@@ -32,7 +32,7 @@ const LogScreen = ({
   logGrouping, setLogGrouping, expandedGroups, setExpandedGroups,
 }) => {
   const { t } = useTranslation();
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
   const renderEntry = (s, key, onClick) => <LogEntry key={key} session={s} onClick={onClick} mutedClass={mutedClass} t={t} />;
   const stats = getWorkoutStats(history);
 

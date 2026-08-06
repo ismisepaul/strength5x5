@@ -41,7 +41,7 @@ const TrainScreen = ({
                       className="w-[38px] h-[38px] rounded-lg border flex items-center justify-center shrink-0 border-ink/18 text-ink"
                     ><CaretDown size={16} /></button>
                   </div>
-                  <p className="text-body mt-1 text-ink/45">
+                  <p className="text-body mt-1 text-ink/62">
                     {isMadcow
                       ? t('workout.madcowSubtitle', { mood: moodLabel(day), lifts: liftIds.map(id => t('exercises.' + id)).join(' · ') })
                       : liftIds.map(id => t('exercises.' + id)).join(' · ')}
@@ -64,7 +64,7 @@ const TrainScreen = ({
                           <p className="text-[16px] font-medium truncate">{exName}</p>
                           <CaretDown size={12} weight="bold" className={`shrink-0 opacity-35 transition-transform ${isBarSetupOpen ? 'rotate-180' : ''}`} />
                         </div>
-                        <p className="text-[12.5px] text-ink/45">
+                        <p className="text-[12.5px] text-ink/62">
                           {isMadcow ? (day === 'C' ? t('workout.dayCMeta') : t('workout.rampSetsMeta', { sets: ex.sets, from: Math.min(...ex.setWeights), to: topWeight })) : `${ex.sets} × ${ex.reps}`}
                         </p>
                         <PlateStrip weight={topWeight} />
@@ -94,8 +94,8 @@ const TrainScreen = ({
                   );
                 })}</div>
                 <div className="flex justify-between items-baseline px-0.5 pb-3.5">
-                  <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-ink/45">{t('workout.plannedLoad')}</span>
-                  <span className="text-[20px] font-medium tabular-nums text-accent-300">{plannedVolume(dayExercises).toLocaleString()} <span className="text-meta text-ink/45">kg</span></span>
+                  <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-ink/62">{t('workout.plannedLoad')}</span>
+                  <span className="text-[20px] font-medium tabular-nums text-accent-300">{plannedVolume(dayExercises).toLocaleString()} <span className="text-meta text-ink/62">kg</span></span>
                 </div>
               </>
             );
@@ -105,7 +105,7 @@ const TrainScreen = ({
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex justify-center mb-2"><h2 className="text-kicker font-semibold uppercase tracking-[0.14em] text-ink/45">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
+          <div className="flex justify-center mb-2"><h2 className="text-kicker font-semibold uppercase tracking-[0.14em] text-ink/62">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
           {(() => {
             const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
             return currentWorkout?.exercises.map((ex, exIdx) => (
@@ -129,11 +129,11 @@ const TrainScreen = ({
               return (
                 <>
                   <button onClick={finishWorkout} disabled={!allDone} className={`w-full h-[52px] rounded-lg border font-medium text-[15.5px] ${allDone ? 'border-accent text-accent active:scale-[0.98]' : 'border-ink/12 text-ink/30'}`}>{t('workout.finishWorkout')}</button>
-                  {!allDone && <p className="text-meta text-center mt-3 text-ink/45">{t('workout.completeAllSets')}</p>}
+                  {!allDone && <p className="text-meta text-center mt-3 text-ink/62">{t('workout.completeAllSets')}</p>}
                 </>
               );
             })()}
-            <button onClick={() => setShowCancelModal(true)} className="mt-8 w-full min-h-[44px] flex items-center justify-center text-card text-ink/45">{t('workout.discardWorkout')}</button>
+            <button onClick={() => setShowCancelModal(true)} className="mt-8 w-full min-h-[44px] flex items-center justify-center text-card text-ink/62">{t('workout.discardWorkout')}</button>
           </div>
         </div>
       )}

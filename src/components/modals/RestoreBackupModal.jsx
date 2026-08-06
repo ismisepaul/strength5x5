@@ -16,7 +16,7 @@ const RestoreBackupModal = ({ driveConfigured, onRestoreFile, onConnectDrive, on
           <button onClick={onConnectDrive} className="w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/18 text-ink"><Cloud size={18} /> {t('modals.restoreFromDrive')}</button>
         )}
         <button onClick={onImportCSV} className="w-full h-[46px] rounded-lg font-medium text-[14px] active:scale-95 border flex items-center justify-center gap-2 border-ink/18 text-ink"><FileCsv size={18} /> {t('options.importStronglifts')}</button>
-        <button onClick={onSkip} className="text-card mt-4 block mx-auto text-ink/45">{t('modals.skipAndStart')}</button>
+        <button onClick={onSkip} className="text-card mt-4 block mx-auto text-ink/62">{t('modals.skipAndStart')}</button>
       </div>
     </Modal>
   );

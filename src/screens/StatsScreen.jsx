@@ -12,7 +12,7 @@ const StatsScreen = ({
   preset, program, mcTop, mcInterval, mcPress,
 }) => {
   const { t } = useTranslation();
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
   const cardClass = 'w-full p-4 rounded-[10px] border flex justify-between items-center active:scale-[0.98] transition-transform bg-surface border-ink/8';
   const trendIconFor = (trend) => trend === 'up' ? { Icon: TrendUp, className: 'text-accent' } : trend === 'down' ? { Icon: TrendDown, className: mutedClass } : { Icon: ArrowRight, className: 'text-ink/40' };
 

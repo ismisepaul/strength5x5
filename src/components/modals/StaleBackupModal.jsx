@@ -13,7 +13,7 @@ const StaleBackupModal = ({ backupCount, backupDate, localCount, lossCount, onRe
       <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
       <p className="text-card leading-relaxed mb-6 text-ink/60">{t('modals.olderBackupBody', { backupCount, backupDate, localCount, lossCount })}</p>
       <button onClick={onRestoreAnyway} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
-      <button onClick={onCancel} className="text-card active:scale-90 text-ink/45">{t('modals.cancel')}</button>
+      <button onClick={onCancel} className="text-card active:scale-90 text-ink/62">{t('modals.cancel')}</button>
     </Modal>
   );
 };

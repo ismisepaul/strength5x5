@@ -85,7 +85,7 @@ const ProgramScreen = ({
   onOpenGuide,
 }) => {
   const { t } = useTranslation();
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
   const cardClass = `p-4 rounded-[10px] border bg-surface border-ink/8`;
 
   const [selectedWorkout, setSelectedWorkout] = useState(currentWorkoutType);
