@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange, getExerciseRangeStats, getBig3Volume } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -333,5 +333,164 @@ describe('groupHistory', () => {
     expect(monthGroups[0].entries[0].session.date).toContain('2026-03');
     expect(monthGroups[1].entries[0].session.date).toContain('2026-02');
     expect(monthGroups[2].entries[0].session.date).toContain('2026-01');
+  });
+});
+
+describe('sessionTonnage', () => {
+  it('sums weight times completed reps across a flat-weight session', () => {
+    const s = session('2024-01-15', 'B', [['squat', 50, [5, 5, 5, 5, 5]], ['deadlift', 70, [5]]]);
+    expect(sessionTonnage(s)).toBe(50 * 25 + 70 * 5);
+  });
+
+  it('ignores unlogged (null) sets', () => {
+    const s = session('2024-01-15', 'B', [['squat', 50, [5, 5, null, null, null]]]);
+    expect(sessionTonnage(s)).toBe(50 * 10);
+  });
+
+  it('uses per-set weights for ramped exercises instead of the flat weight', () => {
+    const s = session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]);
+    s.exercises[0].setWeights = [30, 37.5, 42.5, 47.5, 50];
+    expect(sessionTonnage(s)).toBe((30 + 37.5 + 42.5 + 47.5 + 50) * 5);
+  });
+});
+
+describe('monthlySessionCounts', () => {
+  it('buckets sessions into their calendar month', () => {
+    const sessions = [
+      session('2024-01-05', 'A', [['squat', 50, [5]]]),
+      session('2024-01-20', 'A', [['squat', 50, [5]]]),
+      session('2024-03-10', 'A', [['squat', 50, [5]]]),
+    ];
+    const counts = monthlySessionCounts(sessions);
+    expect(counts).toHaveLength(12);
+    expect(counts[0]).toBe(2);
+    expect(counts[2]).toBe(1);
+    expect(counts[1]).toBe(0);
+  });
+
+  it('returns all zeros for an empty year', () => {
+    expect(monthlySessionCounts([])).toEqual(new Array(12).fill(0));
+  });
+
+  it('counts every session in a year with sessions in every month', () => {
+    const sessions = Array.from({ length: 12 }, (_, m) => session(`2024-${String(m + 1).padStart(2, '0')}-15`, 'A', [['squat', 50, [5]]]));
+    const counts = monthlySessionCounts(sessions);
+    expect(counts).toEqual(new Array(12).fill(1));
+  });
+});
+
+describe('getWeightDelta', () => {
+  it('returns null with fewer than two points', () => {
+    expect(getWeightDelta([])).toBeNull();
+    expect(getWeightDelta([{ weight: 50 }])).toBeNull();
+  });
+
+  it('returns 0 when the two most recent points are held at the same weight', () => {
+    expect(getWeightDelta([{ weight: 50 }, { weight: 50 }])).toBe(0);
+  });
+
+  it('returns the signed kg delta between the two most recent points', () => {
+    expect(getWeightDelta([{ weight: 50 }, { weight: 52.5 }])).toBe(2.5);
+    expect(getWeightDelta([{ weight: 60 }, { weight: 55 }])).toBe(-5);
+  });
+});
+
+describe('filterByRange', () => {
+  const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
+  const timeline = [
+    { date: daysAgo(400), weight: 40 },
+    { date: daysAgo(200), weight: 45 },
+    { date: daysAgo(60), weight: 50 },
+    { date: daysAgo(5), weight: 55 },
+  ];
+
+  it('returns everything for "All"', () => {
+    expect(filterByRange(timeline, 'All')).toHaveLength(4);
+  });
+
+  it('keeps only points within the last 90 days for "3M"', () => {
+    const result = filterByRange(timeline, '3M');
+    expect(result.map(p => p.weight)).toEqual([50, 55]);
+  });
+
+  it('keeps only points within the last 365 days for "1Y"', () => {
+    const result = filterByRange(timeline, '1Y');
+    expect(result.map(p => p.weight)).toEqual([45, 50, 55]);
+  });
+
+  it('falls back to the full timeline for an unknown range label', () => {
+    expect(filterByRange(timeline, 'bogus')).toHaveLength(4);
+  });
+});
+
+describe('getExerciseRangeStats', () => {
+  const daysAgoISO = (n) => new Date(Date.now() - n * 86400000).toISOString();
+
+  it('finds the heaviest completed set, sums volume, and counts misses', () => {
+    const h = [
+      session('2024-01-01', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+      session('2024-01-08', 'A', [['squat', 55, [5, 5, 3, 3, 2]]]),
+    ];
+    const { bestSet, volume, misses } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(bestSet).toEqual({ weight: 55, reps: 5 });
+    expect(volume).toBe(50 * 25 + 55 * (5 + 5 + 3 + 3 + 2));
+    expect(misses).toBe(3);
+  });
+
+  it('ignores unlogged sets and lifts with no matching exercise', () => {
+    const h = [
+      session('2024-01-01', 'A', [['squat', 50, [5, 5, null, null, null]]]),
+      session('2024-01-02', 'A', [['bench', 40, [5, 5, 5, 5, 5]]]),
+    ];
+    const { bestSet, volume, misses } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(bestSet).toEqual({ weight: 50, reps: 5 });
+    expect(volume).toBe(50 * 10);
+    expect(misses).toBe(0);
+  });
+
+  it('uses per-set weights for ramped lifts when picking the best set', () => {
+    const h = [session('2024-01-01', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    h[0].exercises[0].setWeights = [30, 37.5, 42.5, 47.5, 50];
+    h[0].exercises[0].setReps = [5, 5, 5, 5, 5];
+    const { bestSet } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(bestSet).toEqual({ weight: 50, reps: 5 });
+  });
+
+  it('excludes sessions before the range cutoff', () => {
+    const h = [
+      session(daysAgoISO(400), 'A', [['squat', 60, [5, 5, 5, 5, 5]]]),
+      session(daysAgoISO(5), 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+    ];
+    const { bestSet } = getExerciseRangeStats(h, 'squat', '3M');
+    expect(bestSet).toEqual({ weight: 50, reps: 5 });
+  });
+
+  it('returns a null bestSet and zeroed stats when nothing matches', () => {
+    expect(getExerciseRangeStats([], 'squat', 'All')).toEqual({ bestSet: null, volume: 0, misses: 0 });
+  });
+
+  it('falls back to ex.weight when a ramped setWeights entry is missing (malformed import)', () => {
+    const h = [session('2024-01-01', 'A', [['squat', 50, [5, 5, 5]]])];
+    h[0].exercises[0].setWeights = [30, 37.5];
+    const { bestSet, volume } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(bestSet).toEqual({ weight: 50, reps: 5 });
+    expect(volume).toBe(30 * 5 + 37.5 * 5 + 50 * 5);
+  });
+
+  it('does not count reps above target as a miss', () => {
+    const h = [session('2024-01-01', 'A', [['squat', 50, [6, 5, 5, 5, 5]]])];
+    const { misses } = getExerciseRangeStats(h, 'squat', 'All');
+    expect(misses).toBe(0);
+  });
+});
+
+describe('getBig3Volume', () => {
+  it('sums volume across squat/bench/deadlift only, and falls back to ex.weight for a missing ramped setWeights entry', () => {
+    const h = [session('2024-01-01', 'A', [
+      ['squat', 50, [5, 5]],
+      ['press', 30, [5, 5]],
+    ])];
+    h[0].exercises[0].setWeights = [45];
+    expect(getBig3Volume(h, 'All')).toBe(45 * 5 + 50 * 5);
   });
 });

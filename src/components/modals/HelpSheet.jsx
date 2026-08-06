@@ -27,13 +27,13 @@ const HelpSheet = ({ preset, onOpenProgram, onClose }) => {
         ].map(({ Icon, title, body }) => (
           <div key={title} className="flex items-start gap-3">
             <div className="w-[30px] h-[30px] rounded-lg border border-accent text-accent flex items-center justify-center shrink-0"><Icon size={18} /></div>
-            <div><p className="text-card font-medium">{title}</p><p className="text-body leading-relaxed text-ink/55">{body}</p></div>
+            <div><p className="text-card font-medium">{title}</p><p className="text-body leading-relaxed text-ink/78">{body}</p></div>
           </div>
         ))}
       </div>
       <button
         onClick={onOpenProgram}
-        className="w-full flex items-center justify-between p-4 rounded-[10px] border mb-3 active:scale-[0.99] transition-transform bg-surface-deep border-ink/8"
+        className="w-full flex items-center justify-between p-4 rounded-[10px] border mb-3 active:scale-[0.99] transition-transform bg-surface-deep border-ink/14"
       >
         <span className="flex items-center gap-2 text-[14.5px] font-medium">
           <Barbell weight="fill" size={17} className="text-accent" /> {t('help.programLink')}
@@ -42,7 +42,7 @@ const HelpSheet = ({ preset, onOpenProgram, onClose }) => {
           {t(getProgram(preset).nameKey)} <CaretRight size={14} />
         </span>
       </button>
-      <button autoFocus onClick={onClose} className="w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/18 text-ink">{t('help.gotIt')}</button>
+      <button autoFocus onClick={onClose} className="w-full h-[46px] flex items-center justify-center rounded-lg border text-[14px] font-medium active:scale-95 border-ink/26 text-ink">{t('help.gotIt')}</button>
     </Sheet>
   );
 };

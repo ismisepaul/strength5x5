@@ -15,10 +15,10 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
   const totalTime = formatClock(completionSummary.workout.duration);
   return (
     <Modal ariaLabel="Workout complete" z={Z_TOP} cardClassName="max-w-sm p-6">
-      <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent mb-4">{t('completion.kicker')}</p>
+      <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-4">{t('completion.kicker')}</p>
       {totalTime && (
         <div className="flex items-center justify-between px-4 py-2.5 rounded-lg mb-5 bg-surface-deep">
-          <span className="text-meta uppercase text-ink/45">{t('completion.totalTime')}</span>
+          <span className="text-meta uppercase text-ink/62">{t('completion.totalTime')}</span>
           <span className="text-card tabular-nums">{totalTime}</span>
         </div>
       )}
@@ -27,7 +27,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
           const passed = isExercisePassed(ex);
           const progressed = completionSummary.progressions.includes(ex.id);
           const nextWeight = completionSummary.nextWeights?.[ex.id];
-          const mutedColor = 'text-ink/45';
+          const mutedColor = 'text-ink/62';
           const setDurations = ex.setDurations ?? [];
           const logged = setDurations.filter(d => typeof d === 'number');
           const hasSplits = logged.length > 0;
@@ -36,7 +36,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
           // that (Madcow Day C's 6) shrinks its blocks to fit instead of overflowing.
           const setColumns = Math.max(ex.setsCompleted.length, MAX_SETS);
           return (
-            <div key={ex.id} className="p-3 rounded-lg border bg-surface-deep border-ink/8">
+            <div key={ex.id} className="p-3 rounded-lg border bg-surface-deep border-ink/14">
               <div className="flex items-center justify-between">
                 <span className="text-card font-medium">{t('exercises.' + ex.id)}</span>
                 {progressed ? (
@@ -67,7 +67,7 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
           );
         })}
       </div>
-      <button onClick={onDone} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95">{t('completion.done')}</button>
+      <button onClick={onDone} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent-300 font-medium text-[14.5px] active:scale-95">{t('completion.done')}</button>
     </Modal>
   );
 };

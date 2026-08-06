@@ -51,10 +51,10 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
     onToggleSet(exIdx, setIdx);
   };
 
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
 
   return (
-    <div className={`p-4 rounded-[10px] border bg-surface border-ink/8`}>
+    <div className={`p-4 rounded-[10px] border bg-surface border-ink/14`}>
       <div className="mb-5">
         <div className={`flex justify-between ${isRamped ? 'items-start' : 'items-center'}`}>
           <div className="flex-1 min-w-0 pr-4">
@@ -100,7 +100,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
           let stateClass;
           if (passed) stateClass = 'border border-accent bg-accent-900 text-accent-300';
           else if (missed) stateClass = 'border-[1.5px] border-dashed border-ink/50 bg-neutral-tint text-ink';
-          else stateClass = 'border border-ink/18 text-ink/40';
+          else stateClass = 'border border-ink/26 text-ink/62';
           return (
             <div key={ri} className="flex flex-col items-center gap-1" style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}>
               <button
@@ -128,13 +128,13 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
       {hasMissed && (
         <p className="flex items-center gap-1 text-[12.5px] mt-3">
           <ArrowBendDownRight size={13} className="text-accent shrink-0" />
-          <span className="text-ink/55">
+          <span className="text-ink/78">
             {isRamped ? t('workout.missedNoteTopSet') : t('workout.missedNote', { weight: ex.weight })}
           </span>
         </p>
       )}
       {showHint && (
-        <p className={`text-meta mt-3 text-ink/38`}>{t('workout.setHint', { count: targetReps(ex, 0) })}</p>
+        <p className={`text-meta mt-3 text-ink/50`}>{t('workout.setHint', { count: targetReps(ex, 0) })}</p>
       )}
       <div className={`mt-4 pt-3 flex items-center justify-between rule-fade-top`}>
         <button

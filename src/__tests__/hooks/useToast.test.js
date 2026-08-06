@@ -67,4 +67,51 @@ describe('useToast', () => {
     expect(result.current.toasts).toHaveLength(3);
     expect(result.current.toasts.map(t => t.message)).toEqual(['B', 'C', 'D']);
   });
+
+  it('clears the evicted toast\'s timer instead of leaving it pending', () => {
+    const { result } = renderHook(() => useToast());
+
+    act(() => {
+      result.current.showToast('A', 'info', 10000);
+      result.current.showToast('B', 'info', 10000);
+      result.current.showToast('C', 'info', 10000);
+    });
+    expect(vi.getTimerCount()).toBe(3);
+
+    // Evicting A should clear its timer along with dropping it from state --
+    // otherwise it fires 10s later against an id nothing is tracking anymore.
+    act(() => result.current.showToast('D', 'info', 10000));
+    expect(vi.getTimerCount()).toBe(3);
+  });
+
+  it('carries an action label/callback and defaults to a longer duration', () => {
+    const onAction = vi.fn();
+    const { result } = renderHook(() => useToast());
+    act(() => result.current.showToast('Deleted', 'success', undefined, { actionLabel: 'Undo', onAction }));
+
+    expect(result.current.toasts[0].actionLabel).toBe('Undo');
+    expect(result.current.toasts[0].onAction).toBe(onAction);
+
+    // Longer than the plain success duration (2s) since it now has to be tappable --
+    // 8s, not 5s, so there's actually time to read and tap it mid-set at the gym.
+    act(() => vi.advanceTimersByTime(7999));
+    expect(result.current.toasts).toHaveLength(1);
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current.toasts).toHaveLength(0);
+    expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it('dismiss removes a toast immediately and cancels its auto-dismiss timer', () => {
+    const { result } = renderHook(() => useToast());
+    act(() => result.current.showToast('Hello'));
+    const id = result.current.toasts[0].id;
+
+    act(() => result.current.dismiss(id));
+    expect(result.current.toasts).toHaveLength(0);
+
+    // The original timer firing later must not throw or resurrect anything.
+    act(() => vi.advanceTimersByTime(3000));
+    expect(result.current.toasts).toHaveLength(0);
+  });
 });

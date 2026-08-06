@@ -8,7 +8,7 @@ import StepperButton from './StepperButton';
 // sets and reps" disclosure. Standard-only -- Madcow derives everything from top sets.
 const ProgramEditor = ({ program, onChange }) => {
   const { t } = useTranslation();
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
 
   const update = (id, field, delta, min, max) => {
     onChange(prev => ({
@@ -22,7 +22,7 @@ const ProgramEditor = ({ program, onChange }) => {
       {EXPECTED_WEIGHT_KEYS.map(id => {
         const { sets, reps } = program[id];
         return (
-          <div key={id} className={`p-4 rounded-[10px] border bg-surface border-ink/8`}>
+          <div key={id} className={`p-4 rounded-[10px] border bg-surface border-ink/14`}>
             <div className="flex justify-between items-center mb-4">
               <p className="text-card font-semibold">{t('exercises.' + id)}</p>
               <p className={`text-[12.5px] text-ink/50`}>

@@ -56,6 +56,7 @@ describe('Toast notifications', () => {
     await user.click(screen.getByText('Log'));
     const workoutCards = screen.getAllByText(/Workout A/i);
     await user.click(workoutCards[0].closest('button'));
+    await user.click(screen.getByText('Edit workout'));
 
     const dialog = screen.getByRole('dialog');
     const saveBtn = dialog.querySelector('button');
@@ -78,8 +79,7 @@ describe('Toast notifications', () => {
     await user.click(workoutCards[0].closest('button'));
 
     await user.click(screen.getByText('Delete Workout'));
-    const deleteBtn = screen.getByRole('button', { name: /^Delete$/i });
-    await user.click(deleteBtn);
+    await user.click(screen.getByText('Delete anyway'));
 
     await waitFor(() => {
       expect(screen.getByText('Workout deleted')).toBeInTheDocument();
@@ -270,5 +270,39 @@ describe('logGrouping persistence', () => {
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.logGrouping).toBe('month');
+  });
+});
+
+describe('Log band default expansion', () => {
+  const twoMonthData = {
+    ...workoutData,
+    history: [
+      { ...workoutData.history[0], date: new Date().toISOString() },
+      { ...workoutData.history[0], date: new Date(Date.now() - 40 * 86400000).toISOString() },
+    ],
+  };
+
+  it('opens the first band by default in Week view', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(twoMonthData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Log'));
+    await user.click(screen.getByText('Week'));
+
+    expect(screen.getAllByText(/Workout A/i).length).toBeGreaterThan(0);
+  });
+
+  it('opens the first band by default in Month view too, not just Week/Year', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(twoMonthData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Log'));
+    await user.click(screen.getByText('Month'));
+
+    // A collapsed Month band would show nothing but two header rows -- open the
+    // current month by default so the view isn't blank on first render.
+    expect(screen.getAllByText(/Workout A/i).length).toBeGreaterThan(0);
   });
 });

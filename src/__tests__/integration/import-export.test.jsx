@@ -75,7 +75,7 @@ describe('Import / Export', () => {
     render(<App />);
 
     await user.click(screen.getByText('Options'));
-    await user.click(screen.getByText('Backup'));
+    await user.click(screen.getByText('Export'));
 
     expect(URL.createObjectURL).toHaveBeenCalled();
     expect(URL.revokeObjectURL).toHaveBeenCalled();
@@ -301,7 +301,7 @@ describe('StrongLifts CSV Import', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByText('Options'));
-    expect(screen.getByText('Import from StrongLifts')).toBeTruthy();
+    expect(screen.getByText('StrongLifts')).toBeTruthy();
   });
 
   it('opens confirmation modal with session count after selecting a CSV file', async () => {

@@ -7,7 +7,7 @@ const ICONS = {
   info: Info,
 };
 
-const Toast = React.memo(({ toasts }) => {
+const Toast = React.memo(({ toasts, dismiss }) => {
   if (toasts.length === 0) return null;
 
   return (
@@ -23,6 +23,12 @@ const Toast = React.memo(({ toasts }) => {
           >
             <Icon size={18} className="shrink-0" />
             <span className="text-card flex-1">{t.message}</span>
+            {t.onAction && (
+              <button
+                onClick={() => { t.onAction(); dismiss(t.id); }}
+                className="text-card font-semibold shrink-0 underline underline-offset-2 active:scale-95"
+              >{t.actionLabel}</button>
+            )}
           </div>
         );
       })}

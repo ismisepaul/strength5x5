@@ -46,13 +46,14 @@ import SyncConflictModal from './components/modals/SyncConflictModal';
 import WorkoutPickerSheet from './components/modals/WorkoutPickerSheet';
 import CompletionSummaryModal from './components/modals/CompletionSummaryModal';
 import EditEntryModal from './components/modals/EditEntryModal';
+import DeleteEntryConfirmSheet from './components/modals/DeleteEntryConfirmSheet';
 
 const LONG_BREAK_DELOAD_KEY = 'strength5x5_long_break_deload_for_date';
 
 const App = () => {
   const { t } = useTranslation();
   const saved = useLoadSaved();
-  const { toasts, showToast } = useToast();
+  const { toasts, showToast, dismiss: dismissToast } = useToast();
 
   const [weights, setWeights] = useState(saved.weights ?? INITIAL_WEIGHTS);
   const [program, setProgram] = useState(() => normalizeProgram(saved.program));
@@ -83,7 +84,9 @@ const App = () => {
   const [pendingCSVImport, setPendingCSVImport] = useState(null);
   const [statsView, setStatsView] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [deletingEntry, setDeletingEntry] = useState(null);
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [expandedLogEntry, setExpandedLogEntry] = useState(null);
   const [expandedBarSetup, setExpandedBarSetup] = useState({});
   const [completionSummary, setCompletionSummary] = useState(null);
   const [showResumePrompt, setShowResumePrompt] = useState(() => !!saved.activeSession);
@@ -174,6 +177,13 @@ const App = () => {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }, [getAppState, history]);
+
+  // Same shape as exportData's payload -- just measured instead of downloaded, for the
+  // Options "About" footer.
+  const backupSizeBytes = useMemo(() => {
+    const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState() };
+    return new Blob([JSON.stringify(data)]).size;
+  }, [getAppState]);
 
   const saveToDriveQuietly = useCallback(async (state) => {
     if (!import.meta.env.VITE_GOOGLE_CLIENT_ID || !gdrive.hasEverConnected) return;
@@ -563,6 +573,29 @@ const App = () => {
     saveToDriveQuietly(nextState);
   }, [getAppState, saveToDriveQuietly]);
 
+  // Optimistic delete: history drops the session immediately (so every other reader --
+  // Stats, Drive autosave -- sees the same single source of truth right away), and the
+  // toast's Undo re-inserts the exact session back at its original index.
+  const handleDeleteEntry = useCallback((index) => {
+    const deletedSession = history[index];
+    const newHistory = history.filter((_, i) => i !== index);
+    setHistory(newHistory);
+    setDeletingEntry(null);
+    // Row identity in the Log is index-based, and indices shift once an earlier
+    // session is removed -- collapse rather than risk a stale expansion.
+    setExpandedLogEntry(null);
+    showToast(t('toast.workoutDeleted'), 'success', undefined, {
+      actionLabel: t('toast.undo'),
+      onAction: () => {
+        const restored = [...newHistory];
+        restored.splice(index, 0, deletedSession);
+        setHistory(restored);
+        saveToDriveQuietly({ ...getAppState(), history: restored });
+      },
+    });
+    saveToDriveQuietly({ ...getAppState(), history: newHistory });
+  }, [history, setHistory, showToast, t, saveToDriveQuietly, getAppState]);
+
   const formatLastSaved = useCallback((date) => {
     if (!date) return null;
     const now = new Date();
@@ -612,12 +645,12 @@ const App = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <Flame size={15} weight="fill" className="text-accent" />
-              <span className={`text-[12.5px] text-ink/55`}>{t('header.streak', { count: workoutStats.streak })}</span>
+              <span className={`text-[12.5px] text-ink/78`}>{t('header.streak', { count: workoutStats.streak })}</span>
             </div>
             <button
               onClick={() => setShowHelp(true)}
               aria-label="How it works"
-              className={`w-9 h-9 rounded-lg border flex items-center justify-center border-ink/15 text-ink`}
+              className={`w-10 h-10 rounded-lg border flex items-center justify-center border-ink/26 text-ink`}
             ><Question size={18} /></button>
           </div>
         </header>
@@ -650,9 +683,10 @@ const App = () => {
           <LogScreen
             history={history} preset={preset} program={program} weights={weights}
             mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress}
-            getCurrentDay={getCurrentDay} setEditingEntry={setEditingEntry}
+            getCurrentDay={getCurrentDay} setEditingEntry={setEditingEntry} setDeletingEntry={setDeletingEntry}
             logGrouping={logGrouping} setLogGrouping={setLogGrouping}
             expandedGroups={expandedGroups} setExpandedGroups={setExpandedGroups}
+            expandedLogEntry={expandedLogEntry} setExpandedLogEntry={setExpandedLogEntry}
           />
         )}
 
@@ -688,6 +722,7 @@ const App = () => {
             handleConnect={handleConnect} handleDriveSave={handleDriveSave}
             formatLastSaved={formatLastSaved} exportData={exportData}
             fileInputRef={fileInputRef} csvInputRef={csvInputRef}
+            history={history} backupSizeBytes={backupSizeBytes}
           />
         )}
       </main>
@@ -714,7 +749,7 @@ const App = () => {
         );
       })()}
 
-      <nav className={`flex-none border-t flex justify-between px-2 pt-1.5 nav-safe bg-surface-nav border-ink/8`}>
+      <nav className={`flex-none border-t flex justify-between px-2 pt-1.5 nav-safe bg-surface-nav border-ink/14`}>
         {[
           { id: 'workout', label: t('tabs.train'), icon: Barbell },
           { id: 'program', label: t('tabs.program'), icon: SlidersHorizontal },
@@ -723,7 +758,7 @@ const App = () => {
           { id: 'settings', label: t('tabs.options'), icon: Gear },
         ].map(tab => {
           const isActive = activeTab === tab.id;
-          const colorClass = isActive ? 'text-accent-300' : ('text-ink/35');
+          const colorClass = isActive ? 'text-accent-300' : ('text-ink/50');
           return (
             <button key={tab.id} onClick={() => handleTabClick(tab.id)} aria-label={tab.label} className={`flex-1 flex flex-col items-center gap-1 py-1.5 px-2.5 transition-all active:scale-95 ${colorClass}`}>
               <tab.icon size={23} weight={isActive ? 'fill' : 'regular'} />
@@ -845,8 +880,14 @@ const App = () => {
           setHistory={setHistory}
           showToast={showToast}
           handleManualLogSave={handleManualLogSave}
-          saveToDriveQuietly={saveToDriveQuietly}
-          getAppState={getAppState}
+        />
+      )}
+
+      {deletingEntry && (
+        <DeleteEntryConfirmSheet
+          session={deletingEntry.session}
+          onKeep={() => setDeletingEntry(null)}
+          onDelete={() => handleDeleteEntry(deletingEntry.index)}
         />
       )}
 
@@ -929,7 +970,7 @@ const App = () => {
         />
       )}
 
-      <Toast toasts={toasts} />
+      <Toast toasts={toasts} dismiss={dismissToast} />
       <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
       <input type="file" ref={csvInputRef} onChange={handleStrongliftsImport} accept=".csv" className="hidden" />
     </div>

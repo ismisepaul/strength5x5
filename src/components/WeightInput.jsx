@@ -22,7 +22,7 @@ const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant
   const [draft, setDraft] = useState(null); // null while not editing; typed string while editing
   const cancelingRef = useRef(false);
   const { size, iconSize, valueClass, width } = VARIANTS[variant];
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
   const displayValue = draft !== null ? draft : String(value);
   // A Madcow top set is never the day's flat working weight, so it gets its own aria
   // wording everywhere (see design-system.md §4). `caption` is independent of that --
@@ -82,7 +82,7 @@ const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant
               }
             }}
             aria-label={t(inputAriaKey, { name: label })}
-            className={`${width} text-center ${valueClass} font-medium tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] border-ink/18 focus:border-accent focus:outline-none`}
+            className={`${width} text-center ${valueClass} font-medium tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] border-ink/26 focus:border-accent focus:outline-none`}
           />
           <span className={`text-[13px] ${mutedClass}`}>kg</span>
         </div>

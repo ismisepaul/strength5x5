@@ -3,25 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
-import { buildExerciseTimeline, buildBig3Timeline } from '../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, filterByRange, getExerciseRangeStats, getBig3Volume } from '../utils/chartData';
 import { useTheme } from '../hooks/useTheme';
 
-const RANGES = [
-  { label: '1M', days: 30 },
-  { label: '3M', days: 90 },
-  { label: '6M', days: 180 },
-  { label: '1Y', days: 365 },
-  { label: 'All', days: null },
-];
-
-const RANGE_STORAGE_KEY = 'strength5x5_stats_range';
-
-const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
+// range is owned by StatsScreen and shared with the lift-row sparklines -- this
+// component only reads it, so the same range stays selected across the
+// list-to-detail transition instead of two independent pickers drifting apart.
+const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) => {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const [range, setRange] = useState(() => {
-    try { return localStorage.getItem(RANGE_STORAGE_KEY) || '6M'; } catch { return '6M'; }
-  });
   const [showWeight, setShowWeight] = useState(true);
   const [showE1rm, setShowE1rm] = useState(false);
 
@@ -40,13 +30,11 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
       : buildExerciseTimeline(history, exerciseId);
   }, [history, exerciseId, isBig3]);
 
-  const filteredData = useMemo(() => {
-    const rangeDef = RANGES.find(r => r.label === range);
-    if (!rangeDef?.days) return fullTimeline;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - rangeDef.days);
-    return fullTimeline.filter(p => new Date(p.date) >= cutoff);
-  }, [fullTimeline, range]);
+  const filteredData = useMemo(() => filterByRange(fullTimeline, range), [fullTimeline, range]);
+  const maxWeightInRange = filteredData.length > 0 ? Math.max(...filteredData.map(p => p.weight)) : null;
+  const sinceDelta = filteredData.length >= 2 ? filteredData[filteredData.length - 1].weight - filteredData[0].weight : null;
+  const rangeStats = !isBig3 && filteredData.length > 0 ? getExerciseRangeStats(history, exerciseId, range) : null;
+  const big3Volume = isBig3 && filteredData.length > 0 ? getBig3Volume(history, range) : null;
 
   const toggleWeight = () => {
     if (showWeight && !showE1rm) return;
@@ -63,10 +51,10 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
     return `${d.getDate()}/${d.getMonth() + 1}`;
   };
 
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
   // Recharts consumes these as literal prop values (SVG attrs / inline styles), not
   // Tailwind classNames, so they can't re-theme via the CSS custom properties alone.
-  const axisColor = isDark ? 'rgba(236,233,226,.4)' : 'rgba(25,22,18,.4)';
+  const axisColor = isDark ? 'rgba(236,233,226,.55)' : 'rgba(25,22,18,.55)';
   const weightColor = isDark ? '#c8663a' : '#b4552b';
   const e1rmColor = isDark ? '#eda175' : '#93401d';
 
@@ -76,33 +64,26 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
         <button
           onClick={onBack}
           aria-label="Back to stats"
-          className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-95 border-ink/18 text-ink/60"
+          className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-95 border-ink/26 text-ink/60"
         >
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-semibold">{title}</h2>
           <p className="text-card tabular-nums">
-            {showWeight && <span className="text-accent">{currentWeight}kg</span>}
+            {showWeight && <span className="text-accent-300">{currentWeight}kg</span>}
             {showWeight && showE1rm && <span className={mutedClass}> / </span>}
             {showE1rm && <span className="text-accent-300">{t('stats.est1rmValue', { value: currentE1rm })}</span>}
           </p>
+          {sinceDelta !== null && (
+            <p className={`text-meta mt-0.5 ${mutedClass}`}>
+              {t('stats.since', { date: new Date(filteredData[0].date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })} · {sinceDelta > 0 ? '+' : ''}{sinceDelta}kg
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="p-4 rounded-[10px] border bg-surface border-ink/8">
-        <div className="flex rounded-lg border overflow-hidden mb-4 border-ink/10">
-          {RANGES.map((r, i) => (
-            <button
-              key={r.label}
-              onClick={() => { setRange(r.label); try { localStorage.setItem(RANGE_STORAGE_KEY, r.label); } catch {} }}
-              className={`flex-1 py-3 text-meta uppercase tracking-wide transition-all ${i > 0 ? 'border-l border-ink/10' : ''} ${range === r.label ? 'bg-accent-900 text-accent-300 shadow-[inset_0_0_0_1px_var(--color-accent)]' : mutedClass}`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-
+      <div className="p-4 rounded-[10px] border bg-surface border-ink/14">
         {filteredData.length === 0 ? (
           <div className="py-16 text-center">
             <p className={`text-card ${mutedClass}`}>{t('stats.noDataForRange')}</p>
@@ -116,7 +97,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
             )}
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={filteredData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(236,233,226,.07)' : 'rgba(25,22,18,.07)'} />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(236,233,226,.1)' : 'rgba(25,22,18,.1)'} />
                 <XAxis
                   dataKey="date"
                   tickFormatter={formatDate}
@@ -136,7 +117,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
                 <Tooltip
                   contentStyle={{
                     backgroundColor: isDark ? '#1f1d18' : '#ffffff',
-                    border: `1px solid ${isDark ? 'rgba(236,233,226,.1)' : 'rgba(25,22,18,.1)'}`,
+                    border: `1px solid ${isDark ? 'rgba(236,233,226,.14)' : 'rgba(25,22,18,.14)'}`,
                     borderRadius: '8px',
                     fontSize: 13.5,
                   }}
@@ -149,7 +130,13 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
                     dataKey="weight"
                     stroke={weightColor}
                     strokeWidth={2}
-                    dot={{ r: 3, fill: weightColor, strokeWidth: 0 }}
+                    dot={(dotProps) => {
+                      const { cx, cy, payload, index } = dotProps;
+                      const isPR = payload.weight === maxWeightInRange;
+                      return isPR
+                        ? <circle key={`pr-${index}`} cx={cx} cy={cy} r={5} fill="none" stroke={weightColor} strokeWidth={2} />
+                        : <circle key={`dot-${index}`} cx={cx} cy={cy} r={3} fill={weightColor} strokeWidth={0} />;
+                    }}
                     activeDot={{ r: 5, fill: weightColor, strokeWidth: 2, stroke: isDark ? '#141310' : '#ffffff' }}
                   />
                 )}
@@ -174,7 +161,7 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
           <button
             onClick={toggleWeight}
             aria-pressed={showWeight}
-            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showWeight ? 'border-accent text-accent-300' : 'border-ink/26 text-ink/62'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: weightColor }} />
             {t('stats.weight')}
@@ -182,12 +169,41 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs }) => {
           <button
             onClick={toggleE1rm}
             aria-pressed={showE1rm}
-            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent' : 'border-ink/18 text-ink/45'}`}
+            className={`flex-1 py-3 rounded-lg text-meta uppercase transition-all flex items-center justify-center gap-2 border ${showE1rm ? 'border-accent text-accent-300' : 'border-ink/26 text-ink/62'}`}
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: e1rmColor }} />
             {t('stats.est1rm')}
           </button>
         </div>
+
+        {rangeStats && (
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 rule-fade-top text-center">
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.bestSet')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{rangeStats.bestSet ? `${rangeStats.bestSet.weight}kg × ${rangeStats.bestSet.reps}` : '—'}</p>
+            </div>
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.volume')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{Math.round(rangeStats.volume).toLocaleString()}kg</p>
+            </div>
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.misses')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{rangeStats.misses}</p>
+            </div>
+          </div>
+        )}
+        {big3Volume !== null && (
+          <div className="grid grid-cols-2 gap-2 mt-4 pt-4 rule-fade-top text-center">
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.workoutsInRange')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{filteredData.length}</p>
+            </div>
+            <div>
+              <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.volume')}</p>
+              <p className="text-body font-medium tabular-nums mt-0.5">{Math.round(big3Volume).toLocaleString()}kg</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

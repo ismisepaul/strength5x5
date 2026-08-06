@@ -67,7 +67,7 @@ describe('Skip button behavior', () => {
 
     expect(screen.queryByText('Movement finished')).not.toBeInTheDocument();
     expect(screen.queryByText('Lifting')).not.toBeInTheDocument();
-    expect(screen.getByText('In session')).toBeInTheDocument();
+    expect(screen.getByText('In workout')).toBeInTheDocument();
   });
 });
 
@@ -208,7 +208,7 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
 
     expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
     expect(screen.getByText('Weight')).toBeInTheDocument();
@@ -221,7 +221,7 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
     await user.click(screen.getByLabelText('Back to stats'));
 
     expect(screen.getByRole('heading', { name: 'Stats' })).toBeInTheDocument();
@@ -239,7 +239,7 @@ describe('Stats charts', () => {
     expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
   });
 
-  it('shows trend arrows on exercise cards', async () => {
+  it('every exercise card stays tappable into its chart view', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
     const user = userEvent.setup();
     render(<App />);
@@ -248,9 +248,26 @@ describe('Stats charts', () => {
 
     const exerciseNames = ['Back Squat', 'Bench Press', 'Barbell Row', 'Overhead Press', 'Deadlift'];
     for (const name of exerciseNames) {
-      const row = screen.getByText(name).closest('button');
+      const row = screen.getByText(name, { selector: 'p.text-card' }).closest('button');
       expect(row.querySelector('svg')).toBeTruthy();
     }
+  });
+
+  it('renders a sparkline only for lifts with at least two logged sessions', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    // Fixture dates are long past any recent range -- widen it so the sparklines
+    // being tested here actually have points to draw from.
+    await user.click(screen.getByText('All'));
+
+    const squatRow = screen.getByText('Back Squat', { selector: 'p.text-card' }).closest('button');
+    expect(squatRow.querySelector('polyline')).toBeTruthy();
+
+    const benchRow = screen.getByText('Bench Press', { selector: 'p.text-card' }).closest('button');
+    expect(benchRow.querySelector('polyline')).toBeFalsy();
   });
 
   it('Weight toggle is on by default and Est. 1RM can be toggled on independently', async () => {
@@ -259,7 +276,7 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
 
     const weightBtn = screen.getByText('Weight').closest('button');
     const e1rmBtn = screen.getByText('Est. 1RM').closest('button');
@@ -280,13 +297,46 @@ describe('Stats charts', () => {
     render(<App />);
 
     await user.click(screen.getByText('Stats'));
-    await user.click(screen.getByText('Back Squat'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
 
     expect(screen.getByText('1M')).toBeInTheDocument();
     expect(screen.getByText('3M')).toBeInTheDocument();
     expect(screen.getByText('6M')).toBeInTheDocument();
     expect(screen.getByText('1Y')).toBeInTheDocument();
     expect(screen.getByText('All')).toBeInTheDocument();
+  });
+
+  it('shows the since/delta summary and the best-set/volume/misses row', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('All'));
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
+
+    expect(screen.getByText(/^Since /)).toBeInTheDocument();
+    expect(screen.getByText('Best set')).toBeInTheDocument();
+    expect(screen.getByText('55kg × 5')).toBeInTheDocument();
+    expect(screen.getByText('Volume')).toBeInTheDocument();
+    expect(screen.getByText('Misses')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+  });
+
+  it('keeps the chosen range selected across the list-to-detail transition', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(statsData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Stats'));
+    await user.click(screen.getByText('1Y'));
+    expect(screen.getByText('1Y').closest('button').className).toContain('bg-accent-900');
+
+    await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
+    expect(screen.getByText('1Y').closest('button').className).toContain('bg-accent-900');
+
+    await user.click(screen.getByLabelText('Back to stats'));
+    expect(screen.getByText('1Y').closest('button').className).toContain('bg-accent-900');
   });
 });
 
@@ -314,7 +364,7 @@ describe('Log entry editing', () => {
     vibrationEnabled: false,
   };
 
-  it('tapping a log entry opens the edit modal', async () => {
+  it('tapping a log entry expands it in place, and Edit opens the edit modal', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
     const user = userEvent.setup();
     render(<App />);
@@ -323,9 +373,39 @@ describe('Log entry editing', () => {
     const cards = screen.getAllByText(/Workout [AB]/);
     await user.click(cards[0].closest('button'));
 
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(screen.getByText('Edit workout'));
+
     expect(screen.getByLabelText('Edit workout')).toBeInTheDocument();
-    expect(screen.getByText('Edit workout')).toBeInTheDocument();
     expect(screen.getByText('Save Changes')).toBeInTheDocument();
+  });
+
+  it('collapses an expanded entry on a second tap', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const card = screen.getAllByText(/Workout [AB]/)[0].closest('button');
+    await user.click(card);
+    expect(screen.getByText('Edit workout')).toBeInTheDocument();
+
+    await user.click(card);
+    expect(screen.queryByText('Edit workout')).not.toBeInTheDocument();
+  });
+
+  it('renders each exercise\'s weight in the expanded row', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    const card = screen.getAllByText(/Workout [AB]/)[0].closest('button');
+    await user.click(card);
+
+    expect(screen.getByText('55kg')).toBeInTheDocument();
+    expect(screen.getByText('30kg')).toBeInTheDocument();
+    expect(screen.getByText('65kg')).toBeInTheDocument();
   });
 
   it('changing weight and saving persists the change', async () => {
@@ -336,6 +416,7 @@ describe('Log entry editing', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/);
     await user.click(cards[0].closest('button'));
+    await user.click(screen.getByText('Edit workout'));
 
     const increaseButtons = screen.getAllByLabelText(/Increase .+ weight/);
     await user.click(increaseButtons[0]);
@@ -343,10 +424,11 @@ describe('Log entry editing', () => {
     await user.click(screen.getByText('Save Changes'));
 
     expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
-    expect(screen.getByText('57.5kg')).toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.history[0].exercises[0].weight).toBe(57.5);
   });
 
-  it('deleting an entry removes it from history', async () => {
+  it('deleting an entry removes it from history, directly from the row expansion', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
     const user = userEvent.setup();
     render(<App />);
@@ -357,11 +439,44 @@ describe('Log entry editing', () => {
 
     await user.click(cardsBefore[0].closest('button'));
     await user.click(screen.getByText('Delete Workout'));
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
 
-    expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
+    expect(screen.getByText('Keep workout')).toBeInTheDocument();
+    await user.click(screen.getByText('Delete anyway'));
+
+    expect(screen.queryByText('Keep workout')).not.toBeInTheDocument();
     const cardsAfter = screen.getAllByText(/Workout [AB]/);
     expect(cardsAfter).toHaveLength(1);
+  });
+
+  it('keeping a session dismisses the delete confirm without deleting anything', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getAllByText(/Workout [AB]/)[0].closest('button'));
+    await user.click(screen.getByText('Delete Workout'));
+
+    await user.click(screen.getByText('Keep workout'));
+
+    expect(screen.queryByText('Keep workout')).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Workout [AB]/)).toHaveLength(2);
+  });
+
+  it('undoing a delete restores the session', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(logData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByLabelText('Log'));
+    await user.click(screen.getAllByText(/Workout [AB]/)[0].closest('button'));
+    await user.click(screen.getByText('Delete Workout'));
+    await user.click(screen.getByText('Delete anyway'));
+
+    expect(screen.getAllByText(/Workout [AB]/)).toHaveLength(1);
+    await user.click(screen.getByText('Undo'));
+
+    expect(screen.getAllByText(/Workout [AB]/)).toHaveLength(2);
   });
 
   it('cancelling edit discards changes', async () => {
@@ -372,6 +487,7 @@ describe('Log entry editing', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/);
     await user.click(cards[0].closest('button'));
+    await user.click(screen.getByText('Edit workout'));
 
     const increaseButtons = screen.getAllByLabelText(/Increase .+ weight/);
     await user.click(increaseButtons[0]);
@@ -379,8 +495,8 @@ describe('Log entry editing', () => {
     await user.click(screen.getByLabelText('Close edit modal'));
 
     expect(screen.queryByLabelText('Edit workout')).not.toBeInTheDocument();
-    expect(screen.getByText('55kg')).toBeInTheDocument();
-    expect(screen.queryByText('57.5kg')).not.toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.history[0].exercises[0].weight).toBe(55);
   });
 });
 
@@ -502,6 +618,7 @@ describe('Same-day workout prevention', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[1]);
+    await user.click(screen.getByText('Edit workout'));
 
     const dialog = screen.getByRole('dialog');
     const dateInput = dialog.querySelector('input[type="date"]');
@@ -520,6 +637,7 @@ describe('Same-day workout prevention', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[0]);
+    await user.click(screen.getByText('Edit workout'));
 
     const dialog = screen.getByRole('dialog');
     const dateInput = dialog.querySelector('input[type="date"]');
@@ -539,6 +657,7 @@ describe('Same-day workout prevention', () => {
     await user.click(screen.getByLabelText('Log'));
     const cards = screen.getAllByText(/Workout [AB]/).map(el => el.closest('button[class*="rounded-[10px]"]')).filter(Boolean);
     await user.click(cards[0]);
+    await user.click(screen.getByText('Edit workout'));
 
     expect(screen.queryByText('A workout already exists on this date')).not.toBeInTheDocument();
     const saveBtn = screen.getByText('Save Changes').closest('button');

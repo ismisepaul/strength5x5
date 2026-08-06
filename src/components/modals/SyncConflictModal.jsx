@@ -20,18 +20,18 @@ const SyncConflictModal = ({ connectSyncPrompt, onUseDriveData, onUseLocalData, 
         <button
           onClick={onUseDriveData}
           disabled={!connectSyncPrompt.driveData}
-          className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent font-medium text-[14.5px] active:scale-95 disabled:opacity-35"
+          className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent-300 font-medium text-[14.5px] active:scale-95 disabled:opacity-35"
         >
           {t('modals.useDriveData')}
         </button>
         <button
           onClick={onUseLocalData}
-          className="w-full h-[46px] flex items-center justify-center rounded-lg font-medium text-[14px] active:scale-95 border border-ink/18 text-ink"
+          className="w-full h-[46px] flex items-center justify-center rounded-lg font-medium text-[14px] active:scale-95 border border-ink/26 text-ink"
         >
           {t('modals.useLocalData')}
         </button>
       </div>
-      <button onClick={onCancel} className="text-card active:scale-90 text-ink/45">{t('modals.cancel')}</button>
+      <button onClick={onCancel} className="text-card active:scale-90 text-ink/62">{t('modals.cancel')}</button>
     </Modal>
   );
 };

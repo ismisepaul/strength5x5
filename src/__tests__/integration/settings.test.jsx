@@ -64,13 +64,12 @@ describe('Settings', () => {
     expect(stored.autoSave).toBe(true);
   });
 
-  it('toggles dark mode', async () => {
+  it('switches theme via the Dark/Light segmented control', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByLabelText('Options'));
-    const toggle = screen.getByLabelText('Dark mode');
-    await user.click(toggle);
+    await user.click(screen.getByText('Light'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.isDark).toBe(false);

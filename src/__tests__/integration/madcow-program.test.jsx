@@ -138,7 +138,7 @@ describe('Stats under Madcow', () => {
 
     await user.click(screen.getByLabelText('Stats'));
     const inclineCard = within(screen.getByText('Incline Bench').closest('.border'));
-    expect(inclineCard.getByText('No sessions logged for this lift yet.')).toBeInTheDocument();
+    expect(inclineCard.getByText('No workouts logged for this lift yet.')).toBeInTheDocument();
     expect(screen.queryByText('Overhead Press')).not.toBeInTheDocument();
   });
 
@@ -163,7 +163,7 @@ describe('Stats under Madcow', () => {
     render(<App />);
 
     await user.click(screen.getByLabelText('Stats'));
-    const squatCard = screen.getByText('Back Squat').closest('button');
+    const squatCard = screen.getByText('Back Squat', { selector: 'p.text-card' }).closest('button');
     expect(within(squatCard).getByText('107.5kg')).toBeInTheDocument();
   });
 });

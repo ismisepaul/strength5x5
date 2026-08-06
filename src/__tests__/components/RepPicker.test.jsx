@@ -16,9 +16,9 @@ describe('RepPicker', () => {
   it('gives the target a stronger accent border and leaves other values ink-outlined', () => {
     render(<RepPicker ex={ex} setIdx={0} onSelect={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByLabelText('5 reps').className).toContain('border-accent');
-    expect(screen.getByLabelText('3 reps').className).toContain('border-ink/18');
-    expect(screen.getByLabelText('1 reps').className).toContain('border-ink/18');
-    expect(screen.getByLabelText('0 reps').className).toContain('border-ink/18');
+    expect(screen.getByLabelText('3 reps').className).toContain('border-ink/26');
+    expect(screen.getByLabelText('1 reps').className).toContain('border-ink/26');
+    expect(screen.getByLabelText('0 reps').className).toContain('border-ink/26');
   });
 
   it('clicking 0 selects 0 reps done', async () => {

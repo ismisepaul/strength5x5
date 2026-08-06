@@ -110,7 +110,7 @@ describe('Stats surfaces lifts trained under the other program', () => {
 
     await user.click(screen.getByLabelText('Stats'));
 
-    const squatCard = screen.getByText('Back Squat').closest('button');
+    const squatCard = screen.getByText('Back Squat', { selector: 'p.text-card' }).closest('button');
     expect(within(squatCard).queryByText(/^From /)).not.toBeInTheDocument();
   });
 });
@@ -196,6 +196,7 @@ describe('Add workout always logs for the active program', () => {
 
     await user.click(screen.getByLabelText('Log'));
     await user.click(screen.getByText('Workout A'));
+    await user.click(screen.getByText('Edit workout'));
     const dialog = screen.getByRole('dialog', { name: 'Edit workout' });
     await user.click(within(dialog).getByRole('button', { name: 'Save Changes' }));
 

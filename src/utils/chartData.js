@@ -1,4 +1,4 @@
-import { calculate1RM } from '../utils';
+import { calculate1RM, targetReps } from '../utils';
 
 function bestRepsFor(ex) {
   let best = 0;
@@ -6,6 +6,102 @@ function bestRepsFor(ex) {
     if (r !== null && r > best) best = r;
   }
   return best;
+}
+
+// Total kg moved in a session. Ramped lifts (Madcow) log a per-set weight in
+// setWeights; everything else is one flat weight across all sets.
+export function sessionTonnage(session) {
+  return session.exercises.reduce((total, ex) => {
+    const reps = ex.setsCompleted || [];
+    if (Array.isArray(ex.setWeights)) {
+      return total + reps.reduce((sum, r, i) => sum + (typeof r === 'number' ? r * (ex.setWeights[i] ?? ex.weight) : 0), 0);
+    }
+    const totalReps = reps.reduce((sum, r) => sum + (typeof r === 'number' ? r : 0), 0);
+    return total + ex.weight * totalReps;
+  }, 0);
+}
+
+// Session counts bucketed by calendar month (index 0-11) -- the Year view's
+// twelve-month bar strip. Callers pass one year's worth of sessions (e.g. a
+// groupHistory('year', ...) band's entries) so the buckets mean something.
+export function monthlySessionCounts(sessions) {
+  const counts = new Array(12).fill(0);
+  for (const s of sessions) {
+    counts[new Date(s.date).getMonth()]++;
+  }
+  return counts;
+}
+
+// Shared by the Stats list (sparklines) and the detail chart, so both read the same
+// range -- picking a range in one place keeps it selected everywhere else that shows one.
+export const STATS_RANGES = [
+  { label: '1M', days: 30 },
+  { label: '3M', days: 90 },
+  { label: '6M', days: 180 },
+  { label: '1Y', days: 365 },
+  { label: 'All', days: null },
+];
+
+function rangeCutoffDate(rangeLabel) {
+  const rangeDef = STATS_RANGES.find(r => r.label === rangeLabel);
+  if (!rangeDef?.days) return null;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - rangeDef.days);
+  return cutoff;
+}
+
+export function filterByRange(timeline, rangeLabel) {
+  const cutoff = rangeCutoffDate(rangeLabel);
+  if (!cutoff) return timeline;
+  return timeline.filter(p => new Date(p.date) >= cutoff);
+}
+
+// Best single set, total volume, and missed-rep count for one lift within a range --
+// unlike the timeline builders above, this reads every set directly (not just the
+// per-session weight/e1rm reduction), since "best set" and "misses" need per-set detail.
+export function getExerciseRangeStats(history, exerciseId, rangeLabel) {
+  const cutoff = rangeCutoffDate(rangeLabel);
+  let bestSet = null;
+  let volume = 0;
+  let misses = 0;
+
+  for (const session of history) {
+    if (cutoff && new Date(session.date) < cutoff) continue;
+    const ex = session.exercises.find(e => e.id === exerciseId);
+    if (!ex) continue;
+    const isRamped = Array.isArray(ex.setWeights);
+
+    ex.setsCompleted.forEach((reps, i) => {
+      if (reps === null) return;
+      const weight = isRamped ? (ex.setWeights[i] ?? ex.weight) : ex.weight;
+      volume += weight * reps;
+      if (!bestSet || weight > bestSet.weight || (weight === bestSet.weight && reps > bestSet.reps)) {
+        bestSet = { weight, reps };
+      }
+      if (reps < targetReps(ex, i)) misses++;
+    });
+  }
+
+  return { bestSet, volume, misses };
+}
+
+// Big-3 volume within a range -- unlike getExerciseRangeStats, this sums across all
+// three lifts rather than one, since "best set" and "misses" don't mean anything
+// summed across different lifts but total kg moved still does.
+export function getBig3Volume(history, rangeLabel) {
+  const cutoff = rangeCutoffDate(rangeLabel);
+  let volume = 0;
+  for (const session of history) {
+    if (cutoff && new Date(session.date) < cutoff) continue;
+    for (const ex of session.exercises) {
+      if (!['squat', 'bench', 'deadlift'].includes(ex.id)) continue;
+      ex.setsCompleted.forEach((reps, i) => {
+        if (reps === null) return;
+        volume += (Array.isArray(ex.setWeights) ? (ex.setWeights[i] ?? ex.weight) : ex.weight) * reps;
+      });
+    }
+  }
+  return volume;
 }
 
 export function buildExerciseTimeline(history, exerciseId) {
@@ -23,6 +119,17 @@ export function buildExerciseTimeline(history, exerciseId) {
     }
   }
   return points;
+}
+
+// Change between a timeline's two most recent points -- null with fewer than two,
+// 0 for "held", otherwise the signed kg delta. Takes an already-built timeline
+// (buildExerciseTimeline or buildBig3Timeline output) rather than history+id so it
+// works for both a single lift and the Big-3 sum.
+export function getWeightDelta(timeline) {
+  if (timeline.length < 2) return null;
+  const last = timeline[timeline.length - 1].weight;
+  const prev = timeline[timeline.length - 2].weight;
+  return last - prev;
 }
 
 export function buildBig3Timeline(history) {

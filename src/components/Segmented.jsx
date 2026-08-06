@@ -11,7 +11,7 @@ const VARIANT_TEXT = {
 // appearance) pending an owner decision on which should win -- see
 // docs/refactor-plan.md Phase 5.
 const Segmented = ({ options, value, onChange, variant = 'uppercase' }) => {
-  const mutedClass = 'text-ink/45';
+  const mutedClass = 'text-ink/62';
   return (
     <div className="flex rounded-lg border overflow-hidden border-ink/10">
       {options.map((opt, i) => (

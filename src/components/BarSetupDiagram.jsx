@@ -24,7 +24,7 @@ const BarSetupDiagram = ({ weight }) => {
         })}
         <div className="h-[11px] rounded-r-[3px] bg-neutral-tint flex items-center px-[10px] text-meta font-semibold tabular-nums text-ink">20</div>
       </div>
-      <p className={`text-center text-tab mt-3 text-ink/40`}>
+      <p className={`text-center text-tab mt-3 text-ink/62`}>
         {weight <= 20 ? t('warmup.emptyBarCaption') : t('warmup.perSideCaption', { total: weight })}
       </p>
     </>
