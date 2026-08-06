@@ -530,3 +530,21 @@ export function calculateSetDurations(exercises, startedAt) {
     };
   });
 }
+
+export function formatBytes(bytes) {
+  if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) return '0 KB';
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
+}
+
+// How many logged sessions postdate the last successful Drive save -- used to tell a
+// lapsed Drive connection ("paused since X, N sessions unsaved") apart from one that's
+// simply never been connected.
+export function countSessionsSince(history, sinceDate) {
+  if (!sinceDate) return history.length;
+  const cutoff = new Date(sinceDate).getTime();
+  if (!Number.isFinite(cutoff)) return history.length;
+  return history.filter(s => new Date(s.date).getTime() > cutoff).length;
+}

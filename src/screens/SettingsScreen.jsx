@@ -4,15 +4,27 @@ import i18n from '../i18n/index.js';
 import { DownloadSimple, UploadSimple, FileCsv } from '@phosphor-icons/react';
 import Switch from '../components/Switch';
 import Segmented from '../components/Segmented';
+import { formatBytes, countSessionsSince } from '../utils';
 
 const SectionHeader = ({ children }) => (
   <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-3">{children}</p>
+);
+
+// Connection state is carried by dot shape, not hue: filled = connected, hollow = never
+// connected, dashed = was connected but the token has lapsed.
+const DriveDot = ({ state }) => (
+  <span className={
+    state === 'connected' ? 'w-2 h-2 rounded-full bg-accent shrink-0'
+      : state === 'expired' ? 'w-2 h-2 rounded-full border border-dashed border-ink/50 shrink-0'
+        : 'w-2 h-2 rounded-full border border-ink/40 shrink-0'
+  } />
 );
 
 const SettingsScreen = ({
   preferredRest, setPreferredRest, soundEnabled, setSoundEnabled, vibrationEnabled, setVibrationEnabled,
   isDark, setIsDark, localBackup, setLocalBackup, driveConfigured, gdrive,
   handleConnect, handleDriveSave, formatLastSaved, exportData, fileInputRef, csvInputRef,
+  history, backupSizeBytes,
 }) => {
   const { t } = useTranslation();
   const mutedClass = 'text-ink/62';
@@ -81,33 +93,46 @@ const SettingsScreen = ({
           <Switch checked={localBackup} onChange={() => setLocalBackup(!localBackup)} ariaLabel="Local backup" />
         </div>
 
-        {driveConfigured && (
-          <div className={rowClass}>
-            <div className="w-full">
-              <div className="flex items-center justify-between mb-2">
-                <div><p className="text-body font-medium">{t('options.googleDrive')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.googleDriveDesc')}</p></div>
-                {gdrive.isConnected ? (
-                  <span className="text-meta uppercase px-2.5 py-1.5 rounded-lg text-accent-300 bg-accent-900">{t('options.connectedToDrive')}</span>
-                ) : (
-                  <button onClick={handleConnect} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 border-ink/26 text-ink">{gdrive.hasEverConnected ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
-                )}
-              </div>
-              {(gdrive.isConnected || gdrive.hasEverConnected) && (
-                <div className="mt-3 space-y-2">
-                  <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.savesAfterWorkout')}</p>
-                  <div className="flex items-center justify-between">
-                    {gdrive.saveFailed ? (
-                      <button onClick={handleDriveSave} className={`text-meta active:scale-95 ${mutedClass}`}>{t('options.saveFailed')}</button>
-                    ) : gdrive.lastSavedAt ? (
-                      <p className="text-meta text-accent-300">{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>
-                    ) : <span />}
-                    <button onClick={handleDriveSave} disabled={gdrive.isLoading} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 border-ink/26 text-ink">{t('options.syncNow')}</button>
+        {driveConfigured && (() => {
+          const driveState = gdrive.isConnected ? 'connected' : gdrive.hasEverConnected ? 'expired' : 'notConnected';
+          const unsavedCount = countSessionsSince(history, gdrive.lastSavedAt);
+          return (
+            <div className={rowClass}>
+              <div className="w-full">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <DriveDot state={driveState} />
+                    <p className="text-body font-medium truncate">{t('options.googleDrive')}</p>
                   </div>
+                  {driveState === 'connected' ? (
+                    <button onClick={handleDriveSave} disabled={gdrive.isLoading} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 disabled:opacity-35 border-ink/26 text-ink shrink-0">{t('options.syncNow')}</button>
+                  ) : (
+                    <button onClick={handleConnect} className="text-meta uppercase px-3.5 py-2.5 rounded-lg border active:scale-95 border-ink/26 text-ink shrink-0">{driveState === 'expired' ? t('options.reconnectDrive') : t('options.connectDrive')}</button>
+                  )}
                 </div>
-              )}
+                <div className="pl-4 mt-1 space-y-1">
+                  {driveState === 'connected' && (
+                    gdrive.saveFailed ? (
+                      <button onClick={handleDriveSave} className={`text-meta text-left active:scale-95 ${mutedClass}`}>{t('options.saveFailed')}</button>
+                    ) : (
+                      <p className={`text-meta leading-tight ${mutedClass}`}>{gdrive.lastSavedAt ? t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) }) : t('options.savesAfterWorkout')}</p>
+                    )
+                  )}
+                  {driveState === 'expired' && (
+                    <>
+                      <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.driveExpired')}</p>
+                      {gdrive.lastSavedAt && <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.lastSaved', { time: formatLastSaved(gdrive.lastSavedAt) })}</p>}
+                      {unsavedCount > 0 && <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.sessionsUnsavedSince', { count: unsavedCount })}</p>}
+                    </>
+                  )}
+                  {driveState === 'notConnected' && (
+                    <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.driveOfflineNote')}</p>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         <div className={`${lastRowClass} flex-col items-stretch gap-3`}>
           <div className="grid grid-cols-2 gap-3">
@@ -131,6 +156,7 @@ const SettingsScreen = ({
           <div>
             <p className="text-card font-semibold">{t('app.title')}</p>
             <p className={`text-meta leading-tight mt-0.5 ${mutedClass}`}>{t('options.aboutPrivacy')}</p>
+            <p className={`text-meta leading-tight mt-2 ${mutedClass}`}>{t('options.aboutDataSize', { size: formatBytes(backupSizeBytes) })}</p>
           </div>
         </div>
       </div>

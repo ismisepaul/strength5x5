@@ -290,15 +290,17 @@
     "language": "Language",
     "languageDesc": "Choose your language",
     "googleDrive": "Google Drive",
-    "googleDriveDesc": "Cloud backup",
-    "connectDrive": "Connect",
+    "connectDrive": "Connect Google Drive",
     "reconnectDrive": "Reconnect",
     "savesAfterWorkout": "Saves to Drive after every workout",
+    "driveOfflineNote": "The app works fully offline without it.",
+    "driveExpired": "Drive backups are paused. Reconnect to keep syncing.",
+    "sessionsUnsavedSince_one": "{{count}} session logged since",
+    "sessionsUnsavedSince_other": "{{count}} sessions logged since",
     "syncNow": "Sync Now",
     "lastSaved": "Last saved: {{time}}",
-    "saveFailed": "Save failed — tap to retry",
-    "connectedToDrive": "Connected",
-    "notConnected": "Not connected"
+    "saveFailed": "Save failed, tap to retry",
+    "aboutDataSize": "{{size}} stored on this device"
   },
   "modals": {
     "discardTitle": "Discard this workout?",

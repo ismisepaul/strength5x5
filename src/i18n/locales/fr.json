@@ -290,15 +290,17 @@
     "language": "Langue",
     "languageDesc": "Choisir votre langue",
     "googleDrive": "Google Drive",
-    "googleDriveDesc": "Sauvegarde cloud",
-    "connectDrive": "Connecter",
+    "connectDrive": "Connecter Google Drive",
     "reconnectDrive": "Reconnecter",
     "savesAfterWorkout": "Sauvegarde vers Drive après chaque séance",
+    "driveOfflineNote": "L'application fonctionne hors ligne sans lui.",
+    "driveExpired": "Les sauvegardes Drive sont en pause. Reconnectez-vous pour reprendre la synchronisation.",
+    "sessionsUnsavedSince_one": "{{count}} séance enregistrée depuis",
+    "sessionsUnsavedSince_other": "{{count}} séances enregistrées depuis",
     "syncNow": "Synchroniser",
     "lastSaved": "Dernière sauvegarde : {{time}}",
-    "saveFailed": "Échec de sauvegarde — appuyez pour réessayer",
-    "connectedToDrive": "Connecté",
-    "notConnected": "Non connecté"
+    "saveFailed": "Échec de sauvegarde, appuyez pour réessayer",
+    "aboutDataSize": "{{size}} stockés sur cet appareil"
   },
   "modals": {
     "discardTitle": "Abandonner cette séance ?",

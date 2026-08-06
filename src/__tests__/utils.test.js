@@ -19,6 +19,8 @@ import {
   targetReps,
   isExercisePassed,
   plannedVolume,
+  formatBytes,
+  countSessionsSince,
 } from '../utils';
 import { SCHEMA_VERSION, DEFAULT_PROGRAM, EXPECTED_WEIGHT_KEYS } from '../constants';
 
@@ -694,5 +696,42 @@ describe('getConsecutiveFailures', () => {
       { date: '2026-01-01', exercises: [{ id: 'bench', weight: 40, setsCompleted: [5, 5, 5, 5, 5] }] },
     ];
     expect(getConsecutiveFailures(h, 'squat', 60)).toBe(1);
+  });
+});
+
+describe('formatBytes', () => {
+  it('formats sub-kilobyte sizes in bytes', () => {
+    expect(formatBytes(512)).toBe('512 B');
+  });
+
+  it('formats small kilobyte sizes with one decimal', () => {
+    expect(formatBytes(2048)).toBe('2.0 KB');
+  });
+
+  it('formats larger kilobyte sizes as whole numbers', () => {
+    expect(formatBytes(153600)).toBe('150 KB');
+  });
+
+  it('formats megabyte-scale sizes with one decimal', () => {
+    expect(formatBytes(2 * 1024 * 1024)).toBe('2.0 MB');
+  });
+});
+
+describe('countSessionsSince', () => {
+  const s = (date) => ({ date, exercises: [] });
+
+  it('counts every session when there is no prior save', () => {
+    const history = [s('2026-01-03'), s('2026-01-02'), s('2026-01-01')];
+    expect(countSessionsSince(history, null)).toBe(3);
+  });
+
+  it('counts only sessions logged after the given date', () => {
+    const history = [s('2026-01-03'), s('2026-01-02'), s('2026-01-01')];
+    expect(countSessionsSince(history, '2026-01-01')).toBe(2);
+  });
+
+  it('returns 0 when nothing postdates the save', () => {
+    const history = [s('2026-01-01')];
+    expect(countSessionsSince(history, '2026-01-03')).toBe(0);
   });
 });

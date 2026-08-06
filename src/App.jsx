@@ -175,6 +175,13 @@ const App = () => {
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }, [getAppState, history]);
 
+  // Same shape as exportData's payload -- just measured instead of downloaded, for the
+  // Options "About" footer.
+  const backupSizeBytes = useMemo(() => {
+    const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState() };
+    return new Blob([JSON.stringify(data)]).size;
+  }, [getAppState]);
+
   const saveToDriveQuietly = useCallback(async (state) => {
     if (!import.meta.env.VITE_GOOGLE_CLIENT_ID || !gdrive.hasEverConnected) return;
     const result = await gdrive.save(state);
@@ -688,6 +695,7 @@ const App = () => {
             handleConnect={handleConnect} handleDriveSave={handleDriveSave}
             formatLastSaved={formatLastSaved} exportData={exportData}
             fileInputRef={fileInputRef} csvInputRef={csvInputRef}
+            history={history} backupSizeBytes={backupSizeBytes}
           />
         )}
       </main>
