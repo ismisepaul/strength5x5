@@ -136,7 +136,9 @@ const LogScreen = ({
           onChange={(val) => {
             setLogGrouping(val);
             setExpandedLogEntry(null);
-            if (val !== 'all') {
+            // Month bands start collapsed -- a year of months at a glance is the point
+            // of that view. Week/Year keep today's behavior of opening the first band.
+            if (val !== 'all' && val !== 'month') {
               const groups = groupHistory(history, val, 0);
               setExpandedGroups(groups.length > 0 ? { [groups[0].key]: true } : {});
             } else {
@@ -151,7 +153,9 @@ const LogScreen = ({
       ) : logGrouping === 'all' ? (
         history.map((s, i) => renderEntry(s, i, i))
       ) : (
-        groupHistory(history, logGrouping, 0).map((group) => (
+        groupHistory(history, logGrouping, 0).map((group) => {
+          const groupTonnage = Math.round(group.entries.reduce((sum, { session: s }) => sum + sessionTonnage(s), 0));
+          return (
           <div key={group.key}>
             <button
               onClick={() => setExpandedGroups(prev => ({ ...prev, [group.key]: !prev[group.key] }))}
@@ -162,7 +166,7 @@ const LogScreen = ({
                 {expandedGroups[group.key] ? <CaretDown size={18} className={mutedClass} /> : <CaretRight size={18} className={mutedClass} />}
                 <span className="text-card font-medium">{group.key}</span>
               </div>
-              <span className="text-body px-2.5 py-1 rounded-lg bg-surface-deep text-ink/60">{group.entries.length}</span>
+              <span className={`text-body px-2.5 py-1 rounded-lg bg-surface-deep whitespace-nowrap ${mutedClass}`}>{group.entries.length} · {groupTonnage.toLocaleString()} {t('log.tonnage')}</span>
             </button>
             {expandedGroups[group.key] && (
               <div className="space-y-3 mt-3 ml-2">
@@ -170,7 +174,8 @@ const LogScreen = ({
               </div>
             )}
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );

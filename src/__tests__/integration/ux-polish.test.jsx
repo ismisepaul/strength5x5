@@ -272,3 +272,35 @@ describe('logGrouping persistence', () => {
     expect(stored.logGrouping).toBe('month');
   });
 });
+
+describe('Log band default expansion', () => {
+  const twoMonthData = {
+    ...workoutData,
+    history: [
+      { ...workoutData.history[0], date: new Date().toISOString() },
+      { ...workoutData.history[0], date: new Date(Date.now() - 40 * 86400000).toISOString() },
+    ],
+  };
+
+  it('opens the first band by default in Week view', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(twoMonthData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Log'));
+    await user.click(screen.getByText('Week'));
+
+    expect(screen.getAllByText(/Workout A/i).length).toBeGreaterThan(0);
+  });
+
+  it('starts every band collapsed in Month view', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(twoMonthData));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Log'));
+    await user.click(screen.getByText('Month'));
+
+    expect(screen.queryAllByText(/Workout A/i)).toHaveLength(0);
+  });
+});
