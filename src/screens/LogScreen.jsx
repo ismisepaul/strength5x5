@@ -117,17 +117,16 @@ const LogScreen = ({
           className="w-10 h-10 rounded-lg border flex items-center justify-center active:scale-90 transition-transform border-ink/26 text-ink"
         ><Plus size={18} /></button>
       </div>
-      <div className="flex items-center gap-2 flex-wrap mb-4">
-        <div className="flex gap-1">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex gap-1.5 shrink-0">
           {[0, 1, 2].map(i => (
-            <div key={i} className={i < stats.thisWeek ? 'w-2 h-2 rounded-full bg-accent' : 'w-2 h-2 rounded-full border border-ink/30'} />
+            <div key={i} className={`w-7 aspect-[1.35] rounded-[10px] ${i < stats.thisWeek ? 'border border-accent bg-accent-900' : 'border border-ink/26'}`} />
           ))}
         </div>
-        <span className={`text-body ${mutedClass}`}>{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</span>
-        <span className={mutedClass}>·</span>
-        <span className={`text-body ${mutedClass}`}>{t('header.streak', { count: stats.streak })}</span>
-        <span className={mutedClass}>·</span>
-        <span className={`text-body ${mutedClass}`}>{stats.total} {t('log.total')}</span>
+        <div className="min-w-0">
+          <p className="text-body font-medium">{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</p>
+          <p className={`text-meta ${mutedClass}`}>{stats.total} {t('log.total')} · {t('header.streak', { count: stats.streak })}</p>
+        </div>
       </div>
 
       {history.length > 0 && (
