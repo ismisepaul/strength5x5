@@ -1,4 +1,6 @@
 import { calculate1RM, targetReps } from '../utils';
+import { topWeightOf } from '../programs';
+import { EXPECTED_WEIGHT_KEYS } from '../constants';
 
 function bestRepsFor(ex) {
   let best = 0;
@@ -193,7 +195,7 @@ export function getBig3Trend(history) {
   return 'same';
 }
 
-function getMonStart(date) {
+export function getMonStart(date) {
   const d = new Date(date);
   const day = d.getDay();
   const diff = day === 0 ? 6 : day - 1;
@@ -202,9 +204,18 @@ function getMonStart(date) {
   return d;
 }
 
+// Local calendar-date key (never UTC) -- history stores full ISO timestamps, and slicing
+// those to their first 10 characters reads the UTC date, which drifts a day off local
+// "today" for anyone trained in the evening in a negative UTC offset, or in the morning in
+// a positive one. Every same-day comparison in this module goes through this instead.
+export function localDateKey(date) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
 function getWeekKey(date) {
   const mon = getMonStart(date);
-  return `${mon.getFullYear()}-${mon.getMonth()}-${mon.getDate()}`;
+  return localDateKey(mon);
 }
 
 function countWorkoutsInWeek(history, weekKey) {
@@ -248,6 +259,84 @@ export function getWorkoutStats(history, nowOverride) {
   const status = computeStatus(thisWeek);
 
   return { streak, total, thisWeek, status };
+}
+
+// Mon-Sun day states for the Train screen's weekly progress card. A day reads 'trained'
+// once a session lands on that date; today gets a dashed accent state when it isn't
+// trained yet (an invitation to tap Start); every other day -- a past miss or one still
+// ahead -- reads as the same neutral notch, since the surface only distinguishes "done"
+// from "not done", not "why".
+export function getWeekDayStates(history, now = new Date()) {
+  const trainedDates = new Set(history.map(s => localDateKey(s.date)));
+  const todayKey = localDateKey(now);
+  const start = getMonStart(now);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    const dateKey = localDateKey(d);
+    return {
+      label: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
+      trained: trainedDates.has(dateKey),
+      isToday: dateKey === todayKey,
+    };
+  });
+}
+
+// This week's and last week's total kg moved, and the signed difference between them --
+// the weekly card's accent/neutral comparison line. Uses the same Mon-Sun boundary as
+// getWorkoutStats so "this week" means the same thing everywhere it's shown.
+export function getWeekTonnageComparison(history, now = new Date()) {
+  const thisWeekStart = getMonStart(now);
+  const nextWeekStart = new Date(thisWeekStart);
+  nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+  const lastWeekStart = new Date(thisWeekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+
+  let thisWeek = 0;
+  let lastWeek = 0;
+  for (const session of history) {
+    const d = new Date(session.date);
+    if (d >= thisWeekStart && d < nextWeekStart) thisWeek += sessionTonnage(session);
+    else if (d >= lastWeekStart && d < thisWeekStart) lastWeek += sessionTonnage(session);
+  }
+  return { thisWeek: Math.round(thisWeek), lastWeek: Math.round(lastWeek), delta: Math.round(thisWeek - lastWeek) };
+}
+
+// Where one lift stands right now: its most recent weight, what it was the occurrence
+// before that, and whether the latest session on it was a clean pass, a miss (held), or
+// a deload (drop). Walks history newest-first, same direction as getExerciseTrend, but
+// returns the weights and miss state the weekly card's dropdown needs rather than just
+// a direction.
+export function getLiftProgress(history, liftId) {
+  let current = null;
+  let previous = null;
+
+  for (const session of history) {
+    const ex = session.exercises.find(e => e.id === liftId);
+    if (!ex) continue;
+    const weight = topWeightOf(ex);
+    if (current === null) {
+      const hadMiss = ex.setsCompleted.some((r, i) => r !== null && r < targetReps(ex, i));
+      current = { weight, hadMiss };
+    } else {
+      previous = weight;
+      break;
+    }
+  }
+
+  if (current === null) return null;
+  if (previous === null) return { status: 'first', weight: current.weight };
+  if (current.weight > previous) return { status: 'up', from: previous, to: current.weight };
+  if (current.weight < previous) return { status: 'deload', from: previous, to: current.weight };
+  return { status: current.hadMiss ? 'held' : 'flat', weight: current.weight };
+}
+
+// The Big-5 in program order, each paired with its current progress -- lifts never
+// trained yet are left out rather than shown with placeholder data.
+export function getWeekLiftBreakdown(history) {
+  return EXPECTED_WEIGHT_KEYS
+    .map(id => ({ id, progress: getLiftProgress(history, id) }))
+    .filter(({ progress }) => progress !== null);
 }
 
 export function groupHistory(history, mode, skip = 0) {

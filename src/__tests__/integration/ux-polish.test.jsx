@@ -106,7 +106,7 @@ describe('Workout completion summary', () => {
     await user.click(screen.getByText('Finish workout'));
 
     await waitFor(() => {
-      expect(screen.getByText(/Complete/i)).toBeInTheDocument();
+      expect(screen.getByText('Workout complete')).toBeInTheDocument();
       expect(screen.getByText('Done')).toBeInTheDocument();
     });
 

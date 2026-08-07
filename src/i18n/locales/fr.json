@@ -35,8 +35,6 @@
     "completeAllSets": "Complétez toutes les séries",
     "alreadyTrained": "Déjà entraîné aujourd'hui. Reposez-vous jusqu'au prochain entraînement.",
     "trainedToday": "Entraîné aujourd'hui",
-    "weekProgress": "{{count}} entraînement sur 3 cette semaine",
-    "weekProgress_other": "{{count}} entraînements sur 3 cette semaine",
     "plannedLoad": "Charge prévue",
     "setHint": "Touchez pour valider {{count}} répétitions. Maintenez pour choisir un nombre exact.",
     "missedNote": "Répétitions manquées : poids maintenu à {{weight}}kg la prochaine fois",
@@ -63,7 +61,17 @@
     "rampSetLabel": "Série {{n}}",
     "rampTopSetLabel": "Série {{n}} · série maximale",
     "rampBackoffLabel": "Série {{n}} · dégressive",
-    "missedNoteTopSet": "Répétitions manquées : la série maximale reste inchangée la semaine prochaine"
+    "missedNoteTopSet": "Répétitions manquées : la série maximale reste inchangée la semaine prochaine",
+    "weekCard": {
+      "weekCaption": "Progression de la semaine, appuyez pour en savoir plus",
+      "moreVsLastWeek": "+{{amount}} kg par rapport à la semaine dernière",
+      "lessVsLastWeek": "−{{amount}} kg par rapport à la semaine dernière",
+      "sameAsLastWeek": "Comme la semaine dernière",
+      "toggleAria": "Afficher le détail des charges de la semaine",
+      "liftedThisWeek": "Soulevé cette semaine",
+      "deloadChip": "Décharge",
+      "holds": "Maintenu à {{weight}} kg"
+    }
   },
   "program": {
     "title": "Programme",
