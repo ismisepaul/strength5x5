@@ -63,12 +63,12 @@
     "rampBackoffLabel": "Série {{n}} · dégressive",
     "missedNoteTopSet": "Répétitions manquées : la série maximale reste inchangée la semaine prochaine",
     "weekCard": {
-      "moreThanLastWeek": "{{amount}} kg de plus que la semaine dernière",
-      "lessThanLastWeek": "{{amount}} kg de moins que la semaine dernière",
+      "weekCaption": "Progression de la semaine, appuyez pour en savoir plus",
+      "moreVsLastWeek": "+{{amount}} kg par rapport à la semaine dernière",
+      "lessVsLastWeek": "−{{amount}} kg par rapport à la semaine dernière",
       "sameAsLastWeek": "Comme la semaine dernière",
       "toggleAria": "Afficher le détail des charges de la semaine",
       "liftedThisWeek": "Soulevé cette semaine",
-      "weekTotalVsLast": "{{amount}} kg · {{last}} kg la semaine dernière",
       "deloadChip": "Décharge",
       "holds": "Maintenu à {{weight}} kg"
     }

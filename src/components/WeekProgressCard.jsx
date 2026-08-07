@@ -3,23 +3,23 @@ import { useTranslation } from 'react-i18next';
 import { CaretDown, ArrowUp, ArrowDown, Minus } from '@phosphor-icons/react';
 import { getWeekDayStates, getWeekTonnageComparison, getWeekLiftBreakdown } from '../utils/chartData';
 
-// The days row plus a week-over-week tonnage line double as the disclosure trigger --
-// tapping either opens the per-lift breakdown. Up is accent, everything else (held,
-// deload, flat) is neutral ink; state is never carried by hue alone, only by that pairing
-// with the dashed miss/deload chip or the arrow direction.
+// The days row is a plain teaching caption -- the live week-over-week comparison lives in
+// the footer next to the tonnage total instead, once the breakdown is open. Up is accent,
+// everything else (held, deload, flat, same-as-last-week) is neutral ink; state is never
+// carried by hue alone, only by that pairing with the dashed miss/deload chip or the arrow.
 const WeekProgressCard = ({ history }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const days = getWeekDayStates(history);
-  const { thisWeek, lastWeek, delta } = getWeekTonnageComparison(history);
+  const { thisWeek, delta } = getWeekTonnageComparison(history);
   const lifts = getWeekLiftBreakdown(history);
 
   const TrendIcon = delta > 0 ? ArrowUp : delta < 0 ? ArrowDown : Minus;
   const trendLabel = delta > 0
-    ? t('workout.weekCard.moreThanLastWeek', { amount: delta.toLocaleString() })
+    ? t('workout.weekCard.moreVsLastWeek', { amount: delta.toLocaleString() })
     : delta < 0
-      ? t('workout.weekCard.lessThanLastWeek', { amount: Math.abs(delta).toLocaleString() })
+      ? t('workout.weekCard.lessVsLastWeek', { amount: Math.abs(delta).toLocaleString() })
       : t('workout.weekCard.sameAsLastWeek');
   const trendClass = delta > 0 ? 'text-accent-300' : 'text-ink/62';
 
@@ -48,10 +48,7 @@ const WeekProgressCard = ({ history }) => {
           ))}
         </span>
         <span className="flex items-center justify-between gap-3 w-full">
-          <span className={`inline-flex items-center gap-1.5 text-meta min-w-0 ${trendClass}`}>
-            <TrendIcon size={12} weight="bold" className="shrink-0" />
-            <span className="truncate">{trendLabel}</span>
-          </span>
+          <span className="text-meta text-ink/50 truncate">{t('workout.weekCard.weekCaption')}</span>
           <CaretDown size={16} weight="bold" className={`text-ink/45 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
         </span>
       </button>
@@ -82,7 +79,13 @@ const WeekProgressCard = ({ history }) => {
           ))}
           <div className="flex items-baseline justify-between pt-3 rule-fade-top">
             <span className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-ink/62">{t('workout.weekCard.liftedThisWeek')}</span>
-            <span className="font-mono text-meta text-ink/62">{t('workout.weekCard.weekTotalVsLast', { amount: thisWeek.toLocaleString(), last: lastWeek.toLocaleString() })}</span>
+            <span className="flex items-baseline gap-2">
+              <span className="font-display font-semibold text-body tabular-nums text-ink/85">{thisWeek.toLocaleString()} kg</span>
+              <span className={`inline-flex items-center gap-[3px] text-tab ${trendClass}`}>
+                <TrendIcon size={11} weight="bold" className="shrink-0" />
+                {trendLabel}
+              </span>
+            </span>
           </div>
         </div>
       )}

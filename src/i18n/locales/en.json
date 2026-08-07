@@ -63,12 +63,12 @@
     "rampBackoffLabel": "Set {{n}} · back-off",
     "missedNoteTopSet": "Missed reps: top set stays at current weight next week",
     "weekCard": {
-      "moreThanLastWeek": "{{amount}} kg more than last week",
-      "lessThanLastWeek": "{{amount}} kg less than last week",
+      "weekCaption": "Week progress, tap to see more",
+      "moreVsLastWeek": "+{{amount}} kg vs last week",
+      "lessVsLastWeek": "−{{amount}} kg vs last week",
       "sameAsLastWeek": "Same as last week",
       "toggleAria": "Toggle this week's lift breakdown",
       "liftedThisWeek": "Lifted this week",
-      "weekTotalVsLast": "{{amount}} kg · {{last}} kg last week",
       "deloadChip": "Deload",
       "holds": "Holds {{weight}} kg"
     }
