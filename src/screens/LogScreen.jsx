@@ -21,12 +21,12 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedCla
       <button onClick={onToggle} aria-expanded={isExpanded} className="w-full text-left p-4 rounded-[10px] border active:scale-[0.98] transition-transform bg-surface border-ink/14 flex gap-3 items-start">
         <div className="flex flex-col items-center w-10 shrink-0 pt-0.5">
           <span className={`text-[12.5px] ${mutedClass}`}>{date.toLocaleDateString(undefined, { weekday: 'short' })}</span>
-          <span className="text-card font-semibold tabular-nums">{date.getDate()}</span>
+          <span className="font-mono text-card font-bold tabular-nums">{date.getDate()}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300">{t(getProgram(s.preset).nameKey)}</span>
-          <p className="text-card font-semibold mt-0.5">{t(`workout.type${s.type}`)}</p>
-          <p className={`text-meta mt-0.5 ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}{tonnage.toLocaleString()} {t('log.tonnage')}</p>
+          <span className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300">{t(getProgram(s.preset).nameKey)}</span>
+          <p className="font-display font-semibold tracking-[-0.025em] text-card mt-0.5">{t(`workout.type${s.type}`)}</p>
+          <p className={`text-meta mt-0.5 ${mutedClass}`}>{s.duration ? `${formatDuration(s.duration, t)} · ` : ''}<span className="font-mono">{tonnage.toLocaleString()} {t('log.tonnage')}</span></p>
         </div>
         <div className="flex items-center gap-2 shrink-0 pt-0.5">
           {missCount === 0 ? (
@@ -43,7 +43,7 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedCla
             <div key={ex.id}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className={`text-meta ${mutedClass}`}>{t('exercises.' + ex.id)}</span>
-                <span className="text-meta tabular-nums text-accent-300">{ex.weight}kg</span>
+                <span className="font-display font-semibold text-meta tabular-nums text-accent-300">{ex.weight}kg</span>
               </div>
               <div className="flex gap-1.5">
                 {ex.setsCompleted.map((r, ri) => {
@@ -51,17 +51,17 @@ const LogEntry = ({ session: s, isExpanded, onToggle, onEdit, onDelete, mutedCla
                   const passed = r !== null && r === target;
                   const missed = r !== null && r < target;
                   const stateClass = passed
-                    ? 'border border-accent bg-accent-900 text-accent-300'
+                    ? 'border-2 border-accent bg-accent text-ground shadow-[0_0_0_3px_var(--color-accent-900)]'
                     : missed
-                      ? 'border border-dashed border-ink/50 bg-neutral-tint text-ink'
-                      : 'border border-ink/26 text-ink/62';
+                      ? 'border-2 border-dashed border-ink/50 bg-neutral-tint text-ink'
+                      : 'border-2 border-ink/42 bg-ink/7 text-ink/85';
                   return (
                     <div
                       key={ri}
                       style={{ width: `calc((100% - ${6 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
                       className={`aspect-[1.35] rounded-[10px] flex items-center justify-center ${stateClass}`}
                     >
-                      <span className="text-[13px] font-semibold">{r !== null ? r : target}</span>
+                      <span className="font-display text-[13px] font-semibold tabular-nums">{r !== null ? r : target}</span>
                     </div>
                   );
                 })}
@@ -125,11 +125,11 @@ const LogScreen = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-title font-medium">{t('log.title')}</h2>
+        <h2 className="font-display text-title font-semibold tracking-[-0.025em]">{t('log.title')}</h2>
         {addWorkoutButton}
       </div>
       <div className="p-4 rounded-[10px] border bg-surface border-ink/14">
-        <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-2.5">{t('log.thisWeek')}</p>
+        <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-2.5">{t('log.thisWeek')}</p>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex gap-1.5 shrink-0">
@@ -140,7 +140,7 @@ const LogScreen = ({
             <p className="text-body font-medium">{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[20px] font-medium tabular-nums">{stats.total}</p>
+            <p className="font-display font-semibold text-[20px] tabular-nums">{stats.total}</p>
             <p className={`text-tab ${mutedClass}`}>{t('log.total')}</p>
           </div>
         </div>

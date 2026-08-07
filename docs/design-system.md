@@ -22,8 +22,11 @@ option 4a, which this document now reflects):
 1. **One accent, no other hues.** `#c8663a` dark / `#b4552b` light carries every piece of
    emphasis — lines, borders, icons, marks, active states. Status is never communicated
    by hue.
-2. **Quiet typography.** Inter, weight 600 maximum. Nothing shouts. Uppercase is
-   reserved for kickers.
+2. **Quiet typography.** Inter for every body string, label and button — weight 600
+   maximum, nothing shouts. Titles, weights, set counts and stat figures carry a
+   second, structural face (Archivo); kickers, timers, tonnage and dates carry a third,
+   mechanical one (Space Mono). See **Typography** in §2. Uppercase is reserved for
+   kickers.
 3. **One radius scale.** 8–10px for cards and buttons. Set targets are rounded
    rectangles; adherence dots are the only circles.
 4. **Outlined, not filled.** Primary actions are a 1px accent outline on transparent.
@@ -73,7 +76,7 @@ separate grey. Canonical steps:
 | Tertiary text / meta | `text-ink/45` |
 | Faint text / captions | `text-ink/38` |
 | Inactive tab, disabled label | `text-ink/35` |
-| Unlogged set number | `text-ink/40` |
+| Unlogged set number | `text-ink/85` |
 | Card / control border | `border-ink/8` … `border-ink/18` |
 | Missed-set border | `border-ink/50` |
 | Chart grid | `rgba(236,233,226,.07)` dark / `rgba(25,22,18,.07)` light |
@@ -91,9 +94,35 @@ separate grey. Canonical steps:
 | Kicker | 10.5px / 600, uppercase, letter-spacing .14em, accent |
 | Tab label | 11px (the one exception below the 12px type floor besides kickers) |
 
-**Kickers are the only uppercase text in the app.** Font family is Inter (400/500/600);
-never `font-bold`+ beyond 600, never `font-black`. **Type floor is 12px** everywhere
+**Kickers are the only uppercase text in the app.** **Type floor is 12px** everywhere
 except kickers (10.5px) and tab labels (11px).
+
+### Typography
+
+Three faces, each with a fixed job — see [BarMark.jsx](../src/components/BarMark.jsx) and
+the mark it pairs with for the brand rationale:
+
+| Face | Weights loaded | Role |
+| --- | --- | --- |
+| **Inter** (`font-sans`, the default) | 400 / 500 / 600 | Every body string, label and button. Never `font-bold`+ beyond 600, never `font-black`. |
+| **Archivo** (`font-display`) | 500 / 600 / 700 | Screen titles, the header wordmark, exercise names, and every weight / set count / stat figure (paired with `tabular-nums`). Titles take `font-semibold tracking-[-0.025em]`; the header wordmark tightens further (see below). |
+| **Space Mono** (`font-mono`) | 400 / 700 | Kickers (`uppercase tracking-[0.14em]`, weight `font-bold` — 600 isn't loaded for this face, so kicker weight is 700 not 600), the rest timer, session clock, tonnage and log dates. |
+
+Only these three families exist in the app — do not add a fourth without updating this
+table. `font-display`/`font-mono` weights are capped at what's imported in
+[src/main.jsx](../src/main.jsx) (`@fontsource/archivo` 500/600/700,
+`@fontsource/space-mono` 400/700); a class like `font-mono font-semibold` silently falls
+back to the browser's faux-bold on an unloaded weight, so mono text is always `font-normal`
+or `font-bold`, never `font-medium`/`font-semibold`.
+
+The header wordmark lockup gives `Strength` full ink weight and drops `5x5` to
+`font-medium text-ink/40`, so the name reads as a word with a qualifier:
+
+```jsx
+<h1 className="font-display text-[17px] font-semibold tracking-[-0.02em]">
+  {t('app.titleMain')} <span className="font-medium text-ink/40">{t('app.titleSuffix')}</span>
+</h1>
+```
 
 ### Radii
 
@@ -121,9 +150,18 @@ overrides use the light ink rgb triple, `25,22,18`, instead.)
 
 ### Icons
 
-**Phosphor** (`@phosphor-icons/react`). Weight `regular` by default; `fill` for the
-active tab icon, the brand barbell and play glyphs; `bold` only for the 9px ✕ on a
-missed-set badge. The full glyph inventory is in the implementation plan.
+**Phosphor** (`@phosphor-icons/react`) everywhere except the app mark. Weight `regular`
+by default; `fill` for the active tab icon (including Train's `Barbell`) and play glyphs;
+`bold` only for the 9px ✕ on a missed-set badge. The full glyph inventory is in the
+implementation plan.
+
+The app mark is [BarMark.jsx](../src/components/BarMark.jsx) (`currentColor`, pair with
+`text-accent`) — two plates and an outboard collar on a shaft, not a Phosphor glyph. It
+sits **beside the title in the header only**; the tab bar keeps Phosphor's `Barbell` for
+Train, including its `fill` weight when active. The same mark, on the accent tile, is the
+app/favicon (`docs/design/mark.svg` glyph master, `docs/design/icon.svg` tile master,
+regenerated into `public/icon-*.png` / `favicon-32.png` / `apple-touch-icon-180.png`) —
+those files are the mark alone, not composited with any other UI chrome.
 
 ---
 
@@ -147,14 +185,20 @@ the idle screen, from `plannedVolume()` in [utils.js](../src/utils.js) — `weig
 × reps` for Standard's flat entries, summed per-set for Madcow's ramped entries.
 
 **Set targets.** `aspect-[1.35]` rounded rectangles (`rounded-[10px]`, filling their
-flex slot), 20px/600 number — roughly twice the tap area of a circle, and the row reads
-like a loaded bar rather than five dots.
+flex slot), 20px `font-display font-semibold tabular-nums` number — roughly twice the tap
+area of a circle, and the row reads like a loaded bar rather than five dots. Rebalanced so
+a logged set is readable at arm's length (mid-workout, this is the number a lifter checks
+between sets without picking the phone up):
 
 | State | Treatment |
 | --- | --- |
-| Unlogged | 1px `ink/18` border, `ink/40` number, shows the target |
-| Passed | 1px accent border, `accent-900` fill, `accent-300` number |
-| Missed (0 ≤ reps < target) | 1.5px **dashed** `ink/50` border, `neutral-tint` fill, shows reps achieved, plus a 19px corner badge (`neutral-tint` circle, bold 9px ✕) |
+| Unlogged | 2px `ink/42` border, `ink/7` fill, `ink/85` number, shows the target |
+| Passed | 2px accent border, **solid accent fill**, `ground`-coloured number, 3px `accent-900` halo (`shadow-[0_0_0_3px_var(--color-accent-900)]`) |
+| Missed (0 ≤ reps < target) | 2px **dashed** `ink/50` border, `neutral-tint` fill, shows reps achieved, plus a 19px corner badge (`neutral-tint` circle, bold 9px ✕) |
+
+The same three-state treatment is reused everywhere a logged set renders read-only (the
+Log screen's expanded session rows, `EditEntryModal`'s set editor) — one visual language
+for "a set and whether it landed," not a Train-tab-only pattern.
 
 Never render a slot for a set the program doesn't include. Never becomes red — status
 here is shape (dashed border + badge), not hue.
@@ -347,6 +391,9 @@ grep -roE "(bg|text|border|ring|from|to|fill|stroke)-(emerald|rose|amber|indigo|
 # no shouting type
 grep -ro "font-black" src
 grep -ro "uppercase" src   # kickers only
+
+# font-mono paired with an unloaded weight (only 400/700 are imported — see Typography in §2)
+grep -rno "font-mono[^\"'\`]*font-\(medium\|semibold\)\|font-\(medium\|semibold\)[^\"'\`]*font-mono" src
 
 # one radius scale
 grep -roE "rounded(-\[[^]]+\]|-[a-z0-9]+)?" src | sed 's/^[^:]*://' | sort | uniq -c

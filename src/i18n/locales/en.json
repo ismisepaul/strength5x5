@@ -1,6 +1,8 @@
 {
   "app": {
-    "title": "Strength 5x5"
+    "title": "Strength 5x5",
+    "titleMain": "Strength",
+    "titleSuffix": "5x5"
   },
   "header": {
     "streak_one": "{{count}}-week streak",

@@ -42,8 +42,8 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
       <div className="flex items-end justify-between">
         <div className="flex items-end gap-2">
           <div>
-            <p className={`text-kicker font-semibold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent-300' : mutedClass}`}>{kicker}</p>
-            <p className={`text-[44px] font-medium tabular-nums leading-none ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
+            <p className={`font-mono text-kicker font-bold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent-300' : mutedClass}`}>{kicker}</p>
+            <p className={`font-mono text-[44px] font-bold tabular-nums leading-none ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
           </div>
           {showSkip && (
             <button
@@ -54,8 +54,8 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
           )}
         </div>
         <div className="text-right">
-          <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-0.5">{t(`workout.type${workoutType}`)}</p>
-          <p className={`text-[16px] tabular-nums leading-none text-ink/60`}>{formatClock(sessionElapsed * 1000)}</p>
+          <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-0.5">{t(`workout.type${workoutType}`)}</p>
+          <p className={`font-mono text-[16px] tabular-nums leading-none text-ink/60`}>{formatClock(sessionElapsed * 1000)}</p>
         </div>
       </div>
       <div className={`h-[3px] w-full mt-2.5 bg-ink/14 overflow-hidden`}>

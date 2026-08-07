@@ -212,7 +212,7 @@ describe('ExerciseCard', () => {
     const missedEx = { ...baseEx, setsCompleted: [5, 3, null, null, null] };
     render(<ExerciseCard {...defaultProps} ex={missedEx} />);
     const missedSet = screen.getByLabelText('Set 2, 3 reps');
-    expect(missedSet.className).toContain('border-[1.5px]');
+    expect(missedSet.className).toContain('border-2');
     expect(missedSet.className).toContain('border-dashed');
     expect(missedSet.className).toContain('bg-neutral-tint');
   });

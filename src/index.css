@@ -11,7 +11,9 @@
   --color-accent-900:    #3a2413;
   --color-neutral-tint:  #433d34;
 
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans:    'Inter', system-ui, sans-serif;
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-mono:    'Space Mono', ui-monospace, monospace;
 
   /*
     Type scale — see docs/design-system.md §2. Named for role, not pixel value,

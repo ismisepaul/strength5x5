@@ -10,10 +10,10 @@ const LongBreakDeloadModal = ({ deloadAlert, deloadPercent, onDeloadPercentChang
   const previewWeights = calculateDeload(weights, deloadPercent);
   return (
     <Modal ariaLabel="Deload recommendation" z={Z_DELOAD_ALERT} cardClassName="max-w-sm p-6">
-      <h3 className="text-lg font-semibold mb-3">{t('modals.acceptDeload')}</h3>
+      <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-3">{t('modals.acceptDeload')}</h3>
       <p className="text-card leading-relaxed mb-6 text-ink/60">{deloadAlert.message}</p>
       <div className="mb-4">
-        <p className="text-title font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+        <p className="font-display text-title font-semibold tabular-nums mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
         <p className="text-meta text-ink/62">{t('modals.deloadRecommended', { percent: deloadAlert.recommended })}</p>
       </div>
       <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => onDeloadPercentChange(Number(e.target.value))} className="w-full mb-6 accent-accent" />
@@ -21,7 +21,7 @@ const LongBreakDeloadModal = ({ deloadAlert, deloadPercent, onDeloadPercentChang
         {EXPECTED_WEIGHT_KEYS.filter(id => weights[id] > 0).map(id => (
           <div key={id} className="flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep">
             <span className="text-meta uppercase text-ink/62">{t('exercises.' + id)}</span>
-            <span className="text-card tabular-nums">{weights[id]}kg <span className="text-accent mx-1">&rarr;</span> {previewWeights[id]}kg</span>
+            <span className="font-display font-semibold text-card tabular-nums">{weights[id]}kg <span className="text-accent mx-1">&rarr;</span> {previewWeights[id]}kg</span>
           </div>
         ))}
       </div>

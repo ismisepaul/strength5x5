@@ -15,11 +15,11 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
   const totalTime = formatClock(completionSummary.workout.duration);
   return (
     <Modal ariaLabel="Workout complete" z={Z_TOP} cardClassName="max-w-sm p-6">
-      <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-4">{t('completion.kicker')}</p>
+      <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-4">{t('completion.kicker')}</p>
       {totalTime && (
         <div className="flex items-center justify-between px-4 py-2.5 rounded-lg mb-5 bg-surface-deep">
           <span className="text-meta uppercase text-ink/62">{t('completion.totalTime')}</span>
-          <span className="text-card tabular-nums">{totalTime}</span>
+          <span className="font-mono text-card tabular-nums">{totalTime}</span>
         </div>
       )}
       <div className="space-y-3 mb-6">
@@ -56,13 +56,13 @@ const CompletionSummaryModal = ({ completionSummary, onDone }) => {
                       style={{ width: `calc((100% - ${SET_BLOCK_GAP * (setColumns - 1)}px) / ${setColumns})` }}
                       className="shrink-0 max-w-[3.5rem] rounded-lg py-1.5 bg-surface"
                     >
-                      <div className={`text-body leading-none ${failed && !passed ? 'text-ink' : 'text-ink/70'}`}>{val}</div>
-                      {hasSplits && <div className={`text-meta tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
+                      <div className={`font-display font-semibold text-body tabular-nums leading-none ${failed && !passed ? 'text-ink' : 'text-ink/70'}`}>{val}</div>
+                      {hasSplits && <div className={`font-mono text-meta tabular-nums leading-none mt-1 ${mutedColor}`}>{split ?? '–'}</div>}
                     </div>
                   );
                 })}
               </div>
-              {exerciseTime && <p className={`text-meta tabular-nums mt-2 ${mutedColor}`}>{t('completion.exerciseTime', { time: exerciseTime })}</p>}
+              {exerciseTime && <p className={`font-mono text-meta tabular-nums mt-2 ${mutedColor}`}>{t('completion.exerciseTime', { time: exerciseTime })}</p>}
             </div>
           );
         })}

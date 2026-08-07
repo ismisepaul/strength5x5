@@ -12,7 +12,7 @@ const DeleteEntryConfirmSheet = ({ session, onKeep, onDelete }) => {
   const { t } = useTranslation();
   return (
     <Sheet ariaLabel={t('modals.deleteWorkout')} z={Z_EDIT_ENTRY} onClose={onKeep}>
-      <h3 className="text-lg font-semibold text-center mb-2">{t('modals.deleteWorkout')}</h3>
+      <h3 className="font-display font-semibold tracking-[-0.025em] text-lg text-center mb-2">{t('modals.deleteWorkout')}</h3>
       <p className="text-body text-center mb-6 text-ink/62">
         {t('modals.deleteConfirmNamed', { workout: t(`workout.type${session.type}`), program: t(getProgram(session.preset).nameKey) })}
       </p>

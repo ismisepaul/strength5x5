@@ -11,7 +11,7 @@ const ExerciseGuideSheet = ({ liftId, onClose }) => {
   return (
     <div role="dialog" aria-modal="true" aria-label={t('technique.openAria', { exercise: exerciseName })} onClick={onClose} className="fixed inset-0 z-[500] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
       <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
-        <h3 className="text-lg font-semibold mb-5">{exerciseName}</h3>
+        <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-5">{exerciseName}</h3>
         <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-3 mb-6">
           {t('technique.steps.' + liftId, { returnObjects: true }).map((step, i) => (
             <div key={i} className="flex items-start gap-3">

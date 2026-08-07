@@ -69,8 +69,8 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
           <ArrowLeft size={20} />
         </button>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold">{title}</h2>
-          <p className="text-card tabular-nums">
+          <h2 className="font-display font-semibold tracking-[-0.025em] text-lg">{title}</h2>
+          <p className="font-display font-semibold text-card tabular-nums">
             {showWeight && <span className="text-accent-300">{currentWeight}kg</span>}
             {showWeight && showE1rm && <span className={mutedClass}> / </span>}
             {showE1rm && <span className="text-accent-300">{t('stats.est1rmValue', { value: currentE1rm })}</span>}
@@ -180,15 +180,15 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
           <div className="grid grid-cols-3 gap-2 mt-4 pt-4 rule-fade-top text-center">
             <div>
               <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.bestSet')}</p>
-              <p className="text-body font-medium tabular-nums mt-0.5">{rangeStats.bestSet ? `${rangeStats.bestSet.weight}kg × ${rangeStats.bestSet.reps}` : '—'}</p>
+              <p className="font-display font-semibold text-body tabular-nums mt-0.5">{rangeStats.bestSet ? `${rangeStats.bestSet.weight}kg × ${rangeStats.bestSet.reps}` : '—'}</p>
             </div>
             <div>
               <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.volume')}</p>
-              <p className="text-body font-medium tabular-nums mt-0.5">{Math.round(rangeStats.volume).toLocaleString()}kg</p>
+              <p className="font-display font-semibold text-body tabular-nums mt-0.5">{Math.round(rangeStats.volume).toLocaleString()}kg</p>
             </div>
             <div>
               <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.misses')}</p>
-              <p className="text-body font-medium tabular-nums mt-0.5">{rangeStats.misses}</p>
+              <p className="font-display font-semibold text-body tabular-nums mt-0.5">{rangeStats.misses}</p>
             </div>
           </div>
         )}
@@ -196,11 +196,11 @@ const StatsChart = ({ exerciseId, history, onBack, weights, best1RMs, range }) =
           <div className="grid grid-cols-2 gap-2 mt-4 pt-4 rule-fade-top text-center">
             <div>
               <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.workoutsInRange')}</p>
-              <p className="text-body font-medium tabular-nums mt-0.5">{filteredData.length}</p>
+              <p className="font-display font-semibold text-body tabular-nums mt-0.5">{filteredData.length}</p>
             </div>
             <div>
               <p className={`text-tab uppercase tracking-wide ${mutedClass}`}>{t('stats.volume')}</p>
-              <p className="text-body font-medium tabular-nums mt-0.5">{Math.round(big3Volume).toLocaleString()}kg</p>
+              <p className="font-display font-semibold text-body tabular-nums mt-0.5">{Math.round(big3Volume).toLocaleString()}kg</p>
             </div>
           </div>
         )}

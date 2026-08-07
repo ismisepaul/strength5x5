@@ -11,7 +11,7 @@ const RepPicker = ({ ex, setIdx, onSelect, onClose }) => {
     <div role="dialog" aria-modal="true" aria-label="Rep picker" className="fixed inset-0 z-[200] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
       <div className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
         <div className="mb-6">
-          <h3 className="text-lg font-semibold">{t('modals.repPickerTitle', { name: t('exercises.' + ex.id), set: setIdx + 1 })}</h3>
+          <h3 className="font-display font-semibold tracking-[-0.025em] text-lg">{t('modals.repPickerTitle', { name: t('exercises.' + ex.id), set: setIdx + 1 })}</h3>
           <p className={`text-[12.5px] mt-1 text-ink/50`}>{t('modals.repPickerQuestion')}</p>
         </div>
         <div className="flex flex-wrap justify-center gap-3 mb-4">
@@ -20,7 +20,7 @@ const RepPicker = ({ ex, setIdx, onSelect, onClose }) => {
               key={r}
               onClick={() => onSelect(r)}
               aria-label={`${r} reps`}
-              className={`w-[50px] h-[50px] rounded-full flex items-center justify-center text-[17px] font-semibold active:scale-90 transition-transform border ${r === target ? 'border-accent text-accent-300 bg-accent-900' : ('border-ink/26 text-ink/60')}`}
+              className={`font-display w-[50px] h-[50px] rounded-full flex items-center justify-center text-[17px] font-semibold tabular-nums active:scale-90 transition-transform border ${r === target ? 'border-accent text-accent-300 bg-accent-900' : ('border-ink/26 text-ink/60')}`}
             >{r}</button>
           ))}
         </div>

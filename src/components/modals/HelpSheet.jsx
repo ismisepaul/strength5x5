@@ -9,7 +9,7 @@ const HelpSheet = ({ preset, onOpenProgram, onClose }) => {
   const { t } = useTranslation();
   return (
     <Sheet ariaLabel={t('help.title')} z={Z_TOP} onClose={onClose}>
-      <h3 className="text-lg font-semibold mb-5">{t('help.title')}</h3>
+      <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-5">{t('help.title')}</h3>
       <div className="max-h-[60vh] overflow-y-auto overscroll-contain space-y-5 mb-6 text-left">
         {[
           // What 5x5 is, then how this app runs it. The training ideas lead because the
