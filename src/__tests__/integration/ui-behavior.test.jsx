@@ -210,7 +210,7 @@ describe('Stats charts', () => {
     await user.click(screen.getByText('Stats'));
     await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
 
-    expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Back to stats')).toBeInTheDocument();
     expect(screen.getByText('Weight')).toBeInTheDocument();
     expect(screen.getByText('Est. 1RM')).toBeInTheDocument();
   });
@@ -222,7 +222,7 @@ describe('Stats charts', () => {
 
     await user.click(screen.getByText('Stats'));
     await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
-    await user.click(screen.getByLabelText('Back to stats'));
+    await user.click(await screen.findByLabelText('Back to stats'));
 
     expect(screen.getByRole('heading', { name: 'Stats' })).toBeInTheDocument();
   });
@@ -236,7 +236,7 @@ describe('Stats charts', () => {
     await user.click(screen.getByText('Big-3 total'));
 
     expect(screen.getByText('Big-3 total')).toBeInTheDocument();
-    expect(screen.getByLabelText('Back to stats')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Back to stats')).toBeInTheDocument();
   });
 
   it('every exercise card stays tappable into its chart view', async () => {
@@ -335,7 +335,7 @@ describe('Stats charts', () => {
     await user.click(screen.getByText('Back Squat', { selector: 'p.text-card' }));
     expect(screen.getByText('1Y').closest('button').className).toContain('bg-accent-900');
 
-    await user.click(screen.getByLabelText('Back to stats'));
+    await user.click(await screen.findByLabelText('Back to stats'));
     expect(screen.getByText('1Y').closest('button').className).toContain('bg-accent-900');
   });
 });

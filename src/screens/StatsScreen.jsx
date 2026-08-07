@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CaretRight } from '@phosphor-icons/react';
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
@@ -7,7 +7,9 @@ import { getProgram, PROGRAM_IDS, programAllLiftIds } from '../programs';
 import { buildExerciseTimeline, buildBig3Timeline, getWeightDelta, filterByRange, STATS_RANGES } from '../utils/chartData';
 import Sparkline from '../components/Sparkline';
 import Segmented from '../components/Segmented';
-import StatsChart from '../components/StatsChart';
+// Recharts is ~460 kB of the bundle and only the detail chart needs it, so it
+// loads on the first tap into a lift rather than on app start.
+const StatsChart = lazy(() => import('../components/StatsChart'));
 
 const BIG3_IDS = ['squat', 'bench', 'deadlift'];
 const RANGE_STORAGE_KEY = 'strength5x5_stats_range';
@@ -47,7 +49,9 @@ const StatsScreen = ({
             onChange={handleRangeChange}
           />
           {statsView ? (
-            <StatsChart exerciseId={statsView} history={history} onBack={() => setStatsView(null)} weights={weights} best1RMs={best1RMs} range={range} />
+            <Suspense fallback={<div className="h-[280px]" aria-hidden="true" />}>
+              <StatsChart exerciseId={statsView} history={history} onBack={() => setStatsView(null)} weights={weights} best1RMs={best1RMs} range={range} />
+            </Suspense>
           ) : (
             <>
               {(() => {
