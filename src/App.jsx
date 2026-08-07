@@ -639,7 +639,7 @@ const App = () => {
 
       {!isMidWorkout && (
         <header className="flex-none header-safe px-5 pb-2.5 flex justify-between items-center">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5">
             <BarMark size={21} className="text-accent" />
             <h1 className="font-display text-[17px] font-semibold tracking-[-0.02em]">
               {t('app.titleMain')} <span className="font-medium text-ink/40">{t('app.titleSuffix')}</span>
