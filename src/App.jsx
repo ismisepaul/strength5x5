@@ -17,7 +17,7 @@ import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
 import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
 import { getProgram } from './programs';
-import { getWorkoutStats } from './utils/chartData';
+import { getWorkoutStats, localDateKey } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useMadcowState } from './state/useMadcowState';
 import { useSettings } from './state/useSettings';
@@ -162,7 +162,13 @@ const App = () => {
   }, [history]);
 
   const historyDateSet = useMemo(() => new Set(history.map(s => s.date.slice(0, 10))), [history]);
-  const trainedToday = historyDateSet.has(new Date().toISOString().slice(0, 10));
+  // Local calendar date, not UTC -- historyDateSet above stays UTC-keyed for
+  // EditEntryModal's date-input comparisons, but "trained today" means today where the
+  // lifter is, so it can't drift a day off local midnight the way a UTC slice would.
+  const trainedToday = useMemo(() => {
+    const todayKey = localDateKey(new Date());
+    return history.some(s => localDateKey(s.date) === todayKey);
+  }, [history]);
 
   const getAppState = useCallback(() => ({
     weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
@@ -675,7 +681,7 @@ const App = () => {
             program={program} weights={weights} mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress} mcWeek={mcWeek}
             moodLabel={moodLabel} expandedBarSetup={expandedBarSetup} setExpandedBarSetup={setExpandedBarSetup}
             setWorkoutPicker={setWorkoutPicker} updateMcTop={updateMcTop} handleUpdateIdleWeight={handleUpdateIdleWeight}
-            setGuideLift={setGuideLift} startWorkout={startWorkout} trainedToday={trainedToday} workoutStats={workoutStats}
+            setGuideLift={setGuideLift} startWorkout={startWorkout} trainedToday={trainedToday} history={history}
             currentWorkout={currentWorkout} handleToggleSet={handleToggleSet} handleOpenRepPicker={handleOpenRepPicker}
             handleUpdateActiveWeight={handleUpdateActiveWeight} handleUpdateActiveSetWeight={handleUpdateActiveSetWeight}
             finishWorkout={finishWorkout} setShowCancelModal={setShowCancelModal}

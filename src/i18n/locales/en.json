@@ -35,8 +35,6 @@
     "completeAllSets": "Complete all sets to finish",
     "alreadyTrained": "Already trained today. Rest until next session.",
     "trainedToday": "Trained today",
-    "weekProgress": "{{count}} of 3 workouts this week",
-    "weekProgress_other": "{{count}} of 3 workouts this week",
     "plannedLoad": "Planned load",
     "setHint": "Tap to log {{count}} reps. Long-press to set exact count.",
     "missedNote": "Missed reps: keep weight at {{weight}}kg next session",
@@ -63,7 +61,17 @@
     "rampSetLabel": "Set {{n}}",
     "rampTopSetLabel": "Set {{n}} · top set",
     "rampBackoffLabel": "Set {{n}} · back-off",
-    "missedNoteTopSet": "Missed reps: top set stays at current weight next week"
+    "missedNoteTopSet": "Missed reps: top set stays at current weight next week",
+    "weekCard": {
+      "moreThanLastWeek": "{{amount}} kg more than last week",
+      "lessThanLastWeek": "{{amount}} kg less than last week",
+      "sameAsLastWeek": "Same as last week",
+      "toggleAria": "Toggle this week's lift breakdown",
+      "liftedThisWeek": "Lifted this week",
+      "weekTotalVsLast": "{{amount}} kg · {{last}} kg last week",
+      "deloadChip": "Deload",
+      "holds": "Holds {{weight}} kg"
+    }
   },
   "program": {
     "title": "Program",

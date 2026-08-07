@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange, getExerciseRangeStats, getBig3Volume } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange, getExerciseRangeStats, getBig3Volume, getWeekDayStates, getWeekTonnageComparison, getLiftProgress, getWeekLiftBreakdown } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -492,5 +492,108 @@ describe('getBig3Volume', () => {
     ])];
     h[0].exercises[0].setWeights = [45];
     expect(getBig3Volume(h, 'All')).toBe(45 * 5 + 50 * 5);
+  });
+});
+
+describe('getWeekDayStates', () => {
+  it('marks a trained day and leaves every other day neutral', () => {
+    const mon = new Date(2026, 2, 9, 12); // Monday
+    const tue = new Date(mon); tue.setDate(tue.getDate() + 1);
+    const h = [session(tue.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const days = getWeekDayStates(h, mon);
+    expect(days).toHaveLength(7);
+    expect(days[1].trained).toBe(true);
+    expect(days.filter(d => d.trained)).toHaveLength(1);
+  });
+
+  it('gives today a dashed invitation state when not yet trained', () => {
+    const wed = new Date(2026, 2, 11, 12);
+    const days = getWeekDayStates([], wed);
+    expect(days[2].isToday).toBe(true);
+    expect(days[2].trained).toBe(false);
+    expect(days.filter(d => d.isToday)).toHaveLength(1);
+  });
+
+  it('today reads as trained (not the dashed state) once logged', () => {
+    const wed = new Date(2026, 2, 11, 12);
+    const h = [session(wed.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const days = getWeekDayStates(h, wed);
+    expect(days[2].isToday).toBe(true);
+    expect(days[2].trained).toBe(true);
+  });
+});
+
+describe('getWeekTonnageComparison', () => {
+  it('splits tonnage into this week vs last week and signs the delta', () => {
+    const wed = new Date(2026, 2, 11, 12);
+    const lastWeekWed = new Date(wed); lastWeekWed.setDate(lastWeekWed.getDate() - 7);
+    const h = [
+      session(wed.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]]), // 1250
+      session(lastWeekWed.toISOString(), 'A', [['squat', 40, [5, 5, 5, 5, 5]]]), // 1000
+    ];
+    const cmp = getWeekTonnageComparison(h, wed);
+    expect(cmp.thisWeek).toBe(1250);
+    expect(cmp.lastWeek).toBe(1000);
+    expect(cmp.delta).toBe(250);
+  });
+
+  it('returns zeros for a week with no sessions', () => {
+    const cmp = getWeekTonnageComparison([], new Date(2026, 2, 11, 12));
+    expect(cmp).toEqual({ thisWeek: 0, lastWeek: 0, delta: 0 });
+  });
+});
+
+describe('getLiftProgress', () => {
+  it('reports "up" with the before/after weights when the latest session increased', () => {
+    const h = [
+      session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+      session('2024-01-08', 'A', [['squat', 47.5, [5, 5, 5, 5, 5]]]),
+    ];
+    expect(getLiftProgress(h, 'squat')).toEqual({ status: 'up', from: 47.5, to: 50 });
+  });
+
+  it('reports "deload" when the latest session dropped the weight', () => {
+    const h = [
+      session('2024-01-15', 'A', [['squat', 45, [5, 5, 5, 5, 5]]]),
+      session('2024-01-08', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+    ];
+    expect(getLiftProgress(h, 'squat')).toEqual({ status: 'deload', from: 50, to: 45 });
+  });
+
+  it('reports "held" when the weight repeats after a missed rep', () => {
+    const h = [
+      session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 3, null]]]),
+      session('2024-01-08', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+    ];
+    expect(getLiftProgress(h, 'squat')).toEqual({ status: 'held', weight: 50 });
+  });
+
+  it('reports "flat" when the weight repeats with no miss', () => {
+    const h = [
+      session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+      session('2024-01-08', 'A', [['squat', 50, [5, 5, 5, 5, 5]]]),
+    ];
+    expect(getLiftProgress(h, 'squat')).toEqual({ status: 'flat', weight: 50 });
+  });
+
+  it('reports "first" with just the weight when there is only one occurrence', () => {
+    const h = [session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    expect(getLiftProgress(h, 'squat')).toEqual({ status: 'first', weight: 50 });
+  });
+
+  it('returns null when the lift was never trained', () => {
+    const h = [session('2024-01-15', 'A', [['bench', 40, [5, 5, 5, 5, 5]]])];
+    expect(getLiftProgress(h, 'squat')).toBeNull();
+  });
+});
+
+describe('getWeekLiftBreakdown', () => {
+  it('returns the Big-5 in program order, skipping lifts never trained', () => {
+    const h = [
+      session('2024-01-15', 'B', [['squat', 50, [5, 5, 5, 5, 5]], ['deadlift', 70, [5]]]),
+      session('2024-01-12', 'A', [['bench', 40, [5, 5, 5, 5, 5]]]),
+    ];
+    const breakdown = getWeekLiftBreakdown(h);
+    expect(breakdown.map(b => b.id)).toEqual(['squat', 'bench', 'deadlift']);
   });
 });

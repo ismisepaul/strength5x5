@@ -8,11 +8,12 @@ import WeightInput from '../components/WeightInput';
 import BarSetupDiagram from '../components/BarSetupDiagram';
 import PlateStrip from '../components/PlateStrip';
 import ExerciseCard from '../components/ExerciseCard';
+import WeekProgressCard from '../components/WeekProgressCard';
 
 const TrainScreen = ({
   isWorkoutActive, preset, getCurrentDay, program, weights, mcTop, mcInterval, mcPress, mcWeek, moodLabel,
   expandedBarSetup, setExpandedBarSetup, setWorkoutPicker, updateMcTop, handleUpdateIdleWeight, setGuideLift,
-  startWorkout, trainedToday, workoutStats,
+  startWorkout, trainedToday, history,
   currentWorkout, handleToggleSet, handleOpenRepPicker, handleUpdateActiveWeight, handleUpdateActiveSetWeight,
   finishWorkout, setShowCancelModal,
 }) => {
@@ -101,7 +102,8 @@ const TrainScreen = ({
             );
           })()}
           <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
-          <p className="text-meta text-center mt-3 text-ink/50">{trainedToday ? t('workout.alreadyTrained') : t('workout.weekProgress', { count: workoutStats.thisWeek })}</p>
+          {trainedToday && <p className="text-meta text-center mt-3 text-ink/50">{t('workout.alreadyTrained')}</p>}
+          <WeekProgressCard history={history} />
         </div>
       ) : (
         <div className="space-y-6">
