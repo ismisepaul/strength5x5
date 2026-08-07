@@ -8,13 +8,13 @@ const CSVImportModal = ({ pendingCSVImport, onImport, onCancel }) => {
   const { t } = useTranslation();
   return (
     <Modal ariaLabel="Confirm StrongLifts import" z={Z_CSV_IMPORT} cardClassName="max-w-sm p-6">
-      <h3 className="text-lg font-semibold mb-2">{t('modals.importData')}</h3>
+      <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-2">{t('modals.importData')}</h3>
       <p className="text-card leading-relaxed mb-6 text-ink/60">{t('modals.foundWorkouts', { count: pendingCSVImport.history.length })}</p>
       <div className="grid grid-cols-2 gap-2 mb-6">
         {EXPECTED_WEIGHT_KEYS.map(id => (
           <div key={id} className="p-3 rounded-lg text-left bg-surface-deep">
             <p className="text-meta uppercase leading-none mb-1 text-ink/62">{t('exercises.' + id)}</p>
-            <p className="text-card tabular-nums">{pendingCSVImport.weights[id]}kg</p>
+            <p className="font-display font-semibold text-card tabular-nums">{pendingCSVImport.weights[id]}kg</p>
           </div>
         ))}
       </div>

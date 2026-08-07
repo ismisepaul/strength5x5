@@ -82,7 +82,7 @@ const WeightInput = ({ value, increment = 2.5, min = 0, onChange, label, variant
               }
             }}
             aria-label={t(inputAriaKey, { name: label })}
-            className={`${width} text-center ${valueClass} font-medium tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] border-ink/26 focus:border-accent focus:outline-none`}
+            className={`${width} text-center ${valueClass} font-display font-semibold tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] border-ink/26 focus:border-accent focus:outline-none`}
           />
           <span className={`text-[13px] ${mutedClass}`}>kg</span>
         </div>

@@ -53,7 +53,7 @@ const EditEntryModal = ({
     >
     <div className="max-h-[75vh] overflow-y-auto">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold">{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
+        <h3 className="font-display font-semibold tracking-[-0.025em] text-lg">{isNewEntry ? t('modals.addWorkout') : t('modals.editWorkout')}</h3>
         <button onClick={handleClose} aria-label="Close edit modal" className="w-10 h-10 rounded-lg border flex items-center justify-center border-ink/26 text-ink"><X size={18} /></button>
       </div>
 
@@ -95,11 +95,11 @@ const EditEntryModal = ({
       <div className="space-y-3 mb-6">
         {editingEntry.session.exercises.map((ex, exIdx) => (
           <div key={ex.id} className="p-4 rounded-lg border bg-surface-deep border-ink/14">
-            <p className="text-body font-medium mb-3">{t('exercises.' + ex.id)}</p>
+            <p className="font-display font-semibold tracking-[-0.025em] text-body mb-3">{t('exercises.' + ex.id)}</p>
             <div className="flex justify-between items-center mb-3">
               <span className="text-meta uppercase text-ink/62">{t('modals.weightLabel')}</span>
               {entryProg.ramped ? (
-                <span className="text-card tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
+                <span className="font-display font-semibold text-card tabular-nums text-accent-300">{topWeightOf(ex)}kg</span>
               ) : (
                 <WeightInput
                   value={ex.weight}
@@ -121,10 +121,10 @@ const EditEntryModal = ({
                 {ex.setsCompleted.map((reps, setIdx) => {
                   const target = targetReps(ex, setIdx);
                   const stateClass = reps === null
-                    ? 'border border-ink/26 text-ink/62'
+                    ? 'border-2 border-ink/42 bg-ink/7 text-ink/85'
                     : reps === target
-                      ? 'border border-accent bg-accent-900 text-accent-300'
-                      : 'border border-dashed border-ink/50 bg-neutral-tint text-ink';
+                      ? 'border-2 border-accent bg-accent text-ground shadow-[0_0_0_3px_var(--color-accent-900)]'
+                      : 'border-2 border-dashed border-ink/50 bg-neutral-tint text-ink';
                   return (
                     <button
                       key={setIdx}
@@ -136,7 +136,7 @@ const EditEntryModal = ({
                       })}
                       aria-label={`Set ${setIdx + 1}: ${reps === null ? 'not done' : reps + ' reps'}`}
                       style={{ width: `calc((100% - ${6 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}
-                      className={`aspect-[1.35] rounded-[10px] flex items-center justify-center text-[13px] font-semibold active:scale-90 transition-transform ${stateClass}`}
+                      className={`font-display aspect-[1.35] rounded-[10px] flex items-center justify-center text-[13px] font-semibold tabular-nums active:scale-90 transition-transform ${stateClass}`}
                     >
                       {reps === null ? '–' : reps}
                     </button>

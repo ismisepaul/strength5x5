@@ -59,7 +59,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
         <div className={`flex justify-between ${isRamped ? 'items-start' : 'items-center'}`}>
           <div className="flex-1 min-w-0 pr-4">
             <div className="flex items-center gap-1.5 min-w-0">
-              <h3 className="font-semibold text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
+              <h3 className="font-display font-semibold tracking-[-0.025em] text-[17px] truncate">{t('exercises.' + ex.id)}</h3>
               <button
                 onClick={onOpenGuide}
                 aria-label={t('technique.openAria', { exercise: t('exercises.' + ex.id) })}
@@ -98,9 +98,9 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
           const passed = r !== null && r === target;
           const missed = r !== null && r < target;
           let stateClass;
-          if (passed) stateClass = 'border border-accent bg-accent-900 text-accent-300';
-          else if (missed) stateClass = 'border-[1.5px] border-dashed border-ink/50 bg-neutral-tint text-ink';
-          else stateClass = 'border border-ink/26 text-ink/62';
+          if (passed) stateClass = 'border-2 border-accent bg-accent text-ground shadow-[0_0_0_3px_var(--color-accent-900)]';
+          else if (missed) stateClass = 'border-2 border-dashed border-ink/50 bg-neutral-tint text-ink';
+          else stateClass = 'border-2 border-ink/42 bg-ink/7 text-ink/85';
           return (
             <div key={ri} className="flex flex-col items-center gap-1" style={{ width: `calc((100% - ${8 * (MAX_SETS - 1)}px) / ${MAX_SETS})` }}>
               <button
@@ -113,14 +113,14 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
                 aria-label={`Set ${ri + 1}${r !== null ? `, ${r} reps` : ''}`}
                 className={`relative w-full aspect-[1.35] rounded-[10px] flex items-center justify-center transition-all touch-manipulation active:scale-90 ${stateClass}`}
               >
-                <span className="text-[20px] font-semibold">{r !== null ? r : target}</span>
+                <span className="font-display text-[20px] font-semibold tabular-nums">{r !== null ? r : target}</span>
                 {missed && (
                   <span className="absolute -top-1 -right-1 w-[19px] h-[19px] rounded-full bg-neutral-tint flex items-center justify-center">
                     <X size={9} weight="bold" />
                   </span>
                 )}
               </button>
-              {isRamped && <span className={`text-kicker tabular-nums ${ri === topIndex ? 'font-semibold text-accent-300' : mutedClass}`}>{ex.setWeights[ri]}</span>}
+              {isRamped && <span className={`font-display text-kicker tabular-nums ${ri === topIndex ? 'font-semibold text-accent-300' : mutedClass}`}>{ex.setWeights[ri]}</span>}
             </div>
           );
         })}
@@ -162,19 +162,19 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
             const label = isTop ? t('workout.rampTopSetLabel', { n: i + 1 }) : isBackoff ? t('workout.rampBackoffLabel', { n: i + 1 }) : t('workout.rampSetLabel', { n: i + 1 });
             return (
               <div key={i} className={`flex justify-between text-[13px] tabular-nums ${isTop ? 'text-accent-300' : mutedClass}`}>
-                <span>{label}</span><span>{w} kg × {ex.setReps[i]}</span>
+                <span>{label}</span><span className="font-display font-semibold">{w} kg × {ex.setReps[i]}</span>
               </div>
             );
           }) : (
             <>
               <div className={`flex justify-between text-[13px] tabular-nums ${mutedClass}`}>
-                <span>{t('warmup.emptyBar')}</span><span>20 kg × 5</span>
+                <span>{t('warmup.emptyBar')}</span><span className="font-display font-semibold">20 kg × 5</span>
               </div>
               <div className={`flex justify-between text-[13px] tabular-nums ${mutedClass}`}>
-                <span>{t('warmup.prep')}</span><span>{prepWeight} kg × 3</span>
+                <span>{t('warmup.prep')}</span><span className="font-display font-semibold">{prepWeight} kg × 3</span>
               </div>
               <div className="flex justify-between text-[13px] tabular-nums text-accent-300">
-                <span>{t('warmup.workingWeight')}</span><span>{ex.weight} kg × {targetReps(ex, 0)}</span>
+                <span>{t('warmup.workingWeight')}</span><span className="font-display font-semibold">{ex.weight} kg × {targetReps(ex, 0)}</span>
               </div>
             </>
           )}

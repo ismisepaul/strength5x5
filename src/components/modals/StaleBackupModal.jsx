@@ -10,7 +10,7 @@ const StaleBackupModal = ({ backupCount, backupDate, localCount, lossCount, onRe
   const { t } = useTranslation();
   return (
     <Modal ariaLabel="Older backup warning" z={Z_TOP} cardClassName="max-w-sm p-6">
-      <h3 className="text-lg font-semibold mb-3">{t('modals.olderBackupTitle')}</h3>
+      <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-3">{t('modals.olderBackupTitle')}</h3>
       <p className="text-card leading-relaxed mb-6 text-ink/60">{t('modals.olderBackupBody', { backupCount, backupDate, localCount, lossCount })}</p>
       <button onClick={onRestoreAnyway} className="w-full h-12 flex items-center justify-center rounded-lg border border-accent text-accent-300 font-medium text-[14.5px] active:scale-95 mb-3">{t('modals.restoreAnyway')}</button>
       <button onClick={onCancel} className="text-card active:scale-90 text-ink/62">{t('modals.cancel')}</button>

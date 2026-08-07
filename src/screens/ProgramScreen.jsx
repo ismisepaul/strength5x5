@@ -15,7 +15,7 @@ const WEEK_SWIPE_THRESHOLD = 40;
 
 const Kicker = ({ children }) => (
   <div className="flex items-center gap-3">
-    <span className="text-tab font-semibold uppercase tracking-[0.14em] text-accent-300 shrink-0">{children}</span>
+    <span className="font-mono text-tab font-bold uppercase tracking-[0.14em] text-accent-300 shrink-0">{children}</span>
     <div className={`flex-1 h-px bg-gradient-to-r from-ink/15 to-transparent`} />
   </div>
 );
@@ -59,7 +59,7 @@ const RampBars = ({ ex, day }) => {
             className="flex flex-col items-center min-w-0"
             style={{ width: `calc((100% - ${RAMP_BAR_GAP * (columns - 1)}px) / ${columns})` }}
           >
-            <span className="text-kicker font-semibold text-accent-300 tabular-nums h-[13px] leading-[13px]">{reps !== 5 ? `×${reps}` : ''}</span>
+            <span className="font-display text-kicker font-semibold text-accent-300 tabular-nums h-[13px] leading-[13px]">{reps !== 5 ? `×${reps}` : ''}</span>
             <div
               role="img"
               aria-label={`${w} kg × ${reps}`}
@@ -70,7 +70,7 @@ const RampBars = ({ ex, day }) => {
                     : 'border border-accent/35'
               }`}
             />
-            <span className={`text-tab tabular-nums mt-1.5 leading-none ${isTop ? 'text-accent-300' : ('text-ink/50')}`}>{w}</span>
+            <span className={`font-display font-semibold text-tab tabular-nums mt-1.5 leading-none ${isTop ? 'text-accent-300' : ('text-ink/50')}`}>{w}</span>
           </div>
         );
       })}
@@ -114,7 +114,7 @@ const ProgramScreen = ({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center gap-3">
-        <h2 className="text-title font-medium">{t('program.title')}</h2>
+        <h2 className="font-display text-title font-semibold tracking-[-0.025em]">{t('program.title')}</h2>
         {showReset && (
           <button
             onClick={isMadcow ? onRecalculate : () => onChangeProgram(() => JSON.parse(JSON.stringify(DEFAULT_PROGRAM)))}
@@ -130,7 +130,7 @@ const ProgramScreen = ({
       >
         <Barbell weight="fill" size={20} className="text-accent-300 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[16px] truncate">{t(prog.nameKey)}</p>
+          <p className="font-display font-semibold tracking-[-0.025em] text-[16px] truncate">{t(prog.nameKey)}</p>
           <p className={`text-[12.5px] text-ink/78`}>{t(prog.subKey)}</p>
         </div>
         <span className="flex items-center gap-1 text-body text-accent-300 shrink-0">{t('program.strip.change')} <CaretRight size={14} /></span>
@@ -445,7 +445,7 @@ const ProgramScreen = ({
       {programSheet?.step === 'pick' && (
         <div role="dialog" aria-modal="true" aria-label={t('program.picker.title')} onClick={() => setProgramSheet(null)} className="fixed inset-0 z-[400] flex items-end justify-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
           <div onClick={e => e.stopPropagation()} className={`w-full max-w-md rounded-t-sheet pt-[22px] px-5 pb-6 bg-surface`}>
-            <h3 className="text-lg font-semibold mb-1">{t('program.picker.title')}</h3>
+            <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-1">{t('program.picker.title')}</h3>
             <p className={`text-body mb-5 ${mutedClass}`}>{t('program.picker.subtitle')}</p>
             <div className="space-y-3 mb-4">
               {PROGRAM_IDS.map(id => {
@@ -496,13 +496,13 @@ const ProgramScreen = ({
         return (
           <div role="dialog" aria-modal="true" aria-label={t(titleKey)} className="fixed inset-0 z-[450] flex items-center justify-center p-6 text-center backdrop-blur-sm bg-[rgba(15,16,25,.75)]">
             <div className={`w-full max-w-sm rounded-modal p-6 border bg-surface border-ink/14`}>
-              <h3 className="text-lg font-semibold mb-3">{t(titleKey)}</h3>
+              <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-3">{t(titleKey)}</h3>
               <p className={`text-card leading-relaxed mb-6 text-ink/60`}>{t(bodyKey, { week: mcWeek })}</p>
               <div className="space-y-2 mb-4 text-left">
                 {rowIds.map(id => (
                   <div key={id} className={`flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep`}>
                     <span className={`text-meta ${mutedClass}`}>{t('exercises.' + id)}</span>
-                    <span className="text-[14px] tabular-nums">
+                    <span className="font-display font-semibold text-[14px] tabular-nums">
                       {toMadcow
                         ? (resuming
                           ? t('program.confirm.topSetOnlyRow', { weight: previewTop[id] })

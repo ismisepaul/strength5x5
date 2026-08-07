@@ -35,12 +35,12 @@ const StatsScreen = ({
     <div className="space-y-6">
       {history.length === 0 ? (
         <div className="py-20 text-center px-10">
-          <h2 className="text-lg font-semibold mb-2">{t('stats.noStats')}</h2>
+          <h2 className="font-display font-semibold tracking-[-0.025em] text-lg mb-2">{t('stats.noStats')}</h2>
           <p className={`text-card leading-relaxed ${mutedClass}`}>{t('stats.noStatsBody')}</p>
         </div>
       ) : (
         <>
-          {!statsView && <h2 className="text-title font-medium mb-4">{t('stats.title')}</h2>}
+          {!statsView && <h2 className="font-display text-title font-semibold tracking-[-0.025em] mb-4">{t('stats.title')}</h2>}
           <Segmented
             options={STATS_RANGES.map(r => ({ label: r.label, val: r.label }))}
             value={range}
@@ -57,12 +57,12 @@ const StatsScreen = ({
                 return (
                   <button onClick={() => setStatsView('big3')} className="w-full p-4 rounded-[10px] border text-left active:scale-[0.98] transition-transform bg-surface border-ink/14">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300">{t('stats.big3Total')}</p>
+                      <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300">{t('stats.big3Total')}</p>
                       <CaretRight size={18} className={mutedClass} />
                     </div>
                     <div className="flex items-end justify-between gap-3 mb-4">
                       <div className="flex items-baseline gap-2 flex-wrap">
-                        <p className="text-hero font-medium tabular-nums">{big3Total}kg</p>
+                        <p className="font-display font-semibold text-hero tabular-nums">{big3Total}kg</p>
                         {big3Delta !== null && (
                           <>
                             <span className={`text-meta px-2 py-0.5 rounded-md whitespace-nowrap ${big3Delta === 0 ? mutedClass : 'text-accent-300 bg-accent-900'}`}>
@@ -80,7 +80,7 @@ const StatsScreen = ({
                       {BIG3_IDS.map(id => (
                         <div key={id} className="flex-1 min-w-0">
                           <p className={`text-tab uppercase tracking-wide truncate ${mutedClass}`}>{t('exercises.' + id)}</p>
-                          <p className="text-body font-medium tabular-nums">{weights[id]}kg</p>
+                          <p className="font-display font-semibold text-body tabular-nums">{weights[id]}kg</p>
                         </div>
                       ))}
                     </div>
@@ -104,7 +104,7 @@ const StatsScreen = ({
                   return (
                     <button key={id} onClick={() => setStatsView(id)} className={cardClass}>
                       <div className="min-w-0 pr-2 text-left">
-                        <p className="text-card font-medium truncate">{t('exercises.' + id)}</p>
+                        <p className="font-display font-semibold tracking-[-0.025em] text-card truncate">{t('exercises.' + id)}</p>
                         {hasData ? (
                           <p className={`text-meta leading-none mt-1 ${mutedClass}`}>{t('stats.est1rmValue', { value: best1RMs[id] || weights[id] })}</p>
                         ) : (
@@ -117,7 +117,7 @@ const StatsScreen = ({
                       <div className="flex items-center gap-3 shrink-0">
                         {rangedTimeline.length >= 2 && <Sparkline values={rangedTimeline.map(p => p.weight)} width={48} height={20} className="text-accent-300" />}
                         <div className="text-right">
-                          <p className="text-[17px] font-medium tabular-nums text-accent-300">{weights[id]}kg</p>
+                          <p className="font-display font-semibold text-[17px] tabular-nums text-accent-300">{weights[id]}kg</p>
                           {delta !== null && (
                             <>
                               <p className={`text-tab ${mutedClass}`}>{delta === 0 ? t('stats.held') : `${delta > 0 ? '+' : ''}${delta}kg`}</p>

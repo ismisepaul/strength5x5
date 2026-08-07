@@ -32,9 +32,9 @@ const TrainScreen = ({
             return (
               <>
                 <div className="mb-4">
-                  <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-1">{isMadcow ? t('workout.madcowKicker', { week: mcWeek }) : t('workout.standardKicker')}</p>
+                  <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-1">{isMadcow ? t('workout.madcowKicker', { week: mcWeek }) : t('workout.standardKicker')}</p>
                   <div className="flex items-center gap-[10px]">
-                    <h2 className="text-hero font-medium leading-tight">{t(`workout.type${day}`)}</h2>
+                    <h2 className="font-display text-hero font-semibold tracking-[-0.025em] leading-tight">{t(`workout.type${day}`)}</h2>
                     <button
                       onClick={() => setWorkoutPicker(true)}
                       aria-label={t('workout.chooseWorkoutAria')}
@@ -94,8 +94,8 @@ const TrainScreen = ({
                   );
                 })}</div>
                 <div className="flex justify-between items-baseline px-0.5 pb-3.5">
-                  <span className="text-kicker font-semibold uppercase tracking-[0.14em] text-ink/62">{t('workout.plannedLoad')}</span>
-                  <span className="text-[20px] font-medium tabular-nums text-accent-300">{plannedVolume(dayExercises).toLocaleString()} <span className="text-meta text-ink/62">kg</span></span>
+                  <span className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-ink/62">{t('workout.plannedLoad')}</span>
+                  <span className="font-display font-semibold text-[20px] tabular-nums text-accent-300">{plannedVolume(dayExercises).toLocaleString()} <span className="text-meta text-ink/62">kg</span></span>
                 </div>
               </>
             );
@@ -105,7 +105,7 @@ const TrainScreen = ({
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex justify-center mb-2"><h2 className="text-kicker font-semibold uppercase tracking-[0.14em] text-ink/62">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
+          <div className="flex justify-center mb-2"><h2 className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-ink/62">{currentWorkout ? t(`workout.type${currentWorkout.type}`) : ''}</h2></div>
           {(() => {
             const anySetLogged = currentWorkout?.exercises.some(ex => ex.setsCompleted.some(s => s !== null));
             return currentWorkout?.exercises.map((ex, exIdx) => (

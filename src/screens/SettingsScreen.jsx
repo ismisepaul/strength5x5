@@ -7,7 +7,7 @@ import Segmented from '../components/Segmented';
 import { formatBytes, countSessionsSince } from '../utils';
 
 const SectionHeader = ({ children }) => (
-  <p className="text-kicker font-semibold uppercase tracking-[0.14em] text-accent-300 mb-3">{children}</p>
+  <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-3">{children}</p>
 );
 
 // Connection state is carried by dot shape, not hue: filled = connected, hollow = never
@@ -33,7 +33,7 @@ const SettingsScreen = ({
 
   return (
     <div className="space-y-8">
-      <h2 className="text-title font-medium">{t('options.title')}</h2>
+      <h2 className="font-display text-title font-semibold tracking-[-0.025em]">{t('options.title')}</h2>
 
       {/* Session */}
       <div>

@@ -42,7 +42,7 @@ const ProgramEditor = ({ program, onChange }) => {
                 ariaLabel={`Decrease ${id} sets`}
                 icon={Minus}
               />
-              <span className="w-6 text-center text-[19px] tabular-nums">{sets}</span>
+              <span className="font-display font-semibold w-6 text-center text-[19px] tabular-nums">{sets}</span>
               <StepperButton
                 onClick={() => update(id, 'sets', 1, MIN_SETS, MAX_SETS)}
                 ariaLabel={`Increase ${id} sets`}
@@ -62,7 +62,7 @@ const ProgramEditor = ({ program, onChange }) => {
                 ariaLabel={`Decrease ${id} reps`}
                 icon={Minus}
               />
-              <span className="w-6 text-center text-[19px] tabular-nums">{reps}</span>
+              <span className="font-display font-semibold w-6 text-center text-[19px] tabular-nums">{reps}</span>
               <StepperButton
                 onClick={() => update(id, 'reps', 1, MIN_REPS, MAX_REPS)}
                 ariaLabel={`Increase ${id} reps`}

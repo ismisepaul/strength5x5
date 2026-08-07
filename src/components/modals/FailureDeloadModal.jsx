@@ -12,10 +12,10 @@ const FailureDeloadModal = ({ pendingFailureDeloads, deloadPercent, onDeloadPerc
   }));
   return (
     <Modal ariaLabel="Failure deload" z={Z_TOP} cardClassName="max-w-sm p-6">
-      <h3 className="text-lg font-semibold mb-3">{t('modals.failureDeloadTitle')}</h3>
+      <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-3">{t('modals.failureDeloadTitle')}</h3>
       <p className="text-card leading-relaxed mb-6 text-ink/60">{t('modals.failureDeloadMessage')}</p>
       <div className="mb-4">
-        <p className="text-title font-semibold mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
+        <p className="font-display text-title font-semibold tabular-nums mb-1">{t('modals.deloadPercent', { percent: deloadPercent })}</p>
         <p className="text-meta text-ink/62">{t('modals.deloadRecommended', { percent: 10 })}</p>
       </div>
       <input type="range" min={10} max={90} step={5} value={deloadPercent} onChange={e => onDeloadPercentChange(Number(e.target.value))} className="w-full mb-6 accent-accent" />
@@ -23,7 +23,7 @@ const FailureDeloadModal = ({ pendingFailureDeloads, deloadPercent, onDeloadPerc
         {previewDeloads.map(d => (
           <div key={d.id} className="flex justify-between items-center px-4 py-3 rounded-lg bg-surface-deep">
             <span className="text-meta uppercase text-ink/62">{t('exercises.' + d.id)}</span>
-            <span className="text-card tabular-nums">{d.currentWeight}kg <span className="text-accent mx-1">&rarr;</span> {d.newWeight}kg</span>
+            <span className="font-display font-semibold text-card tabular-nums">{d.currentWeight}kg <span className="text-accent mx-1">&rarr;</span> {d.newWeight}kg</span>
           </div>
         ))}
       </div>

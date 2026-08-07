@@ -7,7 +7,7 @@ const SyncConflictModal = ({ connectSyncPrompt, onUseDriveData, onUseLocalData, 
   const { t } = useTranslation();
   return (
     <Modal ariaLabel="Data conflict" z={Z_TOP} cardClassName="max-w-sm p-6">
-      <h3 className="text-lg font-semibold mb-3">{t('modals.dataConflictTitle')}</h3>
+      <h3 className="font-display font-semibold tracking-[-0.025em] text-lg mb-3">{t('modals.dataConflictTitle')}</h3>
       <p className="text-card leading-relaxed mb-6 text-ink/60">
         {t('modals.dataConflictBody', {
           driveCount: connectSyncPrompt.driveCount,
