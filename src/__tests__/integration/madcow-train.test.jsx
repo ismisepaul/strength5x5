@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY, ACTIVE_WORKOUT_KEY } from '../../constants';
+import { START_BUTTON, startWorkout } from '../helpers/train';
 
 beforeEach(() => {
   localStorage.clear();
@@ -60,7 +61,7 @@ describe('Train tab under Madcow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     // The top-of-ramp set (set 5) for squat should read its own weight beneath it.
     expect(squatCard().getByText('107.5')).toBeInTheDocument();
@@ -90,7 +91,7 @@ describe('Train tab under Madcow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     // Before anything is logged, the control tracks set 1 -- the lightest ramp rung --
     // not the top set.
@@ -126,7 +127,7 @@ describe('Train tab under Madcow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const firstSquatSet = squatCard().getAllByLabelText('Set 1')[0];
     // Cycle down from the target (5) to 4 reps -- a miss.
@@ -143,7 +144,7 @@ describe('Train tab under Madcow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     const active = JSON.parse(localStorage.getItem(ACTIVE_WORKOUT_KEY));
     const squat = active.session.exercises.find(e => e.id === 'squat');
     expect(Math.max(...squat.setWeights)).toBe(80); // rung 3 of a 107.5 ramp, per computeRampWeights
@@ -156,7 +157,7 @@ describe('Train tab under Madcow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     const active = JSON.parse(localStorage.getItem(ACTIVE_WORKOUT_KEY));
     const squat = active.session.exercises.find(e => e.id === 'squat');
     // 107.5 + 2.5 = 110, not 107.5 + 2.5 + 2.5 (the bug: double-counting the queued bump).
@@ -181,7 +182,7 @@ describe('Train tab under Madcow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     const setButtons = screen.getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
     for (const btn of setButtons) {
       await user.click(btn);

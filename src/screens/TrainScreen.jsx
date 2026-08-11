@@ -1,23 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CaretDown, Play, Info } from '@phosphor-icons/react';
+import { CaretDown, CaretRight, Play, Info, Barbell, Moon, CheckCircle } from '@phosphor-icons/react';
 import { INITIAL_WEIGHTS } from '../constants';
 import { getProgram, topWeightOf } from '../programs';
 import { plannedVolume } from '../utils';
+import { getWeekVerdict } from '../utils/chartData';
 import WeightInput from '../components/WeightInput';
 import BarSetupDiagram from '../components/BarSetupDiagram';
 import PlateStrip from '../components/PlateStrip';
 import ExerciseCard from '../components/ExerciseCard';
-import WeekProgressCard from '../components/WeekProgressCard';
+import WeekPips from '../components/WeekPips';
+import ExtraSessionModal from '../components/modals/ExtraSessionModal';
 
 const TrainScreen = ({
   isWorkoutActive, preset, getCurrentDay, program, weights, mcTop, mcInterval, mcPress, mcWeek, moodLabel,
   expandedBarSetup, setExpandedBarSetup, setWorkoutPicker, updateMcTop, handleUpdateIdleWeight, setGuideLift,
-  startWorkout, trainedToday, history,
+  startWorkout, trainedToday, history, onGoToLog,
   currentWorkout, handleToggleSet, handleOpenRepPicker, handleUpdateActiveWeight, handleUpdateActiveSetWeight,
   finishWorkout, setShowCancelModal,
 }) => {
   const { t } = useTranslation();
+  const [confirmExtra, setConfirmExtra] = useState(false);
+  const verdict = getWeekVerdict(history);
+  const verdictText = verdict.key === 'complete' ? t('workout.weekVerdict.complete')
+    : verdict.key === 'trainedToday' ? t('workout.weekVerdict.trainedToday')
+      : verdict.key === 'rest' ? t('workout.weekVerdict.rest')
+        : verdict.key === 'train' ? t('workout.weekVerdict.train', { weekday: verdict.weekday })
+          : t('workout.weekVerdict.first');
+  // "Train" and "week complete" are the two states worth calling out in accent -- one
+  // invites action, the other celebrates hitting the goal. "Rest" and "trained today"
+  // both mean nothing is due right now, so they share the same muted, moon-lit treatment.
+  const VerdictIcon = verdict.key === 'complete' ? CheckCircle : verdict.key === 'rest' ? Moon : verdict.key === 'trainedToday' ? CheckCircle : Barbell;
+  const verdictAccent = verdict.key === 'complete' || verdict.key === 'train' || verdict.key === 'first';
+  // Three button states, not two. Having already trained today is a hard stop -- one
+  // session per calendar day, so the button stays disabled. A rest day or an
+  // already-complete week are soft stops: nothing is due, but a fourth session (or one
+  // on a rest day) is yours to take, so the button still works and just drops out of
+  // accent into "Start anyway".
+  const startAnyway = !trainedToday && (verdict.key === 'complete' || verdict.key === 'rest');
 
   return (
     <div className="space-y-4">
@@ -101,9 +121,30 @@ const TrainScreen = ({
               </>
             );
           })()}
-          <button onClick={() => startWorkout()} disabled={trainedToday} className={`w-full h-[54px] rounded-lg border border-accent text-accent font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'opacity-35' : 'active:scale-[0.98]'}`}><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : t('workout.startWorkout')}</button>
+          <button
+            onClick={onGoToLog}
+            title={verdictText}
+            aria-label={t('workout.weekVerdict.aria', { verdict: verdictText, done: verdict.done })}
+            className={`w-full min-h-11 py-2.5 mb-3 flex items-center gap-2 border-y border-ink/9 ${verdictAccent ? 'text-accent-300' : 'text-ink/50'}`}
+          >
+            <VerdictIcon size={13} weight={verdictAccent ? 'fill' : 'regular'} className="shrink-0" />
+            <span className="font-mono text-kicker font-bold uppercase tracking-[0.14em] truncate">{verdictText}</span>
+            <WeekPips done={verdict.done} className="ml-auto shrink-0" />
+            <CaretRight size={13} className="text-ink/40 shrink-0" />
+          </button>
+          <button
+            onClick={() => startAnyway ? setConfirmExtra(true) : startWorkout()}
+            disabled={trainedToday}
+            className={`w-full h-[54px] rounded-lg border font-medium text-[16px] flex items-center justify-center gap-2 transition-opacity ${trainedToday ? 'border-accent text-accent opacity-35' : `active:scale-[0.98] ${startAnyway ? 'border-ink/26 text-ink/62' : 'border-accent text-accent'}`}`}
+          ><Play size={18} weight="fill" /> {trainedToday ? t('workout.trainedToday') : startAnyway ? t('workout.startAnyway') : t('workout.startWorkout')}</button>
           {trainedToday && <p className="text-meta text-center mt-3 text-ink/50">{t('workout.alreadyTrained')}</p>}
-          <WeekProgressCard history={history} />
+          {confirmExtra && (
+            <ExtraSessionModal
+              reason={verdict.key}
+              onCancel={() => setConfirmExtra(false)}
+              onStartAnyway={() => { setConfirmExtra(false); startWorkout(); }}
+            />
+          )}
         </div>
       ) : (
         <div className="space-y-6">

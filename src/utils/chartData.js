@@ -1,6 +1,5 @@
-import { calculate1RM, targetReps } from '../utils';
-import { topWeightOf } from '../programs';
-import { EXPECTED_WEIGHT_KEYS } from '../constants';
+import { calculate1RM, targetReps, roundWeight } from '../utils';
+import { topWeightOf, getProgram } from '../programs';
 
 function bestRepsFor(ex) {
   let best = 0;
@@ -261,11 +260,11 @@ export function getWorkoutStats(history, nowOverride) {
   return { streak, total, thisWeek, status };
 }
 
-// Mon-Sun day states for the Train screen's weekly progress card. A day reads 'trained'
-// once a session lands on that date; today gets a dashed accent state when it isn't
-// trained yet (an invitation to tap Start); every other day -- a past miss or one still
-// ahead -- reads as the same neutral notch, since the surface only distinguishes "done"
-// from "not done", not "why".
+// Mon-Sun day states for the Log week card. Every box reads off the day before it, per
+// the 5a rule: a session logged makes the next day 'rest' (dim), an untrained day whose
+// predecessor was also untrained is 'available' (a session you could still take), and a
+// trained day is 'trained' regardless of what came before it. `trained`/`isToday` are kept
+// alongside `state` for existing callers.
 export function getWeekDayStates(history, now = new Date()) {
   const trainedDates = new Set(history.map(s => localDateKey(s.date)));
   const todayKey = localDateKey(now);
@@ -274,12 +273,45 @@ export function getWeekDayStates(history, now = new Date()) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
     const dateKey = localDateKey(d);
+    const trained = trainedDates.has(dateKey);
+    const prevDay = new Date(d);
+    prevDay.setDate(prevDay.getDate() - 1);
+    const state = trained ? 'trained' : (trainedDates.has(localDateKey(prevDay)) ? 'rest' : 'available');
     return {
       label: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
-      trained: trainedDates.has(dateKey),
+      // The visible letter is ambiguous (Tue/Thu, Sat/Sun) and carries no state -- the
+      // accessible label needs the unabbreviated weekday alongside it.
+      fullLabel: d.toLocaleDateString(undefined, { weekday: 'long' }),
+      trained,
       isToday: dateKey === todayKey,
+      state,
     };
   });
+}
+
+// What the Train screen's verdict line should say about today, checked in this priority
+// order: a completed week wins even over "trained today" (so a bonus 4th session still
+// reads as "week complete"), which wins over yesterday's rest-day framing, which wins over
+// a plain invitation naming when you last trained.
+export function getWeekVerdict(history, now = new Date()) {
+  const stats = getWorkoutStats(history, now);
+  if (stats.thisWeek >= 3) return { key: 'complete', done: stats.thisWeek };
+
+  const todayKey = localDateKey(now);
+  if (history.some(s => localDateKey(s.date) === todayKey)) {
+    return { key: 'trainedToday', done: stats.thisWeek };
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = localDateKey(yesterday);
+  if (history.some(s => localDateKey(s.date) === yesterdayKey)) {
+    return { key: 'rest', done: stats.thisWeek };
+  }
+
+  if (history.length === 0) return { key: 'first', done: stats.thisWeek };
+  // history is newest-first (App.jsx prepends on finish), so [0] is the last session.
+  return { key: 'train', done: stats.thisWeek, weekday: new Date(history[0].date).toLocaleDateString(undefined, { weekday: 'long' }) };
 }
 
 // This week's and last week's total kg moved, and the signed difference between them --
@@ -302,41 +334,87 @@ export function getWeekTonnageComparison(history, now = new Date()) {
   return { thisWeek: Math.round(thisWeek), lastWeek: Math.round(lastWeek), delta: Math.round(thisWeek - lastWeek) };
 }
 
-// Where one lift stands right now: its most recent weight, what it was the occurrence
-// before that, and whether the latest session on it was a clean pass, a miss (held), or
-// a deload (drop). Walks history newest-first, same direction as getExerciseTrend, but
-// returns the weights and miss state the weekly card's dropdown needs rather than just
-// a direction.
-export function getLiftProgress(history, liftId) {
-  let current = null;
-  let previous = null;
-
+// The most recent logged occurrence(s) of a lift -- up to two, newest first. Shared by
+// getLiftProgress (which wants both: the latest and the one before it) and
+// getWeekLiftProjection (which only wants the latest, since its baseline is the live
+// program weight, not a second logged session).
+function findLoggedOccurrences(history, liftId) {
+  const found = [];
   for (const session of history) {
     const ex = session.exercises.find(e => e.id === liftId);
     if (!ex) continue;
-    const weight = topWeightOf(ex);
-    if (current === null) {
-      const hadMiss = ex.setsCompleted.some((r, i) => r !== null && r < targetReps(ex, i));
-      current = { weight, hadMiss };
-    } else {
-      previous = weight;
-      break;
-    }
+    found.push({
+      weight: topWeightOf(ex),
+      hadMiss: ex.setsCompleted.some((r, i) => r !== null && r < targetReps(ex, i)),
+    });
+    if (found.length === 2) break;
   }
+  return found;
+}
 
-  if (current === null) return null;
-  if (previous === null) return { status: 'first', weight: current.weight };
-  if (current.weight > previous) return { status: 'up', from: previous, to: current.weight };
-  if (current.weight < previous) return { status: 'deload', from: previous, to: current.weight };
+// Where one lift stood as of its last two logged sessions: its most recent weight, what
+// it was the occurrence before that, and whether the latest session was a clean pass, a
+// miss (held), or a deload (drop). Retrospective -- for "where it's headed this week",
+// see getWeekLiftProjection, which uses the live program weight instead.
+export function getLiftProgress(history, liftId) {
+  const [current, previous] = findLoggedOccurrences(history, liftId);
+  if (!current) return null;
+  if (!previous) return { status: 'first', weight: current.weight };
+  if (current.weight > previous.weight) return { status: 'up', from: previous.weight, to: current.weight };
+  if (current.weight < previous.weight) return { status: 'deload', from: previous.weight, to: current.weight };
   return { status: current.hadMiss ? 'held' : 'flat', weight: current.weight };
 }
 
-// The Big-5 in program order, each paired with its current progress -- lifts never
-// trained yet are left out rather than shown with placeholder data.
-export function getWeekLiftBreakdown(history) {
-  return EXPECTED_WEIGHT_KEYS
-    .map(id => ({ id, progress: getLiftProgress(history, id) }))
-    .filter(({ progress }) => progress !== null);
+// The day-letter sequence for a program's still-to-come sessions this week, cycling
+// `prog.days` the same way both programs actually advance (Standard flips A/B on finish,
+// Madcow cycles A/B/C -- see App.jsx's finishWorkout) so this doesn't duplicate either
+// program's own turn-taking logic.
+export function getRemainingSessionLiftIds(history, presetId, startDay, programState, now = new Date()) {
+  const prog = getProgram(presetId);
+  const remaining = Math.max(0, 3 - getWorkoutStats(history, now).thisWeek);
+  const days = [];
+  let day = startDay;
+  for (let i = 0; i < remaining; i++) {
+    days.push(day);
+    day = prog.days[(prog.days.indexOf(day) + 1) % prog.days.length];
+  }
+  return days.map(d => prog.liftIds(d, programState));
+}
+
+// Each of the caller-supplied lift ids (see programAllLiftIds, which resolves Madcow's
+// press slot -- this never hard-codes a fixed Big-5), paired with where it actually
+// stands right now. The baseline is the *live* program weight (`weights[id]` --
+// Standard's working weight, or Madcow's current top set), never the last logged
+// session: history is one increment (or one weekly rollover) stale the moment a session
+// finishes, and Madcow's day-to-day set weights vary by design (day B's squat rungs
+// below its own top set), so comparing two logged sessions would misread an ordinary
+// recovery day as a deload.
+//
+// Madcow's top set only moves at the weekly rollover, so within a week it doesn't climb
+// at all -- every Madcow row is a flat current top set, never a projection. Standard
+// rows project forward: `live + increment x n`, where `n` is how many of the week's
+// remaining sessions (see getRemainingSessionLiftIds) still touch that lift. A lift with
+// no sessions left this week, or one that was never logged, falls back to (or omits, if
+// never logged) a plain current-weight display.
+export function getWeekLiftProjection(history, { liftIds = [], weights = {}, remainingSessionLiftIds = [], ramped = false, increments = {} } = {}) {
+  return liftIds
+    .map(id => {
+      const [latest] = findLoggedOccurrences(history, id);
+      if (!latest) return null;
+      const live = weights[id];
+      if (typeof live !== 'number') return null;
+
+      if (ramped) return { id, progress: { status: 'flat', weight: live } };
+      if (live < latest.weight) return { id, progress: { status: 'deload', from: latest.weight, to: live } };
+      if (latest.hadMiss) return { id, progress: { status: 'held', weight: live } };
+
+      const sessions = remainingSessionLiftIds.reduce((n, ids) => n + (ids.includes(id) ? 1 : 0), 0);
+      if (sessions === 0) return { id, progress: { status: 'flat', weight: live } };
+
+      const increment = increments[id] ?? 2.5;
+      return { id, progress: { status: 'up', from: latest.weight, to: roundWeight(live + increment * sessions, increment) } };
+    })
+    .filter(Boolean);
 }
 
 export function groupHistory(history, mode, skip = 0) {

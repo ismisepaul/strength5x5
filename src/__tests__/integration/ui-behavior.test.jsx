@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
+import { START_BUTTON, startWorkout } from '../helpers/train';
 
 const workoutData = {
   version: 1,
@@ -29,7 +30,7 @@ describe('Skip button behavior', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -51,7 +52,7 @@ describe('Skip button behavior', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -77,7 +78,7 @@ describe('Tab bar during an active workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     expect(screen.getByLabelText('Train')).toBeInTheDocument();
     expect(screen.getByLabelText('Program')).toBeInTheDocument();
@@ -92,7 +93,7 @@ describe('Tab bar during an active workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     await user.click(screen.getByLabelText('Log'));
 
     expect(screen.getByRole('heading', { name: 'Log' })).toBeInTheDocument();
@@ -101,7 +102,7 @@ describe('Tab bar during an active workout', () => {
     await user.click(screen.getByLabelText('Train'));
 
     expect(screen.queryByRole('heading', { name: 'Log' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Start workout')).not.toBeInTheDocument();
+    expect(screen.queryByText(START_BUTTON)).not.toBeInTheDocument();
     expect(screen.getByText('Finish workout')).toBeInTheDocument();
   });
 
@@ -110,7 +111,7 @@ describe('Tab bar during an active workout', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -138,7 +139,7 @@ describe('Live Workout bar', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     await user.click(screen.getByLabelText('Log'));
 
     expect(screen.getByText('Workout in progress')).toBeInTheDocument();
@@ -150,7 +151,7 @@ describe('Live Workout bar', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     await user.click(screen.getByLabelText('Log'));
 
     await user.click(screen.getByText('Return'));
@@ -594,11 +595,11 @@ describe('Same-day workout prevention', () => {
     expect(screen.getByText('Already trained today. Rest until next session.')).toBeInTheDocument();
   });
 
-  it('enables Start Workout when no workout exists for today', () => {
+  it('offers an enabled "Start anyway" on a rest day, when the last workout was yesterday', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithYesterday));
     render(<App />);
 
-    const btn = screen.getByText('Start workout').closest('button');
+    const btn = screen.getByText('Start anyway').closest('button');
     expect(btn).not.toBeDisabled();
     expect(screen.queryByText('Already trained today. Rest until next session.')).not.toBeInTheDocument();
   });

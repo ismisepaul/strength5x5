@@ -3,6 +3,7 @@ import { render, screen, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY, ACTIVE_WORKOUT_KEY } from '../../constants';
+import { START_BUTTON, startWorkout } from '../helpers/train';
 
 beforeEach(() => {
   localStorage.clear();
@@ -105,7 +106,7 @@ describe('Switching to Madcow', () => {
 
     await switchToMadcow(user);
     await user.click(screen.getByLabelText('Train'));
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const active = JSON.parse(localStorage.getItem(ACTIVE_WORKOUT_KEY));
     expect(active.session.type).toBe('A');

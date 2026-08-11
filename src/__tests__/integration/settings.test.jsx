@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
+import { START_BUTTON, startWorkout } from '../helpers/train';
 
 beforeEach(() => {
   localStorage.clear();
@@ -89,7 +90,7 @@ describe('Settings', () => {
     expect(screen.getByText('Rest interval')).toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Train'));
-    expect(screen.getByText('Start workout')).toBeInTheDocument();
+    expect(screen.getByText(START_BUTTON)).toBeInTheDocument();
   });
 });
 
@@ -113,7 +114,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.getByText('Deload Recommended')).toBeInTheDocument();
     expect(screen.getByRole('slider')).toBeInTheDocument();
     expect(screen.getByText('Accept & Lift')).toBeInTheDocument();
@@ -139,7 +140,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     await user.click(screen.getByText('Skip Deload'));
 
     expect(screen.getByDisplayValue('60')).toBeInTheDocument();
@@ -164,7 +165,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     await user.click(screen.getByText('Accept & Lift'));
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -190,7 +191,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.getByText('Recommended: 50%')).toBeInTheDocument();
   });
 
@@ -213,7 +214,7 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     const dialog = screen.getByRole('dialog', { name: 'Deload recommendation' });
     expect(within(dialog).getByText(/100kg/)).toBeInTheDocument();
     expect(within(dialog).getByText(/90kg/)).toBeInTheDocument();
@@ -238,13 +239,13 @@ describe('Deload', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     await user.click(screen.getByText('Accept & Lift'));
 
     await user.click(screen.getByText('Discard workout'));
     await user.click(screen.getByText('Yes, discard'));
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.queryByText('Deload Recommended')).not.toBeInTheDocument();
     expect(screen.getByText('Finish workout')).toBeInTheDocument();
   });
@@ -293,7 +294,7 @@ describe('Deload', () => {
     expect(screen.queryByText('Deload Needed')).not.toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Train'));
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.getByText('Deload Needed')).toBeInTheDocument();
   });
 });
