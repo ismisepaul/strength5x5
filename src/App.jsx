@@ -683,7 +683,7 @@ const App = () => {
 
         {activeTab === 'history' && (
           <LogScreen
-            history={history} preset={preset} program={program} weights={weights}
+            history={history} preset={preset} program={program} weights={displayWeights}
             mcTop={mcTop} mcInterval={mcInterval} mcPress={mcPress}
             getCurrentDay={getCurrentDay} setEditingEntry={setEditingEntry} setDeletingEntry={setDeletingEntry}
             logGrouping={logGrouping} setLogGrouping={setLogGrouping}

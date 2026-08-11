@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, CaretDown, CaretRight, PencilSimple, Trash, Flame } from '@phosphor-icons/react';
 import { formatDuration, targetReps } from '../utils';
 import { MAX_SETS } from '../constants';
-import { getProgram } from '../programs';
+import { getProgram, programAllLiftIds } from '../programs';
 import { getWorkoutStats, getRemainingSessionLiftIds, groupHistory, sessionTonnage, monthlySessionCounts } from '../utils/chartData';
 import Segmented from '../components/Segmented';
 import WeekProgressCard from '../components/WeekProgressCard';
@@ -105,15 +105,15 @@ const LogScreen = ({
   );
   const stats = getWorkoutStats(history);
   const prog = getProgram(preset);
-  const remainingSessionLiftIds = getRemainingSessionLiftIds(
-    history, preset, getCurrentDay(prog.id), { program, weights, mcTop, mcInterval, mcPress },
-  );
+  const programState = { program, weights, mcTop, mcInterval, mcPress };
+  const remainingSessionLiftIds = getRemainingSessionLiftIds(history, preset, getCurrentDay(prog.id), programState);
+  const liftIds = programAllLiftIds(preset, programState);
 
   // Defaults to whatever program/day you're actually on -- the modal lets
   // you pick a different program and day before saving.
   const handleAddWorkout = () => {
     const day = getCurrentDay(prog.id);
-    const exercises = prog.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
+    const exercises = prog.dayExercises(day, programState)
       .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
     setEditingEntry({ index: -1, session: { date: new Date().toISOString(), type: day, preset: prog.id, exercises } });
   };
@@ -138,7 +138,10 @@ const LogScreen = ({
         <span aria-hidden="true">·</span>
         <span>{t('log.sessionCount', { count: stats.total })}</span>
       </div>
-      <WeekProgressCard history={history} remainingSessionLiftIds={remainingSessionLiftIds} ramped={prog.ramped} increments={prog.increments} />
+      <WeekProgressCard
+        history={history} liftIds={liftIds} weights={weights}
+        remainingSessionLiftIds={remainingSessionLiftIds} ramped={prog.ramped} increments={prog.increments}
+      />
 
       {history.length > 0 && (
         <Segmented

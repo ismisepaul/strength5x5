@@ -277,7 +277,8 @@
         "todayTrain": "Aujourd'hui · jour d'entraînement",
         "todayRest": "Aujourd'hui · repos, entraîné hier",
         "todayComplete": "Aujourd'hui · semaine terminée",
-        "available": "Disponible"
+        "available": "Disponible",
+        "aria": "{{day}} : {{state}}"
       }
     }
   },
@@ -399,7 +400,7 @@
     "clearSet": "Effacer la série",
     "extraSessionTitle": "S'entraîner quand même ?",
     "extraSessionRestBody": "Vous vous êtes entraîné hier. C'est pendant le jour de repos entre deux séances que la force se construit, et s'entraîner malgré tout coûte souvent la séance suivante.",
-    "extraSessionCompleteBody": "Vous avez déjà trois séances cette semaine. Une quatrième ajoute de la fatigue sans ajouter de progression, et les poids augmentent de toute façon comme prévu.",
+    "extraSessionCompleteBody": "Vous avez déjà trois séances cette semaine. Une quatrième ajoute de la fatigue à récupérer, et c'est le repos qui transforme vraiment les trois dernières en force.",
     "extraSessionRest": "Se reposer plutôt"
   },
   "completion": {

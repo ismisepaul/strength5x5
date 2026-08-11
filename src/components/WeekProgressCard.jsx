@@ -18,14 +18,14 @@ const DAY_STATE_CLASS = {
 // Big-5 lift's forward projection for the week, and tonnage banked vs last week. Train
 // keeps only the verdict line + <WeekPips> -- this card is where "which days, which
 // lifts, how much" actually lives.
-const WeekProgressCard = ({ history, remainingSessionLiftIds, ramped, increments }) => {
+const WeekProgressCard = ({ history, liftIds, weights, remainingSessionLiftIds, ramped, increments }) => {
   const { t } = useTranslation();
 
   const days = getWeekDayStates(history);
   const done = getWorkoutStats(history).thisWeek;
   const weekDone = done >= 3;
   const { thisWeek, delta } = getWeekTonnageComparison(history);
-  const lifts = getWeekLiftProjection(history, { remainingSessionLiftIds, ramped, increments });
+  const lifts = getWeekLiftProjection(history, { liftIds, weights, remainingSessionLiftIds, ramped, increments });
 
   const dayStateKey = (d) => {
     if (d.trained) return 'trained';
@@ -62,8 +62,15 @@ const WeekProgressCard = ({ history, remainingSessionLiftIds, ramped, increments
       <div className="flex gap-[5px]">
         {days.map((d, i) => {
           const key = dayStateKey(d);
+          const stateLabel = t(dayLabelKey(d, key));
           return (
-            <span key={i} title={t(dayLabelKey(d, key))} aria-label={t(dayLabelKey(d, key))} className={`${DAY_BOX} ${DAY_STATE_CLASS[key]}`}>
+            <span
+              key={i}
+              role="img"
+              title={stateLabel}
+              aria-label={t('log.weekCard.day.aria', { day: d.fullLabel, state: stateLabel })}
+              className={`${DAY_BOX} ${DAY_STATE_CLASS[key]}`}
+            >
               {d.label}
             </span>
           );

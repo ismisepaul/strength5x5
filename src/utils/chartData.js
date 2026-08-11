@@ -1,6 +1,5 @@
 import { calculate1RM, targetReps, roundWeight } from '../utils';
 import { topWeightOf, getProgram } from '../programs';
-import { EXPECTED_WEIGHT_KEYS } from '../constants';
 
 function bestRepsFor(ex) {
   let best = 0;
@@ -280,6 +279,9 @@ export function getWeekDayStates(history, now = new Date()) {
     const state = trained ? 'trained' : (trainedDates.has(localDateKey(prevDay)) ? 'rest' : 'available');
     return {
       label: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
+      // The visible letter is ambiguous (Tue/Thu, Sat/Sun) and carries no state -- the
+      // accessible label needs the unabbreviated weekday alongside it.
+      fullLabel: d.toLocaleDateString(undefined, { weekday: 'long' }),
       trained,
       isToday: dateKey === todayKey,
       state,
@@ -332,32 +334,34 @@ export function getWeekTonnageComparison(history, now = new Date()) {
   return { thisWeek: Math.round(thisWeek), lastWeek: Math.round(lastWeek), delta: Math.round(thisWeek - lastWeek) };
 }
 
-// Where one lift stands right now: its most recent weight, what it was the occurrence
-// before that, and whether the latest session on it was a clean pass, a miss (held), or
-// a deload (drop). Walks history newest-first, same direction as getExerciseTrend, but
-// returns the weights and miss state the weekly card's dropdown needs rather than just
-// a direction.
-export function getLiftProgress(history, liftId) {
-  let current = null;
-  let previous = null;
-
+// The most recent logged occurrence(s) of a lift -- up to two, newest first. Shared by
+// getLiftProgress (which wants both: the latest and the one before it) and
+// getWeekLiftProjection (which only wants the latest, since its baseline is the live
+// program weight, not a second logged session).
+function findLoggedOccurrences(history, liftId) {
+  const found = [];
   for (const session of history) {
     const ex = session.exercises.find(e => e.id === liftId);
     if (!ex) continue;
-    const weight = topWeightOf(ex);
-    if (current === null) {
-      const hadMiss = ex.setsCompleted.some((r, i) => r !== null && r < targetReps(ex, i));
-      current = { weight, hadMiss };
-    } else {
-      previous = weight;
-      break;
-    }
+    found.push({
+      weight: topWeightOf(ex),
+      hadMiss: ex.setsCompleted.some((r, i) => r !== null && r < targetReps(ex, i)),
+    });
+    if (found.length === 2) break;
   }
+  return found;
+}
 
-  if (current === null) return null;
-  if (previous === null) return { status: 'first', weight: current.weight };
-  if (current.weight > previous) return { status: 'up', from: previous, to: current.weight };
-  if (current.weight < previous) return { status: 'deload', from: previous, to: current.weight };
+// Where one lift stood as of its last two logged sessions: its most recent weight, what
+// it was the occurrence before that, and whether the latest session was a clean pass, a
+// miss (held), or a deload (drop). Retrospective -- for "where it's headed this week",
+// see getWeekLiftProjection, which uses the live program weight instead.
+export function getLiftProgress(history, liftId) {
+  const [current, previous] = findLoggedOccurrences(history, liftId);
+  if (!current) return null;
+  if (!previous) return { status: 'first', weight: current.weight };
+  if (current.weight > previous.weight) return { status: 'up', from: previous.weight, to: current.weight };
+  if (current.weight < previous.weight) return { status: 'deload', from: previous.weight, to: current.weight };
   return { status: current.hadMiss ? 'held' : 'flat', weight: current.weight };
 }
 
@@ -377,27 +381,38 @@ export function getRemainingSessionLiftIds(history, presetId, startDay, programS
   return days.map(d => prog.liftIds(d, programState));
 }
 
-// The Big-5 in program order, each paired with where it's headed by the end of the week --
-// "owed", not "banked". A held (missed) or deloaded lift isn't projected forward, since
-// there's nothing to promise; everything else gets `current + increment x n`, where `n` is
-// how many of the week's remaining sessions (from getRemainingSessionLiftIds) still touch
-// that lift. Madcow's top-set progression is weekly, not per-session, so `n` never exceeds
-// 1 there regardless of how many sessions remain. A lift with no sessions left this week
-// falls back to a plain current-weight display, same as the never-progressed case.
-export function getWeekLiftProjection(history, { remainingSessionLiftIds = [], ramped = false, increments = {} } = {}) {
-  return EXPECTED_WEIGHT_KEYS
+// Each of the caller-supplied lift ids (see programAllLiftIds, which resolves Madcow's
+// press slot -- this never hard-codes a fixed Big-5), paired with where it actually
+// stands right now. The baseline is the *live* program weight (`weights[id]` --
+// Standard's working weight, or Madcow's current top set), never the last logged
+// session: history is one increment (or one weekly rollover) stale the moment a session
+// finishes, and Madcow's day-to-day set weights vary by design (day B's squat rungs
+// below its own top set), so comparing two logged sessions would misread an ordinary
+// recovery day as a deload.
+//
+// Madcow's top set only moves at the weekly rollover, so within a week it doesn't climb
+// at all -- every Madcow row is a flat current top set, never a projection. Standard
+// rows project forward: `live + increment x n`, where `n` is how many of the week's
+// remaining sessions (see getRemainingSessionLiftIds) still touch that lift. A lift with
+// no sessions left this week, or one that was never logged, falls back to (or omits, if
+// never logged) a plain current-weight display.
+export function getWeekLiftProjection(history, { liftIds = [], weights = {}, remainingSessionLiftIds = [], ramped = false, increments = {} } = {}) {
+  return liftIds
     .map(id => {
-      const progress = getLiftProgress(history, id);
-      if (!progress) return null;
-      if (progress.status === 'held' || progress.status === 'deload') return { id, progress };
+      const [latest] = findLoggedOccurrences(history, id);
+      if (!latest) return null;
+      const live = weights[id];
+      if (typeof live !== 'number') return null;
 
-      const current = progress.status === 'up' ? progress.to : progress.weight;
-      let sessions = remainingSessionLiftIds.reduce((n, ids) => n + (ids.includes(id) ? 1 : 0), 0);
-      if (ramped) sessions = Math.min(sessions, 1);
-      if (sessions === 0) return { id, progress: { status: 'flat', weight: current } };
+      if (ramped) return { id, progress: { status: 'flat', weight: live } };
+      if (live < latest.weight) return { id, progress: { status: 'deload', from: latest.weight, to: live } };
+      if (latest.hadMiss) return { id, progress: { status: 'held', weight: live } };
+
+      const sessions = remainingSessionLiftIds.reduce((n, ids) => n + (ids.includes(id) ? 1 : 0), 0);
+      if (sessions === 0) return { id, progress: { status: 'flat', weight: live } };
 
       const increment = increments[id] ?? 2.5;
-      return { id, progress: { status: 'up', from: current, to: roundWeight(current + increment * sessions, increment) } };
+      return { id, progress: { status: 'up', from: latest.weight, to: roundWeight(live + increment * sessions, increment) } };
     })
     .filter(Boolean);
 }

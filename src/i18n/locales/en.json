@@ -277,7 +277,8 @@
         "todayTrain": "Today · train day",
         "todayRest": "Today · rest, you trained yesterday",
         "todayComplete": "Today · week complete",
-        "available": "Available"
+        "available": "Available",
+        "aria": "{{day}}: {{state}}"
       }
     }
   },
@@ -399,7 +400,7 @@
     "clearSet": "Clear set",
     "extraSessionTitle": "Train anyway?",
     "extraSessionRestBody": "You trained yesterday. A rest day between sessions is where the strength is actually built, and training through it tends to cost you the next session.",
-    "extraSessionCompleteBody": "You've already banked three sessions this week. A fourth adds fatigue without adding progression, and the weights still go up on schedule either way.",
+    "extraSessionCompleteBody": "You've already banked three sessions this week. A fourth is more fatigue to recover from, and rest is where the last three actually turn into strength.",
     "extraSessionRest": "Rest instead"
   },
   "completion": {

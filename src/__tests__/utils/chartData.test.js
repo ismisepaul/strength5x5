@@ -681,55 +681,84 @@ describe('getRemainingSessionLiftIds', () => {
 });
 
 describe('getWeekLiftProjection', () => {
-  it('returns the Big-5 in program order, skipping lifts never trained', () => {
+  // The baseline is always the *live* program weight (weights[id]), never the last
+  // logged session -- history is one increment stale the moment a session finishes.
+  // These fixtures set weights one increment ahead of what's logged, the way the app
+  // actually leaves things right after a passing Standard session.
+
+  it('returns a row per requested lift id, in the order given, skipping lifts never logged', () => {
     const h = [
       session('2024-01-15', 'B', [['squat', 50, [5, 5, 5, 5, 5]], ['deadlift', 70, [5]]]),
       session('2024-01-12', 'A', [['bench', 40, [5, 5, 5, 5, 5]]]),
     ];
-    const rows = getWeekLiftProjection(h, { remainingSessionLiftIds: [] });
+    const weights = { squat: 52.5, bench: 42.5, deadlift: 75, press: 30 };
+    const rows = getWeekLiftProjection(h, { liftIds: ['squat', 'bench', 'deadlift', 'press'], weights, remainingSessionLiftIds: [] });
+    // 'press' was never logged, so it's omitted even though it's in liftIds and weights.
     expect(rows.map(r => r.id)).toEqual(['squat', 'bench', 'deadlift']);
   });
 
-  it('projects a clean lift forward by one increment per remaining session it appears in', () => {
+  it('omits a lift with no entry in the live weights map, even if it was logged', () => {
+    const h = [session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const rows = getWeekLiftProjection(h, { liftIds: ['squat'], weights: {}, remainingSessionLiftIds: [] });
+    expect(rows).toEqual([]);
+  });
+
+  it('projects a clean lift forward from the live weight, one increment per remaining session it appears in', () => {
     const h = [session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
     const rows = getWeekLiftProjection(h, {
+      liftIds: ['squat'], weights: { squat: 52.5 },
       remainingSessionLiftIds: [['squat', 'bench'], ['squat', 'press']],
       increments: { squat: 2.5 },
     });
-    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'up', from: 50, to: 55 });
+    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'up', from: 50, to: 57.5 });
   });
 
-  it('caps the projection at one increment for a ramped program regardless of sessions left', () => {
-    const h = [session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+  it('shows a flat current top set for a ramped program, never a projection', () => {
+    const h = [session('2024-01-15', 'A', [['squat', 85, [5, 5, 5, 5, 5]]])];
     const rows = getWeekLiftProjection(h, {
-      remainingSessionLiftIds: [['squat'], ['squat'], ['squat']],
-      ramped: true,
-      increments: { squat: 2.5 },
+      liftIds: ['squat'], weights: { squat: 90 },
+      remainingSessionLiftIds: [['squat'], ['squat']],
+      ramped: true, increments: { squat: 2.5 },
     });
-    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'up', from: 50, to: 52.5 });
+    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'flat', weight: 90 });
   });
 
-  it('leaves a held (missed) lift exactly as getLiftProgress reports it, never projected', () => {
+  it('does not mistake Madcow day B\'s lighter squat rung for a deload', () => {
+    // Day A logs squat at its top set (90); day B logs the same week's squat at a
+    // deliberately lighter recovery rung (80) -- see buildMadcowLiftPlan. The live top
+    // set (mirrored into weights via mcTop) hasn't moved, so this must read as flat,
+    // not as a drop from 90 to 80.
     const h = [
-      session('2024-01-15', 'A', [['press', 30, [5, 5, 5, 3, null]]]),
-      session('2024-01-08', 'A', [['press', 30, [5, 5, 5, 5, 5]]]),
+      session('2024-01-15', 'B', [['squat', 80, [5, 5, 5, 5]]]),
+      session('2024-01-13', 'A', [['squat', 90, [5, 5, 5, 5, 5]]]),
     ];
-    const rows = getWeekLiftProjection(h, { remainingSessionLiftIds: [['press']], increments: { press: 2.5 } });
-    expect(rows.find(r => r.id === 'press').progress).toEqual({ status: 'held', weight: 30 });
+    const rows = getWeekLiftProjection(h, {
+      liftIds: ['squat'], weights: { squat: 90 }, remainingSessionLiftIds: [], ramped: true,
+    });
+    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'flat', weight: 90 });
   });
 
-  it('leaves a deloaded lift exactly as getLiftProgress reports it, never projected', () => {
+  it('reports "held" from the latest logged session\'s own miss flag, not from comparing two sessions', () => {
+    // A lift that rose from 47.5 to 50 and then missed at 50 -- the naive "current >
+    // previous" comparison across the two logged sessions reads this as 'up', which is
+    // wrong: the miss means the weight holds at 50, it does not project further.
     const h = [
-      session('2024-01-15', 'A', [['deadlift', 77.5, [5]]]),
-      session('2024-01-08', 'A', [['deadlift', 85, [5]]]),
+      session('2024-01-15', 'A', [['press', 50, [5, 5, 5, 3, null]]]),
+      session('2024-01-08', 'A', [['press', 47.5, [5, 5, 5, 5, 5]]]),
     ];
-    const rows = getWeekLiftProjection(h, { remainingSessionLiftIds: [['deadlift']], increments: { deadlift: 5 } });
+    const rows = getWeekLiftProjection(h, { liftIds: ['press'], weights: { press: 50 }, remainingSessionLiftIds: [['press']], increments: { press: 2.5 } });
+    expect(rows.find(r => r.id === 'press').progress).toEqual({ status: 'held', weight: 50 });
+  });
+
+  it('reports "deload" from a live weight below the last logged session, even with only one logged occurrence', () => {
+    const h = [session('2024-01-15', 'A', [['deadlift', 85, [5]]])];
+    const rows = getWeekLiftProjection(h, { liftIds: ['deadlift'], weights: { deadlift: 77.5 }, remainingSessionLiftIds: [['deadlift']], increments: { deadlift: 5 } });
     expect(rows.find(r => r.id === 'deadlift').progress).toEqual({ status: 'deload', from: 85, to: 77.5 });
   });
 
-  it('falls back to a plain current weight once no remaining session touches the lift', () => {
+  it('falls back to a plain current (live) weight once no remaining session touches the lift', () => {
     const h = [session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
-    const rows = getWeekLiftProjection(h, { remainingSessionLiftIds: [['bench']], increments: { squat: 2.5 } });
-    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'flat', weight: 50 });
+    const rows = getWeekLiftProjection(h, { liftIds: ['squat'], weights: { squat: 52.5 }, remainingSessionLiftIds: [['bench']], increments: { squat: 2.5 } });
+    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'flat', weight: 52.5 });
   });
 });
