@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
+import { START_BUTTON, startWorkout } from '../helpers/train';
 
 beforeEach(() => {
   localStorage.clear();
@@ -27,7 +28,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
     expect(screen.getByText('Bench Press')).toBeInTheDocument();
     expect(screen.getByText('Barbell Row')).toBeInTheDocument();
@@ -55,7 +56,7 @@ describe('Workout Flow', () => {
     expect(screen.getByDisplayValue('62.5')).toBeInTheDocument();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).weights.squat).toBe(62.5);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.getByDisplayValue('62.5')).toBeInTheDocument();
   });
 
@@ -279,7 +280,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -318,7 +319,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -349,7 +350,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.getByText('Sync History?')).toBeInTheDocument();
   });
 
@@ -357,7 +358,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     await user.click(screen.getByText('Skip and start fresh'));
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
   });
@@ -378,11 +379,11 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     await user.click(screen.getByText('Discard workout'));
     expect(screen.getByText('Discard this workout?')).toBeInTheDocument();
     await user.click(screen.getByText('Yes, discard'));
-    expect(screen.getByText('Start workout')).toBeInTheDocument();
+    expect(screen.getByText(START_BUTTON)).toBeInTheDocument();
   });
 
   it('shows deload slider after 3 consecutive failures and applies on confirm', async () => {
@@ -411,7 +412,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -469,7 +470,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.getByText('Deload Needed')).toBeInTheDocument();
     expect(screen.getByRole('slider')).toBeInTheDocument();
     expect(screen.getByText('Recommended: 10%')).toBeInTheDocument();
@@ -507,7 +508,7 @@ describe('Workout Flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     expect(screen.getByText('Deload Needed')).toBeInTheDocument();
 
     await user.click(screen.getByText('Skip Deload'));

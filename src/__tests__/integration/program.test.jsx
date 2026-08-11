@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
+import { START_BUTTON, startWorkout } from '../helpers/train';
 
 beforeEach(() => {
   localStorage.clear();
@@ -44,7 +45,7 @@ describe('Program tab', () => {
     expect(stored.program.bench.sets).toBe(3);
 
     await user.click(screen.getByLabelText('Train'));
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const benchSetButtons = benchCard().getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
     expect(benchSetButtons).toHaveLength(3);
@@ -64,7 +65,7 @@ describe('Program tab', () => {
     expect(stored.program.bench.reps).toBe(3);
 
     await user.click(screen.getByLabelText('Train'));
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const benchButtons = benchCard().getAllByRole('button').filter(btn => (btn.getAttribute('aria-label') || '').startsWith('Set '));
     // Each set cycles target -> target-1 -> ... -> unlogged; one tap logs the 3-rep target.
@@ -168,7 +169,7 @@ describe('Rep picker', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const firstSet = screen.getAllByLabelText('Set 1')[0];
     fireEvent.pointerDown(firstSet);
@@ -185,7 +186,7 @@ describe('Rep picker', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const firstSet = screen.getAllByLabelText('Set 1')[0];
     fireEvent.pointerDown(firstSet);
@@ -202,7 +203,7 @@ describe('Short-press set cycle', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const firstSet = screen.getAllByLabelText('Set 1')[0];
     // Cycle: unlogged -> 5 -> 4 -> 3 -> 2 -> 1 -> 0 -> unlogged.

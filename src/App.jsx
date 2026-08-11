@@ -3,7 +3,6 @@ import {
   Barbell, ListChecks, Gear, Play,
   Question,
   CaretRight,
-  Flame,
   SlidersHorizontal, ChartLineUp
 } from '@phosphor-icons/react';
 import BarMark from './components/BarMark';
@@ -17,7 +16,7 @@ import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
 import { hydrateFromBackup, readBackupFile, readStrongliftsFile } from './backup';
 import { getProgram } from './programs';
-import { getWorkoutStats, localDateKey } from './utils/chartData';
+import { localDateKey } from './utils/chartData';
 import { useLoadSaved, useSyncStorage, useStorageSync } from './hooks/useLocalStorage';
 import { useMadcowState } from './state/useMadcowState';
 import { useSettings } from './state/useSettings';
@@ -630,7 +629,6 @@ const App = () => {
   }, [timer, isExerciseComplete]);
 
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  const workoutStats = getWorkoutStats(history);
   const moodLabel = (day) => {
     const mood = getProgram(preset).dayMood(day);
     return mood ? t('program.madcow.mood' + mood.charAt(0).toUpperCase() + mood.slice(1)) : null;
@@ -651,17 +649,11 @@ const App = () => {
               {t('app.titleMain')} <span className="font-medium text-ink/40">{t('app.titleSuffix')}</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <Flame size={15} weight="fill" className="text-accent" />
-              <span className={`text-[12.5px] text-ink/78`}>{t('header.streak', { count: workoutStats.streak })}</span>
-            </div>
-            <button
-              onClick={() => setShowHelp(true)}
-              aria-label="How it works"
-              className={`w-10 h-10 rounded-lg border flex items-center justify-center border-ink/26 text-ink`}
-            ><Question size={18} /></button>
-          </div>
+          <button
+            onClick={() => setShowHelp(true)}
+            aria-label="How it works"
+            className={`w-10 h-10 rounded-lg border flex items-center justify-center border-ink/26 text-ink`}
+          ><Question size={18} /></button>
         </header>
       )}
 
@@ -682,6 +674,7 @@ const App = () => {
             moodLabel={moodLabel} expandedBarSetup={expandedBarSetup} setExpandedBarSetup={setExpandedBarSetup}
             setWorkoutPicker={setWorkoutPicker} updateMcTop={updateMcTop} handleUpdateIdleWeight={handleUpdateIdleWeight}
             setGuideLift={setGuideLift} startWorkout={startWorkout} trainedToday={trainedToday} history={history}
+            onGoToLog={() => setActiveTab('history')}
             currentWorkout={currentWorkout} handleToggleSet={handleToggleSet} handleOpenRepPicker={handleOpenRepPicker}
             handleUpdateActiveWeight={handleUpdateActiveWeight} handleUpdateActiveSetWeight={handleUpdateActiveSetWeight}
             finishWorkout={finishWorkout} setShowCancelModal={setShowCancelModal}

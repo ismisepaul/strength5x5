@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange, getExerciseRangeStats, getBig3Volume, getWeekDayStates, getWeekTonnageComparison, getLiftProgress, getWeekLiftBreakdown } from '../../utils/chartData';
+import { buildExerciseTimeline, buildBig3Timeline, getExerciseTrend, getBig3Trend, getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts, getWeightDelta, filterByRange, getExerciseRangeStats, getBig3Volume, getWeekDayStates, getWeekVerdict, getWeekTonnageComparison, getLiftProgress, getRemainingSessionLiftIds, getWeekLiftProjection } from '../../utils/chartData';
 
 const session = (date, type, exercises) => ({
   date: new Date(date).toISOString(),
@@ -521,6 +521,59 @@ describe('getWeekDayStates', () => {
     expect(days[2].isToday).toBe(true);
     expect(days[2].trained).toBe(true);
   });
+
+  it('reads state off the day before: trained, then rest, then available', () => {
+    const mon = new Date(2026, 2, 9, 12); // Monday
+    const h = [session(mon.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const days = getWeekDayStates(h, mon);
+    expect(days[0].state).toBe('trained'); // Monday: trained
+    expect(days[1].state).toBe('rest'); // Tuesday: day after a trained day
+    expect(days[2].state).toBe('available'); // Wednesday: untrained, predecessor also untrained
+  });
+
+  it('has Monday read Sunday of the previous week for its lookback', () => {
+    const sun = new Date(2026, 2, 8, 12); // the Sunday before
+    const mon = new Date(2026, 2, 9, 12);
+    const h = [session(sun.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const days = getWeekDayStates(h, mon);
+    expect(days[0].state).toBe('rest');
+  });
+});
+
+describe('getWeekVerdict', () => {
+  it('reads "first" with no history at all', () => {
+    expect(getWeekVerdict([], new Date(2026, 2, 11, 12)).key).toBe('first');
+  });
+
+  it('names the last session\'s weekday when there is history but nothing today or yesterday', () => {
+    const mon = new Date(2026, 2, 9, 12);
+    const h = [session(mon.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const verdict = getWeekVerdict(h, new Date(2026, 2, 11, 12)); // Wednesday
+    expect(verdict.key).toBe('train');
+    expect(verdict.weekday).toBe(mon.toLocaleDateString(undefined, { weekday: 'long' }));
+  });
+
+  it('reads "rest" when yesterday was trained', () => {
+    const tue = new Date(2026, 2, 10, 12);
+    const h = [session(tue.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    expect(getWeekVerdict(h, new Date(2026, 2, 11, 12)).key).toBe('rest');
+  });
+
+  it('reads "trainedToday" once today is logged, ahead of the rest/train checks', () => {
+    const wed = new Date(2026, 2, 11, 12);
+    const h = [session(wed.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    expect(getWeekVerdict(h, wed).key).toBe('trainedToday');
+  });
+
+  it('reads "complete" once the week hits 3 sessions, even ahead of "trainedToday"', () => {
+    const mon = new Date(2026, 2, 9, 12);
+    const tue = new Date(2026, 2, 10, 12);
+    const wed = new Date(2026, 2, 11, 12);
+    const h = [mon, tue, wed].map(d => session(d.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]]));
+    const verdict = getWeekVerdict(h, wed);
+    expect(verdict.key).toBe('complete');
+    expect(verdict.done).toBe(3);
+  });
 });
 
 describe('getWeekTonnageComparison', () => {
@@ -587,13 +640,96 @@ describe('getLiftProgress', () => {
   });
 });
 
-describe('getWeekLiftBreakdown', () => {
+describe('getRemainingSessionLiftIds', () => {
+  it("cycles Standard's A/B day letters from the given start day for however many sessions remain", () => {
+    const mon = new Date(2026, 2, 9, 12);
+    const ids = getRemainingSessionLiftIds([], 'standard', 'A', {}, mon);
+    expect(ids).toEqual([
+      ['squat', 'bench', 'row'],
+      ['squat', 'press', 'deadlift'],
+      ['squat', 'bench', 'row'],
+    ]);
+  });
+
+  it('shortens to however many sessions are left once some of the week is already done', () => {
+    const mon = new Date(2026, 2, 9, 12);
+    const h = [session(mon.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const ids = getRemainingSessionLiftIds(h, 'standard', 'B', {}, mon);
+    expect(ids).toEqual([
+      ['squat', 'press', 'deadlift'],
+      ['squat', 'bench', 'row'],
+    ]);
+  });
+
+  it("returns nothing once the week's 3-session goal is already met", () => {
+    const mon = new Date(2026, 2, 9, 12);
+    const tue = new Date(2026, 2, 10, 12);
+    const wed = new Date(2026, 2, 11, 12);
+    const h = [mon, tue, wed].map(d => session(d.toISOString(), 'A', [['squat', 50, [5, 5, 5, 5, 5]]]));
+    expect(getRemainingSessionLiftIds(h, 'standard', 'A', {}, wed)).toEqual([]);
+  });
+
+  it("cycles Madcow's A/B/C days instead of Standard's A/B", () => {
+    const mon = new Date(2026, 2, 9, 12);
+    const ids = getRemainingSessionLiftIds([], 'madcow', 'A', { mcPress: 'incline' }, mon);
+    expect(ids).toEqual([
+      ['squat', 'bench', 'row'],
+      ['squat', 'incline', 'deadlift'],
+      ['squat', 'bench', 'row'],
+    ]);
+  });
+});
+
+describe('getWeekLiftProjection', () => {
   it('returns the Big-5 in program order, skipping lifts never trained', () => {
     const h = [
       session('2024-01-15', 'B', [['squat', 50, [5, 5, 5, 5, 5]], ['deadlift', 70, [5]]]),
       session('2024-01-12', 'A', [['bench', 40, [5, 5, 5, 5, 5]]]),
     ];
-    const breakdown = getWeekLiftBreakdown(h);
-    expect(breakdown.map(b => b.id)).toEqual(['squat', 'bench', 'deadlift']);
+    const rows = getWeekLiftProjection(h, { remainingSessionLiftIds: [] });
+    expect(rows.map(r => r.id)).toEqual(['squat', 'bench', 'deadlift']);
+  });
+
+  it('projects a clean lift forward by one increment per remaining session it appears in', () => {
+    const h = [session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const rows = getWeekLiftProjection(h, {
+      remainingSessionLiftIds: [['squat', 'bench'], ['squat', 'press']],
+      increments: { squat: 2.5 },
+    });
+    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'up', from: 50, to: 55 });
+  });
+
+  it('caps the projection at one increment for a ramped program regardless of sessions left', () => {
+    const h = [session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const rows = getWeekLiftProjection(h, {
+      remainingSessionLiftIds: [['squat'], ['squat'], ['squat']],
+      ramped: true,
+      increments: { squat: 2.5 },
+    });
+    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'up', from: 50, to: 52.5 });
+  });
+
+  it('leaves a held (missed) lift exactly as getLiftProgress reports it, never projected', () => {
+    const h = [
+      session('2024-01-15', 'A', [['press', 30, [5, 5, 5, 3, null]]]),
+      session('2024-01-08', 'A', [['press', 30, [5, 5, 5, 5, 5]]]),
+    ];
+    const rows = getWeekLiftProjection(h, { remainingSessionLiftIds: [['press']], increments: { press: 2.5 } });
+    expect(rows.find(r => r.id === 'press').progress).toEqual({ status: 'held', weight: 30 });
+  });
+
+  it('leaves a deloaded lift exactly as getLiftProgress reports it, never projected', () => {
+    const h = [
+      session('2024-01-15', 'A', [['deadlift', 77.5, [5]]]),
+      session('2024-01-08', 'A', [['deadlift', 85, [5]]]),
+    ];
+    const rows = getWeekLiftProjection(h, { remainingSessionLiftIds: [['deadlift']], increments: { deadlift: 5 } });
+    expect(rows.find(r => r.id === 'deadlift').progress).toEqual({ status: 'deload', from: 85, to: 77.5 });
+  });
+
+  it('falls back to a plain current weight once no remaining session touches the lift', () => {
+    const h = [session('2024-01-15', 'A', [['squat', 50, [5, 5, 5, 5, 5]]])];
+    const rows = getWeekLiftProjection(h, { remainingSessionLiftIds: [['bench']], increments: { squat: 2.5 } });
+    expect(rows.find(r => r.id === 'squat').progress).toEqual({ status: 'flat', weight: 50 });
   });
 });

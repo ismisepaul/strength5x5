@@ -1,5 +1,5 @@
-import { calculate1RM, targetReps } from '../utils';
-import { topWeightOf } from '../programs';
+import { calculate1RM, targetReps, roundWeight } from '../utils';
+import { topWeightOf, getProgram } from '../programs';
 import { EXPECTED_WEIGHT_KEYS } from '../constants';
 
 function bestRepsFor(ex) {
@@ -261,11 +261,11 @@ export function getWorkoutStats(history, nowOverride) {
   return { streak, total, thisWeek, status };
 }
 
-// Mon-Sun day states for the Train screen's weekly progress card. A day reads 'trained'
-// once a session lands on that date; today gets a dashed accent state when it isn't
-// trained yet (an invitation to tap Start); every other day -- a past miss or one still
-// ahead -- reads as the same neutral notch, since the surface only distinguishes "done"
-// from "not done", not "why".
+// Mon-Sun day states for the Log week card. Every box reads off the day before it, per
+// the 5a rule: a session logged makes the next day 'rest' (dim), an untrained day whose
+// predecessor was also untrained is 'available' (a session you could still take), and a
+// trained day is 'trained' regardless of what came before it. `trained`/`isToday` are kept
+// alongside `state` for existing callers.
 export function getWeekDayStates(history, now = new Date()) {
   const trainedDates = new Set(history.map(s => localDateKey(s.date)));
   const todayKey = localDateKey(now);
@@ -274,12 +274,42 @@ export function getWeekDayStates(history, now = new Date()) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
     const dateKey = localDateKey(d);
+    const trained = trainedDates.has(dateKey);
+    const prevDay = new Date(d);
+    prevDay.setDate(prevDay.getDate() - 1);
+    const state = trained ? 'trained' : (trainedDates.has(localDateKey(prevDay)) ? 'rest' : 'available');
     return {
       label: d.toLocaleDateString(undefined, { weekday: 'narrow' }),
-      trained: trainedDates.has(dateKey),
+      trained,
       isToday: dateKey === todayKey,
+      state,
     };
   });
+}
+
+// What the Train screen's verdict line should say about today, checked in this priority
+// order: a completed week wins even over "trained today" (so a bonus 4th session still
+// reads as "week complete"), which wins over yesterday's rest-day framing, which wins over
+// a plain invitation naming when you last trained.
+export function getWeekVerdict(history, now = new Date()) {
+  const stats = getWorkoutStats(history, now);
+  if (stats.thisWeek >= 3) return { key: 'complete', done: stats.thisWeek };
+
+  const todayKey = localDateKey(now);
+  if (history.some(s => localDateKey(s.date) === todayKey)) {
+    return { key: 'trainedToday', done: stats.thisWeek };
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = localDateKey(yesterday);
+  if (history.some(s => localDateKey(s.date) === yesterdayKey)) {
+    return { key: 'rest', done: stats.thisWeek };
+  }
+
+  if (history.length === 0) return { key: 'first', done: stats.thisWeek };
+  // history is newest-first (App.jsx prepends on finish), so [0] is the last session.
+  return { key: 'train', done: stats.thisWeek, weekday: new Date(history[0].date).toLocaleDateString(undefined, { weekday: 'long' }) };
 }
 
 // This week's and last week's total kg moved, and the signed difference between them --
@@ -331,12 +361,45 @@ export function getLiftProgress(history, liftId) {
   return { status: current.hadMiss ? 'held' : 'flat', weight: current.weight };
 }
 
-// The Big-5 in program order, each paired with its current progress -- lifts never
-// trained yet are left out rather than shown with placeholder data.
-export function getWeekLiftBreakdown(history) {
+// The day-letter sequence for a program's still-to-come sessions this week, cycling
+// `prog.days` the same way both programs actually advance (Standard flips A/B on finish,
+// Madcow cycles A/B/C -- see App.jsx's finishWorkout) so this doesn't duplicate either
+// program's own turn-taking logic.
+export function getRemainingSessionLiftIds(history, presetId, startDay, programState, now = new Date()) {
+  const prog = getProgram(presetId);
+  const remaining = Math.max(0, 3 - getWorkoutStats(history, now).thisWeek);
+  const days = [];
+  let day = startDay;
+  for (let i = 0; i < remaining; i++) {
+    days.push(day);
+    day = prog.days[(prog.days.indexOf(day) + 1) % prog.days.length];
+  }
+  return days.map(d => prog.liftIds(d, programState));
+}
+
+// The Big-5 in program order, each paired with where it's headed by the end of the week --
+// "owed", not "banked". A held (missed) or deloaded lift isn't projected forward, since
+// there's nothing to promise; everything else gets `current + increment x n`, where `n` is
+// how many of the week's remaining sessions (from getRemainingSessionLiftIds) still touch
+// that lift. Madcow's top-set progression is weekly, not per-session, so `n` never exceeds
+// 1 there regardless of how many sessions remain. A lift with no sessions left this week
+// falls back to a plain current-weight display, same as the never-progressed case.
+export function getWeekLiftProjection(history, { remainingSessionLiftIds = [], ramped = false, increments = {} } = {}) {
   return EXPECTED_WEIGHT_KEYS
-    .map(id => ({ id, progress: getLiftProgress(history, id) }))
-    .filter(({ progress }) => progress !== null);
+    .map(id => {
+      const progress = getLiftProgress(history, id);
+      if (!progress) return null;
+      if (progress.status === 'held' || progress.status === 'deload') return { id, progress };
+
+      const current = progress.status === 'up' ? progress.to : progress.weight;
+      let sessions = remainingSessionLiftIds.reduce((n, ids) => n + (ids.includes(id) ? 1 : 0), 0);
+      if (ramped) sessions = Math.min(sessions, 1);
+      if (sessions === 0) return { id, progress: { status: 'flat', weight: current } };
+
+      const increment = increments[id] ?? 2.5;
+      return { id, progress: { status: 'up', from: current, to: roundWeight(current + increment * sessions, increment) } };
+    })
+    .filter(Boolean);
 }
 
 export function groupHistory(history, mode, skip = 0) {

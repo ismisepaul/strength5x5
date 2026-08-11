@@ -1,11 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, CaretDown, CaretRight, PencilSimple, Trash } from '@phosphor-icons/react';
+import { Plus, CaretDown, CaretRight, PencilSimple, Trash, Flame } from '@phosphor-icons/react';
 import { formatDuration, targetReps } from '../utils';
 import { MAX_SETS } from '../constants';
 import { getProgram } from '../programs';
-import { getWorkoutStats, groupHistory, sessionTonnage, monthlySessionCounts } from '../utils/chartData';
+import { getWorkoutStats, getRemainingSessionLiftIds, groupHistory, sessionTonnage, monthlySessionCounts } from '../utils/chartData';
 import Segmented from '../components/Segmented';
+import WeekProgressCard from '../components/WeekProgressCard';
 
 // A session's day+date sits in a fixed left column, program/workout/meta in the middle,
 // and the outcome (all reps, or a dashed miss chip -- shape, not hue) on the right.
@@ -103,11 +104,14 @@ const LogScreen = ({
     />
   );
   const stats = getWorkoutStats(history);
+  const prog = getProgram(preset);
+  const remainingSessionLiftIds = getRemainingSessionLiftIds(
+    history, preset, getCurrentDay(prog.id), { program, weights, mcTop, mcInterval, mcPress },
+  );
 
   // Defaults to whatever program/day you're actually on -- the modal lets
   // you pick a different program and day before saving.
   const handleAddWorkout = () => {
-    const prog = getProgram(preset);
     const day = getCurrentDay(prog.id);
     const exercises = prog.dayExercises(day, { program, weights, mcTop, mcInterval, mcPress })
       .map(ex => ({ ...ex, setsCompleted: Array.from({ length: ex.sets }, (_, i) => targetReps(ex, i)) }));
@@ -124,27 +128,17 @@ const LogScreen = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-1">
         <h2 className="font-display text-title font-semibold tracking-[-0.025em]">{t('log.title')}</h2>
         {addWorkoutButton}
       </div>
-      <div className="p-4 rounded-[10px] border bg-surface border-ink/14">
-        <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-2.5">{t('log.thisWeek')}</p>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex gap-1.5 shrink-0">
-              {[0, 1, 2].map(i => (
-                <div key={i} className={`w-7 aspect-[1.35] rounded-[10px] ${i < stats.thisWeek ? 'border border-accent bg-accent-900' : 'border border-ink/26'}`} />
-              ))}
-            </div>
-            <p className="text-body font-medium">{stats.thisWeek >= 3 ? t('log.weekDone') : t('log.toGo', { count: 3 - stats.thisWeek })}</p>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="font-display font-semibold text-[20px] tabular-nums">{stats.total}</p>
-            <p className={`text-tab ${mutedClass}`}>{t('log.total')}</p>
-          </div>
-        </div>
+      <div className={`flex items-center gap-2 mb-2 text-meta ${mutedClass}`}>
+        <Flame size={13} weight="fill" className="text-accent shrink-0" />
+        <span>{t('header.streak', { count: stats.streak })}</span>
+        <span aria-hidden="true">·</span>
+        <span>{t('log.sessionCount', { count: stats.total })}</span>
       </div>
+      <WeekProgressCard history={history} remainingSessionLiftIds={remainingSessionLiftIds} ramped={prog.ramped} increments={prog.increments} />
 
       {history.length > 0 && (
         <Segmented

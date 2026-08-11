@@ -31,6 +31,7 @@
     "nextUp": "Next up",
     "switchTo": "Switch to {{type}}",
     "startWorkout": "Start workout",
+    "startAnyway": "Start anyway",
     "finishWorkout": "Finish workout",
     "completeAllSets": "Complete all sets to finish",
     "alreadyTrained": "Already trained today. Rest until next session.",
@@ -62,16 +63,15 @@
     "rampTopSetLabel": "Set {{n}} · top set",
     "rampBackoffLabel": "Set {{n}} · back-off",
     "missedNoteTopSet": "Missed reps: top set stays at current weight next week",
-    "weekCard": {
-      "weekCaption": "Week progress, tap to see more",
-      "moreVsLastWeek": "+{{amount}} kg vs last week",
-      "lessVsLastWeek": "−{{amount}} kg vs last week",
-      "sameAsLastWeek": "Same as last week",
-      "toggleAria": "Toggle this week's lift breakdown",
-      "liftedThisWeek": "Lifted this week",
-      "deloadChip": "Deload",
-      "holds": "Holds {{weight}} kg"
-    }
+    "weekVerdict": {
+      "complete": "Week complete",
+      "trainedToday": "Rest day · you trained today",
+      "rest": "Rest day · you trained yesterday",
+      "train": "Train day · last was {{weekday}}",
+      "first": "Train day",
+      "aria": "{{verdict}}, {{done}} of 3 sessions this week. Opens Log."
+    },
+    "weekPipsAria": "{{done}} of {{goal}} sessions this week"
   },
   "program": {
     "title": "Program",
@@ -254,17 +254,32 @@
     "year": "Year",
     "weekUnit_one": "{{count}} week",
     "weekUnit_other": "{{count}} weeks",
-    "weekDone": "Week done",
-    "toGo_one": "{{count}} to go this week",
-    "toGo_other": "{{count}} to go this week",
-    "total": "workouts",
-    "thisWeek": "This week",
     "allReps": "All reps",
     "miss_one": "{{count}} miss",
     "miss_other": "{{count}} misses",
     "tonnage": "kg lifted",
     "sessionCount_one": "{{count}} workout",
-    "sessionCount_other": "{{count}} workouts"
+    "sessionCount_other": "{{count}} workouts",
+    "weekCard": {
+      "thisWeek": "This week",
+      "toGo_one": "{{count}} to go",
+      "toGo_other": "{{count}} to go",
+      "weekComplete": "Week complete",
+      "moreVsLastWeek": "+{{amount}} kg vs last week",
+      "lessVsLastWeek": "−{{amount}} kg vs last week",
+      "sameAsLastWeek": "Same as last week",
+      "liftedThisWeek": "Lifted this week",
+      "deloadChip": "Deload",
+      "holds": "Holds {{weight}} kg",
+      "day": {
+        "trained": "Trained",
+        "rest": "Rest · trained the day before",
+        "todayTrain": "Today · train day",
+        "todayRest": "Today · rest, you trained yesterday",
+        "todayComplete": "Today · week complete",
+        "available": "Available"
+      }
+    }
   },
   "stats": {
     "title": "Stats",
@@ -381,7 +396,11 @@
     "repPickerTitle": "{{name}} · Set {{set}}",
     "repPickerQuestion": "How many reps did you get?",
     "repPickerNote": "{{count}} = passed · fewer means the weight holds next session",
-    "clearSet": "Clear set"
+    "clearSet": "Clear set",
+    "extraSessionTitle": "Train anyway?",
+    "extraSessionRestBody": "You trained yesterday. A rest day between sessions is where the strength is actually built, and training through it tends to cost you the next session.",
+    "extraSessionCompleteBody": "You've already banked three sessions this week. A fourth adds fatigue without adding progression, and the weights still go up on schedule either way.",
+    "extraSessionRest": "Rest instead"
   },
   "completion": {
     "kicker": "Workout complete",

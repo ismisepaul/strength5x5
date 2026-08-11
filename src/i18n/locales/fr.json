@@ -31,6 +31,7 @@
     "nextUp": "À suivre",
     "switchTo": "Basculer vers {{type}}",
     "startWorkout": "Commencer",
+    "startAnyway": "Commencer quand même",
     "finishWorkout": "Terminer",
     "completeAllSets": "Complétez toutes les séries",
     "alreadyTrained": "Déjà entraîné aujourd'hui. Reposez-vous jusqu'au prochain entraînement.",
@@ -62,16 +63,15 @@
     "rampTopSetLabel": "Série {{n}} · série maximale",
     "rampBackoffLabel": "Série {{n}} · dégressive",
     "missedNoteTopSet": "Répétitions manquées : la série maximale reste inchangée la semaine prochaine",
-    "weekCard": {
-      "weekCaption": "Progression de la semaine, appuyez pour en savoir plus",
-      "moreVsLastWeek": "+{{amount}} kg par rapport à la semaine dernière",
-      "lessVsLastWeek": "−{{amount}} kg par rapport à la semaine dernière",
-      "sameAsLastWeek": "Comme la semaine dernière",
-      "toggleAria": "Afficher le détail des charges de la semaine",
-      "liftedThisWeek": "Soulevé cette semaine",
-      "deloadChip": "Décharge",
-      "holds": "Maintenu à {{weight}} kg"
-    }
+    "weekVerdict": {
+      "complete": "Semaine terminée",
+      "trainedToday": "Repos · vous vous êtes entraîné aujourd'hui",
+      "rest": "Repos · vous vous êtes entraîné hier",
+      "train": "Jour d'entraînement · dernier le {{weekday}}",
+      "first": "Jour d'entraînement",
+      "aria": "{{verdict}}, {{done}} entraînement(s) sur 3 cette semaine. Ouvre le journal."
+    },
+    "weekPipsAria": "{{done}} sur {{goal}} entraînements cette semaine"
   },
   "program": {
     "title": "Programme",
@@ -254,17 +254,32 @@
     "year": "Année",
     "weekUnit_one": "{{count}} semaine",
     "weekUnit_other": "{{count}} semaines",
-    "weekDone": "Semaine terminée",
-    "toGo_one": "{{count}} restante cette semaine",
-    "toGo_other": "{{count}} restantes cette semaine",
-    "total": "entraînements",
-    "thisWeek": "Cette semaine",
     "allReps": "Toutes les répétitions",
     "miss_one": "{{count}} manquée",
     "miss_other": "{{count}} manquées",
     "tonnage": "kg soulevés",
     "sessionCount_one": "{{count}} entraînement",
-    "sessionCount_other": "{{count}} entraînements"
+    "sessionCount_other": "{{count}} entraînements",
+    "weekCard": {
+      "thisWeek": "Cette semaine",
+      "toGo_one": "{{count}} restant",
+      "toGo_other": "{{count}} restants",
+      "weekComplete": "Semaine terminée",
+      "moreVsLastWeek": "+{{amount}} kg par rapport à la semaine dernière",
+      "lessVsLastWeek": "−{{amount}} kg par rapport à la semaine dernière",
+      "sameAsLastWeek": "Comme la semaine dernière",
+      "liftedThisWeek": "Soulevé cette semaine",
+      "deloadChip": "Décharge",
+      "holds": "Maintenu à {{weight}} kg",
+      "day": {
+        "trained": "Entraîné",
+        "rest": "Repos · entraîné la veille",
+        "todayTrain": "Aujourd'hui · jour d'entraînement",
+        "todayRest": "Aujourd'hui · repos, entraîné hier",
+        "todayComplete": "Aujourd'hui · semaine terminée",
+        "available": "Disponible"
+      }
+    }
   },
   "stats": {
     "title": "Statistiques",
@@ -381,7 +396,11 @@
     "repPickerTitle": "{{name}} · Série {{set}}",
     "repPickerQuestion": "Combien de répétitions avez-vous réussies ?",
     "repPickerNote": "{{count}} = réussi · moins signifie que le poids reste inchangé la prochaine fois",
-    "clearSet": "Effacer la série"
+    "clearSet": "Effacer la série",
+    "extraSessionTitle": "S'entraîner quand même ?",
+    "extraSessionRestBody": "Vous vous êtes entraîné hier. C'est pendant le jour de repos entre deux séances que la force se construit, et s'entraîner malgré tout coûte souvent la séance suivante.",
+    "extraSessionCompleteBody": "Vous avez déjà trois séances cette semaine. Une quatrième ajoute de la fatigue sans ajouter de progression, et les poids augmentent de toute façon comme prévu.",
+    "extraSessionRest": "Se reposer plutôt"
   },
   "completion": {
     "kicker": "Entraînement terminé",

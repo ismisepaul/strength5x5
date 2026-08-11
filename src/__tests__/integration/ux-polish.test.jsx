@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY, ACTIVE_WORKOUT_KEY } from '../../constants';
+import { START_BUTTON, startWorkout } from '../helpers/train';
 
 const yesterdayISO = new Date(Date.now() - 86400000).toISOString();
 
@@ -93,7 +94,7 @@ describe('Workout completion summary', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -121,7 +122,7 @@ describe('Workout completion summary', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
@@ -148,7 +149,7 @@ describe('Workout completion summary', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
     const setButtons = screen.getAllByRole('button').filter(btn => {
       const label = btn.getAttribute('aria-label');
       return label && label.startsWith('Set ');
