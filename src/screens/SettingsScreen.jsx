@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/index.js';
 import { DownloadSimple, UploadSimple, FileCsv, ArrowsClockwise } from '@phosphor-icons/react';
 import Switch from '../components/Switch';
 import Segmented from '../components/Segmented';
 import { formatBytes, countSessionsSince } from '../utils';
+
+const REST_PRESETS = [90, 180, 300];
+const CUSTOM_REST_MIN = 5;
+const CUSTOM_REST_MAX = 600;
 
 const SectionHeader = ({ children }) => (
   <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-3">{children}</p>
@@ -32,6 +36,22 @@ const SettingsScreen = ({
   const rowClass = 'flex items-center justify-between py-4 rule-fade';
   const lastRowClass = 'flex items-center justify-between py-4';
 
+  // Tapping "Custom" reveals the input before a value's typed, so it can't be
+  // derived from preferredRest alone -- once a digit's typed this and
+  // !REST_PRESETS.includes(preferredRest) agree anyway.
+  const [customRestOpen, setCustomRestOpen] = useState(false);
+  const [restDraft, setRestDraft] = useState(null); // null while not editing; typed string while editing
+  const showCustomRest = customRestOpen || !REST_PRESETS.includes(preferredRest);
+  const restDisplayValue = restDraft !== null ? restDraft : String(preferredRest);
+
+  const commitCustomRest = (str) => {
+    const n = parseInt(str, 10);
+    if (Number.isFinite(n)) {
+      setPreferredRest(Math.min(CUSTOM_REST_MAX, Math.max(CUSTOM_REST_MIN, n)));
+    }
+    setRestDraft(null);
+  };
+
   return (
     <div className="space-y-8">
       <h2 className="font-display text-title font-semibold tracking-[-0.025em]">{t('options.title')}</h2>
@@ -45,10 +65,33 @@ const SettingsScreen = ({
             <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
           </div>
           <Segmented
-            options={[{ label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 }]}
-            value={preferredRest}
-            onChange={setPreferredRest}
+            options={[
+              { label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 },
+              { label: t('options.restIntervalCustom'), val: 'custom' },
+            ]}
+            value={showCustomRest ? 'custom' : preferredRest}
+            onChange={(val) => {
+              if (val === 'custom') { setCustomRestOpen(true); return; }
+              setCustomRestOpen(false);
+              setPreferredRest(val);
+            }}
           />
+          {showCustomRest && (
+            <div className="flex items-center gap-2 mt-3">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={restDisplayValue}
+                onFocus={(e) => { setRestDraft(String(preferredRest)); e.target.select(); }}
+                onChange={(e) => setRestDraft(e.target.value.replace(/\D/g, ''))}
+                onBlur={(e) => commitCustomRest(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                aria-label={t('options.restIntervalCustomAria')}
+                className="w-16 text-center text-card font-display font-semibold tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] border-ink/26 focus:border-accent focus:outline-none"
+              />
+              <span className={`text-meta ${mutedClass}`}>{t('options.restIntervalCustomUnit')}</span>
+            </div>
+          )}
         </div>
         <div className={rowClass}>
           <div><p className="text-card font-semibold">{t('options.soundAlert')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>

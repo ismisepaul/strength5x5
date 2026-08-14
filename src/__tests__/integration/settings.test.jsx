@@ -23,6 +23,30 @@ describe('Settings', () => {
     expect(stored.preferredRest).toBe(180);
   });
 
+  it('sets a custom rest interval in seconds, clamped to the allowed range', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+    await user.click(screen.getByText('Custom'));
+
+    const input = screen.getByLabelText('Custom rest time in seconds');
+    await user.clear(input);
+    await user.type(input, '8');
+    await user.click(document.body);
+
+    let stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.preferredRest).toBe(8);
+
+    // Reopens already on Custom (8s isn't one of the presets) and clamps a too-low value.
+    await user.clear(input);
+    await user.type(input, '1');
+    await user.click(document.body);
+
+    stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.preferredRest).toBe(5);
+  });
+
   it('toggles sound setting', async () => {
     const user = userEvent.setup();
     render(<App />);
