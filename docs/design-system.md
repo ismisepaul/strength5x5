@@ -274,7 +274,13 @@ always on.
 - During an active workout on the Train tab, the **timer strip replaces the header** at
   the top of the screen — it is not docked at the bottom. Header everywhere else. The
   strip is full-bleed: 44px tabular digits, a 3px accent progress line that fades in
-  from the left (`transition: width 1s linear`). All timer logic (wall-clock anchor,
+  from the left (`transition: width 1s linear`). In the last 5 seconds of rest the
+  strip floods to `accent-900` with a breathing accent wash, a 1px accent bottom
+  border, "Rest" → "Get ready", digits to 52px `accent-300`, and the progress line to
+  5px — visible from the rack, not just in the hand. The expiry chime is a soft
+  wooden marimba (two struck notes, 339.5/679Hz), not a pure tone, and (if the
+  "Five-second warning" setting is on, alongside Sound alert) a quiet rising pip
+  marks each of those last 5 seconds. All timer logic (wall-clock anchor,
   expire → stopwatch, sound/vibrate) lives in `useTimer`/`RestTimer.jsx` and is
   untouched by presentation work.
 - The header carries a `?` button that opens the "How it works" bottom sheet.

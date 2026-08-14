@@ -22,6 +22,7 @@ const DriveDot = ({ state }) => (
 
 const SettingsScreen = ({
   preferredRest, setPreferredRest, soundEnabled, setSoundEnabled, vibrationEnabled, setVibrationEnabled,
+  restWarningEnabled, setRestWarningEnabled,
   isDark, setIsDark, localBackup, setLocalBackup, driveConfigured, gdrive,
   handleConnect, handleDriveSave, formatLastSaved, exportData, fileInputRef, csvInputRef,
   history, backupSizeBytes,
@@ -52,6 +53,10 @@ const SettingsScreen = ({
         <div className={rowClass}>
           <div><p className="text-card font-semibold">{t('options.soundAlert')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
           <Switch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} ariaLabel="Sound alert" />
+        </div>
+        <div className={rowClass}>
+          <div><p className="text-card font-semibold">{t('options.restWarning')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.restWarningDesc')}</p></div>
+          <Switch checked={restWarningEnabled} onChange={() => setRestWarningEnabled(!restWarningEnabled)} ariaLabel="Five-second warning" />
         </div>
         <div className={lastRowClass}>
           <div><p className="text-card font-semibold">{t('options.vibration')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>

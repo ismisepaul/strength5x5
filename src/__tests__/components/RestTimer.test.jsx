@@ -29,6 +29,19 @@ describe('RestTimer', () => {
     expect(screen.getByLabelText('Skip rest')).toBeInTheDocument();
   });
 
+  it('renders the get-ready warning in the last five seconds of rest', () => {
+    render(<RestTimer {...defaultProps} isActive={true} seconds={5} />);
+    expect(screen.getByText('Get ready')).toBeInTheDocument();
+    expect(screen.getByText('0:05')).toBeInTheDocument();
+    expect(screen.queryByText('Rest')).not.toBeInTheDocument();
+  });
+
+  it('renders the ordinary rest state above the five-second warning threshold', () => {
+    render(<RestTimer {...defaultProps} isActive={true} seconds={6} />);
+    expect(screen.getByText('Rest')).toBeInTheDocument();
+    expect(screen.queryByText('Get ready')).not.toBeInTheDocument();
+  });
+
   it('renders count-up "Lifting" state when expired', () => {
     render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} />);
     expect(screen.getByText('Lifting')).toBeInTheDocument();

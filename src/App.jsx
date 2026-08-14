@@ -9,7 +9,7 @@ import BarMark from './components/BarMark';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL } from './constants';
+import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS } from './constants';
 import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { switchProgramState } from './programSwitch';
@@ -68,7 +68,8 @@ const App = () => {
   } = useMadcowState(saved);
   const {
     isDark, setIsDark, localBackup, setLocalBackup, preferredRest, setPreferredRest,
-    soundEnabled, setSoundEnabled, vibrationEnabled, setVibrationEnabled, logGrouping, setLogGrouping,
+    soundEnabled, setSoundEnabled, vibrationEnabled, setVibrationEnabled,
+    restWarningEnabled, setRestWarningEnabled, logGrouping, setLogGrouping,
   } = useSettings(saved);
 
   const [activeTab, setActiveTab] = useState('workout');
@@ -115,9 +116,20 @@ const App = () => {
     }
   });
 
+  // One quiet pip per second of the final five seconds of rest -- mirrors the
+  // strip's flood in RestTimer.jsx, which derives the same window from
+  // REST_WARNING_SECONDS. Bails out on any tick outside that window, so this only
+  // ever fires once per second while it's active (timer.seconds is an integer that
+  // only changes once per second).
+  useEffect(() => {
+    if (!soundEnabled || !restWarningEnabled) return;
+    if (!timer.isActive || timer.seconds <= 0 || timer.seconds > REST_WARNING_SECONDS) return;
+    chimeRef.current.pip(REST_WARNING_SECONDS - timer.seconds);
+  }, [timer.isActive, timer.seconds, soundEnabled, restWarningEnabled]);
+
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,
-    isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
+    isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, restWarningEnabled, logGrouping,
     preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded,
   });
 
@@ -170,9 +182,9 @@ const App = () => {
   }, [history]);
 
   const getAppState = useCallback(() => ({
-    weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, language: i18n.language,
+    weights, program, history, nextType: currentWorkoutType, isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, restWarningEnabled, logGrouping, language: i18n.language,
     preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded,
-  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded]);
+  }), [weights, program, history, currentWorkoutType, isDark, localBackup, preferredRest, soundEnabled, vibrationEnabled, restWarningEnabled, logGrouping, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded]);
 
   const exportData = useCallback((targetHistory) => {
     const data = { app: 'Strength 5x5', version: SCHEMA_VERSION, ...getAppState(), history: targetHistory || history };
@@ -334,10 +346,10 @@ const App = () => {
 
     saveToDriveQuietly({
       weights: nextWeights, program, history: newHistory, nextType,
-      isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, logGrouping,
+      isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, restWarningEnabled, logGrouping,
       preset, mcTop: nextMcTop, mcWeek: nextMcWeek, mcInterval, mcPress, mcNextDay: nextMcNextDay, mcPending: nextMcPending, mcSeeded,
     });
-  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded]);
+  }, [currentWorkout, history, weights, program, localBackup, exportData, timer, currentWorkoutType, isDark, preferredRest, soundEnabled, vibrationEnabled, restWarningEnabled, logGrouping, saveToDriveQuietly, preset, mcTop, mcWeek, mcInterval, mcPress, mcNextDay, mcPending, mcSeeded]);
 
   const cancelWorkout = useCallback(() => {
     setIsWorkoutActive(false); setCurrentWorkout(null);
@@ -401,7 +413,7 @@ const App = () => {
   const applyLocalImport = useCallback((d) => {
     hydrateFromBackup(d, {
       setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
-      setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
+      setPreferredRest, setSoundEnabled, setVibrationEnabled, setRestWarningEnabled, setLogGrouping,
       setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending, setMcSeeded,
     });
     setActiveTab('workout'); setShowRestorePrompt(false);
@@ -413,13 +425,14 @@ const App = () => {
       preferredRest: d.preferredRest || preferredRest,
       soundEnabled: d.soundEnabled ?? soundEnabled,
       vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
+      restWarningEnabled: d.restWarningEnabled ?? restWarningEnabled,
       logGrouping: d.logGrouping || logGrouping,
       language: d.language || i18n.language,
       preset: normalizePreset(d.preset), mcTop: normalizeMcTop(d.mcTop, d.weights), mcWeek: normalizeMcWeek(d.mcWeek),
       mcInterval: normalizeMcInterval(d.mcInterval), mcPress: normalizeMcPress(d.mcPress), mcNextDay: normalizeMcNextDay(d.mcNextDay),
       mcPending: normalizeMcPending(d.mcPending), mcSeeded: normalizeMcSeeded(d.mcSeeded, d),
     });
-  }, [currentWorkoutType, preferredRest, soundEnabled, vibrationEnabled, logGrouping, saveToDriveQuietly, showToast, t]);
+  }, [currentWorkoutType, preferredRest, soundEnabled, vibrationEnabled, restWarningEnabled, logGrouping, saveToDriveQuietly, showToast, t]);
 
   const handleImport = (e) => {
     const file = e.target.files[0];
@@ -492,7 +505,7 @@ const App = () => {
   const applyDriveRestore = useCallback((d) => {
     hydrateFromBackup(d, {
       setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
-      setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
+      setPreferredRest, setSoundEnabled, setVibrationEnabled, setRestWarningEnabled, setLogGrouping,
       setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending, setMcSeeded,
     });
     setActiveTab('workout');
@@ -718,6 +731,7 @@ const App = () => {
             preferredRest={preferredRest} setPreferredRest={setPreferredRest}
             soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled}
             vibrationEnabled={vibrationEnabled} setVibrationEnabled={setVibrationEnabled}
+            restWarningEnabled={restWarningEnabled} setRestWarningEnabled={setRestWarningEnabled}
             isDark={isDark} setIsDark={setIsDark}
             localBackup={localBackup} setLocalBackup={setLocalBackup}
             driveConfigured={driveConfigured} gdrive={gdrive}

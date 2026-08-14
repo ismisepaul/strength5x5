@@ -241,6 +241,7 @@
   "timer": {
     "inSession": "Entraînement en cours",
     "rest": "Repos",
+    "getReady": "Prêt",
     "lifting": "En cours",
     "workoutComplete": "Entraînement terminé",
     "movementFinished": "Mouvement terminé"
@@ -313,6 +314,8 @@
     "restIntervalDesc": "Décompte entre les séries",
     "soundAlert": "Alerte sonore",
     "soundAlertDesc": "Sonnerie à la fin du repos",
+    "restWarning": "Alerte à 5 secondes",
+    "restWarningDesc": "Décompte sonore à partir de 5 secondes",
     "vibration": "Vibration",
     "vibrationDesc": "Vibration à la fin du repos",
     "darkMode": "Thème",

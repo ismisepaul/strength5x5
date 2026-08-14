@@ -46,6 +46,11 @@
       transform: translateY(0) scale(1);
     }
   }
+
+  @keyframes warnBreathe {
+    0%, 100% { opacity: .05; }
+    50% { opacity: .115; }
+  }
 }
 
 /*

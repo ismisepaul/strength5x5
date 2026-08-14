@@ -37,6 +37,20 @@ describe('Settings', () => {
     expect(stored.soundEnabled).toBe(true);
   });
 
+  it('toggles the five-second warning setting, defaulted on', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const warningSwitch = screen.getByRole('switch', { name: 'Five-second warning' });
+    expect(warningSwitch.getAttribute('aria-checked')).toBe('true');
+    await user.click(warningSwitch);
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.restWarningEnabled).toBe(false);
+  });
+
   it('toggles vibration setting', async () => {
     const user = userEvent.setup();
     render(<App />);

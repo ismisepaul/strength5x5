@@ -68,6 +68,11 @@ export const MADCOW_INTERVAL_OPTIONS = [10, 12.5, 15];
 // fractional plates this app doesn't model, so it isn't an option here.
 export const MADCOW_WEEKLY_INCREMENTS = { squat: 2.5, bench: 2.5, row: 2.5, press: 2.5, deadlift: 2.5, incline: 2.5 };
 
+// Last stretch of rest where the timer strip floods and (if enabled) quiet pips
+// count down -- shared by RestTimer.jsx's visual and App.jsx's audio scheduling so
+// the two can't drift apart.
+export const REST_WARNING_SECONDS = 5;
+
 export const STORAGE_KEY = 'strength5x5_data';
 export const SCHEMA_VERSION = 2;
 export const EXPECTED_WEIGHT_KEYS = ['squat', 'bench', 'row', 'press', 'deadlift'];

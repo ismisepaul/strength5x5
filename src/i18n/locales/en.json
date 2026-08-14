@@ -241,6 +241,7 @@
   "timer": {
     "inSession": "In workout",
     "rest": "Rest",
+    "getReady": "Get ready",
     "lifting": "Lifting",
     "workoutComplete": "Workout complete",
     "movementFinished": "Movement finished"
@@ -313,6 +314,8 @@
     "restIntervalDesc": "Countdown between sets",
     "soundAlert": "Sound alert",
     "soundAlertDesc": "Chime when rest ends",
+    "restWarning": "Five-second warning",
+    "restWarningDesc": "Sound countdown from 5 seconds",
     "vibration": "Vibration",
     "vibrationDesc": "Buzz when rest ends",
     "darkMode": "Theme",
