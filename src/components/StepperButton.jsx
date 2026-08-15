@@ -1,6 +1,9 @@
 import React from 'react';
 
-const SIZE_CLASSES = { 40: 'w-10 h-10', 44: 'w-11 h-11' };
+// 52px is the bottom-sheet "hero" size -- a value with no other way to reach it
+// (CustomRestSheet) gets a bigger thumb target than the 44px Train uses for a value
+// that's also typeable, since there's no keyboard fallback in a sheet.
+const SIZE_CLASSES = { 40: 'w-10 h-10', 44: 'w-11 h-11', 52: 'w-[52px] h-[52px]' };
 
 const StepperButton = ({ onClick, onMouseDown, ariaLabel, icon: Icon, size = 40, iconSize = 16 }) => (
   <button

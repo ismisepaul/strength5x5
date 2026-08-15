@@ -68,6 +68,24 @@ export const MADCOW_INTERVAL_OPTIONS = [10, 12.5, 15];
 // fractional plates this app doesn't model, so it isn't an option here.
 export const MADCOW_WEEKLY_INCREMENTS = { squat: 2.5, bench: 2.5, row: 2.5, press: 2.5, deadlift: 2.5, incline: 2.5 };
 
+// Last stretch of rest where the timer strip floods and (if enabled) quiet pips
+// count down -- shared by RestTimer.jsx's visual and App.jsx's audio scheduling so
+// the two can't drift apart.
+export const REST_WARNING_SECONDS = 5;
+
+// Bounds for the rest interval's "Custom" option. The floor is REST_WARNING_SECONDS
+// rather than a round number on purpose: a rest shorter than the warning window would
+// start already flooded, with pips the countdown never has room to play in order.
+export const CUSTOM_REST_MIN = REST_WARNING_SECONDS;
+export const CUSTOM_REST_MAX = 600;
+export const CUSTOM_REST_STEP = 5;
+export const REST_PRESETS = [90, 180, 300];
+// Shortcut chips inside the custom-rest sheet -- a denser set of jump points than the
+// three main presets, chosen for the intervals people actually reach for when 90/180/300
+// aren't it (a short superset finisher, a long compound lift) rather than a stepping
+// stone toward one of the presets above.
+export const CUSTOM_REST_SHORTCUTS = [45, 60, 120, 240];
+
 export const STORAGE_KEY = 'strength5x5_data';
 export const SCHEMA_VERSION = 2;
 export const EXPECTED_WEIGHT_KEYS = ['squat', 'bench', 'row', 'press', 'deadlift'];
