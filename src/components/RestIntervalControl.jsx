@@ -32,7 +32,13 @@ const RestIntervalControl = ({ preferredRest, setPreferredRest }) => {
       setPreferredRest(CUSTOM_REST_MAX);
       return;
     }
-    const next = clamp(preferredRest + diff);
+    // CUSTOM_REST_MIN (5) sits below the step grid on purpose (see constants.js), so
+    // landing on it and then pressing + would otherwise add the step from 5 (5, 15,
+    // 25...) rather than rejoining the grid the rest of the range steps on (10, 20...).
+    const offGrid = preferredRest % CUSTOM_REST_STEP !== 0;
+    const next = diff > 0 && offGrid
+      ? clamp(preferredRest + (CUSTOM_REST_STEP - (preferredRest % CUSTOM_REST_STEP)))
+      : clamp(preferredRest + diff);
     setNotice(next < REST_SHORT_SECONDS ? 'short' : null);
     setPreferredRest(next);
   };
