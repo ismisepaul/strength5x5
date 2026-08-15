@@ -236,6 +236,11 @@ directly below the footer row:
 
 **Switches.** Custom 46×26 track, 20px knob (`translate-x-[21px]` when on) — accent border,
 `accent-900` track and accent knob when on; `ink/18` border and neutral knob when off.
+A switch whose parent setting is off takes `disabled` — the row dims to `opacity-35` and
+its description says which switch it is waiting on ("Needs Sound alert on"). A dependent
+control never sits there reading as on while doing nothing; that is the "nothing dead on
+screen" rule applied to settings. Options' "Five-second warning" under "Sound alert" is
+the reference case.
 
 **Steppers.** Every − / + control shares one `StepperButton` component: 8px radius,
 outlined `ink/18` border. `ProgramEditor` sets/reps use the default 40×40px / 16px icon.
@@ -274,9 +279,19 @@ always on.
 - During an active workout on the Train tab, the **timer strip replaces the header** at
   the top of the screen — it is not docked at the bottom. Header everywhere else. The
   strip is full-bleed: 44px tabular digits, a 3px accent progress line that fades in
-  from the left (`transition: width 1s linear`). All timer logic (wall-clock anchor,
-  expire → stopwatch, sound/vibrate) lives in `useTimer`/`RestTimer.jsx` and is
-  untouched by presentation work.
+  from the left (`transition: width 1s linear`). In the last 5 seconds of rest the
+  strip floods to `accent-900` with a breathing accent wash, a 1px accent bottom
+  border, "Rest" → "Get ready", digits to 52px `accent-300`, and the progress line to
+  5px — visible from the rack, not just in the hand. The wash is the app's only looping
+  animation, so it is also the only one with a `prefers-reduced-motion` answer: the
+  keyframes are redefined to hold a steady `.09` rather than the animation being
+  dropped, since the flood still has to read. The expiry chime is a soft wooden marimba
+  (two struck notes, 339.5/679Hz), not a pure tone, and (if the "Five-second warning"
+  setting is on, alongside Sound alert) a quiet rising pip marks each of those last
+  5 seconds. Pip scheduling keys off `timer.seconds` alone — the two settings are read
+  through a ref, so toggling either mid-window can't replay the current second's pip.
+  All timer logic (wall-clock anchor, expire → stopwatch, sound/vibrate) lives in
+  `useTimer`/`RestTimer.jsx` and is untouched by presentation work.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
 - **Every editable weight in the app — Train (idle and active), the Program tab's
   Madcow top sets, and the Log's add/edit-entry modal — uses one `WeightInput`
@@ -303,6 +318,33 @@ always on.
     and writes straight through, no separate confirm step. They use
     `onMouseDown={e => e.preventDefault()}` so tapping one doesn't blur/commit the
     input first.
+  - **Custom rest is the app's one number that doesn't use `WeightInput`'s inline
+    lockup, because it isn't reached from a row with room to expand into — it's a
+    bottom sheet** (design 3b, "the list never moves"). Options' rest-interval
+    segmented control's fourth chip reads "Custom" until a custom value is set, then
+    switches to that value clock-formatted (`0:45`, matching the presets) with a
+    trailing caret that signals it opens something rather than selecting in place.
+    Tapping it opens `CustomRestSheet` — the same `Sheet` shell as the rep picker and
+    help — over the *unchanged* Options list behind it: nothing in that list expands,
+    collapses, or reflows while the sheet is open.
+  - Inside the sheet: a kicker + one line of copy stating the bounds and step,
+    52×52px `StepperButton`s (the one place in the app bigger than `WeightInput`'s
+    44px `prominent`, since a sheet reached by tap has no keyboard to fall back on)
+    flanking a 44px clock-formatted value, a row of four shortcut chips
+    (`CUSTOM_REST_SHORTCUTS`) for jumping straight to a commonly-used interval, and an
+    accent-outlined "Done" button that just dismisses. **There is deliberately no
+    typed-number input here** — the sheet trades typed precision for a big thumb
+    target and one-tap shortcuts, the opposite trade-off from `WeightInput`. Both
+    steppers and shortcut chips write straight to `preferredRest` on tap, so — same
+    rule as `WeightInput`'s steppers — there's no draft to revert and Done has
+    nothing to commit.
+  - Rest seconds step by 5 and clamp to `CUSTOM_REST_MIN`/`MAX` without snapping to a
+    grid — unlike weights, which snap to the lift's own increment, because seconds
+    aren't loadable in fixed jumps and snapping would discard a deliberate 8.
+  - A sheet rendered from a screen component (rather than lifted to `App.jsx` like
+    most modals) must be a sibling of, not nested inside, a `space-y-*` column: that
+    utility's margin-top on every child after the first would shove a
+    `position:fixed inset-0` sheet down from the viewport edge.
   - On Train's idle screen, committing writes to `weights` state directly — there's
     no active workout yet to hold a per-session override — so the change persists
     into the started workout, Stats, and everywhere else `weights` is read, the same

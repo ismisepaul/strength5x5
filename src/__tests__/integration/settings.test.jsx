@@ -23,6 +23,64 @@ describe('Settings', () => {
     expect(stored.preferredRest).toBe(180);
   });
 
+  it('opens the custom rest sheet from the chip, steps the value, and closes on Done', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+    await user.click(screen.getByText('Custom'));
+
+    const sheet = screen.getByRole('dialog', { name: 'Custom rest' });
+    expect(sheet).toBeInTheDocument();
+    // Opens on the committed 90s default, mm:ss like the presets.
+    expect(within(sheet).getByText('1:30')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Increase custom rest time'));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(95);
+    expect(within(sheet).getByText('1:35')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Decrease custom rest time'));
+    await user.click(screen.getByLabelText('Decrease custom rest time'));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(85);
+
+    await user.click(screen.getByText('Done'));
+    expect(screen.queryByRole('dialog', { name: 'Custom rest' })).not.toBeInTheDocument();
+
+    // The segmented chip now carries the value instead of the word "Custom".
+    expect(screen.getByText('1:25')).toBeInTheDocument();
+    expect(screen.queryByText('Custom')).not.toBeInTheDocument();
+  });
+
+  it('clamps custom rest at the sheet\'s floor and ceiling', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+    await user.click(screen.getByText('Custom'));
+
+    const decrease = screen.getByLabelText('Decrease custom rest time');
+    for (let i = 0; i < 20; i++) await user.click(decrease); // 90s - 100s of -5s steps
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(5);
+
+    const increase = screen.getByLabelText('Increase custom rest time');
+    for (let i = 0; i < 130; i++) await user.click(increase); // well past the 600s ceiling
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(600);
+  });
+
+  it('jumps to a shortcut chip value inside the custom rest sheet', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+    await user.click(screen.getByText('Custom'));
+
+    await user.click(screen.getByRole('button', { name: '2:00' }));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(120);
+
+    await user.click(screen.getByText('Done'));
+    expect(screen.getByText('2:00')).toBeInTheDocument();
+  });
+
   it('toggles sound setting', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -35,6 +93,40 @@ describe('Settings', () => {
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.soundEnabled).toBe(true);
+  });
+
+  it('toggles the five-second warning setting, defaulted on, once sound is on', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+    await user.click(screen.getByRole('switch', { name: 'Sound alert' }));
+
+    const warningSwitch = screen.getByRole('switch', { name: 'Five-second warning' });
+    expect(warningSwitch.getAttribute('aria-checked')).toBe('true');
+    await user.click(warningSwitch);
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    expect(stored.restWarningEnabled).toBe(false);
+  });
+
+  // The warning has no way to reach the user except the chime, so with Sound alert off
+  // it must not sit there reading as on while doing nothing.
+  it('disables the five-second warning row while Sound alert is off, and explains why', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const warningSwitch = screen.getByRole('switch', { name: 'Five-second warning' });
+    expect(warningSwitch).toBeDisabled();
+    expect(screen.getByText('Needs Sound alert on')).toBeInTheDocument();
+    expect(screen.queryByText('Sound countdown from 5 seconds')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('switch', { name: 'Sound alert' }));
+
+    expect(screen.getByRole('switch', { name: 'Five-second warning' })).toBeEnabled();
+    expect(screen.getByText('Sound countdown from 5 seconds')).toBeInTheDocument();
   });
 
   it('toggles vibration setting', async () => {

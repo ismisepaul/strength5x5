@@ -14,7 +14,7 @@ import { convertStrongliftsCSV } from './utils/convertStronglifts';
 export const hydrateFromBackup = (d, setters) => {
   const {
     setWeights, setProgram, setHistory, setCurrentWorkoutType, setIsDark, setLocalBackup,
-    setPreferredRest, setSoundEnabled, setVibrationEnabled, setLogGrouping,
+    setPreferredRest, setSoundEnabled, setVibrationEnabled, setRestWarningEnabled, setLogGrouping,
     setPreset, setMcTop, setMcWeek, setMcInterval, setMcPress, setMcNextDay, setMcPending, setMcSeeded,
   } = setters;
 
@@ -24,6 +24,7 @@ export const hydrateFromBackup = (d, setters) => {
   if (d.preferredRest) setPreferredRest(d.preferredRest);
   if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
   if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
+  if (d.restWarningEnabled !== undefined) setRestWarningEnabled(d.restWarningEnabled);
   if (d.logGrouping) setLogGrouping(d.logGrouping);
   if (d.language) i18n.changeLanguage(d.language);
   setPreset(normalizePreset(d.preset));

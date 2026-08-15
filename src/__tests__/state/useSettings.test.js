@@ -11,10 +11,22 @@ describe('useSettings', () => {
     expect(result.current.soundEnabled).toBe(false);
   });
 
+  // The only setting in the app that defaults on. It's inert until soundEnabled is
+  // also on, which is what lets it default that way without making noise unasked.
+  it('defaults restWarningEnabled to true when saved is empty', () => {
+    const { result } = renderHook(() => useSettings({}));
+    expect(result.current.restWarningEnabled).toBe(true);
+  });
+
+  it('reads an explicit false for restWarningEnabled rather than falling back to the default', () => {
+    const { result } = renderHook(() => useSettings({ restWarningEnabled: false }));
+    expect(result.current.restWarningEnabled).toBe(false);
+  });
+
   it('reads every field from saved when present', () => {
     const saved = {
       isDark: false, autoSave: true, preferredRest: 180,
-      soundEnabled: true, vibrationEnabled: true, logGrouping: 'week',
+      soundEnabled: true, vibrationEnabled: true, restWarningEnabled: false, logGrouping: 'week',
     };
     const { result } = renderHook(() => useSettings(saved));
     expect(result.current.isDark).toBe(false);
@@ -22,6 +34,7 @@ describe('useSettings', () => {
     expect(result.current.preferredRest).toBe(180);
     expect(result.current.soundEnabled).toBe(true);
     expect(result.current.vibrationEnabled).toBe(true);
+    expect(result.current.restWarningEnabled).toBe(false);
     expect(result.current.logGrouping).toBe('week');
   });
 

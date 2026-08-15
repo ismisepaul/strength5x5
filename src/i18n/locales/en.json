@@ -241,6 +241,7 @@
   "timer": {
     "inSession": "In workout",
     "rest": "Rest",
+    "getReady": "Get ready",
     "lifting": "Lifting",
     "workoutComplete": "Workout complete",
     "movementFinished": "Movement finished"
@@ -311,8 +312,16 @@
     "aboutPrivacy": "Nothing leaves your phone unless you connect Google Drive.",
     "restInterval": "Rest interval",
     "restIntervalDesc": "Countdown between sets",
+    "restIntervalCustom": "Custom",
+    "restIntervalCustomSheetTitle": "Custom rest",
+    "restIntervalCustomSheetDesc": "Anything from {{min}} seconds to {{maxMinutes}} minutes, in {{step}} s steps.",
+    "restIntervalDecreaseAria": "Decrease custom rest time",
+    "restIntervalIncreaseAria": "Increase custom rest time",
     "soundAlert": "Sound alert",
     "soundAlertDesc": "Chime when rest ends",
+    "restWarning": "Five-second warning",
+    "restWarningDesc": "Sound countdown from 5 seconds",
+    "restWarningNeedsSound": "Needs Sound alert on",
     "vibration": "Vibration",
     "vibrationDesc": "Buzz when rest ends",
     "darkMode": "Theme",
@@ -347,6 +356,7 @@
     "aboutDataSize": "{{size}} stored on this device"
   },
   "modals": {
+    "done": "Done",
     "discardTitle": "Discard this workout?",
     "discardBody": "Logged sets won't be saved and weights won't change.",
     "keepLifting": "Keep lifting",

@@ -11,6 +11,7 @@ export const useSettings = (saved) => {
   const [preferredRest, setPreferredRest] = useState(saved.preferredRest ?? 90);
   const [soundEnabled, setSoundEnabled] = useState(saved.soundEnabled ?? false);
   const [vibrationEnabled, setVibrationEnabled] = useState(saved.vibrationEnabled ?? saved.hapticsEnabled ?? false);
+  const [restWarningEnabled, setRestWarningEnabled] = useState(saved.restWarningEnabled ?? true);
   const [logGrouping, setLogGrouping] = useState(saved.logGrouping ?? 'all');
 
   return {
@@ -19,6 +20,7 @@ export const useSettings = (saved) => {
     preferredRest, setPreferredRest,
     soundEnabled, setSoundEnabled,
     vibrationEnabled, setVibrationEnabled,
+    restWarningEnabled, setRestWarningEnabled,
     logGrouping, setLogGrouping,
   };
 };
