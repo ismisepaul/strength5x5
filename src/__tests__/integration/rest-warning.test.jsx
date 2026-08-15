@@ -8,8 +8,9 @@ import userEvent from '@testing-library/user-event';
 // and the spies are asserted on directly.
 const pip = vi.fn();
 const play = vi.fn();
+const unlock = vi.fn();
 vi.mock('../../audio/chime', () => ({
-  createChime: () => ({ pip, play, resume: vi.fn() }),
+  createChime: () => ({ pip, play, unlock }),
 }));
 
 import App from '../../App';
@@ -52,6 +53,7 @@ describe('rest timer five-second warning', () => {
     localStorage.clear();
     pip.mockClear();
     play.mockClear();
+    unlock.mockClear();
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
   afterEach(() => { vi.useRealTimers(); });
@@ -96,6 +98,30 @@ describe('rest timer five-second warning', () => {
     await startRest(user2);
     await tick(4 * REST + 4);
     expect(pip).not.toHaveBeenCalled();
+  });
+
+  // unlock() builds an AudioContext and is the gesture iOS wants spent on audio, so it
+  // rides on the set-log tap -- but sound defaults to off, and someone who left it off
+  // should not have an audio context created on their behalf.
+  it('unlocks audio on the set-log tap when sound is on', async () => {
+    const user = await setup();
+    await startRest(user);
+    expect(unlock).toHaveBeenCalled();
+  });
+
+  it('does not unlock audio on the set-log tap when sound is off', async () => {
+    const user = await setup({ soundEnabled: false });
+    await startRest(user);
+    expect(unlock).not.toHaveBeenCalled();
+  });
+
+  it('does not unlock audio on the skip tap when sound is off', async () => {
+    const user = await setup({ soundEnabled: false });
+    await startRest(user);
+    await tick(4);
+
+    await user.click(screen.getByLabelText('Skip rest'));
+    expect(unlock).not.toHaveBeenCalled();
   });
 
   it('does not replay the current second when a sound setting is toggled mid-window', async () => {

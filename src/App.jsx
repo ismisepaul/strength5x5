@@ -255,6 +255,12 @@ const App = () => {
   // logged value, resolveNext computes the next one, then this stamps setTimes and
   // drives the rest timer identically either way.
   const applySetValue = useCallback((exIdx, setIdx, resolveNext) => {
+    // Logging a set is the tap that starts the rest that ends in a chime, so it is also
+    // the last user gesture before the sound is due. iOS only lets a gesture unlock the
+    // audio context, so spend this one on it -- but only when a sound is actually coming.
+    // unlock() builds the context and claims an audio session, which is not something to
+    // do behind the back of someone who turned sound off.
+    if (soundEnabled) chimeRef.current.unlock();
     if (timer.isExpired) timer.reset();
     setCurrentWorkout(prev => {
       if (!prev) return prev;
@@ -288,7 +294,7 @@ const App = () => {
       } else { timer.stop(); setIsExerciseComplete(false); }
       return nextWorkout;
     });
-  }, [timer, preferredRest]);
+  }, [timer, preferredRest, soundEnabled]);
 
   const handleToggleSet = useCallback((exIdx, setIdx) => {
     // Short-press cycle: unlogged -> target -> target-1 -> ... -> 1 -> 0 -> unlogged.
@@ -641,14 +647,14 @@ const App = () => {
   }, []);
 
   const handleTimerSkip = useCallback(() => {
-    chimeRef.current.resume();
+    if (soundEnabled) chimeRef.current.unlock();
     if (isExerciseComplete) {
       timer.reset();
       setIsExerciseComplete(false);
     } else {
       timer.skip();
     }
-  }, [timer, isExerciseComplete]);
+  }, [timer, isExerciseComplete, soundEnabled]);
 
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const moodLabel = (day) => {
