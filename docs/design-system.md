@@ -246,6 +246,11 @@ the reference case.
 outlined `ink/18` border. `ProgramEditor` sets/reps use the default 40×40px / 16px icon.
 Weight editing (see below) uses the 44×44px / 15px-icon `prominent` variant on Train,
 and the 40×40px / 16px-icon `compact` variant on the Program tab and in the Log.
+`RestIntervalControl` (see below) uses 44×44px / 16px icons — the same footprint as
+`prominent` with `compact`'s icon size, since it flanks a fill track rather than a
+typeable number. `StepperButton`'s `dimmed` prop (opacity-35) marks one pressed against
+a bound it can't move past without disabling it — the tap still lands and is what
+surfaces the explanation for why it won't go further.
 
 **Segmented controls.** Active segment = `accent-900` fill with an inset accent ring
 (`shadow-[inset_0_0_0_1px_var(--color-accent)]`, so it re-themes automatically);
@@ -318,33 +323,55 @@ always on.
     and writes straight through, no separate confirm step. They use
     `onMouseDown={e => e.preventDefault()}` so tapping one doesn't blur/commit the
     input first.
-  - **Custom rest is the app's one number that doesn't use `WeightInput`'s inline
-    lockup, because it isn't reached from a row with room to expand into — it's a
-    bottom sheet** (design 3b, "the list never moves"). Options' rest-interval
-    segmented control's fourth chip reads "Custom" until a custom value is set, then
-    switches to that value clock-formatted (`0:45`, matching the presets) with a
-    trailing caret that signals it opens something rather than selecting in place.
-    Tapping it opens `CustomRestSheet` — the same `Sheet` shell as the rep picker and
-    help — over the *unchanged* Options list behind it: nothing in that list expands,
-    collapses, or reflows while the sheet is open.
-  - Inside the sheet: a kicker + one line of copy stating the bounds and step,
-    52×52px `StepperButton`s (the one place in the app bigger than `WeightInput`'s
-    44px `prominent`, since a sheet reached by tap has no keyboard to fall back on)
-    flanking a 44px clock-formatted value, a row of four shortcut chips
-    (`CUSTOM_REST_SHORTCUTS`) for jumping straight to a commonly-used interval, and an
-    accent-outlined "Done" button that just dismisses. **There is deliberately no
-    typed-number input here** — the sheet trades typed precision for a big thumb
-    target and one-tap shortcuts, the opposite trade-off from `WeightInput`. Both
-    steppers and shortcut chips write straight to `preferredRest` on tap, so — same
-    rule as `WeightInput`'s steppers — there's no draft to revert and Done has
-    nothing to commit.
+  - **Rest interval is the app's one number that doesn't use `WeightInput`'s inline
+    lockup, because it has no discrete increment to hand a lift** (design 3c, "no
+    custom mode at all"). There is one value, `RestIntervalControl.jsx`, always live
+    and always adjustable — no segmented control, no "Custom" state, no sheet
+    (superseding design 3b's `CustomRestSheet`). The row leads with the label/caption
+    pair on the left and the value itself clock-formatted (`0:45`) large on the
+    right, then a stepper row: 44px `StepperButton`s (`WeightInput`'s `prominent`
+    size, 10s `CUSTOM_REST_STEP`) flank a track that fills left-to-right in
+    proportion to `(preferredRest - CUSTOM_REST_MIN) / (CUSTOM_REST_MAX -
+    CUSTOM_REST_MIN)` and centres a step/ceiling caption ("10 s steps · max 5:00").
+    `REST_PRESETS` render as three plain shortcut buttons below — not a segmented
+    control's selected state — that jump straight to a number on tap; a preset
+    lights up (accent border + `accent-900` fill) only when the live value happens
+    to equal it, and dims back out the moment a stepper tap moves away. Nothing in
+    the row ever appears, collapses, or opens — the trade-off this design accepts is
+    that the presets lose their persistent "selected" reading in exchange for the
+    fewest moving parts.
+  - `CUSTOM_REST_MAX` caps the interval at 5:00, the top preset, rather than leaving it
+    open-ended — routinely needing longer than that is read as a signal about the
+    weight or the rest, not a gap the control should paper over with a bigger number.
+    Design 4a ("3c with a hard 5:00 cap") layers live feedback for both ends of the
+    range on top of 3c, driven from `RestIntervalControl`'s local `notice` state
+    (`'cap' | 'short' | null`, mirroring the prototype's `msgD`):
+    - Pressing + while `preferredRest` is already at `CUSTOM_REST_MAX` sets
+      `notice = 'cap'` and renders `options.restIntervalCapExplainer` ("Greater than
+      5 minutes suggests the weight is too heavy. Deload to continue instead.") in a
+      left-accent-bordered callout with a `Warning` (triangle) icon below the
+      presets. The + `StepperButton` also gets `dimmed` (opacity-35, still
+      clickable — tapping a dimmed stepper is exactly what surfaces the notice) once
+      `preferredRest >= CUSTOM_REST_MAX`; − dims the same way at `CUSTOM_REST_MIN`.
+    - Stepping (or jumping via a preset) to a value under `REST_SHORT_SECONDS` (60s)
+      sets `notice = 'short'` and renders `options.restIntervalShortWarning`
+      ("Less than 1 minute rest between sets is not enough to recover.") in the same
+      callout style. Below 5:00 there's no upper-bound reading to explain, so `short`
+      and `cap` never render at once.
+    - Jumping to the 5:00 preset directly does **not** set `notice = 'cap'` — only
+      pressing + while already there does. Any interaction that doesn't re-trigger a
+      notice's condition clears it, so neither is ever a permanent caption.
+  - `restBand()` (`utils.js`) is a second, independent readout: "Typical for: Light
+    Set / Medium Set / Heavy Set", mirroring design 4b's own set-intensity reference
+    (Light 1:30–2:00, Medium 2:00–3:00, Heavy 3:00–5:00, extended down to 60s so
+    there's a band for everything above the "too short to recover" floor). Unlike
+    `notice`, the band is not sticky — it's recomputed from `preferredRest` on every
+    render, so it can be visible at the same time as a `cap` notice (e.g. "Heavy
+    Set" plus the cap explainer, both true at 5:00) but never alongside `short`
+    (below 60s there's no band to name).
   - Rest seconds step by 5 and clamp to `CUSTOM_REST_MIN`/`MAX` without snapping to a
     grid — unlike weights, which snap to the lift's own increment, because seconds
     aren't loadable in fixed jumps and snapping would discard a deliberate 8.
-  - A sheet rendered from a screen component (rather than lifted to `App.jsx` like
-    most modals) must be a sibling of, not nested inside, a `space-y-*` column: that
-    utility's margin-top on every child after the first would shove a
-    `position:fixed inset-0` sheet down from the viewport edge.
   - On Train's idle screen, committing writes to `weights` state directly — there's
     no active workout yet to hold a per-session override — so the change persists
     into the started workout, Stats, and everywhere else `weights` is read, the same

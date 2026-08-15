@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL, PLATE_WEIGHTS, MIN_WEIGHT_INCREMENT } from './constants';
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL, PLATE_WEIGHTS, MIN_WEIGHT_INCREMENT, REST_SHORT_SECONDS } from './constants';
 
 export function migrate(data, fromVersion) {
   let current = { ...data };
@@ -498,6 +498,18 @@ export function formatClock(ms) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+// Set-intensity band for a rest interval -- design 4b's "guidance behind the cap"
+// reference (Light 1:30-2:00, Medium 2:00-3:00, Heavy 3:00-5:00), extended down to
+// REST_SHORT_SECONDS so RestIntervalControl has a band to show for anything between the
+// "too short to recover" floor and the top of Light Set. Null below that floor -- there's
+// nothing to name, the short-rest notice takes over instead.
+export function restBand(seconds) {
+  if (seconds < REST_SHORT_SECONDS) return null;
+  if (seconds < 120) return 'light';
+  if (seconds <= 180) return 'medium';
+  return 'heavy';
 }
 
 // Turns the transient per-set completion timestamps recorded during a workout into
