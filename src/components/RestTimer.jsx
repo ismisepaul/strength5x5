@@ -43,7 +43,10 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   return (
     <div className={`relative flex-none pt-4 px-5 pb-3 ${isWarning ? 'bg-accent-900 border-b border-accent' : 'bg-surface-deep'}`}>
       {isWarning && (
-        <div className="absolute inset-0 bg-accent opacity-[.09] animate-[warnBreathe_1s_ease-in-out_infinite] pointer-events-none" aria-hidden="true" />
+        // Opacity is owned entirely by warnBreathe's keyframes (which hold a steady
+        // .09 under prefers-reduced-motion), so there's no static opacity utility here
+        // to be overridden by the animation.
+        <div className="absolute inset-0 bg-accent animate-[warnBreathe_1s_ease-in-out_infinite] pointer-events-none" aria-hidden="true" />
       )}
       <div className="relative flex items-end justify-between">
         <div className="flex items-end gap-2">

@@ -73,6 +73,14 @@ export const MADCOW_WEEKLY_INCREMENTS = { squat: 2.5, bench: 2.5, row: 2.5, pres
 // the two can't drift apart.
 export const REST_WARNING_SECONDS = 5;
 
+// Bounds for the rest interval's "Custom" option. The floor is REST_WARNING_SECONDS
+// rather than a round number on purpose: a rest shorter than the warning window would
+// start already flooded, with pips the countdown never has room to play in order.
+export const CUSTOM_REST_MIN = REST_WARNING_SECONDS;
+export const CUSTOM_REST_MAX = 600;
+export const CUSTOM_REST_STEP = 5;
+export const REST_PRESETS = [90, 180, 300];
+
 export const STORAGE_KEY = 'strength5x5_data';
 export const SCHEMA_VERSION = 2;
 export const EXPECTED_WEIGHT_KEYS = ['squat', 'bench', 'row', 'press', 'deadlift'];

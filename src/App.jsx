@@ -118,14 +118,23 @@ const App = () => {
 
   // One quiet pip per second of the final five seconds of rest -- mirrors the
   // strip's flood in RestTimer.jsx, which derives the same window from
-  // REST_WARNING_SECONDS. Bails out on any tick outside that window, so this only
-  // ever fires once per second while it's active (timer.seconds is an integer that
-  // only changes once per second).
+  // REST_WARNING_SECONDS.
+  //
+  // The two settings are read through a ref rather than listed as deps on purpose:
+  // as deps they re-run the effect on any toggle, so flipping either switch mid-window
+  // (the rest timer keeps running while you're on the Options tab) replayed the
+  // current second's pip out of step with the countdown. Deps are the timer alone, and
+  // timer.seconds is an integer that only changes once per second, so this fires
+  // exactly once per second of the window. Same idiom as useTimer's onExpireRef.
+  const pipSettingsRef = useRef({ soundEnabled, restWarningEnabled });
+  pipSettingsRef.current = { soundEnabled, restWarningEnabled };
+
   useEffect(() => {
-    if (!soundEnabled || !restWarningEnabled) return;
+    const { soundEnabled: sound, restWarningEnabled: warn } = pipSettingsRef.current;
+    if (!sound || !warn) return;
     if (!timer.isActive || timer.seconds <= 0 || timer.seconds > REST_WARNING_SECONDS) return;
     chimeRef.current.pip(REST_WARNING_SECONDS - timer.seconds);
-  }, [timer.isActive, timer.seconds, soundEnabled, restWarningEnabled]);
+  }, [timer.isActive, timer.seconds]);
 
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,

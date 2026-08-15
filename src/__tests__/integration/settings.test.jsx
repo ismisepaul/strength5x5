@@ -47,6 +47,54 @@ describe('Settings', () => {
     expect(stored.preferredRest).toBe(5);
   });
 
+  it('steps the custom rest interval with the − / + controls, clamped at both ends', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+    await user.click(screen.getByText('Custom'));
+
+    const decrease = screen.getByLabelText('Decrease custom rest time');
+    const increase = screen.getByLabelText('Increase custom rest time');
+    const input = screen.getByLabelText('Custom rest time in seconds');
+
+    // Opens showing the committed 90s default, then steps in 5s jumps.
+    expect(input).toHaveValue('90');
+    await user.click(increase);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(95);
+    await user.click(decrease);
+    await user.click(decrease);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(85);
+
+    // Stepping down past the floor clamps rather than going under the warning window.
+    await user.clear(input);
+    await user.type(input, '6');
+    await user.click(decrease);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(5);
+
+    // ...and up past the ceiling.
+    await user.clear(input);
+    await user.type(input, '599');
+    await user.click(increase);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(600);
+  });
+
+  it('reverts an in-progress custom rest edit on Escape', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+    await user.click(screen.getByText('Custom'));
+
+    const input = screen.getByLabelText('Custom rest time in seconds');
+    await user.clear(input);
+    await user.type(input, '42');
+    await user.keyboard('{Escape}');
+
+    expect(input).toHaveValue('90');
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').preferredRest ?? 90).toBe(90);
+  });
+
   it('toggles sound setting', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -61,11 +109,12 @@ describe('Settings', () => {
     expect(stored.soundEnabled).toBe(true);
   });
 
-  it('toggles the five-second warning setting, defaulted on', async () => {
+  it('toggles the five-second warning setting, defaulted on, once sound is on', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Options'));
+    await user.click(screen.getByRole('switch', { name: 'Sound alert' }));
 
     const warningSwitch = screen.getByRole('switch', { name: 'Five-second warning' });
     expect(warningSwitch.getAttribute('aria-checked')).toBe('true');
@@ -73,6 +122,25 @@ describe('Settings', () => {
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
     expect(stored.restWarningEnabled).toBe(false);
+  });
+
+  // The warning has no way to reach the user except the chime, so with Sound alert off
+  // it must not sit there reading as on while doing nothing.
+  it('disables the five-second warning row while Sound alert is off, and explains why', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const warningSwitch = screen.getByRole('switch', { name: 'Five-second warning' });
+    expect(warningSwitch).toBeDisabled();
+    expect(screen.getByText('Needs Sound alert on')).toBeInTheDocument();
+    expect(screen.queryByText('Sound countdown from 5 seconds')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('switch', { name: 'Sound alert' }));
+
+    expect(screen.getByRole('switch', { name: 'Five-second warning' })).toBeEnabled();
+    expect(screen.getByText('Sound countdown from 5 seconds')).toBeInTheDocument();
   });
 
   it('toggles vibration setting', async () => {

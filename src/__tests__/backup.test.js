@@ -7,7 +7,8 @@ const baseWeights = Object.fromEntries(EXPECTED_WEIGHT_KEYS.map(k => [k, 60]));
 const makeSetters = () => ({
   setWeights: vi.fn(), setProgram: vi.fn(), setHistory: vi.fn(), setCurrentWorkoutType: vi.fn(),
   setIsDark: vi.fn(), setLocalBackup: vi.fn(), setPreferredRest: vi.fn(), setSoundEnabled: vi.fn(),
-  setVibrationEnabled: vi.fn(), setLogGrouping: vi.fn(), setPreset: vi.fn(), setMcTop: vi.fn(),
+  setVibrationEnabled: vi.fn(), setRestWarningEnabled: vi.fn(),
+  setLogGrouping: vi.fn(), setPreset: vi.fn(), setMcTop: vi.fn(),
   setMcWeek: vi.fn(), setMcInterval: vi.fn(), setMcPress: vi.fn(), setMcNextDay: vi.fn(), setMcPending: vi.fn(),
   setMcSeeded: vi.fn(),
 });
@@ -20,13 +21,14 @@ describe('hydrateFromBackup', () => {
     expect(setters.setHistory).toHaveBeenCalledWith([]);
   });
 
-  it('only sets nextType, preferredRest, soundEnabled, vibrationEnabled, logGrouping when present in the backup', () => {
+  it('only sets nextType, preferredRest, soundEnabled, vibrationEnabled, restWarningEnabled, logGrouping when present in the backup', () => {
     const setters = makeSetters();
     hydrateFromBackup({ weights: baseWeights, program: {}, history: [] }, setters);
     expect(setters.setCurrentWorkoutType).not.toHaveBeenCalled();
     expect(setters.setPreferredRest).not.toHaveBeenCalled();
     expect(setters.setSoundEnabled).not.toHaveBeenCalled();
     expect(setters.setVibrationEnabled).not.toHaveBeenCalled();
+    expect(setters.setRestWarningEnabled).not.toHaveBeenCalled();
     expect(setters.setLogGrouping).not.toHaveBeenCalled();
   });
 
@@ -42,6 +44,15 @@ describe('hydrateFromBackup', () => {
     hydrateFromBackup({ weights: baseWeights, program: {}, history: [], soundEnabled: false, vibrationEnabled: false }, setters);
     expect(setters.setSoundEnabled).toHaveBeenCalledWith(false);
     expect(setters.setVibrationEnabled).toHaveBeenCalledWith(false);
+  });
+
+  // restWarningEnabled is the one flag that defaults on, so skipping an explicit false
+  // here wouldn't leave it unset -- it would silently turn the warning back on for
+  // someone who had deliberately switched it off before backing up.
+  it('respects an explicit false for restWarningEnabled rather than falling back to its default', () => {
+    const setters = makeSetters();
+    hydrateFromBackup({ weights: baseWeights, program: {}, history: [], restWarningEnabled: false }, setters);
+    expect(setters.setRestWarningEnabled).toHaveBeenCalledWith(false);
   });
 
   it('always normalizes and sets every Madcow field, even when absent', () => {

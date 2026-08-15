@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/index.js';
-import { DownloadSimple, UploadSimple, FileCsv, ArrowsClockwise } from '@phosphor-icons/react';
+import { DownloadSimple, UploadSimple, FileCsv, ArrowsClockwise, Minus, Plus } from '@phosphor-icons/react';
 import Switch from '../components/Switch';
 import Segmented from '../components/Segmented';
+import StepperButton from '../components/StepperButton';
 import { formatBytes, countSessionsSince } from '../utils';
-
-const REST_PRESETS = [90, 180, 300];
-const CUSTOM_REST_MIN = 5;
-const CUSTOM_REST_MAX = 600;
+import { REST_PRESETS, CUSTOM_REST_MIN, CUSTOM_REST_MAX, CUSTOM_REST_STEP } from '../constants';
 
 const SectionHeader = ({ children }) => (
   <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-3">{children}</p>
@@ -41,14 +39,26 @@ const SettingsScreen = ({
   // !REST_PRESETS.includes(preferredRest) agree anyway.
   const [customRestOpen, setCustomRestOpen] = useState(false);
   const [restDraft, setRestDraft] = useState(null); // null while not editing; typed string while editing
+  const cancelingRest = useRef(false);
   const showCustomRest = customRestOpen || !REST_PRESETS.includes(preferredRest);
   const restDisplayValue = restDraft !== null ? restDraft : String(preferredRest);
 
+  const clampRest = (n) => Math.min(CUSTOM_REST_MAX, Math.max(CUSTOM_REST_MIN, n));
+
   const commitCustomRest = (str) => {
     const n = parseInt(str, 10);
-    if (Number.isFinite(n)) {
-      setPreferredRest(Math.min(CUSTOM_REST_MAX, Math.max(CUSTOM_REST_MIN, n)));
-    }
+    if (Number.isFinite(n)) setPreferredRest(clampRest(n));
+    setRestDraft(null);
+  };
+
+  // Steps from whatever's currently typed if it parses, otherwise from the committed
+  // value, so typing then tapping + adjusts the typed number -- same contract as
+  // WeightInput's steppers. Unlike weights these don't snap to a grid: seconds aren't
+  // loadable in fixed increments, and snapping would throw away a deliberate 8s.
+  const stepCustomRest = (diff) => {
+    const parsed = restDraft !== null ? parseInt(restDraft, 10) : NaN;
+    const base = Number.isFinite(parsed) ? parsed : preferredRest;
+    setPreferredRest(clampRest(base + diff));
     setRestDraft(null);
   };
 
@@ -77,19 +87,51 @@ const SettingsScreen = ({
             }}
           />
           {showCustomRest && (
-            <div className="flex items-center gap-2 mt-3">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={restDisplayValue}
-                onFocus={(e) => { setRestDraft(String(preferredRest)); e.target.select(); }}
-                onChange={(e) => setRestDraft(e.target.value.replace(/\D/g, ''))}
-                onBlur={(e) => commitCustomRest(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                aria-label={t('options.restIntervalCustomAria')}
-                className="w-16 text-center text-card font-display font-semibold tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] border-ink/26 focus:border-accent focus:outline-none"
+            // The same − / number / unit / + lockup every editable number in the app
+            // uses (design-system.md §5), at WeightInput's `compact` geometry. Right
+            // aligned so it sits under the segment that revealed it and shares an edge
+            // with the switches below.
+            <div className="flex items-center justify-end gap-2 mt-3">
+              <StepperButton
+                onClick={() => stepCustomRest(-CUSTOM_REST_STEP)}
+                onMouseDown={(e) => e.preventDefault()}
+                ariaLabel={t('options.restIntervalDecreaseAria')}
+                icon={Minus}
+                size={40}
+                iconSize={16}
               />
-              <span className={`text-meta ${mutedClass}`}>{t('options.restIntervalCustomUnit')}</span>
+              <div className="flex items-baseline gap-1">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={restDisplayValue}
+                  onFocus={(e) => { setRestDraft(String(preferredRest)); e.target.select(); }}
+                  onChange={(e) => setRestDraft(e.target.value.replace(/\D/g, ''))}
+                  onBlur={(e) => {
+                    if (cancelingRest.current) { cancelingRest.current = false; setRestDraft(null); return; }
+                    commitCustomRest(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.currentTarget.blur();
+                    } else if (e.key === 'Escape') {
+                      cancelingRest.current = true;
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  aria-label={t('options.restIntervalCustomAria')}
+                  className="w-14 text-center text-[16px] font-display font-semibold tabular-nums text-accent-300 bg-transparent border-0 border-b-[1.5px] border-ink/26 focus:border-accent focus:outline-none"
+                />
+                <span className={`text-[13px] ${mutedClass}`}>{t('options.restIntervalCustomUnit')}</span>
+              </div>
+              <StepperButton
+                onClick={() => stepCustomRest(CUSTOM_REST_STEP)}
+                onMouseDown={(e) => e.preventDefault()}
+                ariaLabel={t('options.restIntervalIncreaseAria')}
+                icon={Plus}
+                size={40}
+                iconSize={16}
+              />
             </div>
           )}
         </div>
@@ -97,9 +139,22 @@ const SettingsScreen = ({
           <div><p className="text-card font-semibold">{t('options.soundAlert')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
           <Switch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} ariaLabel="Sound alert" />
         </div>
+        {/* The warning only ever plays through the chime, so with Sound alert off this
+            row can't do anything. It dims and stops taking taps rather than reading as
+            on while silent, and says which switch it's waiting on. */}
         <div className={rowClass}>
-          <div><p className="text-card font-semibold">{t('options.restWarning')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.restWarningDesc')}</p></div>
-          <Switch checked={restWarningEnabled} onChange={() => setRestWarningEnabled(!restWarningEnabled)} ariaLabel="Five-second warning" />
+          <div className={soundEnabled ? '' : 'opacity-35'}>
+            <p className="text-card font-semibold">{t('options.restWarning')}</p>
+            <p className={`text-meta leading-tight ${mutedClass}`}>
+              {soundEnabled ? t('options.restWarningDesc') : t('options.restWarningNeedsSound')}
+            </p>
+          </div>
+          <Switch
+            checked={restWarningEnabled}
+            onChange={() => setRestWarningEnabled(!restWarningEnabled)}
+            ariaLabel="Five-second warning"
+            disabled={!soundEnabled}
+          />
         </div>
         <div className={lastRowClass}>
           <div><p className="text-card font-semibold">{t('options.vibration')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.vibrationDesc')}</p></div>

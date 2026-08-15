@@ -46,11 +46,6 @@
       transform: translateY(0) scale(1);
     }
   }
-
-  @keyframes warnBreathe {
-    0%, 100% { opacity: .05; }
-    50% { opacity: .115; }
-  }
 }
 
 /*
@@ -131,5 +126,29 @@
   #root {
     min-height: 100%;
     background: var(--app-page-bg, #141310);
+  }
+}
+
+/*
+  The rest timer's final-five-seconds wash. Unlike `slideIn` this lives outside `@theme`
+  on purpose: duplicate `@keyframes` of the same name are resolved by source order within
+  a cascade layer, and Tailwind emits `@theme` keyframes after everything else in this
+  file — so a reduced-motion override of a `@theme`-defined animation is unreachable no
+  matter where it's written. Defined here, the override below is guaranteed to follow it.
+
+  It is the app's only looping animation, so it's the only one reduced-motion has to
+  answer for. Holding the wash at a steady mid-level rather than dropping the animation
+  keeps the flood readable; it just stops breathing. The warning never rested on the
+  pulse alone anyway — the strip also changes colour, digit size, and its kicker to
+  "Get ready".
+*/
+@keyframes warnBreathe {
+  0%, 100% { opacity: .05; }
+  50% { opacity: .115; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes warnBreathe {
+    0%, 100% { opacity: .09; }
   }
 }
