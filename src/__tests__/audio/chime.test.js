@@ -3,9 +3,24 @@ import { createChime } from '../../audio/chime';
 
 // Minimal fake WebAudio graph -- enough for chime.js's call sequence, not a
 // faithful audio implementation.
+// Records what it was wired to, so tests can assert the shape of the graph and not just
+// that the right nodes got created -- a voice connected to the wrong bus is still a
+// perfectly well-formed set of nodes.
 class FakeNode {
-  connect() { return this; }
+  constructor() { this.connections = []; }
+  connect(dest) { this.connections.push(dest); return dest; }
 }
+
+// Every route from `node` down to the speaker, each as an array of the nodes it passes
+// through. Branches carry their own `seen` so a send and its dry path both show up.
+const pathsToDestination = (node, destination, seen = new Set()) => {
+  if (node === destination) return [[node]];
+  if (seen.has(node)) return [];
+  const walked = new Set(seen).add(node);
+  return node.connections.flatMap(
+    (next) => pathsToDestination(next, destination, walked).map((path) => [node, ...path])
+  );
+};
 class FakeGain extends FakeNode {
   constructor() {
     super();
@@ -51,12 +66,17 @@ class FakeAudioContext {
     this.oscillators = [];
     this.filters = [];
     this.bufferSources = [];
+    this.compressors = [];
   }
   createBuffer(channels, length) {
     return { getChannelData: () => new Float32Array(length) };
   }
   createConvolver() { const node = new FakeNode(); node.buffer = null; return node; }
-  createDynamicsCompressor() { return new FakeCompressor(); }
+  createDynamicsCompressor() {
+    const compressor = new FakeCompressor();
+    this.compressors.push(compressor);
+    return compressor;
+  }
   createGain() { return new FakeGain(); }
   createOscillator() {
     const osc = new FakeOscillator();
@@ -166,6 +186,37 @@ describe('createChime', () => {
     ctx.oscillators.forEach((o) => expect(o.frequency.value).toBeGreaterThanOrEqual(650));
   });
 
+  // The compressor is the whole loudness argument for the rewrite, and it is invisible
+  // unless the dry voices actually run through it -- wiring them to the master gain
+  // instead leaves it processing nothing but the reverb tail.
+  it('routes every voice through the compressor rather than around it', () => {
+    const chime = createChime();
+    chime.play();
+    chime.pip(0);
+    const ctx = instances[0];
+    const compressor = ctx.compressors[0];
+
+    const voices = [...ctx.oscillators, ...ctx.bufferSources];
+    expect(voices).not.toHaveLength(0);
+    voices.forEach((voice) => {
+      const paths = pathsToDestination(voice, ctx.destination);
+      expect(paths).not.toHaveLength(0);
+      paths.forEach((path) => expect(path).toContain(compressor));
+    });
+  });
+
+  // Compressing without making the level back up would land quieter than no compressor
+  // at all, which is the opposite of the point.
+  it('makes up the compressed level on the way to the speaker', () => {
+    const chime = createChime();
+    chime.play();
+    const ctx = instances[0];
+
+    const [makeup] = ctx.compressors[0].connections;
+    expect(makeup.gain.value).toBeGreaterThan(1);
+    expect(makeup.connections).toEqual([ctx.destination]);
+  });
+
   it('plays a rising pip per warning index, clamped to the five-note run', () => {
     const chime = createChime();
     [0, 1, 2, 3, 4, 99].forEach((i) => chime.pip(i));
@@ -176,12 +227,18 @@ describe('createChime', () => {
     expect(fundamentals).toEqual([784, 830.6, 880, 932.3, 987.8, 987.8]);
   });
 
-  it('declares a transient audio session so iOS plays through the ring/silent switch', () => {
+  // A phone on silent should stay silent. The only session type that would override the
+  // ring/silent switch is 'playback', which also pauses the user's music -- so the chime
+  // claims no session at all and inherits the ambient default the switch mutes.
+  it('leaves the audio session alone so iOS silent mode is respected', () => {
     const audioSession = { type: 'auto' };
     Object.defineProperty(navigator, 'audioSession', { value: audioSession, configurable: true });
     try {
-      createChime().pip(0);
-      expect(audioSession.type).toBe('transient');
+      const chime = createChime();
+      chime.pip(0);
+      chime.play();
+      chime.unlock();
+      expect(audioSession.type).toBe('auto');
     } finally {
       delete navigator.audioSession;
     }

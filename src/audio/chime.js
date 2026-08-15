@@ -12,10 +12,14 @@
 //      they would sit under a conversation. Under an actual conversation they vanished.
 //      Everything is louder now and runs through a compressor, which is what buys real
 //      loudness on a speaker with no headroom.
-//   3. The iOS ring/silent switch. A plain WebAudio context lands in the "ambient" audio
-//      session, which that switch mutes outright -- so a phone on silent played nothing
-//      at all, however loud the graph was. Declaring a "transient" session (Safari 16.4+)
-//      plays through the switch and ducks the user's music rather than stopping it.
+//   3. The iOS ring/silent switch, deliberately left alone. A WebAudio context lands in
+//      the "ambient" audio session, which that switch mutes, so an iPhone on silent plays
+//      no pips. That is the correct behaviour: silent means silent. Overriding it needs
+//      navigator.audioSession.type = 'playback', which WebKit maps to
+//      AVAudioSessionCategoryPlayback -- it ignores the switch, but it also pauses
+//      whatever the user was listening to. Not a trade worth making for a rest timer.
+//      ('transient' is not an option here: WebKit maps it to the same ambient category as
+//      the default, so it changes nothing at all.)
 //
 // The AudioContext and its graph are built lazily on first use, so constructing a chime
 // has no side effects until the user actually needs sound.
@@ -36,19 +40,11 @@ const LEAD = 0.06;
 export const createChime = () => {
   let audioCtx = null;
   let reverb = null;
-  let master = null;
-
-  // Safari-only, 16.4+. Without it an iPhone on silent stays silent no matter what we
-  // schedule; "transient" is the type meant for short alerts, and unlike "playback" it
-  // mixes with and ducks whatever the user is listening to instead of pausing it.
-  const declareAudioSession = () => {
-    if (navigator.audioSession) { navigator.audioSession.type = 'transient'; }
-  };
+  let bus = null;
 
   const ensureContext = () => {
     if (audioCtx) return audioCtx;
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    declareAudioSession();
 
     const duration = 2;
     const rate = audioCtx.sampleRate;
@@ -63,9 +59,10 @@ export const createChime = () => {
     const convolver = audioCtx.createConvolver();
     convolver.buffer = impulse;
 
-    // Every voice lands here: compressor -> master -> speaker. The notes overlap and the
-    // clicks are pure transient, so flattening the peaks before the makeup gain is worth
-    // several dB of perceived loudness that the phone would otherwise spend on headroom.
+    // Every voice lands on `bus`: bus (compressor) -> master (makeup) -> speaker. The
+    // notes overlap and the clicks are pure transient, so flattening the peaks before the
+    // makeup gain is worth several dB of perceived loudness that the phone would
+    // otherwise spend on headroom.
     const compressor = audioCtx.createDynamicsCompressor();
     compressor.threshold.value = -16;
     compressor.knee.value = 12;
@@ -73,20 +70,26 @@ export const createChime = () => {
     compressor.attack.value = 0.002;
     compressor.release.value = 0.2;
 
-    master = audioCtx.createGain();
-    master.gain.value = 0.95;
+    // These settings pull a 0.74 chime peak down to about 0.35 and a 0.47 pip peak to
+    // about 0.31, so the makeup has to give roughly 8dB back or compressing the dry
+    // signal would leave everything quieter than it started. 2.4 lands the chime near its
+    // uncompressed peak with headroom to spare, and lifts the pips well above theirs --
+    // the pips being the ones nobody could hear.
+    const master = audioCtx.createGain();
+    master.gain.value = 2.4;
     compressor.connect(master);
     master.connect(audioCtx.destination);
+    bus = compressor;
 
     // Connected once here rather than per strike, so the tail is a send and not a
     // second dry path.
-    convolver.connect(compressor);
+    convolver.connect(bus);
     reverb = convolver;
 
     return audioCtx;
   };
 
-  // One struck note: oscillator -> lowpass -> envelope -> dry + reverb send.
+  // One struck note: oscillator -> lowpass -> envelope -> bus + reverb send.
   const strike = (ctx, t, { freq, dur, gain, attack, cutoff, send }) => {
     const osc = ctx.createOscillator();
     const lowpass = ctx.createBiquadFilter();
@@ -101,7 +104,7 @@ export const createChime = () => {
     envelope.gain.linearRampToValueAtTime(gain, t + attack);
     envelope.gain.exponentialRampToValueAtTime(0.0001, t + dur);
 
-    osc.connect(lowpass); lowpass.connect(envelope); envelope.connect(master);
+    osc.connect(lowpass); lowpass.connect(envelope); envelope.connect(bus);
     if (send > 0 && reverb) {
       const sendGain = ctx.createGain();
       sendGain.gain.value = send;
@@ -133,7 +136,7 @@ export const createChime = () => {
     envelope.gain.setValueAtTime(gain, t);
     envelope.gain.exponentialRampToValueAtTime(0.0001, t + dur);
 
-    src.connect(bandpass); bandpass.connect(envelope); envelope.connect(master);
+    src.connect(bandpass); bandpass.connect(envelope); envelope.connect(bus);
     src.start(t); src.stop(t + dur);
   };
 
