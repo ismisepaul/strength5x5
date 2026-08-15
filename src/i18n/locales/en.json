@@ -313,8 +313,8 @@
     "restInterval": "Rest interval",
     "restIntervalDesc": "Countdown between sets",
     "restIntervalCustom": "Custom",
-    "restIntervalCustomAria": "Custom rest time in seconds",
-    "restIntervalCustomUnit": "sec",
+    "restIntervalCustomSheetTitle": "Custom rest",
+    "restIntervalCustomSheetDesc": "Anything from {{min}} seconds to {{maxMinutes}} minutes, in {{step}} s steps.",
     "restIntervalDecreaseAria": "Decrease custom rest time",
     "restIntervalIncreaseAria": "Increase custom rest time",
     "soundAlert": "Sound alert",
@@ -356,6 +356,7 @@
     "aboutDataSize": "{{size}} stored on this device"
   },
   "modals": {
+    "done": "Done",
     "discardTitle": "Discard this workout?",
     "discardBody": "Logged sets won't be saved and weights won't change.",
     "keepLifting": "Keep lifting",

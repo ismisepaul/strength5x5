@@ -318,16 +318,33 @@ always on.
     and writes straight through, no separate confirm step. They use
     `onMouseDown={e => e.preventDefault()}` so tapping one doesn't blur/commit the
     input first.
-  - **The same lockup is the pattern for every typed number in the app, not just
-    weights.** Options' rest-interval "Custom" reveals a `− / number / sec / +` row at
-    the `compact` geometry, right-aligned so it sits under the segment that revealed it
-    and shares an edge with the switches below. It carries the same draft semantics
-    (focus seeds and selects, Enter/blur commits, Escape reverts) and the same
-    `onMouseDown` preventDefault on its steppers. A bare underlined input with no
-    steppers is not a pattern this app has.
+  - **Custom rest is the app's one number that doesn't use `WeightInput`'s inline
+    lockup, because it isn't reached from a row with room to expand into — it's a
+    bottom sheet** (design 3b, "the list never moves"). Options' rest-interval
+    segmented control's fourth chip reads "Custom" until a custom value is set, then
+    switches to that value clock-formatted (`0:45`, matching the presets) with a
+    trailing caret that signals it opens something rather than selecting in place.
+    Tapping it opens `CustomRestSheet` — the same `Sheet` shell as the rep picker and
+    help — over the *unchanged* Options list behind it: nothing in that list expands,
+    collapses, or reflows while the sheet is open.
+  - Inside the sheet: a kicker + one line of copy stating the bounds and step,
+    52×52px `StepperButton`s (the one place in the app bigger than `WeightInput`'s
+    44px `prominent`, since a sheet reached by tap has no keyboard to fall back on)
+    flanking a 44px clock-formatted value, a row of four shortcut chips
+    (`CUSTOM_REST_SHORTCUTS`) for jumping straight to a commonly-used interval, and an
+    accent-outlined "Done" button that just dismisses. **There is deliberately no
+    typed-number input here** — the sheet trades typed precision for a big thumb
+    target and one-tap shortcuts, the opposite trade-off from `WeightInput`. Both
+    steppers and shortcut chips write straight to `preferredRest` on tap, so — same
+    rule as `WeightInput`'s steppers — there's no draft to revert and Done has
+    nothing to commit.
   - Rest seconds step by 5 and clamp to `CUSTOM_REST_MIN`/`MAX` without snapping to a
     grid — unlike weights, which snap to the lift's own increment, because seconds
     aren't loadable in fixed jumps and snapping would discard a deliberate 8.
+  - A sheet rendered from a screen component (rather than lifted to `App.jsx` like
+    most modals) must be a sibling of, not nested inside, a `space-y-*` column: that
+    utility's margin-top on every child after the first would shove a
+    `position:fixed inset-0` sheet down from the viewport edge.
   - On Train's idle screen, committing writes to `weights` state directly — there's
     no active workout yet to hold a per-session override — so the change persists
     into the started workout, Stats, and everywhere else `weights` is read, the same

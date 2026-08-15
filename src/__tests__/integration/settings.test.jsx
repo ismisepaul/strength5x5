@@ -23,31 +23,35 @@ describe('Settings', () => {
     expect(stored.preferredRest).toBe(180);
   });
 
-  it('sets a custom rest interval in seconds, clamped to the allowed range', async () => {
+  it('opens the custom rest sheet from the chip, steps the value, and closes on Done', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Options'));
     await user.click(screen.getByText('Custom'));
 
-    const input = screen.getByLabelText('Custom rest time in seconds');
-    await user.clear(input);
-    await user.type(input, '8');
-    await user.click(document.body);
+    const sheet = screen.getByRole('dialog', { name: 'Custom rest' });
+    expect(sheet).toBeInTheDocument();
+    // Opens on the committed 90s default, mm:ss like the presets.
+    expect(within(sheet).getByText('1:30')).toBeInTheDocument();
 
-    let stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    expect(stored.preferredRest).toBe(8);
+    await user.click(screen.getByLabelText('Increase custom rest time'));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(95);
+    expect(within(sheet).getByText('1:35')).toBeInTheDocument();
 
-    // Reopens already on Custom (8s isn't one of the presets) and clamps a too-low value.
-    await user.clear(input);
-    await user.type(input, '1');
-    await user.click(document.body);
+    await user.click(screen.getByLabelText('Decrease custom rest time'));
+    await user.click(screen.getByLabelText('Decrease custom rest time'));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(85);
 
-    stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    expect(stored.preferredRest).toBe(5);
+    await user.click(screen.getByText('Done'));
+    expect(screen.queryByRole('dialog', { name: 'Custom rest' })).not.toBeInTheDocument();
+
+    // The segmented chip now carries the value instead of the word "Custom".
+    expect(screen.getByText('1:25')).toBeInTheDocument();
+    expect(screen.queryByText('Custom')).not.toBeInTheDocument();
   });
 
-  it('steps the custom rest interval with the − / + controls, clamped at both ends', async () => {
+  it('clamps custom rest at the sheet\'s floor and ceiling', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -55,44 +59,26 @@ describe('Settings', () => {
     await user.click(screen.getByText('Custom'));
 
     const decrease = screen.getByLabelText('Decrease custom rest time');
-    const increase = screen.getByLabelText('Increase custom rest time');
-    const input = screen.getByLabelText('Custom rest time in seconds');
-
-    // Opens showing the committed 90s default, then steps in 5s jumps.
-    expect(input).toHaveValue('90');
-    await user.click(increase);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(95);
-    await user.click(decrease);
-    await user.click(decrease);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(85);
-
-    // Stepping down past the floor clamps rather than going under the warning window.
-    await user.clear(input);
-    await user.type(input, '6');
-    await user.click(decrease);
+    for (let i = 0; i < 20; i++) await user.click(decrease); // 90s - 100s of -5s steps
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(5);
 
-    // ...and up past the ceiling.
-    await user.clear(input);
-    await user.type(input, '599');
-    await user.click(increase);
+    const increase = screen.getByLabelText('Increase custom rest time');
+    for (let i = 0; i < 130; i++) await user.click(increase); // well past the 600s ceiling
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(600);
   });
 
-  it('reverts an in-progress custom rest edit on Escape', async () => {
+  it('jumps to a shortcut chip value inside the custom rest sheet', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Options'));
     await user.click(screen.getByText('Custom'));
 
-    const input = screen.getByLabelText('Custom rest time in seconds');
-    await user.clear(input);
-    await user.type(input, '42');
-    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: '2:00' }));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(120);
 
-    expect(input).toHaveValue('90');
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').preferredRest ?? 90).toBe(90);
+    await user.click(screen.getByText('Done'));
+    expect(screen.getByText('2:00')).toBeInTheDocument();
   });
 
   it('toggles sound setting', async () => {

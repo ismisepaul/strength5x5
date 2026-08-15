@@ -313,8 +313,8 @@
     "restInterval": "Temps de repos",
     "restIntervalDesc": "Décompte entre les séries",
     "restIntervalCustom": "Autre",
-    "restIntervalCustomAria": "Temps de repos personnalisé en secondes",
-    "restIntervalCustomUnit": "sec",
+    "restIntervalCustomSheetTitle": "Repos personnalisé",
+    "restIntervalCustomSheetDesc": "De {{min}} secondes à {{maxMinutes}} minutes, par pas de {{step}} s.",
     "restIntervalDecreaseAria": "Diminuer le temps de repos personnalisé",
     "restIntervalIncreaseAria": "Augmenter le temps de repos personnalisé",
     "soundAlert": "Alerte sonore",
@@ -356,6 +356,7 @@
     "aboutDataSize": "{{size}} stockés sur cet appareil"
   },
   "modals": {
+    "done": "Terminé",
     "discardTitle": "Abandonner cet entraînement ?",
     "discardBody": "Les séries enregistrées ne seront pas sauvegardées et les poids ne changeront pas.",
     "keepLifting": "Continuer",
