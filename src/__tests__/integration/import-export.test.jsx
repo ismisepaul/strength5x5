@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import i18n from '../../i18n/index.js';
 import { STORAGE_KEY } from '../../constants';
+import { START_BUTTON, startWorkout } from '../helpers/train';
 import legacyBackup from '../../test/fixtures/legacy-backup.json';
 import { validateImportData } from '../../utils';
 import { EXPECTED_WEIGHT_KEYS } from '../../constants';
@@ -380,7 +381,7 @@ describe('StrongLifts CSV Import', () => {
   it('shows Import StrongLifts option in first-launch restore prompt', async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByText('Start workout'));
+    await startWorkout(user);
 
     await waitFor(() => {
       expect(screen.getByText('Sync History?')).toBeTruthy();
