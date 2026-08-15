@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n/index.js';
-import { DownloadSimple, UploadSimple, FileCsv, ArrowsClockwise, CaretDown } from '@phosphor-icons/react';
+import { DownloadSimple, UploadSimple, FileCsv, ArrowsClockwise } from '@phosphor-icons/react';
 import Switch from '../components/Switch';
 import Segmented from '../components/Segmented';
-import CustomRestSheet from '../components/modals/CustomRestSheet';
-import { formatBytes, countSessionsSince, formatClock } from '../utils';
-import { REST_PRESETS } from '../constants';
+import RestIntervalControl from '../components/RestIntervalControl';
+import { formatBytes, countSessionsSince } from '../utils';
 
 const SectionHeader = ({ children }) => (
   <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-3">{children}</p>
@@ -34,19 +33,7 @@ const SettingsScreen = ({
   const rowClass = 'flex items-center justify-between py-4 rule-fade';
   const lastRowClass = 'flex items-center justify-between py-4';
 
-  // Design 3b: custom rest opens a bottom sheet rather than expanding the row in place
-  // -- "the list never moves." isCustomActive tracks whether the current value is a
-  // custom one (so the chip shows that value instead of the word "Custom") independent
-  // of whether the sheet happens to be open right now.
-  const [customSheetOpen, setCustomSheetOpen] = useState(false);
-  const isCustomActive = !REST_PRESETS.includes(preferredRest);
-
-  // The sheet renders as a sibling of, not inside, the space-y-8 column: that utility
-  // puts a margin-top on every child after the first, which would shove a
-  // position:fixed/inset-0 sheet down from the viewport edge and leave its backdrop
-  // short at the bottom.
   return (
-    <>
     <div className="space-y-8">
       <h2 className="font-display text-title font-semibold tracking-[-0.025em]">{t('options.title')}</h2>
 
@@ -54,30 +41,7 @@ const SettingsScreen = ({
       <div>
         <SectionHeader>{t('options.sessionSection')}</SectionHeader>
         <div className="py-4 rule-fade">
-          <div className="mb-3">
-            <p className="text-card font-semibold">{t('options.restInterval')}</p>
-            <p className={`text-meta leading-tight ${mutedClass}`}>{t('options.restIntervalDesc')}</p>
-          </div>
-          <Segmented
-            options={[
-              { label: '1:30', val: 90 }, { label: '3:00', val: 180 }, { label: '5:00', val: 300 },
-              {
-                // Once a custom value is set, the chip carries it (clock-formatted, like
-                // the presets) instead of the word "Custom" -- the row still answers "how
-                // long is my rest?" at a glance. The chevron is what teaches that it opens
-                // something rather than selecting in place.
-                label: (
-                  <span className="inline-flex items-center gap-[5px]">
-                    {isCustomActive ? formatClock(preferredRest * 1000) : t('options.restIntervalCustom')}
-                    <CaretDown size={10} weight="bold" />
-                  </span>
-                ),
-                val: 'custom',
-              },
-            ]}
-            value={isCustomActive ? 'custom' : preferredRest}
-            onChange={(val) => val === 'custom' ? setCustomSheetOpen(true) : setPreferredRest(val)}
-          />
+          <RestIntervalControl preferredRest={preferredRest} setPreferredRest={setPreferredRest} />
         </div>
         <div className={rowClass}>
           <div><p className="text-card font-semibold">{t('options.soundAlert')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.soundAlertDesc')}</p></div>
@@ -209,14 +173,6 @@ const SettingsScreen = ({
         </div>
       </div>
     </div>
-    {customSheetOpen && (
-      <CustomRestSheet
-        preferredRest={preferredRest}
-        setPreferredRest={setPreferredRest}
-        onClose={() => setCustomSheetOpen(false)}
-      />
-    )}
-    </>
   );
 };
 

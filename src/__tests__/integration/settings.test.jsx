@@ -23,62 +23,133 @@ describe('Settings', () => {
     expect(stored.preferredRest).toBe(180);
   });
 
-  it('opens the custom rest sheet from the chip, steps the value, and closes on Done', async () => {
+  it('steps the rest interval value directly, with no sheet or mode switch', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Options'));
-    await user.click(screen.getByText('Custom'));
 
-    const sheet = screen.getByRole('dialog', { name: 'Custom rest' });
-    expect(sheet).toBeInTheDocument();
-    // Opens on the committed 90s default, mm:ss like the presets.
-    expect(within(sheet).getByText('1:30')).toBeInTheDocument();
+    // Opens on the committed 90s default, mm:ss like the presets. Matches both the
+    // live value span and the now-lit 1:30 preset button, so scope to the span.
+    expect(screen.getByText('1:30', { selector: 'span' })).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText('Increase custom rest time'));
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(95);
-    expect(within(sheet).getByText('1:35')).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Increase rest interval'));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(100);
+    expect(screen.getByText('1:40')).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText('Decrease custom rest time'));
-    await user.click(screen.getByLabelText('Decrease custom rest time'));
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(85);
-
-    await user.click(screen.getByText('Done'));
-    expect(screen.queryByRole('dialog', { name: 'Custom rest' })).not.toBeInTheDocument();
-
-    // The segmented chip now carries the value instead of the word "Custom".
-    expect(screen.getByText('1:25')).toBeInTheDocument();
-    expect(screen.queryByText('Custom')).not.toBeInTheDocument();
+    await user.click(screen.getByLabelText('Decrease rest interval'));
+    await user.click(screen.getByLabelText('Decrease rest interval'));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(80);
+    expect(screen.getByText('1:20')).toBeInTheDocument();
   });
 
-  it('clamps custom rest at the sheet\'s floor and ceiling', async () => {
+  it('clamps the rest interval at its floor and ceiling, dimming the stepper pressed against it', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Options'));
-    await user.click(screen.getByText('Custom'));
 
-    const decrease = screen.getByLabelText('Decrease custom rest time');
-    for (let i = 0; i < 20; i++) await user.click(decrease); // 90s - 100s of -5s steps
+    const decrease = screen.getByLabelText('Decrease rest interval');
+    const increase = screen.getByLabelText('Increase rest interval');
+    expect(decrease.className).not.toMatch(/opacity-35/);
+
+    for (let i = 0; i < 15; i++) await user.click(decrease); // 90s of -10s steps, well past the 5s floor
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(5);
+    expect(decrease.className).toMatch(/opacity-35/);
+    expect(increase.className).not.toMatch(/opacity-35/);
 
-    const increase = screen.getByLabelText('Increase custom rest time');
-    for (let i = 0; i < 130; i++) await user.click(increase); // well past the 600s ceiling
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(600);
+    for (let i = 0; i < 35; i++) await user.click(increase); // well past the 300s ceiling
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(300);
+    expect(increase.className).toMatch(/opacity-35/);
+    expect(decrease.className).not.toMatch(/opacity-35/);
   });
 
-  it('jumps to a shortcut chip value inside the custom rest sheet', async () => {
+  it('lights up a preset only when the value happens to match it', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByText('Options'));
-    await user.click(screen.getByText('Custom'));
 
-    await user.click(screen.getByRole('button', { name: '2:00' }));
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(120);
+    const preset180 = screen.getByRole('button', { name: '3:00' });
+    expect(preset180.className).not.toMatch(/border-accent/);
 
-    await user.click(screen.getByText('Done'));
-    expect(screen.getByText('2:00')).toBeInTheDocument();
+    await user.click(preset180);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(180);
+    expect(preset180.className).toMatch(/border-accent/);
+
+    // Stepping away from the preset's exact value drops the lit state again.
+    await user.click(screen.getByLabelText('Increase rest interval'));
+    expect(preset180.className).not.toMatch(/border-accent/);
+  });
+
+  it('only shows the 5:00 ceiling explainer once the user presses against it', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const explainer = 'Greater than 5 minutes suggests the weight is too heavy. Deload to continue instead.';
+    expect(screen.queryByText(explainer)).not.toBeInTheDocument();
+
+    // Jumping straight to the 5:00 preset doesn't count as pressing against the cap.
+    await user.click(screen.getByRole('button', { name: '5:00' }));
+    expect(screen.queryByText(explainer)).not.toBeInTheDocument();
+
+    // Pressing + while already at the ceiling is what surfaces the explanation.
+    await user.click(screen.getByLabelText('Increase rest interval'));
+    expect(screen.getByText(explainer)).toBeInTheDocument();
+
+    // Any other interaction clears it again.
+    await user.click(screen.getByLabelText('Decrease rest interval'));
+    expect(screen.queryByText(explainer)).not.toBeInTheDocument();
+  });
+
+  it('warns when the value drops under a minute, and clears the warning again on any other change', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    const warning = 'Less than 1 minute rest between sets is not enough to recover.';
+    const decrease = screen.getByLabelText('Decrease rest interval');
+    expect(screen.queryByText(warning)).not.toBeInTheDocument();
+
+    // 90s -> 80 -> 70 -> 60 -> 50: only the last step lands under the 60s floor.
+    await user.click(decrease);
+    await user.click(decrease);
+    await user.click(decrease);
+    expect(screen.queryByText(warning)).not.toBeInTheDocument();
+    await user.click(decrease);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(50);
+    expect(screen.getByText(warning)).toBeInTheDocument();
+
+    // Jumping to a preset clears it, same as the cap explainer.
+    await user.click(screen.getByRole('button', { name: '3:00' }));
+    expect(screen.queryByText(warning)).not.toBeInTheDocument();
+  });
+
+  it('shows the matching set-intensity band for the live value, independent of the notices', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Options'));
+
+    // Default 90s is already inside the Light Set band.
+    expect(screen.getByText('Light Set')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '3:00' }));
+    expect(screen.getByText('Medium Set')).toBeInTheDocument();
+    expect(screen.queryByText('Light Set')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '5:00' }));
+    expect(screen.getByText('Heavy Set')).toBeInTheDocument();
+
+    // Below the 60s floor there's no band to name -- the short-rest notice takes over.
+    const decrease = screen.getByLabelText('Decrease rest interval');
+    for (let i = 0; i < 30; i++) await user.click(decrease);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBeLessThan(60);
+    expect(screen.queryByText('Heavy Set')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Typical for:/)).not.toBeInTheDocument();
   });
 
   it('toggles sound setting', async () => {

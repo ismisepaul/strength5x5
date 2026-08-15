@@ -73,18 +73,21 @@ export const MADCOW_WEEKLY_INCREMENTS = { squat: 2.5, bench: 2.5, row: 2.5, pres
 // the two can't drift apart.
 export const REST_WARNING_SECONDS = 5;
 
-// Bounds for the rest interval's "Custom" option. The floor is REST_WARNING_SECONDS
-// rather than a round number on purpose: a rest shorter than the warning window would
-// start already flooded, with pips the countdown never has room to play in order.
+// Bounds for the rest interval control (RestIntervalControl.jsx). The floor is
+// REST_WARNING_SECONDS rather than a round number on purpose: a rest shorter than the
+// warning window would start already flooded, with pips the countdown never has room to
+// play in order. The ceiling is capped at the top preset rather than left open-ended:
+// routinely needing more than that is a sign the weight is too demanding for straight
+// 5x5, or the rest is running longer than it needs to, not a gap the app should paper
+// over with a bigger number. See options.restIntervalCapExplainer.
 export const CUSTOM_REST_MIN = REST_WARNING_SECONDS;
-export const CUSTOM_REST_MAX = 600;
-export const CUSTOM_REST_STEP = 5;
+export const CUSTOM_REST_MAX = 300;
+export const CUSTOM_REST_STEP = 10;
 export const REST_PRESETS = [90, 180, 300];
-// Shortcut chips inside the custom-rest sheet -- a denser set of jump points than the
-// three main presets, chosen for the intervals people actually reach for when 90/180/300
-// aren't it (a short superset finisher, a long compound lift) rather than a stepping
-// stone toward one of the presets above.
-export const CUSTOM_REST_SHORTCUTS = [45, 60, 120, 240];
+// Below this, rest is short enough that RestIntervalControl swaps the Light/Medium/Heavy
+// Set band readout (see restBand() in utils.js) for a "too short to recover" notice --
+// design 4a/4b's own boundary, not derived from anything else in the app.
+export const REST_SHORT_SECONDS = 60;
 
 export const STORAGE_KEY = 'strength5x5_data';
 export const SCHEMA_VERSION = 2;
