@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event';
 const pip = vi.fn();
 const play = vi.fn();
 vi.mock('../../audio/chime', () => ({
-  createChime: () => ({ pip, play, resume: vi.fn() }),
+  createChime: () => ({ pip, play, unlock: vi.fn() }),
 }));
 
 import App from '../../App';

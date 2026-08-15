@@ -255,6 +255,10 @@ const App = () => {
   // logged value, resolveNext computes the next one, then this stamps setTimes and
   // drives the rest timer identically either way.
   const applySetValue = useCallback((exIdx, setIdx, resolveNext) => {
+    // Logging a set is the tap that starts the rest that ends in a chime, so it is also
+    // the last user gesture before the sound is due. iOS only lets a gesture unlock the
+    // audio context, so spend this one on it.
+    chimeRef.current.unlock();
     if (timer.isExpired) timer.reset();
     setCurrentWorkout(prev => {
       if (!prev) return prev;
@@ -641,7 +645,7 @@ const App = () => {
   }, []);
 
   const handleTimerSkip = useCallback(() => {
-    chimeRef.current.resume();
+    chimeRef.current.unlock();
     if (isExerciseComplete) {
       timer.reset();
       setIsExerciseComplete(false);
