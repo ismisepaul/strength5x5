@@ -89,6 +89,21 @@ describe('RestTimer', () => {
     expect(screen.queryByText(/^\(\+/)).not.toBeInTheDocument();
   });
 
+  it('fills the overtime bar close to the primary accent before the ceiling, and exactly matching it at the ceiling', () => {
+    // Scoped to the track itself (its one bg-ink/14 element) -- the ceiling's own
+    // flashing flood also carries a bare bg-accent class, elsewhere in the strip.
+    const { container: over } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
+    const track = over.querySelector('.bg-ink\\/14');
+    expect(track.querySelector('.bg-accent\\/70')).toBeInTheDocument();
+
+    const { container: atCeiling } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={300} total={90} />);
+    const ceilingTrack = atCeiling.querySelector('.bg-ink\\/14');
+    // Solid bg-accent, the same fill the primary segment uses -- the whole bar reads as
+    // one continuous block once there really should be no more rest.
+    expect(ceilingTrack.querySelector('.bg-accent\\/70')).not.toBeInTheDocument();
+    expect(ceilingTrack.querySelector('.bg-accent')).toBeInTheDocument();
+  });
+
   it('re-scales to the next rest preset above the marker, not straight to the 5:00 ceiling', () => {
     // A 1:30 marker's next preset is 3:00 -- overtime borrows that much room first,
     // not the full 5:00 track a longer interval would eventually need.

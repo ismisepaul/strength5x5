@@ -294,10 +294,12 @@ always on.
   intermediate preset above it and re-scales straight to 5:00. Each step is one clean
   re-scale, not a gradual expansion, so the room is borrowed, not pre-drawn. A 3px accent fill (5px
   once rest is running late — see below) tracks elapsed up to the marker; past it, a
-  second segment in `accent` at low opacity (`accent/22`, no border) continues the fill
-  for the overtime stretch — a wash rather than a second solid segment, so it reads
-  clearly against the empty track without competing with the primary fill for
-  attention. Faint reference
+  second segment continues the fill for the overtime stretch, close to the primary
+  fill's own accent (`accent/70`, no border) rather than a faint wash, so it reads as
+  part of the same bar rather than a separate, lesser one. At the 5:00 ceiling that
+  segment switches to the exact same solid `accent` the primary fill uses, so the whole
+  bar reads as one continuous, unmistakably full block — there really should be no more
+  rest once it looks like that. Faint reference
   hairlines at 1:30 and 3:00 sit on the track, each with a muted 9px mono label under it
   (the same style as the end label, not just an unlabeled break in the line), but only
   when they fall inside the current scale and don't coincide with the marker itself (no

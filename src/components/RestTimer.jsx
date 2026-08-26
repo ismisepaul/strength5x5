@@ -144,11 +144,12 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             }}
           />
           {over > 0 && (
-            // Overtime fills in the accent at low opacity, no border -- a wash rather
-            // than a second solid segment, so it doesn't compete with the primary fill
-            // for attention while still reading clearly against the empty track.
+            // Overtime fills close to the primary fill's own accent -- close enough to
+            // read as part of the same bar rather than a faint wash, but the exact match
+            // is saved for the ceiling itself: once atCeiling, the whole bar reads as one
+            // solid, unmistakably full block, since there really should be no more rest.
             <div
-              className="absolute inset-y-0 bg-accent/22"
+              className={`absolute inset-y-0 ${atCeiling ? 'bg-accent' : 'bg-accent/70'}`}
               style={{ left: pct(marker, denom), width: pct(over, denom), transition: 'left 900ms cubic-bezier(.4,0,.2,1), width 900ms cubic-bezier(.4,0,.2,1)' }}
             />
           )}
