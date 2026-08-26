@@ -266,7 +266,7 @@ describe('Workout recovery', () => {
     expect(screen.getByText('Lift')).toBeInTheDocument();
     expect(screen.getByText('2:10')).toBeInTheDocument();
     expect(screen.getByText('(+0:40)')).toBeInTheDocument();
-    expect(screen.getByText('1:30')).toBeInTheDocument(); // the marker survived the reload
+    expect(screen.getAllByText('1:30').length).toBeGreaterThan(0); // the marker survived the reload
   });
 
   describe('closing the app after the marker already passed', () => {
@@ -304,7 +304,7 @@ describe('Workout recovery', () => {
       // The marker and overtime survive the close instead of resuming to a bare idle
       // strip with no rest shown at all.
       expect(screen.getByText('Lift')).toBeInTheDocument();
-      expect(screen.getByText('1:30')).toBeInTheDocument(); // the marker
+      expect(screen.getAllByText('1:30').length).toBeGreaterThan(0); // the marker
     });
   });
 

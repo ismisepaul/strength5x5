@@ -267,6 +267,13 @@ describe('Settings', () => {
     const firstSetButton = () => screen.getAllByRole('button')
       .filter((b) => b.getAttribute('aria-label')?.startsWith('Set '))[0];
 
+    // The marker's own caret label (10px, tabular-nums) is distinct from the muted 9px
+    // preset-reference labels the track also shows now -- those can legitimately read
+    // "1:30" or "3:00" too, for an unrelated reference point, so asserting on the
+    // marker specifically (rather than "this text appears nowhere on the page") is what
+    // actually proves whether a retarget happened.
+    const markerLabel = (container) => container.querySelector('.text-\\[10px\\]');
+
     it('retargets the running rest marker instead of waiting for the next set', async () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -275,7 +282,7 @@ describe('Settings', () => {
         history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
         nextType: 'A', isDark: true, autoSave: false, preferredRest: 90,
       }));
-      render(<App />);
+      const { container } = render(<App />);
 
       await startWorkout(user);
       await user.click(firstSetButton()); // starts rest at the default 1:30
@@ -285,10 +292,8 @@ describe('Settings', () => {
 
       await user.click(screen.getByText('Train'));
       // The strip's marker reflects the new interval for the rest already running,
-      // not just the next one. (Two matches: the visible marker label, and the
-      // scale's end label -- hidden pre-overtime since it coincides with the marker.)
-      expect(screen.getAllByText('3:00').length).toBeGreaterThan(0);
-      expect(screen.queryByText('1:30')).not.toBeInTheDocument();
+      // not just the next one.
+      expect(markerLabel(container)).toHaveTextContent('3:00');
     });
 
     it('does not retarget a Madcow ramp rest, which is not driven by the interval setting', async () => {
@@ -303,7 +308,7 @@ describe('Settings', () => {
         mcTop: { squat: 60, bench: 45, row: 50, deadlift: 80, press: 32.5, incline: 40 },
         mcWeek: 5, mcInterval: 12.5, mcPress: 'incline', mcNextDay: 'A',
       }));
-      render(<App />);
+      const { container } = render(<App />);
 
       await startWorkout(user);
       // Day A's squat ramps rest across its five sets as [90, 180, 180, 300] -- log
@@ -320,8 +325,7 @@ describe('Settings', () => {
       await user.click(screen.getByText('3:00'));
 
       await user.click(screen.getByText('Train'));
-      expect(screen.queryByText('3:00')).not.toBeInTheDocument();
-      expect(screen.getAllByText('5:00').length).toBeGreaterThan(0);
+      expect(markerLabel(container)).toHaveTextContent('5:00');
     });
   });
 });

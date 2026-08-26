@@ -140,6 +140,10 @@ describe('RestTimer', () => {
     const ticks = container.querySelectorAll('.bg-ground\\/50');
     expect(ticks[0]).toHaveStyle({ opacity: '0' }); // 1:30 tick, coincides with the marker
     expect(ticks[1]).toHaveStyle({ opacity: '0' }); // 3:00 tick, past the current scale
+    // The label under each tick follows the same visibility rule as the tick itself.
+    const labels = container.querySelectorAll('.text-ink\\/38');
+    expect(labels[1]).toHaveStyle({ opacity: '0' }); // 1:30 label
+    expect(labels[2]).toHaveStyle({ opacity: '0' }); // 3:00 label
   });
 
   it('shows both reference ticks once the scale is wide enough to hold them', () => {
@@ -147,6 +151,11 @@ describe('RestTimer', () => {
     const ticks = container.querySelectorAll('.bg-ground\\/50');
     expect(ticks[0]).toHaveStyle({ opacity: '1', left: '30%' });
     expect(ticks[1]).toHaveStyle({ opacity: '1', left: '60%' });
+    const labels = container.querySelectorAll('.text-ink\\/38');
+    expect(labels[1]).toHaveStyle({ opacity: '1', left: '30%' });
+    expect(labels[1]).toHaveTextContent('1:30');
+    expect(labels[2]).toHaveStyle({ opacity: '1', left: '60%' });
+    expect(labels[2]).toHaveTextContent('3:00');
   });
 
   it('renders "Movement finished" when exercise is complete', () => {

@@ -298,9 +298,10 @@ always on.
   for the overtime stretch — a wash rather than a second solid segment, so it reads
   clearly against the empty track without competing with the primary fill for
   attention. Faint reference
-  hairlines at 1:30 and 3:00 sit on the track, but only when they fall inside the
-  current scale and don't coincide with the marker itself (no redundant double-mark at
-  the same spot). An accent caret + `m:ss` label floats above the track at the marker's
+  hairlines at 1:30 and 3:00 sit on the track, each with a muted 9px mono label under it
+  (the same style as the end label, not just an unlabeled break in the line), but only
+  when they fall inside the current scale and don't coincide with the marker itself (no
+  redundant double-mark at the same spot). An accent caret + `m:ss` label floats above the track at the marker's
   position (right-aligned instead of centered once it's within 12% of the right edge, so
   the label can't clip off the strip — which is the normal case before overtime, since
   the marker sits right at the scale's own endpoint), and a muted end label at the right

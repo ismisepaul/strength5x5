@@ -168,6 +168,21 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             className="absolute right-0 font-mono text-[9px] font-bold tracking-wide text-ink/38"
             style={{ opacity: showMarker && denom > marker + 2 ? 1 : 0, transition: 'opacity 400ms ease' }}
           >{formatClock(denom * 1000)}</span>
+          {showMarker && (
+            <>
+              {/* Same reference points as the two hairline ticks above, labeled instead of
+                  left as an unmarked break in the line -- same visibility rule as their
+                  tick too, so a label never appears over a hidden line. */}
+              <span
+                className="absolute font-mono text-[9px] font-bold tracking-wide text-ink/38"
+                style={{ left: pct(90, denom), transform: 'translateX(-50%)', opacity: denom > 95 && Math.abs(marker - 90) > 2 ? 1 : 0, transition: 'opacity 400ms ease' }}
+              >{formatClock(90 * 1000)}</span>
+              <span
+                className="absolute font-mono text-[9px] font-bold tracking-wide text-ink/38"
+                style={{ left: pct(180, denom), transform: 'translateX(-50%)', opacity: denom > 185 && Math.abs(marker - 180) > 2 ? 1 : 0, transition: 'opacity 400ms ease' }}
+              >{formatClock(180 * 1000)}</span>
+            </>
+          )}
         </div>
       </div>
     </div>
