@@ -65,6 +65,11 @@ describe('RestTimer', () => {
     expect(wallEl(container)).toHaveStyle({ opacity: '1' });
   });
 
+  it('exposes the rest target to assistive tech, since the caret conveys it by position alone', () => {
+    render(<RestTimer {...defaultProps} isActive={true} seconds={80} total={90} />);
+    expect(screen.getByText('Rest target 1:30')).toBeInTheDocument();
+  });
+
   it('keeps counting past the marker into "Lift", with the overtime shown in brackets', () => {
     const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
     expect(screen.getByText('Lift')).toBeInTheDocument();

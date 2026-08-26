@@ -244,6 +244,7 @@
     "getReady": "Prêt",
     "lift": "Lève",
     "time": "Temps",
+    "restTargetAria": "Objectif de repos {{time}}",
     "workoutComplete": "Entraînement terminé",
     "movementFinished": "Mouvement terminé"
   },

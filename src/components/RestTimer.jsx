@@ -112,15 +112,23 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
         {/* The marker and wall rows always occupy their height, marker content or not --
             mounting/unmounting them only once a rest starts is what made the strip grow
             the instant a set was logged. showMarker instead toggles their content. */}
-        <div className="relative h-3.5" aria-hidden="true">
+        <div className="relative h-3.5">
           {showMarker && (
-            <div
-              className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
-              style={{ left: pct(marker, denom), transform: markerPct > 88 ? 'translateX(-100%)' : 'translateX(-50%)' }}
-            >
-              <span className="font-mono text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">{formatClock(marker * 1000)}</span>
-              <div className="w-0 h-0 border-x-[4px] border-x-transparent border-t-[5px] border-t-accent-300" />
-            </div>
+            <>
+              {/* Counting up means the target is no longer implied by the digits the way
+                  a countdown's remaining time was, and the caret conveys it by position
+                  alone -- so the target gets a text equivalent instead of being left
+                  visual-only. The caret itself stays decorative. */}
+              <span className="sr-only">{t('timer.restTargetAria', { time: formatClock(marker * 1000) })}</span>
+              <div
+                aria-hidden="true"
+                className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
+                style={{ left: pct(marker, denom), transform: markerPct > 88 ? 'translateX(-100%)' : 'translateX(-50%)' }}
+              >
+                <span className="font-mono text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">{formatClock(marker * 1000)}</span>
+                <div className="w-0 h-0 border-x-[4px] border-x-transparent border-t-[5px] border-t-accent-300" />
+              </div>
+            </>
           )}
         </div>
         <div className={`relative w-full bg-ink/14 overflow-hidden ${thickBar ? 'h-[5px]' : 'h-[3px]'} transition-[height] duration-200`}>
