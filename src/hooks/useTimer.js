@@ -79,5 +79,35 @@ export function useTimer({ onExpire } = {}) {
     expiredAtRef.current = null;
   }, []);
 
-  return { seconds, duration, isActive, isExpired, elapsed, start, stop, skip, reset };
+  // Re-aims an in-flight rest at a new duration without resetting how much of it has
+  // already elapsed -- e.g. the rest interval changes in Settings while a rest is
+  // running. Not memoized (it closes over this render's seconds/elapsed/duration
+  // directly) since it's only ever called from an event handler, never used as another
+  // hook's dependency. A no-op when nothing is currently counting; that case only
+  // affects the *next* rest, which reads the new duration fresh when it starts.
+  const retarget = (newDuration) => {
+    if (!isActive && !isExpired) return;
+    const totalElapsed = isActive ? Math.max(0, duration - seconds) : duration + elapsed;
+    if (newDuration > totalElapsed) {
+      const nextSeconds = newDuration - totalElapsed;
+      endTimeRef.current = Date.now() + nextSeconds * 1000;
+      expiredAtRef.current = null;
+      setSeconds(nextSeconds);
+      setDuration(newDuration);
+      setElapsed(0);
+      setIsActive(true);
+      setIsExpired(false);
+    } else {
+      const nextElapsed = totalElapsed - newDuration;
+      expiredAtRef.current = Date.now() - nextElapsed * 1000;
+      endTimeRef.current = null;
+      setSeconds(0);
+      setDuration(newDuration);
+      setElapsed(nextElapsed);
+      setIsActive(false);
+      setIsExpired(true);
+    }
+  };
+
+  return { seconds, duration, isActive, isExpired, elapsed, start, stop, skip, reset, retarget };
 }

@@ -255,6 +255,74 @@ describe('Settings', () => {
     await user.click(screen.getByLabelText('Train'));
     expect(screen.getByText(START_BUTTON)).toBeInTheDocument();
   });
+
+  describe('changing the interval while a rest is running', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const firstSetButton = () => screen.getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-label')?.startsWith('Set '))[0];
+
+    it('retargets the running rest marker instead of waiting for the next set', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+        history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
+        nextType: 'A', isDark: true, autoSave: false, preferredRest: 90,
+      }));
+      render(<App />);
+
+      await startWorkout(user);
+      await user.click(firstSetButton()); // starts rest at the default 1:30
+
+      await user.click(screen.getByText('Options'));
+      await user.click(screen.getByText('3:00'));
+
+      await user.click(screen.getByText('Train'));
+      // The strip's marker reflects the new interval for the rest already running,
+      // not just the next one.
+      expect(screen.getByText('3:00')).toBeInTheDocument();
+      expect(screen.queryByText('1:30')).not.toBeInTheDocument();
+    });
+
+    it('does not retarget a Madcow ramp rest, which is not driven by the interval setting', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 2,
+        weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+        history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
+        nextType: 'A', isDark: true, autoSave: false, preferredRest: 90,
+        soundEnabled: false, vibrationEnabled: false,
+        preset: 'madcow',
+        mcTop: { squat: 60, bench: 45, row: 50, deadlift: 80, press: 32.5, incline: 40 },
+        mcWeek: 5, mcInterval: 12.5, mcPress: 'incline', mcNextDay: 'A',
+      }));
+      render(<App />);
+
+      await startWorkout(user);
+      // Day A's squat ramps rest across its five sets as [90, 180, 180, 300] -- log
+      // the first four to land on the 300s rest into the top-effort set, a value
+      // distinct from both the app's default (90) and what this test switches to
+      // (180), so a wrongly-firing retarget would actually be caught.
+      const setButtons = () => screen.getAllByRole('button').filter((b) => b.getAttribute('aria-label')?.startsWith('Set '));
+      await user.click(setButtons()[0]);
+      await user.click(setButtons()[1]);
+      await user.click(setButtons()[2]);
+      await user.click(setButtons()[3]);
+
+      await user.click(screen.getByText('Options'));
+      await user.click(screen.getByText('3:00'));
+
+      await user.click(screen.getByText('Train'));
+      expect(screen.queryByText('3:00')).not.toBeInTheDocument();
+      expect(screen.getAllByText('5:00').length).toBeGreaterThan(0);
+    });
+  });
 });
 
 describe('Deload', () => {

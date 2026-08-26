@@ -113,4 +113,63 @@ describe('useTimer', () => {
     expect(result.current.isExpired).toBe(false);
     expect(result.current.elapsed).toBe(0);
   });
+
+  describe('retarget()', () => {
+    it('does nothing when no rest is currently running', () => {
+      const { result } = renderHook(() => useTimer());
+      act(() => result.current.retarget(120));
+      expect(result.current.isActive).toBe(false);
+      expect(result.current.isExpired).toBe(false);
+      expect(result.current.duration).toBe(0);
+    });
+
+    it('extends an active countdown when the new duration is later, keeping elapsed time', () => {
+      const { result } = renderHook(() => useTimer());
+      act(() => result.current.start(90));
+      act(() => vi.advanceTimersByTime(20000)); // ~20s elapsed, ~70s left
+
+      act(() => result.current.retarget(180));
+      expect(result.current.isActive).toBe(true);
+      expect(result.current.isExpired).toBe(false);
+      expect(result.current.duration).toBe(180);
+      // ~20s already elapsed against the new 180s target leaves ~160s.
+      expect(result.current.seconds).toBeGreaterThanOrEqual(159);
+      expect(result.current.seconds).toBeLessThanOrEqual(160);
+    });
+
+    it('flips an active countdown straight to expired when the new duration has already passed', () => {
+      const { result } = renderHook(() => useTimer());
+      act(() => result.current.start(90));
+      act(() => vi.advanceTimersByTime(30000)); // 30s elapsed
+
+      act(() => result.current.retarget(20)); // already 10s past a 20s target
+      expect(result.current.isActive).toBe(false);
+      expect(result.current.isExpired).toBe(true);
+      expect(result.current.duration).toBe(20);
+      expect(result.current.seconds).toBe(0);
+      expect(result.current.elapsed).toBeGreaterThanOrEqual(9);
+      expect(result.current.elapsed).toBeLessThanOrEqual(10);
+    });
+
+    it('resumes counting down after expiry when the new duration is later than total elapsed', () => {
+      const onExpire = vi.fn();
+      const { result } = renderHook(() => useTimer({ onExpire }));
+      act(() => result.current.start(10));
+      act(() => vi.advanceTimersByTime(10000)); // expires exactly at 10s
+      expect(result.current.isExpired).toBe(true);
+      // The overtime ticker is a newly-mounted effect as of the transition above, so it
+      // needs its own act() to actually tick -- same reason the "counts elapsed time
+      // upward after expiry" test above splits its advance into two calls.
+      act(() => vi.advanceTimersByTime(1000)); // ~1s of overtime
+      onExpire.mockClear();
+
+      act(() => result.current.retarget(30)); // ~11s total elapsed, 30s target -> ~19s left
+      expect(result.current.isActive).toBe(true);
+      expect(result.current.isExpired).toBe(false);
+      expect(result.current.duration).toBe(30);
+      expect(result.current.seconds).toBeGreaterThanOrEqual(18);
+      expect(result.current.seconds).toBeLessThanOrEqual(20);
+      expect(onExpire).not.toHaveBeenCalled();
+    });
+  });
 });

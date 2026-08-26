@@ -104,6 +104,12 @@ const App = () => {
   const csvInputRef = useRef(null);
   const chimeRef = useRef(null);
   if (!chimeRef.current) chimeRef.current = createChime();
+  // Whether the currently running rest's duration came straight from preferredRest --
+  // Madcow's per-set restSeconds and the fixed 300s missed-rep rest don't, so a change
+  // to the Settings interval mid-rest should only retarget the former. Set fresh every
+  // time a rest actually starts (see applySetValue); stale values are harmless since
+  // retargeting is also gated on a rest currently running.
+  const restTracksPreferredRef = useRef(false);
 
   const gdrive = useGoogleDrive();
 
@@ -293,9 +299,11 @@ const App = () => {
           setIsExerciseComplete(allDone ? 'workout' : true);
         } else {
           setIsExerciseComplete(false);
+          const followsPreferred = !Array.isArray(ex.restSeconds) && nextVal === target;
           const req = Array.isArray(ex.restSeconds)
             ? (ex.restSeconds[setIdx + 1] ?? preferredRest)
             : (nextVal === target ? preferredRest : 300);
+          restTracksPreferredRef.current = followsPreferred;
           timer.start(req);
         }
       } else { timer.stop(); setIsExerciseComplete(false); }
@@ -661,6 +669,17 @@ const App = () => {
     setIsExerciseComplete(false);
   }, [timer]);
 
+  // Settings' rest interval otherwise only takes effect on the *next* rest -- if one is
+  // already running (and its duration actually came from preferredRest, see
+  // applySetValue), retarget it live so dragging the stepper mid-rest visibly moves the
+  // marker instead of waiting for the next set.
+  const handleSetPreferredRest = useCallback((next) => {
+    setPreferredRest(next);
+    if (restTracksPreferredRef.current && (timer.isActive || timer.isExpired)) {
+      timer.retarget(next);
+    }
+  }, [timer, setPreferredRest]);
+
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const moodLabel = (day) => {
     const mood = getProgram(preset).dayMood(day);
@@ -748,7 +767,7 @@ const App = () => {
 
         {activeTab === 'settings' && (
           <SettingsScreen
-            preferredRest={preferredRest} setPreferredRest={setPreferredRest}
+            preferredRest={preferredRest} setPreferredRest={handleSetPreferredRest}
             soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled}
             vibrationEnabled={vibrationEnabled} setVibrationEnabled={setVibrationEnabled}
             restWarningEnabled={restWarningEnabled} setRestWarningEnabled={setRestWarningEnabled}

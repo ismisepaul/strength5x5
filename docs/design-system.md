@@ -320,9 +320,16 @@ always on.
   settings are read through a ref, so toggling either mid-window can't replay the
   current second's pip. The session clock in the strip's corner reads off the same
   render pass as the rest digits (not its own independent polling interval)
-  specifically so the two numbers can't visibly drift out of phase with each other. All
-  timer logic (wall-clock anchor, expire → stopwatch, sound/vibrate) lives in
-  `useTimer`/`RestTimer.jsx` and is untouched by presentation work.
+  specifically so the two numbers can't visibly drift out of phase with each other.
+  Changing the rest interval in Settings **retargets a rest already in progress**
+  (`useTimer`'s `retarget()`) rather than only taking effect on the next one — the
+  marker moves live, and elapsed time is preserved rather than restarting the clock.
+  This only applies when the running rest's duration actually came from
+  `preferredRest` (App.jsx tracks this per-rest); Madcow's per-set ramp rest and the
+  fixed 300s missed-rep rest are untouched by the setting either way, matching how
+  they were already sourced independently of it. All timer logic (wall-clock anchor,
+  expire → stopwatch, sound/vibrate, retargeting) lives in `useTimer`/`RestTimer.jsx`
+  and is untouched by presentation work.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
 - **Every editable weight in the app — Train (idle and active), the Program tab's
   Madcow top sets, and the Log's add/edit-entry modal — uses one `WeightInput`
