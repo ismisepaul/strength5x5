@@ -13,10 +13,12 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   // seconds/elapsed), so the session clock piggybacks on that same render instead of
   // polling Date.now() on its own independent interval -- two separately-scheduled
   // intervals is what let the two clocks visibly fall out of phase with each other.
-  // useElapsedSince's own 1s interval is only the fallback for when nothing else is
-  // driving a re-render (idle, with no rest to borrow a tick from).
-  const tickingSessionElapsed = useElapsedSince(startedAt, true);
+  // The fallback interval is genuinely stopped while resting rather than just ignored:
+  // left running it would still re-render on its own schedule, refreshing the session
+  // clock against a `seconds` that useTimer hasn't ticked yet. It resyncs immediately
+  // when re-enabled, so handing back to it costs nothing.
   const resting = isActive || isExpired;
+  const tickingSessionElapsed = useElapsedSince(startedAt, !resting);
   const sessionElapsed = resting && startedAt ? Math.floor((Date.now() - startedAt) / 1000) : tickingSessionElapsed;
 
   const isWarning = isActive && seconds > 0 && seconds <= REST_WARNING_SECONDS;
