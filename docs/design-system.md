@@ -287,9 +287,12 @@ always on.
   interval instead of resetting there — only the hard 5:00 ceiling (`CUSTOM_REST_MAX`)
   freezes it. The track's **scale is the interval, not a fixed 0–5:00 span**: a 1:30
   rest fills the track exactly, not one thirded away by two-thirds of dead space, and
-  the scale only widens to the full 5:00 ceiling once elapsed actually runs past the
-  marker — one re-scale, not a gradual expansion, so the room is borrowed, not
-  pre-drawn. A 3px accent fill (5px
+  the scale only widens once elapsed actually runs past the marker — to the next rest
+  preset above it (`REST_PRESETS`: 1:30 → 3:00 → 5:00), not straight to the 5:00
+  ceiling. A 1:30 rest running long re-scales to 3:00 first and only earns the full
+  5:00 once it also runs past that; an interval already at or past 3:00 has no
+  intermediate preset above it and re-scales straight to 5:00. Each step is one clean
+  re-scale, not a gradual expansion, so the room is borrowed, not pre-drawn. A 3px accent fill (5px
   once rest is running late — see below) tracks elapsed up to the marker; past it, a
   second segment in `accent-900` with an `accent` left border continues the fill for the
   overtime stretch, reusing the muted/accent pairing already used for "logged but

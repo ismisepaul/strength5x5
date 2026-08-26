@@ -89,9 +89,23 @@ describe('RestTimer', () => {
     expect(screen.queryByText(/^\(\+/)).not.toBeInTheDocument();
   });
 
-  it('re-scales the track to the full 5:00 ceiling the instant overtime starts, not gradually', () => {
+  it('re-scales to the next rest preset above the marker, not straight to the 5:00 ceiling', () => {
+    // A 1:30 marker's next preset is 3:00 -- overtime borrows that much room first,
+    // not the full 5:00 track a longer interval would eventually need.
     const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
-    // Barely over the marker still jumps straight to the 5:00 scale in one step.
+    expect(wallEl(container)).toHaveTextContent('3:00');
+  });
+
+  it('only re-scales to the full 5:00 track once overtime also runs past the 3:00 preset', () => {
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={100} total={90} />);
+    // 90s marker + 100s over = 190s elapsed, past the intermediate 3:00 (180s) stop.
+    expect(wallEl(container)).toHaveTextContent('5:00');
+  });
+
+  it('skips the intermediate 3:00 stop when the marker itself is already past it', () => {
+    // A 3:00 interval running long has nowhere to go but straight to the 5:00 ceiling --
+    // there's no shorter preset above it to borrow room from first.
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={180} />);
     expect(wallEl(container)).toHaveTextContent('5:00');
   });
 

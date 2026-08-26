@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { SkipForward } from '@phosphor-icons/react';
 import { formatClock, restElapsedFromTimer, rawRestElapsedFromTimer } from '../utils';
 import { useElapsedSince } from '../hooks/useElapsedSince';
-import { REST_WARNING_SECONDS, CUSTOM_REST_MAX } from '../constants';
+import { REST_WARNING_SECONDS, CUSTOM_REST_MAX, REST_PRESETS } from '../constants';
 
 const pct = (n, denom) => (denom > 0 ? `${Math.min(100, Math.max(0, (n / denom) * 100))}%` : '0%');
 
@@ -38,10 +38,13 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   const over = Math.max(0, rawElapsed - marker);
 
   // The track's scale is the interval, not a fixed 0-5:00 span, so a 1:30 rest fills
-  // the line instead of leaving two-thirds of the strip permanently empty. It stays at
-  // that scale until overtime actually starts, at which point it re-scales once to the
-  // full 5:00 ceiling -- a single jump rather than growing in steps as overtime runs.
-  const denom = showMarker ? (over > 0 ? CUSTOM_REST_MAX : marker) : 0;
+  // the line instead of leaving two-thirds of the strip permanently empty. Once overtime
+  // runs past the current scale, it re-scales to the next rest preset above the marker
+  // (1:30 -> 3:00 -> 5:00) rather than jumping straight to the 5:00 ceiling -- a 1:30
+  // rest that runs long gets the 3:00 scale first, and only earns the full 5:00 once it
+  // actually runs past 3:00 too.
+  const scaleSteps = [...new Set([marker, ...REST_PRESETS])].filter(w => w >= marker).sort((a, b) => a - b);
+  const denom = showMarker ? scaleSteps.find(w => restElapsed <= w) : 0;
   const markerPct = denom > 0 ? Math.min(100, (marker / denom) * 100) : 0;
 
   let kicker, digits, showSkip, accentState;
