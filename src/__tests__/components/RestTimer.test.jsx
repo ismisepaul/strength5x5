@@ -116,6 +116,15 @@ describe('RestTimer', () => {
     expect(screen.getByText('(+5:00)')).toBeInTheDocument();
   });
 
+  it('flashes the same breathing warning treatment at the 5:00 ceiling as the five-second warning', () => {
+    // Reuses isWarning's own flood/thick-bar/big-digit package rather than a separate
+    // "ceiling" treatment -- the same "pay attention now" language, just with no natural
+    // end (it keeps breathing for as long as rest keeps running past the ceiling).
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={300} total={90} />);
+    expect(container.querySelector('.animate-\\[warnBreathe_1s_ease-in-out_infinite\\]')).toBeInTheDocument();
+    expect(digitsEl(container)).toHaveClass('text-[52px]');
+  });
+
   it('keeps the overtime bracket counting up past the 5:00 ceiling instead of freezing it too', () => {
     // 90s interval + 400s elapsed since expiry = 490s raw -- well past the 5:00 (300s)
     // ceiling that freezes the main digits. The bracket isn't capped there: it reads the

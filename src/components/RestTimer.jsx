@@ -65,11 +65,16 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   }
 
   const mutedClass = 'text-ink/62';
-  const thickBar = isWarning || over > 0;
+  // The five-second warning and the 5:00 ceiling share the same "pay attention now"
+  // treatment -- the ceiling's flash has no natural end the way the warning's five
+  // seconds do, so it keeps breathing for as long as rest keeps running past it, which
+  // is exactly the point: there should be no more rest once it's showing.
+  const flashing = isWarning || atCeiling;
+  const thickBar = flashing || over > 0;
 
   return (
-    <div className={`relative flex-none pt-4 px-5 pb-3 ${isWarning ? 'bg-accent-900 border-b border-accent' : 'bg-surface-deep'}`}>
-      {isWarning && (
+    <div className={`relative flex-none pt-4 px-5 pb-3 ${flashing ? 'bg-accent-900 border-b border-accent' : 'bg-surface-deep'}`}>
+      {flashing && (
         // Opacity is owned entirely by warnBreathe's keyframes (which hold a steady
         // .09 under prefers-reduced-motion), so there's no static opacity utility here
         // to be overridden by the animation.
@@ -79,7 +84,7 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
         <div className="flex items-end gap-2">
           <div>
             <p className={`font-mono text-kicker font-bold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent-300' : mutedClass}`}>{kicker}</p>
-            <p className={`font-mono font-bold tabular-nums leading-none ${isWarning ? 'text-[52px]' : 'text-[44px]'} ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
+            <p className={`font-mono font-bold tabular-nums leading-none ${flashing ? 'text-[52px]' : 'text-[44px]'} ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
           </div>
           {over > 0 && (
             // The main digits already read total rest elapsed -- this is the delta past

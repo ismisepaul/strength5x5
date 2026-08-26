@@ -317,9 +317,14 @@ always on.
   **not** subject to the 5:00 ceiling — it keeps counting up off the raw elapsed time
   (`rawRestElapsedFromTimer`) for as long as rest keeps running, rather than freezing at
   whatever delta the ceiling happened to land on. In the last-5-seconds-before-the-marker stretch
-  specifically the strip also floods to `accent-900` with a breathing accent wash and a
+  the strip also floods to `accent-900` with a breathing accent wash and a
   1px accent bottom border, and digits grow to 52px; the track itself thickens to 5px for
-  that stretch *and* for the whole overtime stretch past the marker. The wash is the
+  that stretch *and* for the whole overtime stretch past the marker. The 5:00 ceiling
+  gets the exact same flood/thick-bar/52px-digit package (`flashing = isWarning ||
+  atCeiling`) rather than a separate treatment of its own — the difference is that it has
+  no natural end the way the five-second window does, so it keeps breathing for as long
+  as rest keeps running past the ceiling: there should be no more rest once it's
+  showing. The wash is the
   app's only looping animation, so it is also the only one with a
   `prefers-reduced-motion` answer: the keyframes are redefined to hold a steady `.09`
   rather than the animation being dropped, since the flood still has to read. **The
