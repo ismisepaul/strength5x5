@@ -115,15 +115,6 @@ describe('rest timer five-second warning', () => {
     expect(unlock).not.toHaveBeenCalled();
   });
 
-  it('does not unlock audio on the skip tap when sound is off', async () => {
-    const user = await setup({ soundEnabled: false });
-    await startRest(user);
-    await tick(4);
-
-    await user.click(screen.getByLabelText('Skip rest'));
-    expect(unlock).not.toHaveBeenCalled();
-  });
-
   it('does not replay the current second when a sound setting is toggled mid-window', async () => {
     const user = await setup();
     await startRest(user);
@@ -141,19 +132,5 @@ describe('rest timer five-second warning', () => {
     await user.click(warningSwitch);
 
     expect(pip).toHaveBeenCalledTimes(during);
-  });
-
-  it('skipping rest during the warning window stops the pips', async () => {
-    const user = await setup();
-    await startRest(user);
-
-    await tick(13); // 5s remaining, first pip fired
-    expect(pip).toHaveBeenCalledTimes(1);
-
-    await user.click(screen.getByLabelText('Skip rest'));
-    await tick(20);
-
-    expect(pip).toHaveBeenCalledTimes(1);
-    expect(play).not.toHaveBeenCalled();
   });
 });

@@ -242,7 +242,7 @@
     "inSession": "Entraînement en cours",
     "rest": "Repos",
     "getReady": "Prêt",
-    "lifting": "En cours",
+    "lift": "Lève",
     "workoutComplete": "Entraînement terminé",
     "movementFinished": "Mouvement terminé"
   },

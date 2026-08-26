@@ -1,9 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { SkipForward } from '@phosphor-icons/react';
+import { SkipForward, CaretDown } from '@phosphor-icons/react';
 import { formatClock } from '../utils';
 import { useElapsedSince } from '../hooks/useElapsedSince';
-import { REST_WARNING_SECONDS } from '../constants';
+import { REST_WARNING_SECONDS, CUSTOM_REST_MAX } from '../constants';
+
+const pct = (seconds) => `${Math.min(100, Math.max(0, (seconds / CUSTOM_REST_MAX) * 100))}%`;
 
 const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isExpired, isActive, elapsed, startedAt, workoutType }) => {
   const { t } = useTranslation();
@@ -11,31 +13,38 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
 
   const isWarning = isActive && seconds > 0 && seconds <= REST_WARNING_SECONDS;
 
-  let kicker, digits, showSkip, accentState, progress;
+  // The clock counts up from 0 and keeps running past `total` (the marker) instead of
+  // resetting there -- only the hard 5:00 ceiling stops it. `total` is 0 whenever no
+  // rest is pending (idle, or just after the last set of an exercise), which also hides
+  // the marker/wall below rather than pinning them to 0:00.
+  const marker = Math.min(total || 0, CUSTOM_REST_MAX);
+  const showMarker = marker > 0;
+  const restElapsed = Math.min(
+    isActive ? Math.max(0, total - seconds) : isExpired ? total + elapsed : 0,
+    CUSTOM_REST_MAX,
+  );
+
+  let kicker, digits, showSkip, accentState;
   if (isExerciseComplete) {
     kicker = isExerciseComplete === 'workout' ? t('timer.workoutComplete') : t('timer.movementFinished');
     digits = sessionElapsed;
     showSkip = true;
     accentState = true;
-    progress = 100;
   } else if (isExpired) {
-    kicker = t('timer.lifting');
-    digits = elapsed || 0;
-    showSkip = true;
+    kicker = t('timer.lift');
+    digits = restElapsed;
+    showSkip = false;
     accentState = true;
-    progress = 100;
   } else if (isActive) {
     kicker = isWarning ? t('timer.getReady') : t('timer.rest');
-    digits = seconds;
-    showSkip = true;
+    digits = restElapsed;
+    showSkip = false;
     accentState = isWarning;
-    progress = total > 0 ? (1 - seconds / total) * 100 : 0;
   } else {
     kicker = t('timer.inSession');
     digits = sessionElapsed;
     showSkip = false;
     accentState = false;
-    progress = 0;
   }
 
   const mutedClass = 'text-ink/62';
@@ -55,9 +64,12 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             <p className={`font-mono font-bold tabular-nums leading-none ${isWarning ? 'text-[52px]' : 'text-[44px]'} ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
           </div>
           {showSkip && (
+            // showSkip is only ever true for the exercise/workout-complete banners --
+            // rest itself has no controls (see the derivation above) -- so this is
+            // always a dismiss, never a mid-rest skip.
             <button
               onClick={onSkip}
-              aria-label={isExerciseComplete ? 'Dismiss' : 'Skip rest'}
+              aria-label="Dismiss"
               className={`w-[34px] h-[34px] rounded-[7px] border flex items-center justify-center shrink-0 border-ink/26`}
             ><SkipForward size={14} weight="fill" /></button>
           )}
@@ -67,15 +79,53 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
           <p className={`font-mono text-[16px] tabular-nums leading-none text-ink/60`}>{formatClock(sessionElapsed * 1000)}</p>
         </div>
       </div>
-      <div className={`relative w-full mt-2.5 bg-ink/14 overflow-hidden ${isWarning ? 'h-[5px]' : 'h-[3px]'}`}>
-        <div
-          className="h-full"
-          style={{
-            width: `${progress}%`,
-            background: 'linear-gradient(to right, transparent, var(--color-accent) 24px, var(--color-accent))',
-            transition: 'width 1s linear',
-          }}
-        />
+
+      <div className="mt-2.5">
+        {showMarker && (
+          <div className="relative h-3.5" aria-hidden="true">
+            <div
+              className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
+              style={{ left: pct(marker), transform: 'translateX(-50%)' }}
+            >
+              <span className="font-mono text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">{formatClock(marker * 1000)}</span>
+              <CaretDown size={7} weight="bold" />
+            </div>
+          </div>
+        )}
+        <div className={`relative w-full bg-ink/14 overflow-hidden ${isWarning ? 'h-[5px]' : 'h-[3px]'}`}>
+          <div
+            className="h-full"
+            style={{
+              width: pct(restElapsed),
+              background: 'linear-gradient(to right, transparent, var(--color-accent) 24px, var(--color-accent))',
+              transition: 'width 1s linear',
+            }}
+          />
+          {showMarker && (
+            <>
+              <div className="absolute inset-y-0 w-px bg-ground/50" style={{ left: '30%' }} aria-hidden="true" />
+              <div className="absolute inset-y-0 w-px bg-ground/50" style={{ left: '60%' }} aria-hidden="true" />
+            </>
+          )}
+        </div>
+        {showMarker && (
+          <div className="relative h-3 mt-1.5" aria-hidden="true">
+            <span
+              className="absolute right-0 font-mono text-[9px] font-bold tracking-wide text-ink/38"
+              style={{ opacity: marker >= CUSTOM_REST_MAX ? 0 : 1 }}
+            >{formatClock(CUSTOM_REST_MAX * 1000)}</span>
+          </div>
+        )}
+        {isWarning && (
+          <div className="mt-2.5 flex items-center gap-[7px]" aria-hidden="true">
+            {[5, 4, 3, 2, 1].map((n) => (
+              <span
+                key={n}
+                className={`w-2 h-2 rounded-full ${seconds <= n ? 'bg-accent border border-accent' : 'border border-accent/30'}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

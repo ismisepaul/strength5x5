@@ -158,7 +158,14 @@ const App = () => {
 
   useEffect(() => {
     if (!currentWorkout || !isWorkoutActive) return;
-    const data = { session: currentWorkout, restTimerEndTime: timer.isActive ? (Date.now() + timer.seconds * 1000) : null };
+    const data = {
+      session: currentWorkout,
+      restTimerEndTime: timer.isActive ? (Date.now() + timer.seconds * 1000) : null,
+      // RestTimer.jsx's marker sits at the original interval, not whatever's left of it,
+      // so a resume has to hand start() the full duration back rather than just the
+      // remaining time (which start() would otherwise treat as a shorter interval).
+      restTimerDuration: timer.isActive ? timer.duration : null,
+    };
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
   }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
 
@@ -646,15 +653,13 @@ const App = () => {
     setActiveTab(tabId);
   }, []);
 
+  // The strip's button is only ever the "Dismiss" one now -- rest itself has nothing to
+  // touch (see RestTimer.jsx), so the only tap left to handle is clearing the
+  // exercise/workout-complete banner.
   const handleTimerSkip = useCallback(() => {
-    if (soundEnabled) chimeRef.current.unlock();
-    if (isExerciseComplete) {
-      timer.reset();
-      setIsExerciseComplete(false);
-    } else {
-      timer.skip();
-    }
-  }, [timer, isExerciseComplete, soundEnabled]);
+    timer.reset();
+    setIsExerciseComplete(false);
+  }, [timer]);
 
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const moodLabel = (day) => {
@@ -847,7 +852,7 @@ const App = () => {
             if (active.restTimerEndTime) {
               const remaining = Math.ceil((active.restTimerEndTime - Date.now()) / 1000);
               if (remaining > 0) {
-                timer.start(remaining);
+                timer.start(active.restTimerDuration ?? remaining, { initialSeconds: remaining });
               } else {
                 timer.skip();
               }

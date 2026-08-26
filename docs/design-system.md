@@ -282,21 +282,35 @@ always on.
   **live bar** sits above the tab bar: play icon + "Resting · m:ss" (or "Workout in
   progress") + "Return ›". Tapping it returns to Train.
 - During an active workout on the Train tab, the **timer strip replaces the header** at
-  the top of the screen — it is not docked at the bottom. Header everywhere else. The
-  strip is full-bleed: 44px tabular digits, a 3px accent progress line that fades in
-  from the left (`transition: width 1s linear`). In the last 5 seconds of rest the
-  strip floods to `accent-900` with a breathing accent wash, a 1px accent bottom
-  border, "Rest" → "Get ready", digits to 52px `accent-300`, and the progress line to
-  5px — visible from the rack, not just in the hand. The wash is the app's only looping
-  animation, so it is also the only one with a `prefers-reduced-motion` answer: the
-  keyframes are redefined to hold a steady `.09` rather than the animation being
-  dropped, since the flood still has to read. The expiry chime is a soft wooden marimba
-  (two struck notes, 339.5/679Hz), not a pure tone, and (if the "Five-second warning"
-  setting is on, alongside Sound alert) a quiet rising pip marks each of those last
-  5 seconds. Pip scheduling keys off `timer.seconds` alone — the two settings are read
-  through a ref, so toggling either mid-window can't replay the current second's pip.
-  All timer logic (wall-clock anchor, expire → stopwatch, sound/vibrate) lives in
-  `useTimer`/`RestTimer.jsx` and is untouched by presentation work.
+  the top of the screen — it is not docked at the bottom. Header everywhere else. Rest
+  **counts up from 0:00** rather than down, and keeps counting past the programmed
+  interval instead of resetting there — only the hard 5:00 ceiling (`CUSTOM_REST_MAX`)
+  freezes it. The track below the digits is a **fixed 0–5:00 scale**, not a 0–100% fill
+  of the interval: a 3px accent fill grows left-to-right at `restElapsed / 5:00`, with
+  faint reference hairlines at 1:30 and 3:00 (1:30's hairline carries a small muted
+  triangle, since it's otherwise an unlabeled tick), an accent caret + `m:ss` label
+  floating above the track at the programmed interval's position, and a muted "5:00"
+  label at the right edge (hidden once the interval itself is already 5:00). Digits are
+  44px tabular; kicker reads "Rest" until 5 seconds before the marker, "Get ready" for
+  that last stretch, then "Lift" once the marker passes — kicker and digits both turn
+  `accent-300` for "Get ready" and "Lift". In that last-5-seconds stretch the strip also
+  floods to `accent-900` with a breathing accent wash, a 1px accent bottom border,
+  digits to 52px, the track to 5px, and five countdown dots beneath it filling
+  left-to-right as the seconds close in. The wash is the app's only looping animation,
+  so it is also the only one with a `prefers-reduced-motion` answer: the keyframes are
+  redefined to hold a steady `.09` rather than the animation being dropped, since the
+  flood still has to read. **The strip has no controls while rest is running** — no
+  skip button — the only tap left is the "Dismiss" on the exercise/workout-complete
+  banner. The expiry chime is a soft wooden marimba (two struck notes, 339.5/679Hz), not
+  a pure tone, and (if the "Five-second warning" setting is on, alongside Sound alert) a
+  quiet rising pip marks each of those last 5 seconds. Pip scheduling keys off
+  `timer.seconds` alone — the two settings are read through a ref, so toggling either
+  mid-window can't replay the current second's pip. The session clock in the strip's
+  corner reads off the same render pass as the rest digits (not its own independent
+  polling interval) specifically so the two numbers can't visibly drift out of phase
+  with each other. All timer logic (wall-clock anchor, expire → stopwatch,
+  sound/vibrate) lives in `useTimer`/`RestTimer.jsx` and is untouched by presentation
+  work.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
 - **Every editable weight in the app — Train (idle and active), the Program tab's
   Madcow top sets, and the Log's add/edit-entry modal — uses one `WeightInput`

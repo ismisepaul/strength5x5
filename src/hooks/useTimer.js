@@ -37,10 +37,14 @@ export function useTimer({ onExpire } = {}) {
     return () => clearInterval(interval);
   }, [isExpired]);
 
-  const start = useCallback((newDuration) => {
-    endTimeRef.current = Date.now() + newDuration * 1000;
+  // initialSeconds lets a resumed rest rejoin partway through while duration keeps the
+  // full original length -- RestTimer.jsx's marker is placed at duration, so a resume
+  // that collapsed duration down to just the remaining time would relocate the marker.
+  const start = useCallback((newDuration, { initialSeconds } = {}) => {
+    const startSeconds = initialSeconds ?? newDuration;
+    endTimeRef.current = Date.now() + startSeconds * 1000;
     expiredAtRef.current = null;
-    setSeconds(newDuration);
+    setSeconds(startSeconds);
     setDuration(newDuration);
     setElapsed(0);
     setIsActive(true);

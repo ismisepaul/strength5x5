@@ -24,8 +24,8 @@ beforeEach(() => {
   URL.revokeObjectURL = vi.fn();
 });
 
-describe('Skip button behavior', () => {
-  it('skip during countdown transitions to lifting state instead of dismissing', async () => {
+describe('Rest timer button behavior', () => {
+  it('rest has no skip control -- the strip is read-only until the marker or the next set', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
     const user = userEvent.setup();
     render(<App />);
@@ -39,12 +39,7 @@ describe('Skip button behavior', () => {
     await user.click(setButtons[0]);
 
     expect(screen.getByText('Rest')).toBeInTheDocument();
-    expect(screen.getByLabelText('Skip rest')).toBeInTheDocument();
-
-    await user.click(screen.getByLabelText('Skip rest'));
-
-    expect(screen.getByText('Lifting')).toBeInTheDocument();
-    expect(screen.queryByText('Rest')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Skip rest')).not.toBeInTheDocument();
   });
 
   it('Got it on exercise complete fully dismisses the timer bar', async () => {
