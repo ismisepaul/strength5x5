@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY } from '../../constants';
@@ -153,6 +153,34 @@ describe('Live Workout bar', () => {
 
     expect(screen.getByText('Back Squat')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Log' })).not.toBeInTheDocument();
+  });
+
+  describe('while resting, on another tab', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('reads the same count-up clock as the Train tab strip, continuing past the marker instead of resetting', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
+      render(<App />);
+
+      await startWorkout(user);
+      const setButtons = screen.getAllByRole('button').filter((b) => b.getAttribute('aria-label')?.startsWith('Set '));
+      await user.click(setButtons[0]); // starts the default 1:30 (90s) rest
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(90000); }); // reach the marker
+      await act(async () => { await vi.advanceTimersByTimeAsync(5000); }); // 5s of overtime
+
+      // 95s total elapsed reads "1:35" -- the same continuous clock RestTimer.jsx shows
+      // on Train. The old bar reset a separate stopwatch to 0 at the marker, which
+      // would have read "Lifting · 0:05" here instead.
+      await user.click(screen.getByLabelText('Log'));
+      expect(screen.getByText('Lifting · 1:35')).toBeInTheDocument();
+    });
   });
 });
 

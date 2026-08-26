@@ -9,8 +9,8 @@ import BarMark from './components/BarMark';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
+import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS, CUSTOM_REST_MAX } from './constants';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight, formatClock } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
@@ -783,11 +783,19 @@ const App = () => {
       </main>
 
       {liveWorkoutVisible && (() => {
-        const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+        // Mirrors RestTimer.jsx's own clock exactly: rest counts up from 0 and keeps
+        // running past the marker instead of resetting there, capped at the 5:00
+        // ceiling -- this bar used to show the countdown's remaining time and a
+        // separate stopwatch that reset to 0 at the marker, which no longer matches
+        // what the Train tab's strip displays for the same rest.
+        const restElapsed = Math.min(
+          timer.isActive ? Math.max(0, timer.duration - timer.seconds) : timer.isExpired ? timer.duration + timer.elapsed : 0,
+          CUSTOM_REST_MAX,
+        );
         const liveDetail = timer.isExpired
-          ? t('liveWorkout.lifting', { time: formatTime(timer.elapsed) })
+          ? t('liveWorkout.lifting', { time: formatClock(restElapsed * 1000) })
           : timer.isActive
-            ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
+            ? t('liveWorkout.resting', { time: formatClock(restElapsed * 1000) })
             : t('liveWorkout.activeWorkout');
         return (
           <div className="flex-none px-3 py-1.5">
