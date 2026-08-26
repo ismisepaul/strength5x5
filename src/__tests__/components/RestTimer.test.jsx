@@ -22,9 +22,11 @@ describe('RestTimer', () => {
     expect(screen.queryByLabelText('Dismiss')).not.toBeInTheDocument();
   });
 
-  it('hides the marker and wall when no rest is pending', () => {
+  it('hides the marker and wall when no rest is pending, without changing the strip height', () => {
+    // The marker/wall rows stay mounted (so starting rest can't grow the strip), just
+    // empty -- hidden via opacity, not by unmounting.
     render(<RestTimer {...defaultProps} total={0} />);
-    expect(screen.queryByText('5:00')).not.toBeInTheDocument();
+    expect(screen.getByText('5:00')).toHaveStyle({ opacity: '0' });
   });
 
   it('counts rest up from zero, with no skip control, while active', () => {

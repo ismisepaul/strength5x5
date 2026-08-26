@@ -89,22 +89,27 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
       </div>
 
       <div className="mt-2.5">
-        {showMarker && (
-          <div className="relative h-3.5" aria-hidden="true">
-            {/* Unlabeled reference tick at 1:30 (light-rest recovery point) so the
-                hairline on the track below reads as a specific mark, not a stray line. */}
-            <div className="absolute bottom-0 text-ink/40" style={{ left: '30%', transform: 'translateX(-50%)' }}>
-              <CaretDown size={7} weight="bold" />
-            </div>
-            <div
-              className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
-              style={{ left: pct(marker), transform: 'translateX(-50%)' }}
-            >
-              <span className="font-mono text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">{formatClock(marker * 1000)}</span>
-              <CaretDown size={7} weight="bold" />
-            </div>
-          </div>
-        )}
+        {/* The marker and wall rows always occupy their height, marker content or not --
+            mounting/unmounting them only once a rest starts is what made the strip grow
+            the instant a set was logged. showMarker instead toggles their content. */}
+        <div className="relative h-3.5" aria-hidden="true">
+          {showMarker && (
+            <>
+              {/* Unlabeled reference tick at 1:30 (light-rest recovery point) so the
+                  hairline on the track below reads as a specific mark, not a stray line. */}
+              <div className="absolute bottom-0 text-ink/40" style={{ left: '30%', transform: 'translateX(-50%)' }}>
+                <CaretDown size={7} weight="bold" />
+              </div>
+              <div
+                className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
+                style={{ left: pct(marker), transform: 'translateX(-50%)' }}
+              >
+                <span className="font-mono text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">{formatClock(marker * 1000)}</span>
+                <CaretDown size={7} weight="bold" />
+              </div>
+            </>
+          )}
+        </div>
         <div className={`relative w-full bg-ink/14 overflow-hidden ${isWarning ? 'h-[5px]' : 'h-[3px]'}`}>
           <div
             className="h-full"
@@ -121,14 +126,12 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             </>
           )}
         </div>
-        {showMarker && (
-          <div className="relative h-3 mt-1.5" aria-hidden="true">
-            <span
-              className="absolute right-0 font-mono text-[9px] font-bold tracking-wide text-ink/38"
-              style={{ opacity: marker >= CUSTOM_REST_MAX ? 0 : 1 }}
-            >{formatClock(CUSTOM_REST_MAX * 1000)}</span>
-          </div>
-        )}
+        <div className="relative h-3 mt-1.5" aria-hidden="true">
+          <span
+            className="absolute right-0 font-mono text-[9px] font-bold tracking-wide text-ink/38"
+            style={{ opacity: showMarker && marker < CUSTOM_REST_MAX ? 1 : 0 }}
+          >{formatClock(CUSTOM_REST_MAX * 1000)}</span>
+        </div>
         {isWarning && (
           <div className="mt-2.5 flex items-center gap-[7px]" aria-hidden="true">
             {[5, 4, 3, 2, 1].map((n) => (
