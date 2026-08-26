@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SkipForward } from '@phosphor-icons/react';
-import { formatClock } from '../utils';
+import { formatClock, restElapsedFromTimer } from '../utils';
 import { useElapsedSince } from '../hooks/useElapsedSince';
 import { REST_WARNING_SECONDS, CUSTOM_REST_MAX } from '../constants';
 
@@ -29,10 +29,7 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   // the marker/track scale below rather than pinning them to 0:00.
   const marker = Math.min(total || 0, CUSTOM_REST_MAX);
   const showMarker = marker > 0;
-  const restElapsed = Math.min(
-    isActive ? Math.max(0, total - seconds) : isExpired ? total + elapsed : 0,
-    CUSTOM_REST_MAX,
-  );
+  const restElapsed = restElapsedFromTimer({ isActive, isExpired, duration: total, seconds, elapsed });
   const over = Math.max(0, restElapsed - marker);
   const atCeiling = restElapsed >= CUSTOM_REST_MAX;
 

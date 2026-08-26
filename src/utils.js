@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL, PLATE_WEIGHTS, MIN_WEIGHT_INCREMENT, REST_SHORT_SECONDS } from './constants';
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL, PLATE_WEIGHTS, MIN_WEIGHT_INCREMENT, REST_SHORT_SECONDS, CUSTOM_REST_MAX } from './constants';
 
 export function migrate(data, fromVersion) {
   let current = { ...data };
@@ -485,6 +485,17 @@ export function formatDuration(ms, t) {
   const hours = Math.floor(totalMinutes / 60);
   const mins = totalMinutes % 60;
   return t ? t('duration.hoursMinutes', { h: hours, m: mins }) : `${hours}h ${mins}m`;
+}
+
+// The rest timer's count-up clock: counts up to `duration` (the marker) then keeps
+// going into overtime, capped at the hard CUSTOM_REST_MAX ceiling. Shared by RestTimer.jsx
+// (the Train tab strip) and the cross-tab live bar in App.jsx so the two can't drift back
+// out of sync with each other the way they did before both read this same formula.
+export function restElapsedFromTimer({ isActive, isExpired, duration, seconds, elapsed }) {
+  return Math.min(
+    isActive ? Math.max(0, duration - seconds) : isExpired ? duration + elapsed : 0,
+    CUSTOM_REST_MAX,
+  );
 }
 
 // Clock-style m:ss (or h:mm:ss past an hour) for short spans where formatDuration's

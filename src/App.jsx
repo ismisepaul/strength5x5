@@ -9,8 +9,8 @@ import BarMark from './components/BarMark';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS, CUSTOM_REST_MAX } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight, formatClock } from './utils';
+import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS } from './constants';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight, formatClock, restElapsedFromTimer } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
@@ -164,20 +164,28 @@ const App = () => {
 
   useEffect(() => {
     if (!currentWorkout || !isWorkoutActive) return;
+    // isExpired (overtime/"Lift") is a normal, often long-lived rest state now, not just
+    // a brief flash before a skip -- closing the app during it has to resume the same way
+    // closing during isActive does, so it's persisted here too, not only while isActive.
+    const resting = timer.isActive || timer.isExpired;
     const data = {
       session: currentWorkout,
-      restTimerEndTime: timer.isActive ? (Date.now() + timer.seconds * 1000) : null,
+      restTimerEndTime: timer.isActive
+        ? Date.now() + timer.seconds * 1000
+        // Work back to the wall-clock moment the marker passed, so resume() derives the
+        // same offline overtime whether the app closed before or after that moment.
+        : timer.isExpired ? Date.now() - timer.elapsed * 1000 : null,
       // RestTimer.jsx's marker sits at the original interval, not whatever's left of it,
       // so a resume has to hand the full duration back rather than just the remaining
       // time (which would otherwise be treated as a shorter interval).
-      restTimerDuration: timer.isActive ? timer.duration : null,
+      restTimerDuration: resting ? timer.duration : null,
       // Whether this rest follows the Settings interval has to survive the reload too --
       // it lives in a ref, which reinitialises to false, so without persisting it a
       // resumed ordinary rest would silently stop retargeting (see handleSetPreferredRest).
-      restTracksPreferred: timer.isActive ? restTracksPreferredRef.current : false,
+      restTracksPreferred: resting ? restTracksPreferredRef.current : false,
     };
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
-  }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
+  }, [currentWorkout, isWorkoutActive, timer.isActive, timer.isExpired, timer.seconds, timer.elapsed]);
 
   // Madcow trains a ramp, not a flat weight, so anything that renders a single "current
   // weight" reads the top set instead. Kept derived rather than mirrored into `weights`
@@ -787,15 +795,14 @@ const App = () => {
       </main>
 
       {liveWorkoutVisible && (() => {
-        // Mirrors RestTimer.jsx's own clock exactly: rest counts up from 0 and keeps
-        // running past the marker instead of resetting there, capped at the 5:00
-        // ceiling -- this bar used to show the countdown's remaining time and a
-        // separate stopwatch that reset to 0 at the marker, which no longer matches
-        // what the Train tab's strip displays for the same rest.
-        const restElapsed = Math.min(
-          timer.isActive ? Math.max(0, timer.duration - timer.seconds) : timer.isExpired ? timer.duration + timer.elapsed : 0,
-          CUSTOM_REST_MAX,
-        );
+        // Shares RestTimer.jsx's own restElapsedFromTimer so this bar's count-up clock
+        // can't drift out of sync with what the Train tab's strip displays for the same
+        // rest -- this bar used to compute its own separate stopwatch that reset to 0 at
+        // the marker instead of continuing past it, which no longer matches the strip.
+        const restElapsed = restElapsedFromTimer({
+          isActive: timer.isActive, isExpired: timer.isExpired,
+          duration: timer.duration, seconds: timer.seconds, elapsed: timer.elapsed,
+        });
         const liveDetail = timer.isExpired
           ? t('liveWorkout.lifting', { time: formatClock(restElapsed * 1000) })
           : timer.isActive
