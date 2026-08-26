@@ -331,8 +331,12 @@ always on.
   tabs while a workout is active reads the exact same count-up clock as the Train tab
   strip (continuing past the marker rather than resetting to a fresh stopwatch at that
   point), so switching tabs mid-rest never shows a different number than the strip
-  would. All timer logic (wall-clock anchor, expire → stopwatch, sound/vibrate,
-  retargeting) lives in `useTimer`/`RestTimer.jsx` and is untouched by presentation
+  would. Resuming a saved workout rehydrates a rest that was still in flight
+  (`useTimer`'s `resume()`), including one whose marker passed while the app was closed
+  — the marker and the overtime that accrued offline both come back rather than the
+  clock restarting at 0:00, and no chime fires for a moment that already passed. All
+  timer logic (wall-clock anchor, expire → stopwatch, sound/vibrate, retargeting,
+  resume) lives in `useTimer`/`RestTimer.jsx` and is untouched by presentation
   work.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
 - **Every editable weight in the app — Train (idle and active), the Program tab's

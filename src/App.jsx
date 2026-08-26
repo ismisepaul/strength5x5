@@ -168,9 +168,13 @@ const App = () => {
       session: currentWorkout,
       restTimerEndTime: timer.isActive ? (Date.now() + timer.seconds * 1000) : null,
       // RestTimer.jsx's marker sits at the original interval, not whatever's left of it,
-      // so a resume has to hand start() the full duration back rather than just the
-      // remaining time (which start() would otherwise treat as a shorter interval).
+      // so a resume has to hand the full duration back rather than just the remaining
+      // time (which would otherwise be treated as a shorter interval).
       restTimerDuration: timer.isActive ? timer.duration : null,
+      // Whether this rest follows the Settings interval has to survive the reload too --
+      // it lives in a ref, which reinitialises to false, so without persisting it a
+      // resumed ordinary rest would silently stop retargeting (see handleSetPreferredRest).
+      restTracksPreferred: timer.isActive ? restTracksPreferredRef.current : false,
     };
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
   }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
@@ -877,12 +881,12 @@ const App = () => {
             setIsWorkoutActive(true);
             setActiveTab('workout');
             if (active.restTimerEndTime) {
-              const remaining = Math.ceil((active.restTimerEndTime - Date.now()) / 1000);
-              if (remaining > 0) {
-                timer.start(active.restTimerDuration ?? remaining, { initialSeconds: remaining });
-              } else {
-                timer.skip();
-              }
+              // resume() covers both cases: still counting down, or run past its marker
+              // while the app was closed (in which case the offline overtime is carried
+              // over rather than the clock restarting at 0:00 with no marker).
+              const remaining = Math.max(0, Math.ceil((active.restTimerEndTime - Date.now()) / 1000));
+              timer.resume(active.restTimerDuration ?? remaining, active.restTimerEndTime);
+              restTracksPreferredRef.current = active.restTracksPreferred ?? false;
             }
             setShowResumePrompt(false);
           }}

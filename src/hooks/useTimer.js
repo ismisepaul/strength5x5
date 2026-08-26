@@ -37,14 +37,10 @@ export function useTimer({ onExpire } = {}) {
     return () => clearInterval(interval);
   }, [isExpired]);
 
-  // initialSeconds lets a resumed rest rejoin partway through while duration keeps the
-  // full original length -- RestTimer.jsx's marker is placed at duration, so a resume
-  // that collapsed duration down to just the remaining time would relocate the marker.
-  const start = useCallback((newDuration, { initialSeconds } = {}) => {
-    const startSeconds = initialSeconds ?? newDuration;
-    endTimeRef.current = Date.now() + startSeconds * 1000;
+  const start = useCallback((newDuration) => {
+    endTimeRef.current = Date.now() + newDuration * 1000;
     expiredAtRef.current = null;
-    setSeconds(startSeconds);
+    setSeconds(newDuration);
     setDuration(newDuration);
     setElapsed(0);
     setIsActive(true);
@@ -60,13 +56,29 @@ export function useTimer({ onExpire } = {}) {
     expiredAtRef.current = null;
   }, []);
 
-  const skip = useCallback(() => {
-    endTimeRef.current = null;
-    expiredAtRef.current = Date.now();
-    setIsActive(false);
-    setSeconds(0);
-    setElapsed(0);
-    setIsExpired(true);
+  // Restores a rest that was still in flight when the app was closed. `endsAt` is when
+  // that rest was due to reach its marker, which may already be in the past: unlike
+  // start(), this keeps the original duration (so the marker stays where it was) and
+  // hydrates any overtime that accrued while the app was shut rather than restarting
+  // the count-up from zero. Never fires onExpire -- the marker was passed offline, so
+  // there is no moment to chime for.
+  const resume = useCallback((newDuration, endsAt) => {
+    setDuration(newDuration);
+    if (endsAt > Date.now()) {
+      endTimeRef.current = endsAt;
+      expiredAtRef.current = null;
+      setSeconds(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+      setElapsed(0);
+      setIsActive(true);
+      setIsExpired(false);
+    } else {
+      endTimeRef.current = null;
+      expiredAtRef.current = endsAt;
+      setSeconds(0);
+      setElapsed(Math.max(0, Math.floor((Date.now() - endsAt) / 1000)));
+      setIsActive(false);
+      setIsExpired(true);
+    }
   }, []);
 
   const reset = useCallback(() => {
@@ -109,5 +121,5 @@ export function useTimer({ onExpire } = {}) {
     }
   };
 
-  return { seconds, duration, isActive, isExpired, elapsed, start, stop, skip, reset, retarget };
+  return { seconds, duration, isActive, isExpired, elapsed, start, stop, resume, reset, retarget };
 }

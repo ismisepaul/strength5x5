@@ -235,6 +235,40 @@ describe('Workout recovery', () => {
     });
   });
 
+  it('restores the marker and the offline overtime when the rest ran out while closed', async () => {
+    const activeSession = {
+      session: {
+        date: new Date().toISOString(),
+        type: 'A',
+        startedAt: Date.now() - 300000,
+        exercises: [
+          { id: 'squat', name: 'Back Squat', weight: 60, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5, null, null, null, null] },
+          { id: 'bench', name: 'Bench Press', weight: 45, sets: 5, reps: 5, increment: 2.5, setsCompleted: [null, null, null, null, null] },
+          { id: 'row', name: 'Barbell Row', weight: 50, sets: 5, reps: 5, increment: 2.5, setsCompleted: [null, null, null, null, null] },
+        ],
+      },
+      // A 1:30 rest whose marker passed 40s before the app was reopened.
+      restTimerEndTime: Date.now() - 40000,
+      restTimerDuration: 90,
+      restTracksPreferred: true,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(activeSession));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Resume'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Resume Workout?')).not.toBeInTheDocument();
+    });
+    // 90s marker + 40s of offline overtime -- not a bare 0:00 count-up with no marker.
+    expect(screen.getByText('Lift')).toBeInTheDocument();
+    expect(screen.getByText('2:10')).toBeInTheDocument();
+    expect(screen.getByText('(+0:40)')).toBeInTheDocument();
+    expect(screen.getByText('1:30')).toBeInTheDocument(); // the marker survived the reload
+  });
+
   it('clears active workout when Discard is clicked', async () => {
     const activeSession = {
       session: {

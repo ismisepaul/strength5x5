@@ -62,31 +62,42 @@ describe('useTimer', () => {
     expect(result.current.elapsed).toBeGreaterThanOrEqual(2);
   });
 
-  it('skip() transitions from countdown to expired without calling onExpire', () => {
-    const onExpire = vi.fn();
-    const { result } = renderHook(() => useTimer({ onExpire }));
-    act(() => result.current.start(90));
+  describe('resume()', () => {
+    it('rejoins a still-running rest partway through, keeping the original duration', () => {
+      const { result } = renderHook(() => useTimer());
 
-    expect(result.current.isActive).toBe(true);
-    expect(result.current.isExpired).toBe(false);
+      // A 90s rest that was started 30s ago: 60s still to run, but the marker (and so
+      // duration) is still the full 90.
+      act(() => result.current.resume(90, Date.now() + 60000));
+      expect(result.current.isActive).toBe(true);
+      expect(result.current.isExpired).toBe(false);
+      expect(result.current.duration).toBe(90);
+      expect(result.current.seconds).toBe(60);
+    });
 
-    act(() => result.current.skip());
-    expect(result.current.isActive).toBe(false);
-    expect(result.current.isExpired).toBe(true);
-    expect(result.current.seconds).toBe(0);
-    expect(result.current.elapsed).toBe(0);
-    expect(onExpire).not.toHaveBeenCalled();
-  });
+    it('carries over overtime accrued while the app was closed, without calling onExpire', () => {
+      const onExpire = vi.fn();
+      const { result } = renderHook(() => useTimer({ onExpire }));
 
-  it('elapsed counts up after skip()', () => {
-    const { result } = renderHook(() => useTimer());
-    act(() => result.current.start(90));
-    act(() => result.current.skip());
+      // A 90s rest whose marker passed 40s ago while the app was shut.
+      act(() => result.current.resume(90, Date.now() - 40000));
+      expect(result.current.isActive).toBe(false);
+      expect(result.current.isExpired).toBe(true);
+      expect(result.current.duration).toBe(90);
+      expect(result.current.seconds).toBe(0);
+      expect(result.current.elapsed).toBe(40);
+      // The marker was passed offline -- there is no moment left to chime for.
+      expect(onExpire).not.toHaveBeenCalled();
+    });
 
-    expect(result.current.isExpired).toBe(true);
+    it('keeps counting the overtime forward from the offline value', () => {
+      const { result } = renderHook(() => useTimer());
+      act(() => result.current.resume(90, Date.now() - 40000));
 
-    act(() => vi.advanceTimersByTime(5000));
-    expect(result.current.elapsed).toBeGreaterThanOrEqual(4);
+      act(() => vi.advanceTimersByTime(5000));
+      expect(result.current.elapsed).toBeGreaterThanOrEqual(44);
+      expect(result.current.elapsed).toBeLessThanOrEqual(45);
+    });
   });
 
   it('reset() clears all state', () => {
