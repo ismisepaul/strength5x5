@@ -308,7 +308,10 @@ always on.
   turn `accent-300` for every state past "Rest". Once past the marker, a small
   parenthesized `(+m:ss)` next to the digits reads the delta past the marker — never
   "+m:ss over": the lifter could simply still be lifting, not running late, and "over" is
-  a verdict the app has no way to make. In the last-5-seconds-before-the-marker stretch
+  a verdict the app has no way to make. Unlike the digits themselves, this bracket is
+  **not** subject to the 5:00 ceiling — it keeps counting up off the raw elapsed time
+  (`rawRestElapsedFromTimer`) for as long as rest keeps running, rather than freezing at
+  whatever delta the ceiling happened to land on. In the last-5-seconds-before-the-marker stretch
   specifically the strip also floods to `accent-900` with a breathing accent wash and a
   1px accent bottom border, and digits grow to 52px; the track itself thickens to 5px for
   that stretch *and* for the whole overtime stretch past the marker. The wash is the

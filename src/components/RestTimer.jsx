@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SkipForward } from '@phosphor-icons/react';
-import { formatClock, restElapsedFromTimer } from '../utils';
+import { formatClock, restElapsedFromTimer, rawRestElapsedFromTimer } from '../utils';
 import { useElapsedSince } from '../hooks/useElapsedSince';
 import { REST_WARNING_SECONDS, CUSTOM_REST_MAX } from '../constants';
 
@@ -30,8 +30,12 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   const marker = Math.min(total || 0, CUSTOM_REST_MAX);
   const showMarker = marker > 0;
   const restElapsed = restElapsedFromTimer({ isActive, isExpired, duration: total, seconds, elapsed });
-  const over = Math.max(0, restElapsed - marker);
   const atCeiling = restElapsed >= CUSTOM_REST_MAX;
+  // The digits above freeze at the 5:00 ceiling, but the overtime bracket reads off the
+  // uncapped elapsed time instead, so it keeps counting up rather than freezing at
+  // whatever "+m:ss" the ceiling happened to land on.
+  const rawElapsed = rawRestElapsedFromTimer({ isActive, isExpired, duration: total, seconds, elapsed });
+  const over = Math.max(0, rawElapsed - marker);
 
   // The track's scale is the interval, not a fixed 0-5:00 span, so a 1:30 rest fills
   // the line instead of leaving two-thirds of the strip permanently empty. It stays at

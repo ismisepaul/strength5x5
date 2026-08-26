@@ -487,15 +487,21 @@ export function formatDuration(ms, t) {
   return t ? t('duration.hoursMinutes', { h: hours, m: mins }) : `${hours}h ${mins}m`;
 }
 
+// The rest timer's true elapsed rest, uncapped -- keeps counting for as long as rest
+// keeps running, past CUSTOM_REST_MAX included. Exported separately (rather than only
+// inline in restElapsedFromTimer below) since RestTimer.jsx's overtime bracket reads
+// off this raw value instead of the ceiling-capped one, so it isn't frozen by the same
+// 5:00 cap that rightly freezes the main clock.
+export function rawRestElapsedFromTimer({ isActive, isExpired, duration, seconds, elapsed }) {
+  return isActive ? Math.max(0, duration - seconds) : isExpired ? duration + elapsed : 0;
+}
+
 // The rest timer's count-up clock: counts up to `duration` (the marker) then keeps
 // going into overtime, capped at the hard CUSTOM_REST_MAX ceiling. Shared by RestTimer.jsx
 // (the Train tab strip) and the cross-tab live bar in App.jsx so the two can't drift back
 // out of sync with each other the way they did before both read this same formula.
-export function restElapsedFromTimer({ isActive, isExpired, duration, seconds, elapsed }) {
-  return Math.min(
-    isActive ? Math.max(0, duration - seconds) : isExpired ? duration + elapsed : 0,
-    CUSTOM_REST_MAX,
-  );
+export function restElapsedFromTimer(args) {
+  return Math.min(rawRestElapsedFromTimer(args), CUSTOM_REST_MAX);
 }
 
 // Clock-style m:ss (or h:mm:ss past an hour) for short spans where formatDuration's

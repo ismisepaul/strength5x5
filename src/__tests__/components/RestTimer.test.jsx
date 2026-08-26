@@ -99,7 +99,17 @@ describe('RestTimer', () => {
     const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={300} total={90} />);
     expect(screen.getByText('Time')).toBeInTheDocument();
     expect(digitsEl(container)).toHaveTextContent('5:00');
-    expect(screen.getByText('(+3:30)')).toBeInTheDocument();
+    expect(screen.getByText('(+5:00)')).toBeInTheDocument();
+  });
+
+  it('keeps the overtime bracket counting up past the 5:00 ceiling instead of freezing it too', () => {
+    // 90s interval + 400s elapsed since expiry = 490s raw -- well past the 5:00 (300s)
+    // ceiling that freezes the main digits. The bracket isn't capped there: it reads the
+    // full 400s delta (+6:40), not 210s (+3:30) the way it would if it inherited the
+    // digits' own cap.
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={400} total={90} />);
+    expect(digitsEl(container)).toHaveTextContent('5:00');
+    expect(screen.getByText('(+6:40)')).toBeInTheDocument();
   });
 
   it('shifts the marker label off the right edge once it sits at the ceiling', () => {
