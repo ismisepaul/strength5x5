@@ -9,8 +9,8 @@ import BarMark from './components/BarMark';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight, formatClock, restElapsedFromTimer } from './utils';
+import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS, REST_PRESETS, CUSTOM_REST_MAX } from './constants';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight, formatClock, restElapsedFromTimer, rawRestElapsedFromTimer } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
@@ -141,6 +141,30 @@ const App = () => {
     if (!timer.isActive || timer.seconds <= 0 || timer.seconds > REST_WARNING_SECONDS) return;
     chimeRef.current.pip(REST_WARNING_SECONDS - timer.seconds);
   }, [timer.isActive, timer.seconds]);
+
+  // The rest strip's track re-scales at each rest preset above the marker (1:30 -> 3:00
+  // -> 5:00 -- see RestTimer.jsx), and each of those re-scales gets the same chime that
+  // already marks reaching the marker itself, so a rest running long is never silently
+  // past a checkpoint the strip just visibly jumped to. Presets at or below the marker
+  // are covered by onExpire above; presetsChimedRef records which of the ones above it
+  // have already sounded for the rest currently running, so each fires once. Reset at
+  // the same call site as timer.start() (a genuinely new rest) and pre-seeded on resume
+  // with whichever presets the raw elapsed time had already passed while the app was
+  // closed, so reopening it can't replay a burst of catch-up chimes.
+  const presetsChimedRef = useRef(new Set());
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
+  useEffect(() => {
+    if (!soundEnabledRef.current || (!timer.isActive && !timer.isExpired)) return;
+    const marker = Math.min(timer.duration || 0, CUSTOM_REST_MAX);
+    const raw = rawRestElapsedFromTimer({ isActive: timer.isActive, isExpired: timer.isExpired, duration: timer.duration, seconds: timer.seconds, elapsed: timer.elapsed });
+    for (const preset of REST_PRESETS) {
+      if (preset <= marker || raw < preset || presetsChimedRef.current.has(preset)) continue;
+      presetsChimedRef.current.add(preset);
+      chimeRef.current.play();
+    }
+  }, [timer.isActive, timer.isExpired, timer.duration, timer.seconds, timer.elapsed]);
 
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,
@@ -316,6 +340,7 @@ const App = () => {
             ? (ex.restSeconds[setIdx + 1] ?? preferredRest)
             : (nextVal === target ? preferredRest : 300);
           restTracksPreferredRef.current = followsPreferred;
+          presetsChimedRef.current = new Set();
           timer.start(req);
         }
       } else { timer.stop(); setIsExerciseComplete(false); }
@@ -892,7 +917,15 @@ const App = () => {
               // while the app was closed (in which case the offline overtime is carried
               // over rather than the clock restarting at 0:00 with no marker).
               const remaining = Math.max(0, Math.ceil((active.restTimerEndTime - Date.now()) / 1000));
-              timer.resume(active.restTimerDuration ?? remaining, active.restTimerEndTime);
+              const resumedDuration = active.restTimerDuration ?? remaining;
+              const resumedMarker = Math.min(resumedDuration || 0, CUSTOM_REST_MAX);
+              const overdue = Math.max(0, Math.floor((Date.now() - active.restTimerEndTime) / 1000));
+              const resumedRaw = overdue > 0 ? resumedDuration + overdue : 0;
+              // Same "no chime for a moment that already passed" rule as the marker itself
+              // (see useTimer's resume() below) -- seed with whatever presets the offline
+              // overtime had already cleared so reopening the app doesn't replay them.
+              presetsChimedRef.current = new Set(REST_PRESETS.filter(p => p > resumedMarker && p <= resumedRaw));
+              timer.resume(resumedDuration, active.restTimerEndTime);
               restTracksPreferredRef.current = active.restTracksPreferred ?? false;
             }
             setShowResumePrompt(false);

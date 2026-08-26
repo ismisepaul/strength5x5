@@ -328,7 +328,16 @@ always on.
   "Five-second warning" setting is on, alongside Sound alert) a quiet rising pip marks
   each of those last 5 seconds. Pip scheduling keys off `timer.seconds` alone — the two
   settings are read through a ref, so toggling either mid-window can't replay the
-  current second's pip. The session clock in the strip's corner reads off the same
+  current second's pip. The same expiry chime also sounds at every rest preset
+  (`REST_PRESETS`: 1:30, 3:00, 5:00) above the marker as overtime reaches it — the same
+  moments the track re-scales to — so a rest running long is never silently past a
+  checkpoint the strip just visibly jumped to; a preset at or below the marker is
+  already covered by the marker's own chime and doesn't sound twice. Gated on Sound
+  alert alone, not the five-second warning setting. `presetsChimedRef` (App.jsx) tracks
+  which presets have already sounded for the rest currently running, reset when a new
+  rest actually starts and pre-seeded on resume with whichever presets the offline
+  overtime had already cleared, so reopening the app can't replay a burst of catch-up
+  chimes. The session clock in the strip's corner reads off the same
   render pass as the rest digits (not its own independent polling interval)
   specifically so the two numbers can't visibly drift out of phase with each other.
   Changing the rest interval in Settings **retargets a rest already in progress**
