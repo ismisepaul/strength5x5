@@ -308,8 +308,10 @@ always on.
   edge reads the *current* scale's endpoint, hidden whenever it would just duplicate the
   marker's own label — before overtime starts (scale ends at the marker) and once the
   interval itself is already 5:00. Digits are 44px tabular; kicker reads "Rest"
-  until 5 seconds before the marker, "Get ready" for that last stretch, "Lift" once the
-  marker passes, and "Time" once the clock hits the 5:00 ceiling — kicker and digits all
+  until 5 seconds before the marker, "Get ready" for that last stretch, and "Lift" once
+  the marker passes — including at and past the 5:00 ceiling, which gets the flashing
+  treatment below rather than a separate kicker of its own: the lifter is just as much
+  still lifting at 5:00 over as at 10 seconds over. Kicker and digits
   turn `accent-300` for every state past "Rest". Once past the marker, a small
   parenthesized `(+m:ss)` next to the digits reads the delta past the marker — never
   "+m:ss over": the lifter could simply still be lifting, not running late, and "over" is

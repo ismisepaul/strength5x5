@@ -109,9 +109,11 @@ describe('RestTimer', () => {
     expect(wallEl(container)).toHaveTextContent('5:00');
   });
 
-  it('reads "Time" and freezes at the 5:00 ceiling rather than counting past it', () => {
+  it('keeps reading "Lift" and freezes at the 5:00 ceiling rather than counting past it', () => {
+    // Still "Lift", not a separate "Time" state -- the lifter is just as much still
+    // lifting at 5:00 over as at 10 seconds over.
     const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={300} total={90} />);
-    expect(screen.getByText('Time')).toBeInTheDocument();
+    expect(screen.getByText('Lift')).toBeInTheDocument();
     expect(digitsEl(container)).toHaveTextContent('5:00');
     expect(screen.getByText('(+5:00)')).toBeInTheDocument();
   });

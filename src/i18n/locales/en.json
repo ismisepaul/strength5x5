@@ -243,7 +243,6 @@
     "rest": "Rest",
     "getReady": "Get ready",
     "lift": "Lift",
-    "time": "Time",
     "restTargetAria": "Rest target {{time}}",
     "workoutComplete": "Workout complete",
     "movementFinished": "Movement finished",

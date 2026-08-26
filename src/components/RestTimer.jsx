@@ -55,10 +55,9 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
     accentState = true;
   } else {
     kicker = !resting ? t('timer.inSession')
-      : atCeiling ? t('timer.time')
-        : over > 0 ? t('timer.lift')
-          : isWarning ? t('timer.getReady')
-            : t('timer.rest');
+      : over > 0 ? t('timer.lift')
+        : isWarning ? t('timer.getReady')
+          : t('timer.rest');
     digits = resting ? restElapsed : sessionElapsed;
     showSkip = false;
     accentState = resting && (isWarning || over > 0 || atCeiling);
