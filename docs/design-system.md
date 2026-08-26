@@ -295,8 +295,7 @@ always on.
   that last stretch, then "Lift" once the marker passes — kicker and digits both turn
   `accent-300` for "Get ready" and "Lift". In that last-5-seconds stretch the strip also
   floods to `accent-900` with a breathing accent wash, a 1px accent bottom border,
-  digits to 52px, the track to 5px, and five countdown dots beneath it filling
-  left-to-right as the seconds close in. The wash is the app's only looping animation,
+  digits to 52px, and the track to 5px. The wash is the app's only looping animation,
   so it is also the only one with a `prefers-reduced-motion` answer: the keyframes are
   redefined to hold a steady `.09` rather than the animation being dropped, since the
   flood still has to read. **The strip has no controls while rest is running** — no

@@ -135,16 +135,6 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             style={{ opacity: showMarker && marker < CUSTOM_REST_MAX ? 1 : 0 }}
           >{formatClock(CUSTOM_REST_MAX * 1000)}</span>
         </div>
-        {isWarning && (
-          <div className="mt-2.5 flex items-center gap-[7px]" aria-hidden="true">
-            {[5, 4, 3, 2, 1].map((n) => (
-              <span
-                key={n}
-                className={`w-2 h-2 rounded-full ${seconds <= n ? 'bg-accent border border-accent' : 'border border-accent/30'}`}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

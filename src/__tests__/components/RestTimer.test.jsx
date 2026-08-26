@@ -49,18 +49,6 @@ describe('RestTimer', () => {
     expect(screen.queryByText('Get ready')).not.toBeInTheDocument();
   });
 
-  it('fills the countdown dots as the warning window closes', () => {
-    const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={3} total={90} />);
-    const dots = container.querySelectorAll('.rounded-full');
-    expect(dots).toHaveLength(5);
-    expect([...dots].filter((d) => d.className.includes('bg-accent'))).toHaveLength(3);
-  });
-
-  it('shows no countdown dots outside the warning window', () => {
-    const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={6} total={90} />);
-    expect(container.querySelectorAll('.rounded-full')).toHaveLength(0);
-  });
-
   it('keeps counting past the marker into "Lift", still with no skip control', () => {
     render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
     expect(screen.getByText('Lift')).toBeInTheDocument();
