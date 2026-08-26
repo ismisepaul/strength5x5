@@ -726,7 +726,7 @@ const App = () => {
           seconds={timer.seconds} total={timer.duration}
           isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired} isActive={timer.isActive}
           onSkip={handleTimerSkip} elapsed={timer.elapsed}
-          startedAt={currentWorkout?.startedAt} workoutType={currentWorkout?.type}
+          startedAt={currentWorkout?.startedAt}
         />
       )}
 

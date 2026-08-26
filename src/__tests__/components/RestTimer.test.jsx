@@ -18,7 +18,6 @@ describe('RestTimer', () => {
     isActive: false,
     onSkip: vi.fn(),
     startedAt: Date.now(),
-    workoutType: 'A',
   };
 
   it('renders the in-session state with no controls when no timer is running', () => {
@@ -26,6 +25,11 @@ describe('RestTimer', () => {
     expect(screen.getByText('In workout')).toBeInTheDocument();
     expect(screen.queryByLabelText('Skip rest')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Dismiss')).not.toBeInTheDocument();
+  });
+
+  it('labels the session clock "This workout" rather than the specific workout type', () => {
+    render(<RestTimer {...defaultProps} />);
+    expect(screen.getByText('This workout')).toBeInTheDocument();
   });
 
   it('hides the marker and wall when no rest is pending, without changing the strip height', () => {

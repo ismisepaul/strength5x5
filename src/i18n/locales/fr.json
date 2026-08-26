@@ -246,7 +246,8 @@
     "time": "Temps",
     "restTargetAria": "Objectif de repos {{time}}",
     "workoutComplete": "Entraînement terminé",
-    "movementFinished": "Mouvement terminé"
+    "movementFinished": "Mouvement terminé",
+    "thisWorkout": "Cet entraînement"
   },
   "log": {
     "title": "Historique",

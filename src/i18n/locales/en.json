@@ -246,7 +246,8 @@
     "time": "Time",
     "restTargetAria": "Rest target {{time}}",
     "workoutComplete": "Workout complete",
-    "movementFinished": "Movement finished"
+    "movementFinished": "Movement finished",
+    "thisWorkout": "This workout"
   },
   "log": {
     "title": "Log",

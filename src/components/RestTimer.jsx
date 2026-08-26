@@ -7,7 +7,7 @@ import { REST_WARNING_SECONDS, CUSTOM_REST_MAX } from '../constants';
 
 const pct = (n, denom) => (denom > 0 ? `${Math.min(100, Math.max(0, (n / denom) * 100))}%` : '0%');
 
-const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isExpired, isActive, elapsed, startedAt, workoutType }) => {
+const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isExpired, isActive, elapsed, startedAt }) => {
   const { t } = useTranslation();
   // useTimer already re-renders this component every 250ms while rest is running (via
   // seconds/elapsed), so the session clock piggybacks on that same render instead of
@@ -95,7 +95,7 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
           )}
         </div>
         <div className="text-right">
-          <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-0.5">{t(`workout.type${workoutType}`)}</p>
+          <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-0.5">{t('timer.thisWorkout')}</p>
           <p className={`font-mono text-[16px] tabular-nums leading-none text-ink/60`}>{formatClock(sessionElapsed * 1000)}</p>
         </div>
       </div>
