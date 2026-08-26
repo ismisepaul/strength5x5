@@ -3,6 +3,12 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RestTimer from '../../components/RestTimer';
 
+// Both the digits and the wall label can coincide with other on-screen text (e.g. the
+// marker label, or the digits themselves reading "5:00"), so tests grab them by their
+// stable classes rather than by text content.
+const digitsEl = (container) => container.querySelector('.text-\\[44px\\], .text-\\[52px\\]');
+const wallEl = (container) => container.querySelector('.text-ink\\/38');
+
 describe('RestTimer', () => {
   const defaultProps = {
     seconds: 60,
@@ -25,8 +31,9 @@ describe('RestTimer', () => {
   it('hides the marker and wall when no rest is pending, without changing the strip height', () => {
     // The marker/wall rows stay mounted (so starting rest can't grow the strip), just
     // empty -- hidden via opacity, not by unmounting.
-    render(<RestTimer {...defaultProps} total={0} />);
-    expect(screen.getByText('5:00')).toHaveStyle({ opacity: '0' });
+    const { container } = render(<RestTimer {...defaultProps} total={0} />);
+    expect(container.querySelector('.border-t-accent-300')).not.toBeInTheDocument();
+    expect(wallEl(container)).toHaveStyle({ opacity: '0' });
   });
 
   it('counts rest up from zero, with no skip control, while active', () => {
@@ -49,30 +56,63 @@ describe('RestTimer', () => {
     expect(screen.queryByText('Get ready')).not.toBeInTheDocument();
   });
 
-  it('keeps counting past the marker into "Lift", still with no skip control', () => {
-    render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
+  it('scales the track to the interval plus headroom, not a fixed 0-5:00 span', () => {
+    // A 1:30 (90s) interval gets a scale that ends at 2:00, not a fixed 5:00 -- most of
+    // the strip isn't sitting empty behind a short rest.
+    const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={80} total={90} />);
+    expect(screen.getByText('1:30')).toBeInTheDocument(); // the marker label
+    expect(wallEl(container)).toHaveTextContent('2:00');
+    expect(wallEl(container)).toHaveStyle({ opacity: '1' });
+  });
+
+  it('keeps counting past the marker into "Lift", with the overtime shown in brackets', () => {
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
     expect(screen.getByText('Lift')).toBeInTheDocument();
-    expect(screen.getByText('1:35')).toBeInTheDocument();
+    expect(digitsEl(container)).toHaveTextContent('1:35');
+    expect(screen.getByText('(+0:05)')).toBeInTheDocument();
+    expect(screen.queryByText(/over/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Skip rest')).not.toBeInTheDocument();
   });
 
-  it('freezes the clock at the 5:00 ceiling rather than counting past it', () => {
+  it('does not show the overtime bracket before the marker is reached', () => {
+    render(<RestTimer {...defaultProps} isActive={true} seconds={65} total={90} />);
+    expect(screen.queryByText(/^\(\+/)).not.toBeInTheDocument();
+  });
+
+  it('grows the scale in 30s steps as overtime runs past the initial headroom', () => {
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={40} total={90} />);
+    // 90s interval + 40s over = 130s elapsed; headroom alone (2:00) no longer fits it.
+    expect(wallEl(container)).toHaveTextContent('2:30');
+  });
+
+  it('reads "Time" and freezes at the 5:00 ceiling rather than counting past it', () => {
     const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={300} total={90} />);
-    expect(screen.getByText('Lift')).toBeInTheDocument();
-    expect(container.querySelector('.text-\\[44px\\]')).toHaveTextContent('5:00');
+    expect(screen.getByText('Time')).toBeInTheDocument();
+    expect(digitsEl(container)).toHaveTextContent('5:00');
+    expect(screen.getByText('(+3:30)')).toBeInTheDocument();
   });
 
-  it('shows the marker at the programmed interval and the 5:00 wall beyond it', () => {
-    render(<RestTimer {...defaultProps} isActive={true} seconds={80} total={90} />);
-    expect(screen.getByText('1:30')).toBeInTheDocument();
-    expect(screen.getByText('5:00')).toHaveStyle({ opacity: '1' });
+  it('shifts the marker label off the right edge once it sits at the ceiling', () => {
+    const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={290} total={300} />);
+    const label = screen.getAllByText('5:00')[0]; // the marker's own label
+    expect(label.parentElement).toHaveStyle({ transform: 'translateX(-100%)' });
+    expect(wallEl(container)).toHaveStyle({ opacity: '0' });
   });
 
-  it('hides the 5:00 wall label once the marker sits at the ceiling', () => {
-    render(<RestTimer {...defaultProps} isActive={true} seconds={290} total={300} />);
-    const matches = screen.getAllByText('5:00');
-    expect(matches).toHaveLength(2); // the marker label and the wall label coincide
-    expect(matches[1]).toHaveStyle({ opacity: '0' });
+  it('hides a reference tick that coincides with the marker itself', () => {
+    // At a 1:30 interval the 1:30 reference tick would sit exactly under the marker --
+    // redundant, so it's hidden rather than drawn twice in the same spot.
+    const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={80} total={90} />);
+    const ticks = container.querySelectorAll('.bg-ground\\/50');
+    expect(ticks[0]).toHaveStyle({ opacity: '0' }); // 1:30 tick, coincides with the marker
+    expect(ticks[1]).toHaveStyle({ opacity: '0' }); // 3:00 tick, past the current scale
+  });
+
+  it('shows both reference ticks once the scale is wide enough to hold them', () => {
+    const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={290} total={300} />);
+    const ticks = container.querySelectorAll('.bg-ground\\/50');
+    expect(ticks[0]).toHaveStyle({ opacity: '1', left: '30%' });
+    expect(ticks[1]).toHaveStyle({ opacity: '1', left: '60%' });
   });
 
   it('renders "Movement finished" when exercise is complete', () => {

@@ -5,7 +5,7 @@ import { formatClock } from '../utils';
 import { useElapsedSince } from '../hooks/useElapsedSince';
 import { REST_WARNING_SECONDS, CUSTOM_REST_MAX } from '../constants';
 
-const pct = (seconds) => `${Math.min(100, Math.max(0, (seconds / CUSTOM_REST_MAX) * 100))}%`;
+const pct = (n, denom) => (denom > 0 ? `${Math.min(100, Math.max(0, (n / denom) * 100))}%` : '0%');
 
 const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isExpired, isActive, elapsed, startedAt, workoutType }) => {
   const { t } = useTranslation();
@@ -24,13 +24,27 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   // The clock counts up from 0 and keeps running past `total` (the marker) instead of
   // resetting there -- only the hard 5:00 ceiling stops it. `total` is 0 whenever no
   // rest is pending (idle, or just after the last set of an exercise), which also hides
-  // the marker/wall below rather than pinning them to 0:00.
+  // the marker/track scale below rather than pinning them to 0:00.
   const marker = Math.min(total || 0, CUSTOM_REST_MAX);
   const showMarker = marker > 0;
   const restElapsed = Math.min(
     isActive ? Math.max(0, total - seconds) : isExpired ? total + elapsed : 0,
     CUSTOM_REST_MAX,
   );
+  const over = Math.max(0, restElapsed - marker);
+  const atCeiling = restElapsed >= CUSTOM_REST_MAX;
+
+  // The track's scale is the interval, not a fixed 0-5:00 span, so a 1:30 rest doesn't
+  // leave two-thirds of the strip permanently empty -- `headroom` gives it a little
+  // breathing room past the marker. It only grows once elapsed actually runs past the
+  // marker, in 30s steps, and never past the 5:00 ceiling.
+  const headroom = showMarker
+    ? Math.min(CUSTOM_REST_MAX, Math.max(marker + 20, Math.ceil((marker * 1.25) / 10) * 10))
+    : 0;
+  const denom = showMarker
+    ? (over > 0 ? Math.min(CUSTOM_REST_MAX, Math.max(headroom, Math.ceil((restElapsed + 20) / 30) * 30)) : headroom)
+    : 0;
+  const markerPct = denom > 0 ? Math.min(100, (marker / denom) * 100) : 0;
 
   let kicker, digits, showSkip, accentState;
   if (isExerciseComplete) {
@@ -38,24 +52,19 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
     digits = sessionElapsed;
     showSkip = true;
     accentState = true;
-  } else if (isExpired) {
-    kicker = t('timer.lift');
-    digits = restElapsed;
-    showSkip = false;
-    accentState = true;
-  } else if (isActive) {
-    kicker = isWarning ? t('timer.getReady') : t('timer.rest');
-    digits = restElapsed;
-    showSkip = false;
-    accentState = isWarning;
   } else {
-    kicker = t('timer.inSession');
-    digits = sessionElapsed;
+    kicker = !resting ? t('timer.inSession')
+      : atCeiling ? t('timer.time')
+        : over > 0 ? t('timer.lift')
+          : isWarning ? t('timer.getReady')
+            : t('timer.rest');
+    digits = resting ? restElapsed : sessionElapsed;
     showSkip = false;
-    accentState = false;
+    accentState = resting && (isWarning || over > 0 || atCeiling);
   }
 
   const mutedClass = 'text-ink/62';
+  const thickBar = isWarning || over > 0;
 
   return (
     <div className={`relative flex-none pt-4 px-5 pb-3 ${isWarning ? 'bg-accent-900 border-b border-accent' : 'bg-surface-deep'}`}>
@@ -71,6 +80,15 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             <p className={`font-mono text-kicker font-bold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent-300' : mutedClass}`}>{kicker}</p>
             <p className={`font-mono font-bold tabular-nums leading-none ${isWarning ? 'text-[52px]' : 'text-[44px]'} ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
           </div>
+          {over > 0 && (
+            // The main digits already read total rest elapsed -- this is the delta past
+            // the marker specifically. Parenthesized rather than "over": the lifter may
+            // simply still be lifting, not running late, and "over" reads as a verdict
+            // the app has no way to make.
+            <span className="pb-[5px] font-mono text-[12px] font-bold tabular-nums tracking-[0.02em] text-accent-300 whitespace-nowrap">
+              (+{formatClock(over * 1000)})
+            </span>
+          )}
           {showSkip && (
             // showSkip is only ever true for the exercise/workout-complete banners --
             // rest itself has no controls (see the derivation above) -- so this is
@@ -94,46 +112,53 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             the instant a set was logged. showMarker instead toggles their content. */}
         <div className="relative h-3.5" aria-hidden="true">
           {showMarker && (
-            <>
-              {/* Unlabeled reference notch at 1:30 (light-rest recovery point) so the
-                  hairline on the track below reads as a specific mark, not a stray line.
-                  A solid triangle, tip overlapping the track's top edge, so it reads as
-                  cutting into the line rather than floating above it. */}
-              <div
-                className="absolute bottom-[-2px] w-0 h-0 border-x-[4px] border-x-transparent border-t-[5px] border-t-ink/40"
-                style={{ left: '30%', transform: 'translateX(-50%)' }}
-              />
-              <div
-                className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
-                style={{ left: pct(marker), transform: 'translateX(-50%)' }}
-              >
-                <span className="font-mono text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">{formatClock(marker * 1000)}</span>
-                <div className="w-0 h-0 border-x-[4px] border-x-transparent border-t-[5px] border-t-accent-300" />
-              </div>
-            </>
+            <div
+              className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
+              style={{ left: pct(marker, denom), transform: markerPct > 88 ? 'translateX(-100%)' : 'translateX(-50%)' }}
+            >
+              <span className="font-mono text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">{formatClock(marker * 1000)}</span>
+              <div className="w-0 h-0 border-x-[4px] border-x-transparent border-t-[5px] border-t-accent-300" />
+            </div>
           )}
         </div>
-        <div className={`relative w-full bg-ink/14 overflow-hidden ${isWarning ? 'h-[5px]' : 'h-[3px]'}`}>
+        <div className={`relative w-full bg-ink/14 overflow-hidden ${thickBar ? 'h-[5px]' : 'h-[3px]'} transition-[height] duration-200`}>
           <div
-            className="h-full"
+            className="absolute inset-y-0 left-0"
             style={{
-              width: pct(restElapsed),
+              width: pct(Math.min(restElapsed, marker), denom),
               background: 'linear-gradient(to right, transparent, var(--color-accent) 24px, var(--color-accent))',
               transition: 'width 1s linear',
             }}
           />
+          {over > 0 && (
+            // Overtime fills in the muted accent/accent-300 pairing used everywhere else
+            // in the app for "this happened, but it's not the primary reading" -- rather
+            // than a one-off darker accent that would need its own token.
+            <div
+              className="absolute inset-y-0 bg-accent-900 border-l border-accent"
+              style={{ left: pct(marker, denom), width: pct(over, denom), transition: 'left 900ms cubic-bezier(.4,0,.2,1), width 900ms cubic-bezier(.4,0,.2,1)' }}
+            />
+          )}
           {showMarker && (
             <>
-              <div className="absolute inset-y-0 w-px bg-ground/50" style={{ left: '30%' }} aria-hidden="true" />
-              <div className="absolute inset-y-0 w-px bg-ground/50" style={{ left: '60%' }} aria-hidden="true" />
+              <div
+                className="absolute inset-y-0 w-px bg-ground/50"
+                style={{ left: pct(90, denom), opacity: denom > 95 && Math.abs(marker - 90) > 2 ? 1 : 0, transition: 'left 900ms cubic-bezier(.4,0,.2,1), opacity 300ms ease' }}
+                aria-hidden="true"
+              />
+              <div
+                className="absolute inset-y-0 w-px bg-ground/50"
+                style={{ left: pct(180, denom), opacity: denom > 185 && Math.abs(marker - 180) > 2 ? 1 : 0, transition: 'left 900ms cubic-bezier(.4,0,.2,1), opacity 300ms ease' }}
+                aria-hidden="true"
+              />
             </>
           )}
         </div>
         <div className="relative h-3 mt-1.5" aria-hidden="true">
           <span
             className="absolute right-0 font-mono text-[9px] font-bold tracking-wide text-ink/38"
-            style={{ opacity: showMarker && marker < CUSTOM_REST_MAX ? 1 : 0 }}
-          >{formatClock(CUSTOM_REST_MAX * 1000)}</span>
+            style={{ opacity: showMarker && denom > marker + 2 ? 1 : 0, transition: 'opacity 400ms ease' }}
+          >{formatClock(denom * 1000)}</span>
         </div>
       </div>
     </div>

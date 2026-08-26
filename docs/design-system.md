@@ -285,31 +285,44 @@ always on.
   the top of the screen — it is not docked at the bottom. Header everywhere else. Rest
   **counts up from 0:00** rather than down, and keeps counting past the programmed
   interval instead of resetting there — only the hard 5:00 ceiling (`CUSTOM_REST_MAX`)
-  freezes it. The track below the digits is a **fixed 0–5:00 scale**, not a 0–100% fill
-  of the interval: a 3px accent fill grows left-to-right at `restElapsed / 5:00`, with
-  faint reference hairlines at 1:30 and 3:00 (1:30's hairline carries a small muted
-  triangle, since it's otherwise an unlabeled tick), an accent caret + `m:ss` label
-  floating above the track at the programmed interval's position, and a muted "5:00"
-  label at the right edge (hidden once the interval itself is already 5:00). Digits are
-  44px tabular; kicker reads "Rest" until 5 seconds before the marker, "Get ready" for
-  that last stretch, then "Lift" once the marker passes — kicker and digits both turn
-  `accent-300` for "Get ready" and "Lift". In that last-5-seconds stretch the strip also
-  floods to `accent-900` with a breathing accent wash, a 1px accent bottom border,
-  digits to 52px, and the track to 5px. The wash is the app's only looping animation,
-  so it is also the only one with a `prefers-reduced-motion` answer: the keyframes are
-  redefined to hold a steady `.09` rather than the animation being dropped, since the
-  flood still has to read. **The strip has no controls while rest is running** — no
-  skip button — the only tap left is the "Dismiss" on the exercise/workout-complete
-  banner. The expiry chime is a soft wooden marimba (two struck notes, 339.5/679Hz), not
-  a pure tone, and (if the "Five-second warning" setting is on, alongside Sound alert) a
-  quiet rising pip marks each of those last 5 seconds. Pip scheduling keys off
-  `timer.seconds` alone — the two settings are read through a ref, so toggling either
-  mid-window can't replay the current second's pip. The session clock in the strip's
-  corner reads off the same render pass as the rest digits (not its own independent
-  polling interval) specifically so the two numbers can't visibly drift out of phase
-  with each other. All timer logic (wall-clock anchor, expire → stopwatch,
-  sound/vibrate) lives in `useTimer`/`RestTimer.jsx` and is untouched by presentation
-  work.
+  freezes it. The track's **scale is the interval, not a fixed 0–5:00 span**: a 1:30
+  rest fills a track that ends around 2:00, not one thirded away by two-thirds of dead
+  space, and the scale only widens once elapsed actually runs past the marker — in 30s
+  steps, capped at 5:00 — so the room is borrowed, not pre-drawn. A 3px accent fill (5px
+  once rest is running late — see below) tracks elapsed up to the marker; past it, a
+  second segment in `accent-900` with an `accent` left border continues the fill for the
+  overtime stretch, reusing the muted/accent pairing already used for "logged but
+  missed" elsewhere rather than inventing a one-off darker accent. Faint reference
+  hairlines at 1:30 and 3:00 sit on the track, but only when they fall inside the
+  current scale and don't coincide with the marker itself (no redundant double-mark at
+  the same spot). An accent caret + `m:ss` label floats above the track at the marker's
+  position (right-aligned instead of centered once it's within 12% of the right edge, so
+  the label can't clip off the strip), and a muted end label at the right edge reads the
+  *current* scale's endpoint — "2:00", growing toward "5:00" as overtime runs — hidden
+  once the interval itself is already 5:00. Digits are 44px tabular; kicker reads "Rest"
+  until 5 seconds before the marker, "Get ready" for that last stretch, "Lift" once the
+  marker passes, and "Time" once the clock hits the 5:00 ceiling — kicker and digits all
+  turn `accent-300` for every state past "Rest". Once past the marker, a small
+  parenthesized `(+m:ss)` next to the digits reads the delta past the marker — never
+  "+m:ss over": the lifter could simply still be lifting, not running late, and "over" is
+  a verdict the app has no way to make. In the last-5-seconds-before-the-marker stretch
+  specifically the strip also floods to `accent-900` with a breathing accent wash and a
+  1px accent bottom border, and digits grow to 52px; the track itself thickens to 5px for
+  that stretch *and* for the whole overtime stretch past the marker. The wash is the
+  app's only looping animation, so it is also the only one with a
+  `prefers-reduced-motion` answer: the keyframes are redefined to hold a steady `.09`
+  rather than the animation being dropped, since the flood still has to read. **The
+  strip has no controls while rest is running** — no skip button — the only tap left is
+  the "Dismiss" on the exercise/workout-complete banner. The expiry chime is a soft
+  wooden marimba (two struck notes, 339.5/679Hz), not a pure tone, and (if the
+  "Five-second warning" setting is on, alongside Sound alert) a quiet rising pip marks
+  each of those last 5 seconds. Pip scheduling keys off `timer.seconds` alone — the two
+  settings are read through a ref, so toggling either mid-window can't replay the
+  current second's pip. The session clock in the strip's corner reads off the same
+  render pass as the rest digits (not its own independent polling interval)
+  specifically so the two numbers can't visibly drift out of phase with each other. All
+  timer logic (wall-clock anchor, expire → stopwatch, sound/vibrate) lives in
+  `useTimer`/`RestTimer.jsx` and is untouched by presentation work.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
 - **Every editable weight in the app — Train (idle and active), the Program tab's
   Madcow top sets, and the Log's add/edit-entry modal — uses one `WeightInput`
