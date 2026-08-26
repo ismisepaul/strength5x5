@@ -91,6 +91,11 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
       <div className="mt-2.5">
         {showMarker && (
           <div className="relative h-3.5" aria-hidden="true">
+            {/* Unlabeled reference tick at 1:30 (light-rest recovery point) so the
+                hairline on the track below reads as a specific mark, not a stray line. */}
+            <div className="absolute bottom-0 text-ink/40" style={{ left: '30%', transform: 'translateX(-50%)' }}>
+              <CaretDown size={7} weight="bold" />
+            </div>
             <div
               className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
               style={{ left: pct(marker), transform: 'translateX(-50%)' }}
