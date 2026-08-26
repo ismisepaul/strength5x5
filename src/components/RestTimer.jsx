@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { SkipForward, CaretDown } from '@phosphor-icons/react';
+import { SkipForward } from '@phosphor-icons/react';
 import { formatClock } from '../utils';
 import { useElapsedSince } from '../hooks/useElapsedSince';
 import { REST_WARNING_SECONDS, CUSTOM_REST_MAX } from '../constants';
@@ -95,17 +95,20 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
         <div className="relative h-3.5" aria-hidden="true">
           {showMarker && (
             <>
-              {/* Unlabeled reference tick at 1:30 (light-rest recovery point) so the
-                  hairline on the track below reads as a specific mark, not a stray line. */}
-              <div className="absolute bottom-0 text-ink/40" style={{ left: '30%', transform: 'translateX(-50%)' }}>
-                <CaretDown size={7} weight="bold" />
-              </div>
+              {/* Unlabeled reference notch at 1:30 (light-rest recovery point) so the
+                  hairline on the track below reads as a specific mark, not a stray line.
+                  A solid triangle, tip overlapping the track's top edge, so it reads as
+                  cutting into the line rather than floating above it. */}
+              <div
+                className="absolute bottom-[-2px] w-0 h-0 border-x-[4px] border-x-transparent border-t-[5px] border-t-ink/40"
+                style={{ left: '30%', transform: 'translateX(-50%)' }}
+              />
               <div
                 className="absolute top-0 flex flex-col items-center gap-px text-accent-300"
                 style={{ left: pct(marker), transform: 'translateX(-50%)' }}
               >
                 <span className="font-mono text-[10px] font-bold tabular-nums leading-none whitespace-nowrap">{formatClock(marker * 1000)}</span>
-                <CaretDown size={7} weight="bold" />
+                <div className="w-0 h-0 border-x-[4px] border-x-transparent border-t-[5px] border-t-accent-300" />
               </div>
             </>
           )}
