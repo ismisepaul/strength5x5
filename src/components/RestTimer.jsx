@@ -9,7 +9,15 @@ const pct = (seconds) => `${Math.min(100, Math.max(0, (seconds / CUSTOM_REST_MAX
 
 const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isExpired, isActive, elapsed, startedAt, workoutType }) => {
   const { t } = useTranslation();
-  const sessionElapsed = useElapsedSince(startedAt, true);
+  // useTimer already re-renders this component every 250ms while rest is running (via
+  // seconds/elapsed), so the session clock piggybacks on that same render instead of
+  // polling Date.now() on its own independent interval -- two separately-scheduled
+  // intervals is what let the two clocks visibly fall out of phase with each other.
+  // useElapsedSince's own 1s interval is only the fallback for when nothing else is
+  // driving a re-render (idle, with no rest to borrow a tick from).
+  const tickingSessionElapsed = useElapsedSince(startedAt, true);
+  const resting = isActive || isExpired;
+  const sessionElapsed = resting && startedAt ? Math.floor((Date.now() - startedAt) / 1000) : tickingSessionElapsed;
 
   const isWarning = isActive && seconds > 0 && seconds <= REST_WARNING_SECONDS;
 
