@@ -294,9 +294,10 @@ always on.
   intermediate preset above it and re-scales straight to 5:00. Each step is one clean
   re-scale, not a gradual expansion, so the room is borrowed, not pre-drawn. A 3px accent fill (5px
   once rest is running late — see below) tracks elapsed up to the marker; past it, a
-  second segment in `accent-900` with an `accent` left border continues the fill for the
-  overtime stretch, reusing the muted/accent pairing already used for "logged but
-  missed" elsewhere rather than inventing a one-off darker accent. Faint reference
+  second segment in `neutral-tint` with a dashed `ink/50` left border continues the fill
+  for the overtime stretch — the same fill/border pairing used for a missed set, so
+  overtime reads as "off plan" rather than just a darker shade of the accent used for
+  on-track rest. Faint reference
   hairlines at 1:30 and 3:00 sit on the track, but only when they fall inside the
   current scale and don't coincide with the marker itself (no redundant double-mark at
   the same spot). An accent caret + `m:ss` label floats above the track at the marker's

@@ -140,11 +140,11 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
             }}
           />
           {over > 0 && (
-            // Overtime fills in the muted accent/accent-300 pairing used everywhere else
-            // in the app for "this happened, but it's not the primary reading" -- rather
-            // than a one-off darker accent that would need its own token.
+            // Overtime fills in the same neutral-tint/dashed-border treatment used for a
+            // missed set elsewhere in the app -- reading as "off plan" rather than just a
+            // darker shade of the same accent used for on-track rest.
             <div
-              className="absolute inset-y-0 bg-accent-900 border-l border-accent"
+              className="absolute inset-y-0 bg-neutral-tint border-l border-dashed border-ink/50"
               style={{ left: pct(marker, denom), width: pct(over, denom), transition: 'left 900ms cubic-bezier(.4,0,.2,1), width 900ms cubic-bezier(.4,0,.2,1)' }}
             />
           )}
