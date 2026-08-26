@@ -27,9 +27,9 @@ describe('RestTimer', () => {
     expect(screen.queryByLabelText('Dismiss')).not.toBeInTheDocument();
   });
 
-  it('labels the session clock "This workout" rather than the specific workout type', () => {
+  it('labels the session clock "Workout" rather than the specific workout type', () => {
     render(<RestTimer {...defaultProps} />);
-    expect(screen.getByText('This workout')).toBeInTheDocument();
+    expect(screen.getByText('Workout')).toBeInTheDocument();
   });
 
   it('hides the marker and wall when no rest is pending, without changing the strip height', () => {

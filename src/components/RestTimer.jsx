@@ -102,7 +102,7 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
           )}
         </div>
         <div className="text-right">
-          <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-0.5">{t('timer.thisWorkout')}</p>
+          <p className="font-mono text-kicker font-bold uppercase tracking-[0.14em] text-accent-300 mb-0.5">{t('timer.workout')}</p>
           <p className={`font-mono text-[16px] tabular-nums leading-none text-ink/60`}>{formatClock(sessionElapsed * 1000)}</p>
         </div>
       </div>
