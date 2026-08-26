@@ -286,9 +286,10 @@ always on.
   **counts up from 0:00** rather than down, and keeps counting past the programmed
   interval instead of resetting there — only the hard 5:00 ceiling (`CUSTOM_REST_MAX`)
   freezes it. The track's **scale is the interval, not a fixed 0–5:00 span**: a 1:30
-  rest fills a track that ends around 2:00, not one thirded away by two-thirds of dead
-  space, and the scale only widens once elapsed actually runs past the marker — in 30s
-  steps, capped at 5:00 — so the room is borrowed, not pre-drawn. A 3px accent fill (5px
+  rest fills the track exactly, not one thirded away by two-thirds of dead space, and
+  the scale only widens to the full 5:00 ceiling once elapsed actually runs past the
+  marker — one re-scale, not a gradual expansion, so the room is borrowed, not
+  pre-drawn. A 3px accent fill (5px
   once rest is running late — see below) tracks elapsed up to the marker; past it, a
   second segment in `accent-900` with an `accent` left border continues the fill for the
   overtime stretch, reusing the muted/accent pairing already used for "logged but
@@ -297,9 +298,11 @@ always on.
   current scale and don't coincide with the marker itself (no redundant double-mark at
   the same spot). An accent caret + `m:ss` label floats above the track at the marker's
   position (right-aligned instead of centered once it's within 12% of the right edge, so
-  the label can't clip off the strip), and a muted end label at the right edge reads the
-  *current* scale's endpoint — "2:00", growing toward "5:00" as overtime runs — hidden
-  once the interval itself is already 5:00. Digits are 44px tabular; kicker reads "Rest"
+  the label can't clip off the strip — which is the normal case before overtime, since
+  the marker sits right at the scale's own endpoint), and a muted end label at the right
+  edge reads the *current* scale's endpoint, hidden whenever it would just duplicate the
+  marker's own label — before overtime starts (scale ends at the marker) and once the
+  interval itself is already 5:00. Digits are 44px tabular; kicker reads "Rest"
   until 5 seconds before the marker, "Get ready" for that last stretch, "Lift" once the
   marker passes, and "Time" once the clock hits the 5:00 ceiling — kicker and digits all
   turn `accent-300` for every state past "Rest". Once past the marker, a small

@@ -285,8 +285,9 @@ describe('Settings', () => {
 
       await user.click(screen.getByText('Train'));
       // The strip's marker reflects the new interval for the rest already running,
-      // not just the next one.
-      expect(screen.getByText('3:00')).toBeInTheDocument();
+      // not just the next one. (Two matches: the visible marker label, and the
+      // scale's end label -- hidden pre-overtime since it coincides with the marker.)
+      expect(screen.getAllByText('3:00').length).toBeGreaterThan(0);
       expect(screen.queryByText('1:30')).not.toBeInTheDocument();
     });
 

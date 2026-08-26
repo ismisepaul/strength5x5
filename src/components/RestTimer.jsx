@@ -33,16 +33,11 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   const over = Math.max(0, restElapsed - marker);
   const atCeiling = restElapsed >= CUSTOM_REST_MAX;
 
-  // The track's scale is the interval, not a fixed 0-5:00 span, so a 1:30 rest doesn't
-  // leave two-thirds of the strip permanently empty -- `headroom` gives it a little
-  // breathing room past the marker. It only grows once elapsed actually runs past the
-  // marker, in 30s steps, and never past the 5:00 ceiling.
-  const headroom = showMarker
-    ? Math.min(CUSTOM_REST_MAX, Math.max(marker + 20, Math.ceil((marker * 1.25) / 10) * 10))
-    : 0;
-  const denom = showMarker
-    ? (over > 0 ? Math.min(CUSTOM_REST_MAX, Math.max(headroom, Math.ceil((restElapsed + 20) / 30) * 30)) : headroom)
-    : 0;
+  // The track's scale is the interval, not a fixed 0-5:00 span, so a 1:30 rest fills
+  // the line instead of leaving two-thirds of the strip permanently empty. It stays at
+  // that scale until overtime actually starts, at which point it re-scales once to the
+  // full 5:00 ceiling -- a single jump rather than growing in steps as overtime runs.
+  const denom = showMarker ? (over > 0 ? CUSTOM_REST_MAX : marker) : 0;
   const markerPct = denom > 0 ? Math.min(100, (marker / denom) * 100) : 0;
 
   let kicker, digits, showSkip, accentState;

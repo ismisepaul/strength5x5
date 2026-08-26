@@ -56,13 +56,14 @@ describe('RestTimer', () => {
     expect(screen.queryByText('Get ready')).not.toBeInTheDocument();
   });
 
-  it('scales the track to the interval plus headroom, not a fixed 0-5:00 span', () => {
-    // A 1:30 (90s) interval gets a scale that ends at 2:00, not a fixed 5:00 -- most of
-    // the strip isn't sitting empty behind a short rest.
+  it('scales the track to the interval itself before overtime starts, not a fixed 0-5:00 span', () => {
+    // A 1:30 (90s) interval gets a scale that ends at 1:30, not a fixed 5:00 -- most of
+    // the strip isn't sitting empty behind a short rest. The wall label duplicates the
+    // marker's own "1:30" text here (hidden via opacity, since its endpoint coincides
+    // with the marker) rather than being unmounted, hence getAllByText over getByText.
     const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={80} total={90} />);
-    expect(screen.getByText('1:30')).toBeInTheDocument(); // the marker label
-    expect(wallEl(container)).toHaveTextContent('2:00');
-    expect(wallEl(container)).toHaveStyle({ opacity: '1' });
+    expect(screen.getAllByText('1:30').length).toBeGreaterThan(0); // the marker label
+    expect(wallEl(container)).toHaveStyle({ opacity: '0' });
   });
 
   it('exposes the rest target to assistive tech, since the caret conveys it by position alone', () => {
@@ -84,10 +85,10 @@ describe('RestTimer', () => {
     expect(screen.queryByText(/^\(\+/)).not.toBeInTheDocument();
   });
 
-  it('grows the scale in 30s steps as overtime runs past the initial headroom', () => {
-    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={40} total={90} />);
-    // 90s interval + 40s over = 130s elapsed; headroom alone (2:00) no longer fits it.
-    expect(wallEl(container)).toHaveTextContent('2:30');
+  it('re-scales the track to the full 5:00 ceiling the instant overtime starts, not gradually', () => {
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
+    // Barely over the marker still jumps straight to the 5:00 scale in one step.
+    expect(wallEl(container)).toHaveTextContent('5:00');
   });
 
   it('reads "Time" and freezes at the 5:00 ceiling rather than counting past it', () => {
