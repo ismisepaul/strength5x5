@@ -73,6 +73,12 @@ export const MADCOW_WEEKLY_INCREMENTS = { squat: 2.5, bench: 2.5, row: 2.5, pres
 // the two can't drift apart.
 export const REST_WARNING_SECONDS = 5;
 
+// How long the 5:00 ceiling's flood stays lit before it fades to the standing state
+// (solid bar, accent digits, "Lift" kicker) -- see RestTimer.jsx. The flash has no
+// natural end the way the five-second warning does, so left alone it would keep
+// breathing indefinitely at anyone who racks the bar and doesn't immediately log a set.
+export const REST_CEILING_SETTLE_SECONDS = 30;
+
 // Bounds for the rest interval control (RestIntervalControl.jsx). The floor is
 // REST_WARNING_SECONDS rather than a round number on purpose: a rest shorter than the
 // warning window would start already flooded, with pips the countdown never has room to

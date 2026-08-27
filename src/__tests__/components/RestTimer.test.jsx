@@ -8,6 +8,9 @@ import RestTimer from '../../components/RestTimer';
 // stable classes rather than by text content.
 const digitsEl = (container) => container.querySelector('.text-\\[44px\\], .text-\\[52px\\]');
 const wallEl = (container) => container.querySelector('.text-ink\\/38');
+// The wash overlay is the only aria-hidden element with pointer-events-none -- the
+// marker caret and the reference ticks are aria-hidden too, but none carry that class.
+const wash = (container) => container.querySelector('[aria-hidden="true"].pointer-events-none');
 
 describe('RestTimer', () => {
   const defaultProps = {
@@ -135,11 +138,29 @@ describe('RestTimer', () => {
 
   it('flashes the same breathing warning treatment at the 5:00 ceiling as the five-second warning', () => {
     // Reuses isWarning's own flood/thick-bar/big-digit package rather than a separate
-    // "ceiling" treatment -- the same "pay attention now" language, just with no natural
-    // end (it keeps breathing for as long as rest keeps running past the ceiling).
-    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={300} total={90} />);
+    // "ceiling" treatment -- the same "pay attention now" language. 90s marker + 220s
+    // elapsed = 310s raw, past the 300s ceiling but inside its 30s hold before the wash
+    // starts to fade.
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={220} total={90} />);
     expect(container.querySelector('.animate-\\[warnBreathe_1s_ease-in-out_infinite\\]')).toBeInTheDocument();
+    expect(wash(container)).toHaveStyle({ opacity: '1' });
     expect(digitsEl(container)).toHaveClass('text-[52px]');
+  });
+
+  it('fades the ceiling wash out once it has held for 30s, without touching digit size or the bar', () => {
+    // 90s marker + 250s elapsed = 340s raw, 40s past the 300s ceiling -- past the 30s
+    // hold, so the wash is fading. Nothing else moves: the "pay attention" size and the
+    // thick bar are keyed off staying at the ceiling, not off the wash's own visibility,
+    // so the fade doesn't cause a second reflow on top of the one that got it here.
+    const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={250} total={90} />);
+    expect(wash(container)).toHaveStyle({ opacity: '0', transition: 'opacity 2600ms ease' });
+    expect(digitsEl(container)).toHaveClass('text-[52px]');
+    expect(screen.getByText('Lift')).toBeInTheDocument();
+  });
+
+  it('snaps the five-second warning wash on and off with no fade, unlike the ceiling', () => {
+    const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={3} total={90} />);
+    expect(wash(container)).toHaveStyle({ opacity: '1', transition: 'none' });
   });
 
   it('keeps the overtime bracket counting up past the 5:00 ceiling instead of freezing it too', () => {

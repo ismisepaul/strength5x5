@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { SkipForward } from '@phosphor-icons/react';
 import { formatClock, restElapsedFromTimer, rawRestElapsedFromTimer } from '../utils';
 import { useElapsedSince } from '../hooks/useElapsedSince';
-import { REST_WARNING_SECONDS, CUSTOM_REST_MAX, REST_PRESETS } from '../constants';
+import { REST_WARNING_SECONDS, CUSTOM_REST_MAX, REST_CEILING_SETTLE_SECONDS, REST_PRESETS } from '../constants';
 
 const pct = (n, denom) => (denom > 0 ? `${Math.min(100, Math.max(0, (n / denom) * 100))}%` : '0%');
 
@@ -36,6 +36,12 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   // whatever "+m:ss" the ceiling happened to land on.
   const rawElapsed = rawRestElapsedFromTimer({ isActive, isExpired, duration: total, seconds, elapsed });
   const over = Math.max(0, rawElapsed - marker);
+  // The ceiling's flood has no natural end the way the five-second warning does -- rest
+  // itself has no controls, so left alone it would keep breathing at whoever racked the
+  // bar to talk to a training partner. Once the ceiling has held for this long, the wash
+  // fades out; the solid bar, accent digits and "Lift" kicker stand on their own as the
+  // settled state, which is still exactly what changed.
+  const ceilingSettled = atCeiling && rawElapsed >= CUSTOM_REST_MAX + REST_CEILING_SETTLE_SECONDS;
 
   // The track's scale is the interval, not a fixed 0-5:00 span, so a 1:30 rest fills
   // the line instead of leaving two-thirds of the strip permanently empty. Once overtime
@@ -65,25 +71,43 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
 
   const mutedClass = 'text-ink/62';
   // The five-second warning and the 5:00 ceiling share the same "pay attention now"
-  // treatment -- the ceiling's flash has no natural end the way the warning's five
-  // seconds do, so it keeps breathing for as long as rest keeps running past it, which
-  // is exactly the point: there should be no more rest once it's showing.
-  const flashing = isWarning || atCeiling;
-  const thickBar = flashing || over > 0;
+  // treatment, but the ceiling's settles down after REST_CEILING_SETTLE_SECONDS -- see
+  // ceilingSettled above. `emphasis` is the big-digit/thick-bar state, which holds for
+  // as long as the ceiling does; `alarm` is just the wash's own visibility, which is
+  // what actually fades. Keeping the size/weight change on `emphasis` rather than
+  // `alarm` means the fade never triggers a second reflow on top of the one it's
+  // replacing -- the digits and bar are already at their "pay attention" size when the
+  // wash starts to fade, and stay there.
+  const emphasis = isWarning || atCeiling;
+  const alarm = isWarning || (atCeiling && !ceilingSettled);
+  const thickBar = emphasis || over > 0;
 
   return (
-    <div className={`relative flex-none pt-4 px-5 pb-3 ${flashing ? 'bg-accent-900 border-b border-accent' : 'bg-surface-deep'}`}>
-      {flashing && (
-        // Opacity is owned entirely by warnBreathe's keyframes (which hold a steady
-        // .09 under prefers-reduced-motion), so there's no static opacity utility here
-        // to be overridden by the animation.
-        <div className="absolute inset-0 bg-accent animate-[warnBreathe_1s_ease-in-out_infinite] pointer-events-none" aria-hidden="true" />
+    <div className="relative flex-none pt-4 px-5 pb-3 bg-surface-deep">
+      {emphasis && (
+        // Mounted for as long as `emphasis` holds (so opacity has something to
+        // transition from/to across the fade), with `alarm` driving the visible state.
+        // The five-second warning snaps on/off as before (transition: none); only the
+        // settling ceiling gets the slow fade -- a blanket transition would ramp the
+        // five-second warning in over half its own window.
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{ opacity: alarm ? 1 : 0, transition: ceilingSettled ? 'opacity 2600ms ease' : 'none' }}
+        >
+          <div className="absolute inset-0 bg-accent-900" />
+          {/* Opacity here is owned entirely by warnBreathe's keyframes (which hold a
+              steady .09 under prefers-reduced-motion) -- the parent's own opacity
+              transition above multiplies with it rather than replacing it. */}
+          <div className="absolute inset-0 bg-accent animate-[warnBreathe_1s_ease-in-out_infinite]" />
+          <div className="absolute inset-x-0 bottom-0 h-px bg-accent" />
+        </div>
       )}
       <div className="relative flex items-end justify-between">
         <div className="flex items-end gap-2">
           <div>
             <p className={`font-mono text-kicker font-bold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent-300' : mutedClass}`}>{kicker}</p>
-            <p className={`font-mono font-bold tabular-nums leading-none ${flashing ? 'text-[52px]' : 'text-[44px]'} ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
+            <p className={`font-mono font-bold tabular-nums leading-none ${emphasis ? 'text-[52px]' : 'text-[44px]'} ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
           </div>
           {over > 0 && (
             // The main digits already read total rest elapsed -- this is the delta past
