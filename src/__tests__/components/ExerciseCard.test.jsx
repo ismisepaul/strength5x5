@@ -137,6 +137,48 @@ describe('ExerciseCard', () => {
     expect(screen.getByText('Per side · 20 kg bar · 60 total')).toBeInTheDocument();
   });
 
+  it('retires the Warm-up disclosure once the first set is logged, keeping Bar setup', () => {
+    const { rerender } = render(<ExerciseCard {...defaultProps} />);
+    expect(screen.getByText('Warm-up')).toBeInTheDocument();
+
+    const afterSet1 = { ...baseEx, setsCompleted: [5, null, null, null, null] };
+    rerender(<ExerciseCard {...defaultProps} ex={afterSet1} />);
+    expect(screen.queryByText('Warm-up')).not.toBeInTheDocument();
+    expect(screen.getByText('Bar setup')).toBeInTheDocument();
+  });
+
+  it('keeps a ramped card\'s "Ramp" disclosure after its first set is logged', () => {
+    const rampedEx = {
+      id: 'squat', name: 'Back Squat', sets: 3, setWeights: [35, 45, 55], setReps: [5, 5, 5],
+      increment: 2.5, weight: 55, setsCompleted: [null, null, null],
+    };
+    const { rerender } = render(<ExerciseCard {...defaultProps} ex={rampedEx} setWeightMin={20} onSetWeightChange={vi.fn()} />);
+    expect(screen.getByText('Ramp')).toBeInTheDocument();
+
+    const afterSet1 = { ...rampedEx, setsCompleted: [5, null, null] };
+    rerender(<ExerciseCard {...defaultProps} ex={afterSet1} setWeightMin={20} onSetWeightChange={vi.fn()} />);
+    expect(screen.getByText('Ramp')).toBeInTheDocument();
+  });
+
+  it('retires the whole footer, panels included, once every set is logged', () => {
+    const complete = { ...baseEx, setsCompleted: [5, 5, 5, 5, 5] };
+    render(<ExerciseCard {...defaultProps} ex={complete} />);
+    expect(screen.queryByText('Warm-up')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bar setup')).not.toBeInTheDocument();
+    expect(screen.queryByText('Prep')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Per side/)).not.toBeInTheDocument();
+  });
+
+  it('brings the footer back if the last logged set is undone', () => {
+    const complete = { ...baseEx, setsCompleted: [5, 5, 5, 5, 5] };
+    const { rerender } = render(<ExerciseCard {...defaultProps} ex={complete} />);
+    expect(screen.queryByText('Bar setup')).not.toBeInTheDocument();
+
+    const reopened = { ...baseEx, setsCompleted: [5, 5, 5, 5, null] };
+    rerender(<ExerciseCard {...defaultProps} ex={reopened} />);
+    expect(screen.getByText('Bar setup')).toBeInTheDocument();
+  });
+
   describe('ramped (Madcow) exercise', () => {
     const rampedEx = {
       id: 'squat',
