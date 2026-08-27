@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL, PLATE_WEIGHTS, MIN_WEIGHT_INCREMENT, REST_SHORT_SECONDS, CUSTOM_REST_MAX } from './constants';
+import { SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, INITIAL_WEIGHTS, WORKOUTS, DEFAULT_PROGRAM, MIN_SETS, MAX_SETS, MIN_REPS, MAX_REPS, EXERCISE_INCREMENTS, MADCOW_DAYS, MADCOW_DAY_LIFTS, MADCOW_ONRAMP_WEEKS, MADCOW_WEEKLY_INCREMENTS, MADCOW_PRESS_OPTIONS, MADCOW_DEFAULT_PRESS, MADCOW_INTERVAL_OPTIONS, MADCOW_DEFAULT_INTERVAL, PLATE_WEIGHTS, MIN_WEIGHT_INCREMENT, REST_SHORT_SECONDS, CUSTOM_REST_MIN, CUSTOM_REST_MAX } from './constants';
 
 export function migrate(data, fromVersion) {
   let current = { ...data };
@@ -70,6 +70,14 @@ export function isExercisePassed(ex) {
 
 export function normalizePreset(raw) {
   return raw === 'madcow' ? 'madcow' : 'standard';
+}
+
+// Clamps a stored/restored rest interval into the current CUSTOM_REST_MIN..MAX range --
+// needed because CUSTOM_REST_MIN has moved over time (it used to track
+// REST_WARNING_SECONDS), so a value saved under an older floor could sit below today's.
+// Not grid-snapped: an in-range value is left exactly as stored.
+export function normalizePreferredRest(raw) {
+  return Number.isFinite(raw) ? Math.min(CUSTOM_REST_MAX, Math.max(CUSTOM_REST_MIN, raw)) : 90;
 }
 
 export function normalizeMcPress(raw) {

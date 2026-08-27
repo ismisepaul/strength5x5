@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { normalizePreferredRest } from '../utils';
 
 // Groups the app-preference fields: all saved.*-seeded, all written in the same
 // useSyncStorage call, none read outside the Settings screen and the handful of
@@ -8,7 +9,7 @@ import { useState } from 'react';
 export const useSettings = (saved) => {
   const [isDark, setIsDark] = useState(() => saved.isDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [localBackup, setLocalBackup] = useState(saved.autoSave ?? false);
-  const [preferredRest, setPreferredRest] = useState(saved.preferredRest ?? 90);
+  const [preferredRest, setPreferredRest] = useState(() => normalizePreferredRest(saved.preferredRest));
   const [soundEnabled, setSoundEnabled] = useState(saved.soundEnabled ?? false);
   const [vibrationEnabled, setVibrationEnabled] = useState(saved.vibrationEnabled ?? saved.hapticsEnabled ?? false);
   const [restWarningEnabled, setRestWarningEnabled] = useState(saved.restWarningEnabled ?? true);

@@ -17,9 +17,10 @@ import App from '../../App';
 import { STORAGE_KEY, REST_WARNING_SECONDS } from '../../constants';
 import { startWorkout } from '../helpers/train';
 
-// 8s of rest: long enough that the run-up is ordinary rest and the warning window is
-// entered partway through, rather than the whole timer being one long warning.
-const REST = 8;
+// 32s of rest (above the CUSTOM_REST_MIN floor): long enough that the run-up is
+// ordinary rest and the warning window is entered partway through, rather than the
+// whole timer being one long warning.
+const REST = 32;
 
 const fixture = (over = {}) => JSON.stringify({
   version: 1,
@@ -80,8 +81,8 @@ describe('rest timer five-second warning', () => {
     const user = await setup();
     await startRest(user);
 
-    // 8s -> 6s remaining, still two seconds clear of the window.
-    await tick(8);
+    // 25s elapsed -> 7s remaining, still two seconds clear of the window.
+    await tick(100);
     expect(pip).not.toHaveBeenCalled();
     expect(screen.getByText('Rest')).toBeInTheDocument();
   });
@@ -120,7 +121,7 @@ describe('rest timer five-second warning', () => {
     await startRest(user);
 
     // Into the window, with the countdown showing 4.
-    await tick(17);
+    await tick(113);
     const during = pip.mock.calls.length;
     expect(during).toBeGreaterThan(0);
 

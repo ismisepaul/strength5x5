@@ -32,6 +32,23 @@ describe('hydrateFromBackup', () => {
     expect(setters.setLogGrouping).not.toHaveBeenCalled();
   });
 
+  it('clamps a restored preferredRest into the current CUSTOM_REST_MIN..MAX range', () => {
+    // A backup made under an older, lower floor (or hand-edited) could carry a value
+    // outside today's bounds -- restoring it should land in range, not import the
+    // out-of-range number verbatim.
+    const low = makeSetters();
+    hydrateFromBackup({ weights: baseWeights, program: {}, history: [], preferredRest: 5 }, low);
+    expect(low.setPreferredRest).toHaveBeenCalledWith(30);
+
+    const high = makeSetters();
+    hydrateFromBackup({ weights: baseWeights, program: {}, history: [], preferredRest: 9999 }, high);
+    expect(high.setPreferredRest).toHaveBeenCalledWith(300);
+
+    const inRange = makeSetters();
+    hydrateFromBackup({ weights: baseWeights, program: {}, history: [], preferredRest: 120 }, inRange);
+    expect(inRange.setPreferredRest).toHaveBeenCalledWith(120);
+  });
+
   it('defaults isDark and autoSave to true/false when absent from the backup', () => {
     const setters = makeSetters();
     hydrateFromBackup({ weights: baseWeights, program: {}, history: [] }, setters);

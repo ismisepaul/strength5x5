@@ -1,6 +1,6 @@
 import i18n from './i18n/index.js';
 import {
-  validateImportData, normalizeProgram, normalizePreset,
+  validateImportData, normalizeProgram, normalizePreset, normalizePreferredRest,
   normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending,
   normalizeMcSeeded,
 } from './utils';
@@ -21,7 +21,7 @@ export const hydrateFromBackup = (d, setters) => {
   setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
   if (d.nextType) setCurrentWorkoutType(d.nextType);
   setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
-  if (d.preferredRest) setPreferredRest(d.preferredRest);
+  if (d.preferredRest) setPreferredRest(normalizePreferredRest(d.preferredRest));
   if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
   if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
   if (d.restWarningEnabled !== undefined) setRestWarningEnabled(d.restWarningEnabled);

@@ -15,6 +15,7 @@ import {
   calculateSetDurations,
   normalizeProgram,
   normalizeMcSeeded,
+  normalizePreferredRest,
   getProgramExercises,
   targetReps,
   isExercisePassed,
@@ -22,7 +23,7 @@ import {
   formatBytes,
   countSessionsSince,
 } from '../utils';
-import { SCHEMA_VERSION, DEFAULT_PROGRAM, EXPECTED_WEIGHT_KEYS } from '../constants';
+import { SCHEMA_VERSION, DEFAULT_PROGRAM, EXPECTED_WEIGHT_KEYS, CUSTOM_REST_MIN, CUSTOM_REST_MAX } from '../constants';
 
 describe('calculatePlates', () => {
   it('returns correct plates for 60kg (one 20 per side)', () => {
@@ -334,6 +335,27 @@ describe('migrate', () => {
     const customProgram = { ...DEFAULT_PROGRAM, bench: { sets: 3, reps: 8 } };
     const result = migrate({ program: customProgram, version: 2 }, 2);
     expect(result.program).toEqual(customProgram);
+  });
+});
+
+describe('normalizePreferredRest', () => {
+  it('clamps a value below CUSTOM_REST_MIN up to the floor', () => {
+    expect(normalizePreferredRest(5)).toBe(CUSTOM_REST_MIN);
+  });
+
+  it('clamps a value above CUSTOM_REST_MAX down to the ceiling', () => {
+    expect(normalizePreferredRest(9999)).toBe(CUSTOM_REST_MAX);
+  });
+
+  it('leaves an in-range value untouched', () => {
+    expect(normalizePreferredRest(120)).toBe(120);
+  });
+
+  it('defaults non-numeric or missing input to 90', () => {
+    expect(normalizePreferredRest(undefined)).toBe(90);
+    expect(normalizePreferredRest(null)).toBe(90);
+    expect(normalizePreferredRest('120')).toBe(90);
+    expect(normalizePreferredRest(NaN)).toBe(90);
   });
 });
 

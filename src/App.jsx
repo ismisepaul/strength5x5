@@ -10,7 +10,7 @@ import BarMark from './components/BarMark';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
 import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS, REST_PRESETS, CUSTOM_REST_MAX } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight, formatClock, restElapsedFromTimer, rawRestElapsedFromTimer } from './utils';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizePreferredRest, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight, formatClock, restElapsedFromTimer, rawRestElapsedFromTimer } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
@@ -489,7 +489,7 @@ const App = () => {
     saveToDriveQuietly({
       weights: d.weights, program: normalizeProgram(d.program), history: d.history, nextType: d.nextType || currentWorkoutType,
       isDark: d.isDark ?? true, autoSave: d.autoSave ?? false,
-      preferredRest: d.preferredRest || preferredRest,
+      preferredRest: normalizePreferredRest(d.preferredRest || preferredRest),
       soundEnabled: d.soundEnabled ?? soundEnabled,
       vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
       restWarningEnabled: d.restWarningEnabled ?? restWarningEnabled,

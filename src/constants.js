@@ -79,14 +79,17 @@ export const REST_WARNING_SECONDS = 5;
 // breathing indefinitely at anyone who racks the bar and doesn't immediately log a set.
 export const REST_CEILING_SETTLE_SECONDS = 30;
 
-// Bounds for the rest interval control (RestIntervalControl.jsx). The floor is
-// REST_WARNING_SECONDS rather than a round number on purpose: a rest shorter than the
-// warning window would start already flooded, with pips the countdown never has room to
-// play in order. The ceiling is capped at the top preset rather than left open-ended:
-// routinely needing more than that is a sign the weight is too demanding for straight
-// 5x5, or the rest is running longer than it needs to, not a gap the app should paper
-// over with a bigger number. See options.restIntervalCapExplainer.
-export const CUSTOM_REST_MIN = REST_WARNING_SECONDS;
+// Bounds for the rest interval control (RestIntervalControl.jsx), draggable as well as
+// steppable -- both move in CUSTOM_REST_STEP grid steps, so the floor sits exactly on
+// the grid rather than below it (an off-grid floor used to need its own rejoin-the-grid
+// branch in the stepper; it no longer does). 30s is a floor on the setting itself: below
+// that isn't really a rest between 5x5 sets any more, distinct from REST_WARNING_SECONDS
+// below, which is about the flood having room to play out, not about what's a sane rest.
+// The ceiling is capped at the top preset rather than left open-ended: routinely needing
+// more than that is a sign the weight is too demanding for straight 5x5, or the rest is
+// running longer than it needs to, not a gap the app should paper over with a bigger
+// number. See options.restIntervalCapExplainer.
+export const CUSTOM_REST_MIN = 30;
 export const CUSTOM_REST_MAX = 300;
 export const CUSTOM_REST_STEP = 10;
 export const REST_PRESETS = [90, 180, 300];
