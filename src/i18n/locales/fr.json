@@ -38,7 +38,7 @@
     "trainedToday": "Entraîné aujourd'hui",
     "plannedLoad": "Charge prévue",
     "setHint": "Touchez pour valider {{count}} répétitions. Maintenez pour choisir un nombre exact.",
-    "missedNote": "Répétitions manquées : poids maintenu à {{weight}}kg la prochaine fois",
+    "missedNote": "Répétitions manquées : poids maintenu à {{weight}} kg la prochaine fois",
     "discardWorkout": "Abandonner",
     "decreaseWeightAria": "Diminuer le poids de {{name}}",
     "increaseWeightAria": "Augmenter le poids de {{name}}",

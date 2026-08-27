@@ -38,7 +38,7 @@
     "trainedToday": "Trained today",
     "plannedLoad": "Planned load",
     "setHint": "Tap to log {{count}} reps. Long-press to set exact count.",
-    "missedNote": "Missed reps: keep weight at {{weight}}kg next session",
+    "missedNote": "Missed reps: keep weight at {{weight}} kg next session",
     "discardWorkout": "Discard workout",
     "decreaseWeightAria": "Decrease {{name}} weight",
     "increaseWeightAria": "Increase {{name}} weight",

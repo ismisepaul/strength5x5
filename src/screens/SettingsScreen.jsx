@@ -86,7 +86,7 @@ const SettingsScreen = ({
         </div>
         <div className={lastRowClass}>
           <div><p className="text-card font-semibold">{t('options.language')}</p><p className={`text-meta leading-tight ${mutedClass}`}>{t('options.languageDesc')}</p></div>
-          <div className="w-24">
+          <div className="w-32">
             <Segmented
               options={[{ label: 'EN', val: 'en' }, { label: 'FR', val: 'fr' }]}
               value={i18n.language?.startsWith('fr') ? 'fr' : 'en'}
@@ -149,13 +149,13 @@ const SettingsScreen = ({
         </div>
 
         <div className="grid grid-cols-3 gap-2 mt-3">
-          <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent-300 flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform">
+          <button onClick={() => exportData()} className="py-3.5 rounded-lg border border-accent text-accent-300 flex flex-col items-center gap-2 text-meta active:scale-95 transition-transform">
             <DownloadSimple size={20} /> {t('options.backupToDevice')}
           </button>
-          <button onClick={() => fileInputRef.current?.click()} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
+          <button onClick={() => fileInputRef.current?.click()} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta active:scale-95 transition-transform border-ink/26 text-ink">
             <UploadSimple size={20} /> {t('options.restore')}
           </button>
-          <button onClick={() => csvInputRef.current?.click()} aria-label={t('options.importStronglifts')} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta uppercase active:scale-95 transition-transform border-ink/26 text-ink">
+          <button onClick={() => csvInputRef.current?.click()} aria-label={t('options.importStronglifts')} className="py-3.5 rounded-lg border flex flex-col items-center gap-2 text-meta active:scale-95 transition-transform border-ink/26 text-ink">
             <FileCsv size={20} /> {t('options.importCsv')}
           </button>
         </div>
