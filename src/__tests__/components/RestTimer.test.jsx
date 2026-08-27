@@ -63,6 +63,36 @@ describe('RestTimer', () => {
     expect(screen.queryByText('Get ready')).not.toBeInTheDocument();
   });
 
+  it('shows a state glyph beside the kicker for each of the three resting states', () => {
+    // Hourglass while resting, HourglassLow inside the five-second warning, Barbell
+    // once over the marker -- a silhouette change instead of a reading task, since
+    // nothing else on the strip is guaranteed to be animating once the ceiling settles.
+    const { container: resting } = render(<RestTimer {...defaultProps} isActive={true} seconds={60} total={90} />);
+    expect(resting.querySelector('[data-state-icon] svg')).toBeInTheDocument();
+
+    const { container: warning } = render(<RestTimer {...defaultProps} isActive={true} seconds={4} total={90} />);
+    expect(warning.querySelector('[data-state-icon] svg')).toBeInTheDocument();
+
+    const { container: over } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
+    expect(over.querySelector('[data-state-icon] svg')).toBeInTheDocument();
+  });
+
+  it('hides the state glyph from assistive tech, since the kicker text already carries the state', () => {
+    const { container } = render(<RestTimer {...defaultProps} isActive={true} seconds={60} total={90} />);
+    expect(container.querySelector('[data-state-icon] svg')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('shows no state glyph outside of rest -- its presence alone means rest is running', () => {
+    const { container: inSession } = render(<RestTimer {...defaultProps} />);
+    expect(inSession.querySelector('[data-state-icon]')).not.toBeInTheDocument();
+
+    const { container: movementDone } = render(<RestTimer {...defaultProps} isExerciseComplete="movement" />);
+    expect(movementDone.querySelector('[data-state-icon]')).not.toBeInTheDocument();
+
+    const { container: workoutDone } = render(<RestTimer {...defaultProps} isExerciseComplete="workout" />);
+    expect(workoutDone.querySelector('[data-state-icon]')).not.toBeInTheDocument();
+  });
+
   it('scales the track to the interval itself before overtime starts, not a fixed 0-5:00 span', () => {
     // A 1:30 (90s) interval gets a scale that ends at 1:30, not a fixed 5:00 -- most of
     // the strip isn't sitting empty behind a short rest. The wall label duplicates the

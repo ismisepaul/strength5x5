@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { SkipForward } from '@phosphor-icons/react';
+import { SkipForward, Hourglass, HourglassLow, Barbell } from '@phosphor-icons/react';
 import { formatClock, restElapsedFromTimer, rawRestElapsedFromTimer } from '../utils';
 import { useElapsedSince } from '../hooks/useElapsedSince';
 import { REST_WARNING_SECONDS, CUSTOM_REST_MAX, REST_CEILING_SETTLE_SECONDS, REST_PRESETS } from '../constants';
@@ -53,13 +53,22 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   const denom = showMarker ? scaleSteps.find(w => restElapsed <= w) : 0;
   const markerPct = denom > 0 ? Math.min(100, (marker / denom) * 100) : 0;
 
-  let kicker, digits, showSkip, accentState;
+  let kicker, digits, showSkip, accentState, StateIcon;
   if (isExerciseComplete) {
     kicker = isExerciseComplete === 'workout' ? t('timer.workoutComplete') : t('timer.movementFinished');
     digits = sessionElapsed;
     showSkip = true;
     accentState = true;
   } else {
+    // Three silhouettes, three rest states, nothing that moves -- the glyph itself is
+    // the signal once the ceiling wash has settled and nothing else on the strip is
+    // animating. It only appears while rest is actually running: "In workout" and the
+    // two completion banners above stay glyph-less, so its mere presence already means
+    // "resting" and the vocabulary never has to grow past these three.
+    StateIcon = !resting ? null
+      : over > 0 ? Barbell
+        : isWarning ? HourglassLow
+          : Hourglass;
     kicker = !resting ? t('timer.inSession')
       : over > 0 ? t('timer.lift')
         : isWarning ? t('timer.getReady')
@@ -106,7 +115,10 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
       <div className="relative flex items-end justify-between">
         <div className="flex items-end gap-2">
           <div>
-            <p className={`font-mono text-kicker font-bold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent-300' : mutedClass}`}>{kicker}</p>
+            <p className={`flex items-center gap-1.5 font-mono text-kicker font-bold uppercase tracking-[0.14em] mb-0.5 ${accentState ? 'text-accent-300' : mutedClass}`}>
+              {StateIcon && <span data-state-icon><StateIcon size={13} weight="fill" aria-hidden="true" /></span>}
+              {kicker}
+            </p>
             <p className={`font-mono font-bold tabular-nums leading-none ${emphasis ? 'text-[52px]' : 'text-[44px]'} ${accentState ? 'text-accent-300' : ''}`}>{formatClock(digits * 1000)}</p>
           </div>
           {over > 0 && (
