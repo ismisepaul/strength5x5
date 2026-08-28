@@ -65,17 +65,27 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
     // animating. It only appears while rest is actually running: "In workout" and the
     // two completion banners above stay glyph-less, so its mere presence already means
     // "resting" and the vocabulary never has to grow past these three.
+    //
+    // Gated on `isExpired`, not `over > 0`: useTimer batches the expiry transition
+    // (isActive -> false, isExpired -> true, elapsed reset to 0) into a single render,
+    // and elapsed's own tracking effect only increments once a full second has passed
+    // -- so `over` (which reads off elapsed) is still exactly 0 on that first expired
+    // render. `over > 0` used to gate "Lift" here, and isWarning is false too by then
+    // (it requires isActive, which just went false), so the kicker fell through to
+    // "Rest" for up to a second before `over` ticked up -- a Rest/Get ready/Rest/Lift
+    // flicker right at the transition. `isExpired` alone is correct: once expired,
+    // we're always in the Lift phase, whether or not any overtime has accumulated yet.
     StateIcon = !resting ? null
-      : over > 0 ? Barbell
+      : isExpired ? Barbell
         : isWarning ? HourglassLow
           : Hourglass;
     kicker = !resting ? t('timer.inSession')
-      : over > 0 ? t('timer.lift')
+      : isExpired ? t('timer.lift')
         : isWarning ? t('timer.getReady')
           : t('timer.rest');
     digits = resting ? restElapsed : sessionElapsed;
     showSkip = false;
-    accentState = resting && (isWarning || over > 0 || atCeiling);
+    accentState = resting && (isWarning || isExpired || atCeiling);
   }
 
   const mutedClass = 'text-ink/62';
@@ -89,7 +99,9 @@ const RestTimer = React.memo(({ seconds, total, onSkip, isExerciseComplete, isEx
   // wash starts to fade, and stay there.
   const emphasis = isWarning || atCeiling;
   const alarm = isWarning || (atCeiling && !ceilingSettled);
-  const thickBar = emphasis || over > 0;
+  // Same isExpired-not-over>0 reasoning as the kicker above: the bar should thicken the
+  // instant the Lift phase starts, not wait for `over` to tick past zero.
+  const thickBar = emphasis || isExpired;
 
   return (
     <div className="relative flex-none pt-4 px-5 pb-3 bg-surface-deep">

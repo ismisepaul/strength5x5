@@ -108,6 +108,22 @@ describe('RestTimer', () => {
     expect(screen.getByText('Rest target 1:30')).toBeInTheDocument();
   });
 
+  it('shows "Lift" immediately on expiry, not a brief flash back to "Rest"', () => {
+    // useTimer batches the expiry transition (isActive -> false, isExpired -> true,
+    // elapsed reset to 0) into a single render, and elapsed's own tracking effect only
+    // increments once a full second has passed -- so `over` (rawElapsed - marker) is
+    // still exactly 0 on this very first expired render. The kicker used to key "Lift"
+    // off `over > 0`, which isn't true yet here, and isWarning is false too (it
+    // requires isActive, which just went false), so it fell through to "Rest" for up to
+    // a second before `over` ticked up. `isExpired` alone is the right signal: once
+    // expired, we're always in the Lift phase, whether or not any overtime has
+    // accumulated.
+    render(<RestTimer {...defaultProps} isActive={false} isExpired={true} seconds={0} elapsed={0} total={90} />);
+    expect(screen.getByText('Lift')).toBeInTheDocument();
+    expect(screen.queryByText('Rest')).not.toBeInTheDocument();
+    expect(screen.queryByText('Get ready')).not.toBeInTheDocument();
+  });
+
   it('keeps counting past the marker into "Lift", with the overtime shown in brackets', () => {
     const { container } = render(<RestTimer {...defaultProps} isExpired={true} elapsed={5} total={90} />);
     expect(screen.getByText('Lift')).toBeInTheDocument();
