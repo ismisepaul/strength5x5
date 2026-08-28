@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../App';
 import { STORAGE_KEY, ACTIVE_WORKOUT_KEY } from '../../constants';
@@ -232,6 +232,79 @@ describe('Workout recovery', () => {
     await waitFor(() => {
       expect(screen.queryByText('Resume Workout?')).not.toBeInTheDocument();
       expect(screen.getByText('Finish workout')).toBeInTheDocument();
+    });
+  });
+
+  it('restores the marker and the offline overtime when the rest ran out while closed', async () => {
+    const activeSession = {
+      session: {
+        date: new Date().toISOString(),
+        type: 'A',
+        startedAt: Date.now() - 300000,
+        exercises: [
+          { id: 'squat', name: 'Back Squat', weight: 60, sets: 5, reps: 5, increment: 2.5, setsCompleted: [5, null, null, null, null] },
+          { id: 'bench', name: 'Bench Press', weight: 45, sets: 5, reps: 5, increment: 2.5, setsCompleted: [null, null, null, null, null] },
+          { id: 'row', name: 'Barbell Row', weight: 50, sets: 5, reps: 5, increment: 2.5, setsCompleted: [null, null, null, null, null] },
+        ],
+      },
+      // A 1:30 rest whose marker passed 40s before the app was reopened.
+      restTimerEndTime: Date.now() - 40000,
+      restTimerDuration: 90,
+      restTracksPreferred: true,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(activeSession));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Resume'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('Resume Workout?')).not.toBeInTheDocument();
+    });
+    // 90s marker + 40s of offline overtime -- not a bare 0:00 count-up with no marker.
+    expect(screen.getByText('Lift')).toBeInTheDocument();
+    expect(screen.getByText('2:10')).toBeInTheDocument();
+    expect(screen.getByText('(+0:40)')).toBeInTheDocument();
+    expect(screen.getAllByText('1:30').length).toBeGreaterThan(0); // the marker survived the reload
+  });
+
+  describe('closing the app after the marker already passed', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('persists the marker and overtime once already in the Lift phase, not only while still counting down', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutData));
+      const { unmount } = render(<App />);
+
+      await startWorkout(user);
+      const setButtons = screen.getAllByRole('button').filter((b) => b.getAttribute('aria-label')?.startsWith('Set '));
+      await user.click(setButtons[0]); // starts the default 1:30 (90s) rest
+
+      // Run the rest past its marker and into overtime while the app stays open, so the
+      // timer is already isExpired ("Lift") -- not merely isActive -- at the moment the
+      // app closes.
+      await act(async () => { await vi.advanceTimersByTimeAsync(90000); });
+      await act(async () => { await vi.advanceTimersByTimeAsync(20000); });
+      expect(screen.getByText('Lift')).toBeInTheDocument();
+
+      // Simulate the app closing and reopening right there, mid-overtime.
+      unmount();
+      render(<App />);
+      await user.click(screen.getByText('Resume'));
+      await waitFor(() => {
+        expect(screen.queryByText('Resume Workout?')).not.toBeInTheDocument();
+      });
+
+      // The marker and overtime survive the close instead of resuming to a bare idle
+      // strip with no rest shown at all.
+      expect(screen.getByText('Lift')).toBeInTheDocument();
+      expect(screen.getAllByText('1:30').length).toBeGreaterThan(0); // the marker
     });
   });
 

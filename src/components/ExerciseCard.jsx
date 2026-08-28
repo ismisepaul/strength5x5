@@ -24,6 +24,14 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
   const firstPendingIndex = ex.setsCompleted.findIndex(r => r === null);
   const currentSetIndex = firstPendingIndex === -1 ? ex.setsCompleted.length - 1 : firstPendingIndex;
   const currentSetWeight = isRamped ? ex.setWeights[currentSetIndex] : ex.weight;
+  // The footer (warm-up/ramp + bar setup) has nothing left to prep for once every set
+  // is logged, so it retires entirely rather than sitting there as a dead disclosure.
+  // Warm-up itself retires a set earlier than that -- it's only useful before the first
+  // set is logged -- but "Ramp" stays for the life of the card since it's the only place
+  // to see what a later rung's weight/reps are, not just a warm-up reference.
+  const isCardComplete = firstPendingIndex === -1;
+  const anySetLogged = ex.setsCompleted.some(r => r !== null);
+  const showWarmRow = isRamped || !anySetLogged;
 
   const pressTimerRef = useRef(null);
   const longPressFiredRef = useRef(false);
@@ -136,25 +144,29 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
       {showHint && (
         <p className={`text-meta mt-3 text-ink/50`}>{t('workout.setHint', { count: targetReps(ex, 0) })}</p>
       )}
-      <div className={`mt-4 pt-3 flex items-center justify-between rule-fade-top`}>
-        <button
-          onClick={() => setPanel(p => p === 'warm' ? null : 'warm')}
-          aria-expanded={panel === 'warm'}
-          className={`flex items-center gap-1 min-h-9 text-[12.5px] font-medium ${panel === 'warm' ? 'text-accent-300' : mutedClass}`}
-        >
-          {panel === 'warm' ? <CaretUp size={11} /> : <CaretDown size={11} />}
-          {t(isRamped ? 'workout.rampDisclosure' : 'warmup.warmup')}
-        </button>
-        <button
-          onClick={() => setPanel(p => p === 'bar' ? null : 'bar')}
-          aria-expanded={panel === 'bar'}
-          className={`flex items-center gap-1 min-h-9 text-[12.5px] font-medium ${panel === 'bar' ? 'text-accent-300' : mutedClass}`}
-        >
-          {t('warmup.barSetup')}
-          {panel === 'bar' ? <CaretUp size={11} /> : <CaretDown size={11} />}
-        </button>
-      </div>
-      {panel === 'warm' && (
+      {!isCardComplete && (
+        <div className={`mt-4 pt-3 flex items-center rule-fade-top ${showWarmRow ? 'justify-between' : 'justify-end'}`}>
+          {showWarmRow && (
+            <button
+              onClick={() => setPanel(p => p === 'warm' ? null : 'warm')}
+              aria-expanded={panel === 'warm'}
+              className={`flex items-center gap-1 min-h-9 text-[12.5px] font-medium ${panel === 'warm' ? 'text-accent-300' : mutedClass}`}
+            >
+              {panel === 'warm' ? <CaretUp size={11} /> : <CaretDown size={11} />}
+              {t(isRamped ? 'workout.rampDisclosure' : 'warmup.warmup')}
+            </button>
+          )}
+          <button
+            onClick={() => setPanel(p => p === 'bar' ? null : 'bar')}
+            aria-expanded={panel === 'bar'}
+            className={`flex items-center gap-1 min-h-9 text-[12.5px] font-medium ${panel === 'bar' ? 'text-accent-300' : mutedClass}`}
+          >
+            {t('warmup.barSetup')}
+            {panel === 'bar' ? <CaretUp size={11} /> : <CaretDown size={11} />}
+          </button>
+        </div>
+      )}
+      {!isCardComplete && showWarmRow && panel === 'warm' && (
         <div className={`mt-2 rounded-[9px] p-3.5 space-y-2 bg-ground/60`}>
           {isRamped ? ex.setWeights.map((w, i) => {
             const isTop = i === topIndex;
@@ -180,7 +192,7 @@ const ExerciseCard = React.memo(({ ex, exIdx, onToggleSet, onOpenRepPicker, show
           )}
         </div>
       )}
-      {panel === 'bar' && (
+      {!isCardComplete && panel === 'bar' && (
         <div className={`mt-2 rounded-[9px] p-3.5 bg-ground/60`}>
           <BarSetupDiagram weight={currentSetWeight} />
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Minus, Plus, Warning } from '@phosphor-icons/react';
 import StepperButton from './StepperButton';
@@ -11,40 +11,64 @@ const BAND_LABEL_KEYS = {
   heavy: 'options.restIntervalBandHeavy',
 };
 
-// Design 3c (no custom mode, no sheet) plus design 4a's live feedback layered on top:
-// - `notice` mirrors 4a's msgD -- 'cap' when + is pressed while already at
-//   CUSTOM_REST_MAX, 'short' whenever a step or preset lands below REST_SHORT_SECONDS.
-//   Either clears the moment a different interaction stops matching its condition, so
-//   neither ever sits there as a permanent caption.
+// Design 3c (no custom mode, no sheet) plus design 4a's live feedback layered on top,
+// plus design 7b's draggable track: the whole 0:30-5:00 range is one gesture instead of
+// 27 taps, snapped to the same 10s grid the steppers use.
+// - `notice` mirrors 4a's msgD -- 'cap' when the requested value overshoots
+//   CUSTOM_REST_MAX (stepper +, drag past the right edge, or Right/End past the max),
+//   'short' whenever the committed value lands below REST_SHORT_SECONDS. Either clears
+//   the moment a different interaction stops matching its condition, so neither ever
+//   sits there as a permanent caption.
 // - `band` is not sticky like `notice` -- it's just restBand(preferredRest), recomputed
 //   every render, so "Typical for: Medium Set" tracks the live value even while a cap or
 //   short notice is also showing.
 const RestIntervalControl = ({ preferredRest, setPreferredRest }) => {
   const { t } = useTranslation();
+  const trackRef = useRef(null);
   const clamp = (n) => Math.min(CUSTOM_REST_MAX, Math.max(CUSTOM_REST_MIN, n));
+  const snap = (n) => Math.round(n / CUSTOM_REST_STEP) * CUSTOM_REST_STEP;
   const fillPct = ((preferredRest - CUSTOM_REST_MIN) / (CUSTOM_REST_MAX - CUSTOM_REST_MIN)) * 100;
   const band = restBand(preferredRest);
 
   const [notice, setNotice] = useState(null); // 'cap' | 'short' | null
-  const step = (diff) => {
-    if (diff > 0 && preferredRest >= CUSTOM_REST_MAX) {
-      setNotice('cap');
-      setPreferredRest(CUSTOM_REST_MAX);
-      return;
-    }
-    // CUSTOM_REST_MIN (5) sits below the step grid on purpose (see constants.js), so
-    // landing on it and then pressing + would otherwise add the step from 5 (5, 15,
-    // 25...) rather than rejoining the grid the rest of the range steps on (10, 20...).
-    const offGrid = preferredRest % CUSTOM_REST_STEP !== 0;
-    const next = diff > 0 && offGrid
-      ? clamp(preferredRest + (CUSTOM_REST_STEP - (preferredRest % CUSTOM_REST_STEP)))
-      : clamp(preferredRest + diff);
-    setNotice(next < REST_SHORT_SECONDS ? 'short' : null);
-    setPreferredRest(next);
+  const [dragging, setDragging] = useState(false);
+
+  // Shared by the steppers, the presets, drag, and the keyboard fallback -- `raw` is
+  // allowed to sit outside CUSTOM_REST_MIN..MAX (that's how a drag past either edge, or
+  // a stepper press against it, is told apart from one that merely lands on the edge),
+  // while the value actually committed is always clamped into range.
+  const commit = (raw) => {
+    const value = clamp(raw);
+    setNotice(raw > CUSTOM_REST_MAX ? 'cap' : value < REST_SHORT_SECONDS ? 'short' : null);
+    setPreferredRest(value);
   };
-  const jumpTo = (secs) => {
-    setNotice(secs < REST_SHORT_SECONDS ? 'short' : null);
-    setPreferredRest(secs);
+  const step = (diff) => commit(preferredRest + diff);
+  const jumpTo = (secs) => commit(secs);
+
+  const valueFromClientX = (clientX) => {
+    const rect = trackRef.current.getBoundingClientRect();
+    const ratio = rect.width > 0 ? (clientX - rect.left) / rect.width : 0;
+    return snap(CUSTOM_REST_MIN + ratio * (CUSTOM_REST_MAX - CUSTOM_REST_MIN));
+  };
+
+  const onPointerDown = (e) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setDragging(true);
+    commit(valueFromClientX(e.clientX));
+  };
+  const onPointerMove = (e) => {
+    if (!dragging) return;
+    commit(valueFromClientX(e.clientX));
+  };
+  const endDrag = (e) => {
+    setDragging(false);
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+  };
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); step(CUSTOM_REST_STEP); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); step(-CUSTOM_REST_STEP); }
+    else if (e.key === 'Home') { e.preventDefault(); commit(CUSTOM_REST_MIN); }
+    else if (e.key === 'End') { e.preventDefault(); commit(CUSTOM_REST_MAX); }
   };
 
   return (
@@ -67,10 +91,30 @@ const RestIntervalControl = ({ preferredRest, setPreferredRest }) => {
           iconSize={16}
           dimmed={preferredRest <= CUSTOM_REST_MIN}
         />
-        <div className="relative flex-1 h-11 rounded-lg bg-ink/7 overflow-hidden">
-          <div className="absolute inset-y-0 left-0 bg-accent-900 border-r border-accent" style={{ width: `${fillPct}%` }} />
-          <div className="absolute inset-0 flex items-center justify-center text-[11.5px] text-ink/45">
-            {t('options.restIntervalStepHint', { step: CUSTOM_REST_STEP, max: formatClock(CUSTOM_REST_MAX * 1000) })}
+        <div
+          ref={trackRef}
+          role="slider"
+          tabIndex={0}
+          aria-label={t('options.restInterval')}
+          aria-valuemin={CUSTOM_REST_MIN}
+          aria-valuemax={CUSTOM_REST_MAX}
+          aria-valuenow={preferredRest}
+          aria-valuetext={formatClock(preferredRest * 1000)}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onKeyDown={onKeyDown}
+          className="relative flex-1 h-11 rounded-lg bg-ink/7 overflow-hidden cursor-pointer touch-none"
+        >
+          <div className="absolute inset-y-0 left-0 bg-accent-900" style={{ width: `${fillPct}%` }} />
+          <div
+            aria-hidden="true"
+            className="absolute top-1/2 w-1 h-6 rounded-full bg-accent pointer-events-none"
+            style={{ left: `${fillPct}%`, transform: 'translate(-50%, -50%)' }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center text-[11.5px] text-ink/45 pointer-events-none">
+            {t('options.restIntervalDragHint', { min: formatClock(CUSTOM_REST_MIN * 1000), max: formatClock(CUSTOM_REST_MAX * 1000) })}
           </div>
         </div>
         <StepperButton

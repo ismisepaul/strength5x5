@@ -53,8 +53,8 @@ describe('Settings', () => {
     const increase = screen.getByLabelText('Increase rest interval');
     expect(decrease.className).not.toMatch(/opacity-35/);
 
-    for (let i = 0; i < 15; i++) await user.click(decrease); // 90s of -10s steps, well past the 5s floor
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(5);
+    for (let i = 0; i < 15; i++) await user.click(decrease); // 90s of -10s steps, well past the 0:30 floor
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(30);
     expect(decrease.className).toMatch(/opacity-35/);
     expect(increase.className).not.toMatch(/opacity-35/);
 
@@ -62,6 +62,84 @@ describe('Settings', () => {
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(300);
     expect(increase.className).toMatch(/opacity-35/);
     expect(decrease.className).not.toMatch(/opacity-35/);
+  });
+
+  it('clamps a stored preferredRest below the current floor up to it on load', () => {
+    // CUSTOM_REST_MIN has moved (it used to track REST_WARNING_SECONDS at 5s, now a
+    // flat 30s floor), so a value saved under the old floor needs to come back in range
+    // rather than being trusted verbatim.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, preferredRest: 5, autoSave: false }));
+    render(<App />);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(30);
+  });
+
+  it('drags the rest interval track to a snapped value', async () => {
+    render(<App />);
+    await userEvent.setup().click(screen.getByText('Options'));
+
+    const track = screen.getByRole('slider', { name: 'Rest interval' });
+    vi.spyOn(track, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 200, top: 0, height: 44, right: 200, bottom: 44 });
+    track.setPointerCapture = vi.fn();
+    track.releasePointerCapture = vi.fn();
+
+    // Midpoint of a 200px-wide 0:30-5:00 track lands on (30+270*0.5)=165, snapped to
+    // the nearest 10s -> 170.
+    fireEvent.pointerDown(track, { clientX: 100, pointerId: 1 });
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(170);
+
+    fireEvent.pointerMove(track, { clientX: 200, pointerId: 1 });
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(300);
+
+    fireEvent.pointerUp(track, { clientX: 200, pointerId: 1 });
+  });
+
+  it('clamps a drag past either edge of the track, raising the matching notice', async () => {
+    render(<App />);
+    await userEvent.setup().click(screen.getByText('Options'));
+
+    const track = screen.getByRole('slider', { name: 'Rest interval' });
+    vi.spyOn(track, 'getBoundingClientRect').mockReturnValue({ left: 0, width: 200, top: 0, height: 44, right: 200, bottom: 44 });
+    track.setPointerCapture = vi.fn();
+    track.releasePointerCapture = vi.fn();
+
+    fireEvent.pointerDown(track, { clientX: -50, pointerId: 1 });
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(30);
+    expect(screen.getByText(/not enough to recover/)).toBeInTheDocument();
+    fireEvent.pointerUp(track, { clientX: -50, pointerId: 1 });
+
+    fireEvent.pointerDown(track, { clientX: 500, pointerId: 2 });
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(300);
+    expect(screen.getByText(/too heavy/)).toBeInTheDocument();
+    fireEvent.pointerUp(track, { clientX: 500, pointerId: 2 });
+  });
+
+  it('moves the rest interval by one step per arrow key, and jumps to the bounds with Home/End', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByText('Options'));
+
+    const track = screen.getByRole('slider', { name: 'Rest interval' });
+    track.focus();
+
+    await user.keyboard('{ArrowRight}');
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(100);
+    await user.keyboard('{ArrowLeft}{ArrowLeft}');
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(80);
+    await user.keyboard('{Home}');
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(30);
+    await user.keyboard('{End}');
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).preferredRest).toBe(300);
+  });
+
+  it('exposes the rest interval slider bounds and live value to assistive tech', async () => {
+    render(<App />);
+    await userEvent.setup().click(screen.getByText('Options'));
+
+    const track = screen.getByRole('slider', { name: 'Rest interval' });
+    expect(track).toHaveAttribute('aria-valuemin', '30');
+    expect(track).toHaveAttribute('aria-valuemax', '300');
+    expect(track).toHaveAttribute('aria-valuenow', '90');
+    expect(track).toHaveAttribute('aria-valuetext', '1:30');
   });
 
   it('lights up a preset only when the value happens to match it', async () => {
@@ -254,6 +332,79 @@ describe('Settings', () => {
 
     await user.click(screen.getByLabelText('Train'));
     expect(screen.getByText(START_BUTTON)).toBeInTheDocument();
+  });
+
+  describe('changing the interval while a rest is running', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const firstSetButton = () => screen.getAllByRole('button')
+      .filter((b) => b.getAttribute('aria-label')?.startsWith('Set '))[0];
+
+    // The marker's own caret label (10px, tabular-nums) is distinct from the muted 9px
+    // preset-reference labels the track also shows now -- those can legitimately read
+    // "1:30" or "3:00" too, for an unrelated reference point, so asserting on the
+    // marker specifically (rather than "this text appears nowhere on the page") is what
+    // actually proves whether a retarget happened.
+    const markerLabel = (container) => container.querySelector('.text-\\[10px\\]');
+
+    it('retargets the running rest marker instead of waiting for the next set', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+        history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
+        nextType: 'A', isDark: true, autoSave: false, preferredRest: 90,
+      }));
+      const { container } = render(<App />);
+
+      await startWorkout(user);
+      await user.click(firstSetButton()); // starts rest at the default 1:30
+
+      await user.click(screen.getByText('Options'));
+      await user.click(screen.getByText('3:00'));
+
+      await user.click(screen.getByText('Train'));
+      // The strip's marker reflects the new interval for the rest already running,
+      // not just the next one.
+      expect(markerLabel(container)).toHaveTextContent('3:00');
+    });
+
+    it('does not retarget a Madcow ramp rest, which is not driven by the interval setting', async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 2,
+        weights: { squat: 60, bench: 45, row: 50, press: 32.5, deadlift: 80 },
+        history: [{ date: new Date(Date.now() - 86400000).toISOString(), type: 'A', exercises: [] }],
+        nextType: 'A', isDark: true, autoSave: false, preferredRest: 90,
+        soundEnabled: false, vibrationEnabled: false,
+        preset: 'madcow',
+        mcTop: { squat: 60, bench: 45, row: 50, deadlift: 80, press: 32.5, incline: 40 },
+        mcWeek: 5, mcInterval: 12.5, mcPress: 'incline', mcNextDay: 'A',
+      }));
+      const { container } = render(<App />);
+
+      await startWorkout(user);
+      // Day A's squat ramps rest across its five sets as [90, 180, 180, 300] -- log
+      // the first four to land on the 300s rest into the top-effort set, a value
+      // distinct from both the app's default (90) and what this test switches to
+      // (180), so a wrongly-firing retarget would actually be caught.
+      const setButtons = () => screen.getAllByRole('button').filter((b) => b.getAttribute('aria-label')?.startsWith('Set '));
+      await user.click(setButtons()[0]);
+      await user.click(setButtons()[1]);
+      await user.click(setButtons()[2]);
+      await user.click(setButtons()[3]);
+
+      await user.click(screen.getByText('Options'));
+      await user.click(screen.getByText('3:00'));
+
+      await user.click(screen.getByText('Train'));
+      expect(markerLabel(container)).toHaveTextContent('5:00');
+    });
   });
 });
 

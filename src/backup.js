@@ -1,6 +1,6 @@
 import i18n from './i18n/index.js';
 import {
-  validateImportData, normalizeProgram, normalizePreset,
+  validateImportData, normalizeProgram, normalizePreset, normalizePreferredRest,
   normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending,
   normalizeMcSeeded,
 } from './utils';
@@ -21,7 +21,11 @@ export const hydrateFromBackup = (d, setters) => {
   setWeights(d.weights); setProgram(normalizeProgram(d.program)); setHistory(d.history);
   if (d.nextType) setCurrentWorkoutType(d.nextType);
   setIsDark(d.isDark ?? true); setLocalBackup(d.autoSave ?? false);
-  if (d.preferredRest) setPreferredRest(d.preferredRest);
+  // Presence, not truthiness: validateImportData lets any finite preferredRest through,
+  // so a 0 in the file has to reach the normalizer and be clamped to CUSTOM_REST_MIN
+  // like every other out-of-range value rather than falling through and silently
+  // leaving the previous interval in place.
+  if (d.preferredRest !== undefined) setPreferredRest(normalizePreferredRest(d.preferredRest));
   if (d.soundEnabled !== undefined) setSoundEnabled(d.soundEnabled);
   if (d.vibrationEnabled !== undefined) setVibrationEnabled(d.vibrationEnabled);
   if (d.restWarningEnabled !== undefined) setRestWarningEnabled(d.restWarningEnabled);

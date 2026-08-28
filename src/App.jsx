@@ -9,8 +9,8 @@ import BarMark from './components/BarMark';
 
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/index.js';
-import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS } from './constants';
-import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight } from './utils';
+import { INITIAL_WEIGHTS, STORAGE_KEY, SCHEMA_VERSION, EXPECTED_WEIGHT_KEYS, MAX_IMPORT_SIZE, ACTIVE_WORKOUT_KEY, MADCOW_DAYS, MADCOW_ONRAMP_WEEKS, MADCOW_DEFAULT_INTERVAL, REST_WARNING_SECONDS, REST_PRESETS, CUSTOM_REST_MAX } from './constants';
+import { calculateBest1RM, calculateSetDurations, normalizeProgram, targetReps, normalizePreset, normalizePreferredRest, normalizeMcTop, normalizeMcWeek, normalizeMcInterval, normalizeMcPress, normalizeMcNextDay, normalizeMcPending, normalizeMcSeeded, applyMcTopToWeights, evaluateMadcowOutcome, roundWeight, formatClock, restElapsedFromTimer, rawRestElapsedFromTimer } from './utils';
 import { clampMcTop, reviseWorkoutTopSet } from './madcow';
 import { switchProgramState } from './programSwitch';
 import { evaluateWorkoutOutcome, getStartDeloadPrompt } from './progression';
@@ -49,6 +49,12 @@ import EditEntryModal from './components/modals/EditEntryModal';
 import DeleteEntryConfirmSheet from './components/modals/DeleteEntryConfirmSheet';
 
 const LONG_BREAK_DELOAD_KEY = 'strength5x5_long_break_deload_for_date';
+
+// The presets a rest is already past *without* the lifter having counted through them:
+// the marker moved under them (the Settings interval was retargeted mid-rest) or they
+// went by while the app was closed. Neither is a moment to chime for, so they're stamped
+// as already sounded rather than left for the effect below to fire as a burst.
+const presetsAlreadyPassed = (marker, raw) => new Set(REST_PRESETS.filter(p => p > marker && p <= raw));
 
 const App = () => {
   const { t } = useTranslation();
@@ -104,6 +110,12 @@ const App = () => {
   const csvInputRef = useRef(null);
   const chimeRef = useRef(null);
   if (!chimeRef.current) chimeRef.current = createChime();
+  // Whether the currently running rest's duration came straight from preferredRest --
+  // Madcow's per-set restSeconds and the fixed 300s missed-rep rest don't, so a change
+  // to the Settings interval mid-rest should only retarget the former. Set fresh every
+  // time a rest actually starts (see applySetValue); stale values are harmless since
+  // retargeting is also gated on a rest currently running.
+  const restTracksPreferredRef = useRef(false);
 
   const gdrive = useGoogleDrive();
 
@@ -136,6 +148,34 @@ const App = () => {
     chimeRef.current.pip(REST_WARNING_SECONDS - timer.seconds);
   }, [timer.isActive, timer.seconds]);
 
+  // The rest strip's track re-scales at each rest preset above the marker (1:30 -> 3:00
+  // -> 5:00 -- see RestTimer.jsx), and each of those re-scales gets the same chime that
+  // already marks reaching the marker itself, so a rest running long is never silently
+  // past a checkpoint the strip just visibly jumped to. Presets at or below the marker
+  // are covered by onExpire above; presetsChimedRef records which of the ones above it
+  // have already sounded for the rest currently running, so each fires once. Reset at
+  // the same call site as timer.start() (a genuinely new rest) and pre-seeded on resume
+  // with whichever presets the raw elapsed time had already passed while the app was
+  // closed, so reopening it can't replay a burst of catch-up chimes.
+  const presetsChimedRef = useRef(new Set());
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
+  useEffect(() => {
+    if (!timer.isActive && !timer.isExpired) return;
+    const marker = Math.min(timer.duration || 0, CUSTOM_REST_MAX);
+    const raw = rawRestElapsedFromTimer({ isActive: timer.isActive, isExpired: timer.isExpired, duration: timer.duration, seconds: timer.seconds, elapsed: timer.elapsed });
+    for (const preset of REST_PRESETS) {
+      if (preset <= marker || raw < preset || presetsChimedRef.current.has(preset)) continue;
+      // Recorded whether or not it actually sounds. The checkpoint is passed either way,
+      // and skipping the record while muted means turning sound back on mid-rest (the
+      // timer keeps running while you're on the Options tab) replays every preset the
+      // rest has already gone by, all at once.
+      presetsChimedRef.current.add(preset);
+      if (soundEnabledRef.current) chimeRef.current.play();
+    }
+  }, [timer.isActive, timer.isExpired, timer.duration, timer.seconds, timer.elapsed]);
+
   useSyncStorage({
     weights, program, history, nextType: currentWorkoutType,
     isDark, autoSave: localBackup, preferredRest, soundEnabled, vibrationEnabled, restWarningEnabled, logGrouping,
@@ -158,9 +198,28 @@ const App = () => {
 
   useEffect(() => {
     if (!currentWorkout || !isWorkoutActive) return;
-    const data = { session: currentWorkout, restTimerEndTime: timer.isActive ? (Date.now() + timer.seconds * 1000) : null };
+    // isExpired (overtime/"Lift") is a normal, often long-lived rest state now, not just
+    // a brief flash before a skip -- closing the app during it has to resume the same way
+    // closing during isActive does, so it's persisted here too, not only while isActive.
+    const resting = timer.isActive || timer.isExpired;
+    const data = {
+      session: currentWorkout,
+      restTimerEndTime: timer.isActive
+        ? Date.now() + timer.seconds * 1000
+        // Work back to the wall-clock moment the marker passed, so resume() derives the
+        // same offline overtime whether the app closed before or after that moment.
+        : timer.isExpired ? Date.now() - timer.elapsed * 1000 : null,
+      // RestTimer.jsx's marker sits at the original interval, not whatever's left of it,
+      // so a resume has to hand the full duration back rather than just the remaining
+      // time (which would otherwise be treated as a shorter interval).
+      restTimerDuration: resting ? timer.duration : null,
+      // Whether this rest follows the Settings interval has to survive the reload too --
+      // it lives in a ref, which reinitialises to false, so without persisting it a
+      // resumed ordinary rest would silently stop retargeting (see handleSetPreferredRest).
+      restTracksPreferred: resting ? restTracksPreferredRef.current : false,
+    };
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
-  }, [currentWorkout, isWorkoutActive, timer.isActive, timer.seconds]);
+  }, [currentWorkout, isWorkoutActive, timer.isActive, timer.isExpired, timer.seconds, timer.elapsed]);
 
   // Madcow trains a ramp, not a flat weight, so anything that renders a single "current
   // weight" reads the top set instead. Kept derived rather than mirrored into `weights`
@@ -286,9 +345,12 @@ const App = () => {
           setIsExerciseComplete(allDone ? 'workout' : true);
         } else {
           setIsExerciseComplete(false);
+          const followsPreferred = !Array.isArray(ex.restSeconds) && nextVal === target;
           const req = Array.isArray(ex.restSeconds)
             ? (ex.restSeconds[setIdx + 1] ?? preferredRest)
             : (nextVal === target ? preferredRest : 300);
+          restTracksPreferredRef.current = followsPreferred;
+          presetsChimedRef.current = new Set();
           timer.start(req);
         }
       } else { timer.stop(); setIsExerciseComplete(false); }
@@ -437,7 +499,10 @@ const App = () => {
     saveToDriveQuietly({
       weights: d.weights, program: normalizeProgram(d.program), history: d.history, nextType: d.nextType || currentWorkoutType,
       isDark: d.isDark ?? true, autoSave: d.autoSave ?? false,
-      preferredRest: d.preferredRest || preferredRest,
+      // ?? not ||, matching hydrateFromBackup: an imported 0 is normalized to the floor
+      // locally, so echoing the previous local value here would leave the Drive copy
+      // disagreeing with the state that was just restored.
+      preferredRest: normalizePreferredRest(d.preferredRest ?? preferredRest),
       soundEnabled: d.soundEnabled ?? soundEnabled,
       vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
       restWarningEnabled: d.restWarningEnabled ?? restWarningEnabled,
@@ -646,15 +711,33 @@ const App = () => {
     setActiveTab(tabId);
   }, []);
 
+  // The strip's button is only ever the "Dismiss" one now -- rest itself has nothing to
+  // touch (see RestTimer.jsx), so the only tap left to handle is clearing the
+  // exercise/workout-complete banner.
   const handleTimerSkip = useCallback(() => {
-    if (soundEnabled) chimeRef.current.unlock();
-    if (isExerciseComplete) {
-      timer.reset();
-      setIsExerciseComplete(false);
-    } else {
-      timer.skip();
+    timer.reset();
+    setIsExerciseComplete(false);
+  }, [timer]);
+
+  // Settings' rest interval otherwise only takes effect on the *next* rest -- if one is
+  // already running (and its duration actually came from preferredRest, see
+  // applySetValue), retarget it live so dragging the stepper mid-rest visibly moves the
+  // marker instead of waiting for the next set.
+  const handleSetPreferredRest = useCallback((next) => {
+    setPreferredRest(next);
+    if (restTracksPreferredRef.current && (timer.isActive || timer.isExpired)) {
+      // Dragging the interval moves the marker under a rest that's already running, so
+      // presets can end up behind it without a second of real time passing -- dragging
+      // 5:00 down to 0:30 at 4:00 elapsed puts both 1:30 and 3:00 behind the marker at
+      // once. Re-seeded from the elapsed time the retarget is about to preserve, so the
+      // drag itself is silent and only presets still ahead of it can sound.
+      presetsChimedRef.current = presetsAlreadyPassed(
+        Math.min(next, CUSTOM_REST_MAX),
+        rawRestElapsedFromTimer({ isActive: timer.isActive, isExpired: timer.isExpired, duration: timer.duration, seconds: timer.seconds, elapsed: timer.elapsed }),
+      );
+      timer.retarget(next);
     }
-  }, [timer, isExerciseComplete, soundEnabled]);
+  }, [timer, setPreferredRest]);
 
   const driveConfigured = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const moodLabel = (day) => {
@@ -690,7 +773,7 @@ const App = () => {
           seconds={timer.seconds} total={timer.duration}
           isExerciseComplete={isExerciseComplete} isExpired={timer.isExpired} isActive={timer.isActive}
           onSkip={handleTimerSkip} elapsed={timer.elapsed}
-          startedAt={currentWorkout?.startedAt} workoutType={currentWorkout?.type}
+          startedAt={currentWorkout?.startedAt}
         />
       )}
 
@@ -743,7 +826,7 @@ const App = () => {
 
         {activeTab === 'settings' && (
           <SettingsScreen
-            preferredRest={preferredRest} setPreferredRest={setPreferredRest}
+            preferredRest={preferredRest} setPreferredRest={handleSetPreferredRest}
             soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled}
             vibrationEnabled={vibrationEnabled} setVibrationEnabled={setVibrationEnabled}
             restWarningEnabled={restWarningEnabled} setRestWarningEnabled={setRestWarningEnabled}
@@ -759,11 +842,18 @@ const App = () => {
       </main>
 
       {liveWorkoutVisible && (() => {
-        const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+        // Shares RestTimer.jsx's own restElapsedFromTimer so this bar's count-up clock
+        // can't drift out of sync with what the Train tab's strip displays for the same
+        // rest -- this bar used to compute its own separate stopwatch that reset to 0 at
+        // the marker instead of continuing past it, which no longer matches the strip.
+        const restElapsed = restElapsedFromTimer({
+          isActive: timer.isActive, isExpired: timer.isExpired,
+          duration: timer.duration, seconds: timer.seconds, elapsed: timer.elapsed,
+        });
         const liveDetail = timer.isExpired
-          ? t('liveWorkout.lifting', { time: formatTime(timer.elapsed) })
+          ? t('liveWorkout.lifting', { time: formatClock(restElapsed * 1000) })
           : timer.isActive
-            ? t('liveWorkout.resting', { time: formatTime(timer.seconds) })
+            ? t('liveWorkout.resting', { time: formatClock(restElapsed * 1000) })
             : t('liveWorkout.activeWorkout');
         return (
           <div className="flex-none px-3 py-1.5">
@@ -845,12 +935,20 @@ const App = () => {
             setIsWorkoutActive(true);
             setActiveTab('workout');
             if (active.restTimerEndTime) {
-              const remaining = Math.ceil((active.restTimerEndTime - Date.now()) / 1000);
-              if (remaining > 0) {
-                timer.start(remaining);
-              } else {
-                timer.skip();
-              }
+              // resume() covers both cases: still counting down, or run past its marker
+              // while the app was closed (in which case the offline overtime is carried
+              // over rather than the clock restarting at 0:00 with no marker).
+              const remaining = Math.max(0, Math.ceil((active.restTimerEndTime - Date.now()) / 1000));
+              const resumedDuration = active.restTimerDuration ?? remaining;
+              const resumedMarker = Math.min(resumedDuration || 0, CUSTOM_REST_MAX);
+              const overdue = Math.max(0, Math.floor((Date.now() - active.restTimerEndTime) / 1000));
+              const resumedRaw = overdue > 0 ? resumedDuration + overdue : 0;
+              // Same "no chime for a moment that already passed" rule as the marker itself
+              // (see useTimer's resume()) -- seed with whatever presets the offline
+              // overtime had already cleared so reopening the app doesn't replay them.
+              presetsChimedRef.current = presetsAlreadyPassed(resumedMarker, resumedRaw);
+              timer.resume(resumedDuration, active.restTimerEndTime);
+              restTracksPreferredRef.current = active.restTracksPreferred ?? false;
             }
             setShowResumePrompt(false);
           }}

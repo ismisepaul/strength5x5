@@ -282,21 +282,101 @@ always on.
   **live bar** sits above the tab bar: play icon + "Resting · m:ss" (or "Workout in
   progress") + "Return ›". Tapping it returns to Train.
 - During an active workout on the Train tab, the **timer strip replaces the header** at
-  the top of the screen — it is not docked at the bottom. Header everywhere else. The
-  strip is full-bleed: 44px tabular digits, a 3px accent progress line that fades in
-  from the left (`transition: width 1s linear`). In the last 5 seconds of rest the
-  strip floods to `accent-900` with a breathing accent wash, a 1px accent bottom
-  border, "Rest" → "Get ready", digits to 52px `accent-300`, and the progress line to
-  5px — visible from the rack, not just in the hand. The wash is the app's only looping
-  animation, so it is also the only one with a `prefers-reduced-motion` answer: the
-  keyframes are redefined to hold a steady `.09` rather than the animation being
-  dropped, since the flood still has to read. The expiry chime is a soft wooden marimba
-  (two struck notes, 339.5/679Hz), not a pure tone, and (if the "Five-second warning"
-  setting is on, alongside Sound alert) a quiet rising pip marks each of those last
-  5 seconds. Pip scheduling keys off `timer.seconds` alone — the two settings are read
-  through a ref, so toggling either mid-window can't replay the current second's pip.
-  All timer logic (wall-clock anchor, expire → stopwatch, sound/vibrate) lives in
-  `useTimer`/`RestTimer.jsx` and is untouched by presentation work.
+  the top of the screen — it is not docked at the bottom. Header everywhere else. Rest
+  **counts up from 0:00** rather than down, and keeps counting past the programmed
+  interval instead of resetting there — only the hard 5:00 ceiling (`CUSTOM_REST_MAX`)
+  freezes it. The track's **scale is the interval, not a fixed 0–5:00 span**: a 1:30
+  rest fills the track exactly, not one thirded away by two-thirds of dead space, and
+  the scale only widens once elapsed actually runs past the marker — to the next rest
+  preset above it (`REST_PRESETS`: 1:30 → 3:00 → 5:00), not straight to the 5:00
+  ceiling. A 1:30 rest running long re-scales to 3:00 first and only earns the full
+  5:00 once it also runs past that; an interval already at or past 3:00 has no
+  intermediate preset above it and re-scales straight to 5:00. Each step is one clean
+  re-scale, not a gradual expansion, so the room is borrowed, not pre-drawn. A 3px accent fill (5px
+  once rest is running late — see below) tracks elapsed up to the marker; past it, a
+  second segment continues the fill for the overtime stretch, close to the primary
+  fill's own accent (`accent/70`, no border) rather than a faint wash, so it reads as
+  part of the same bar rather than a separate, lesser one. At the 5:00 ceiling that
+  segment switches to the exact same solid `accent` the primary fill uses, so the whole
+  bar reads as one continuous, unmistakably full block — there really should be no more
+  rest once it looks like that. Faint reference
+  hairlines at 1:30 and 3:00 sit on the track, each with a muted 9px mono label under it
+  (the same style as the end label, not just an unlabeled break in the line), but only
+  when they fall inside the current scale and don't coincide with the marker itself (no
+  redundant double-mark at the same spot). An accent caret + `m:ss` label floats above the track at the marker's
+  position (right-aligned instead of centered once it's within 12% of the right edge, so
+  the label can't clip off the strip — which is the normal case before overtime, since
+  the marker sits right at the scale's own endpoint), and a muted end label at the right
+  edge reads the *current* scale's endpoint, hidden whenever it would just duplicate the
+  marker's own label — before overtime starts (scale ends at the marker) and once the
+  interval itself is already 5:00. Digits are 44px tabular; kicker reads "Rest"
+  until 5 seconds before the marker, "Get ready" for that last stretch, and "Lift" once
+  the marker passes — including at and past the 5:00 ceiling, which gets the flashing
+  treatment below rather than a separate kicker of its own: the lifter is just as much
+  still lifting at 5:00 over as at 10 seconds over. Kicker and digits
+  turn `accent-300` for every state past "Rest". Once past the marker, a small
+  parenthesized `(+m:ss)` next to the digits reads the delta past the marker — never
+  "+m:ss over": the lifter could simply still be lifting, not running late, and "over" is
+  a verdict the app has no way to make. Unlike the digits themselves, this bracket is
+  **not** subject to the 5:00 ceiling — it keeps counting up off the raw elapsed time
+  (`rawRestElapsedFromTimer`) for as long as rest keeps running, rather than freezing at
+  whatever delta the ceiling happened to land on. In the last-5-seconds-before-the-marker stretch
+  the strip also floods to `accent-900` with a breathing accent wash and a
+  1px accent bottom border, and digits grow to 52px; the track itself thickens to 5px for
+  that stretch *and* for the whole overtime stretch past the marker. The 5:00 ceiling
+  gets the same flood/thick-bar/52px-digit package rather than a separate treatment of
+  its own, but it splits into two states, because unlike the five-second window it has no
+  natural end: rest has no controls, so left alone the ceiling would keep breathing at
+  whoever racked the bar to talk to a training partner. The size and weight change
+  (`emphasis = isWarning || atCeiling`) holds for as long as the ceiling does; the wash's
+  own visibility (`alarm = isWarning || (atCeiling && !ceilingSettled)`) does not. Once
+  the ceiling has held for `REST_CEILING_SETTLE_SECONDS` (30s) the wash fades out over
+  2600ms, leaving the solid bar, accent digits and "Lift" kicker as the settled state,
+  which is still exactly what changed. The five-second warning keeps snapping on and off
+  with no transition; only the settling ceiling gets the fade, and the size change rides
+  `emphasis` rather than `alarm` so the fade never triggers a second reflow on top of the
+  one it is replacing. The wash is the
+  app's only looping animation, so it is also the only one with a
+  `prefers-reduced-motion` answer: the keyframes are redefined to hold a steady `.09`
+  rather than the animation being dropped, since the flood still has to read. **The
+  strip has no controls while rest is running** — no skip button — the only tap left is
+  the "Dismiss" on the exercise/workout-complete banner. The expiry chime is a soft
+  wooden marimba (two struck notes, 339.5/679Hz), not a pure tone, and (if the
+  "Five-second warning" setting is on, alongside Sound alert) a quiet rising pip marks
+  each of those last 5 seconds. Pip scheduling keys off `timer.seconds` alone — the two
+  settings are read through a ref, so toggling either mid-window can't replay the
+  current second's pip. The same expiry chime also sounds at every rest preset
+  (`REST_PRESETS`: 1:30, 3:00, 5:00) above the marker as overtime reaches it — the same
+  moments the track re-scales to — so a rest running long is never silently past a
+  checkpoint the strip just visibly jumped to; a preset at or below the marker is
+  already covered by the marker's own chime and doesn't sound twice. Gated on Sound
+  alert alone, not the five-second warning setting. `presetsChimedRef` (App.jsx) tracks
+  which presets the rest currently running has gone past, reset when a new rest actually
+  starts. Only a checkpoint the lifter counts *through* sounds: a preset the rest was
+  already past when it came back from a reload, or one the marker was dragged back
+  behind in Settings, is stamped as passed without sounding, so neither a reopen nor a
+  drag replays a burst of catch-up chimes. A preset passed while Sound alert is off is
+  stamped too, so switching sound back on mid-rest doesn't replay it either. The session
+  clock in the strip's corner reads off the same render pass as the rest digits (not its
+  own independent polling interval) specifically so the two numbers can't visibly drift
+  out of phase with each other.
+  Changing the rest interval in Settings **retargets a rest already in progress**
+  (`useTimer`'s `retarget()`) rather than only taking effect on the next one — the
+  marker moves live, and elapsed time is preserved rather than restarting the clock.
+  This only applies when the running rest's duration actually came from
+  `preferredRest` (App.jsx tracks this per-rest); Madcow's per-set ramp rest and the
+  fixed 300s missed-rep rest are untouched by the setting either way, matching how
+  they were already sourced independently of it. The compact live bar shown on other
+  tabs while a workout is active reads the exact same count-up clock as the Train tab
+  strip (continuing past the marker rather than resetting to a fresh stopwatch at that
+  point), so switching tabs mid-rest never shows a different number than the strip
+  would. Resuming a saved workout rehydrates a rest that was still in flight
+  (`useTimer`'s `resume()`), including one whose marker passed while the app was closed
+  — the marker and the overtime that accrued offline both come back rather than the
+  clock restarting at 0:00, and no chime fires for a moment that already passed. All
+  timer logic (wall-clock anchor, expire → stopwatch, sound/vibrate, retargeting,
+  resume) lives in `useTimer`/`RestTimer.jsx` and is untouched by presentation
+  work.
 - The header carries a `?` button that opens the "How it works" bottom sheet.
 - **Every editable weight in the app — Train (idle and active), the Program tab's
   Madcow top sets, and the Log's add/edit-entry modal — uses one `WeightInput`
