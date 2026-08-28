@@ -89,4 +89,44 @@ describe('rest preset chimes', () => {
     await jump(310 * 1000); // well past every preset
     expect(play).not.toHaveBeenCalled();
   });
+
+  // The rest keeps running while you're on the Options tab, so both of these are things
+  // that can happen to a rest already well into overtime. Neither is the lifter counting
+  // through a checkpoint, so neither should sound one.
+  it('does not replay presets already passed when sound is switched on mid-rest', async () => {
+    const user = await setup({ preferredRest: 90, soundEnabled: false });
+    await startRest(user);
+
+    // Split at the marker: the overtime ticker is a newly-mounted effect as of that
+    // transition, so it only starts counting once this act has flushed.
+    await jump(90 * 1000 + 250);
+    await jump(110 * 1000); // ~3:20 elapsed, so the 3:00 preset goes by while muted
+
+    await user.click(screen.getByLabelText('Options'));
+    await user.click(screen.getByRole('switch', { name: 'Sound alert' }));
+    await jump(2000);
+    expect(play).not.toHaveBeenCalled();
+
+    // The 5:00 preset is still ahead, so it does sound when the rest actually reaches it.
+    await jump(110 * 1000);
+    expect(play).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not chime for presets the marker is dragged back past', async () => {
+    const user = await setup({ preferredRest: 300 });
+    await startRest(user);
+
+    await jump(240 * 1000); // 4:00 into a 5:00 rest, still counting down -- silent so far
+    expect(play).not.toHaveBeenCalled();
+
+    // Retargeting to 1:30 drops the marker below 4:00 elapsed, putting the 3:00 preset
+    // behind it in one move. That is the marker moving, not time passing.
+    await user.click(screen.getByLabelText('Options'));
+    await user.click(screen.getByText('1:30'));
+    await jump(2000);
+    expect(play).not.toHaveBeenCalled();
+
+    await jump(60 * 1000); // raw elapsed ~5:00 -- the one preset still ahead does sound
+    expect(play).toHaveBeenCalledTimes(1);
+  });
 });

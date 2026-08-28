@@ -351,12 +351,15 @@ always on.
   checkpoint the strip just visibly jumped to; a preset at or below the marker is
   already covered by the marker's own chime and doesn't sound twice. Gated on Sound
   alert alone, not the five-second warning setting. `presetsChimedRef` (App.jsx) tracks
-  which presets have already sounded for the rest currently running, reset when a new
-  rest actually starts and pre-seeded on resume with whichever presets the offline
-  overtime had already cleared, so reopening the app can't replay a burst of catch-up
-  chimes. The session clock in the strip's corner reads off the same
-  render pass as the rest digits (not its own independent polling interval)
-  specifically so the two numbers can't visibly drift out of phase with each other.
+  which presets the rest currently running has gone past, reset when a new rest actually
+  starts. Only a checkpoint the lifter counts *through* sounds: a preset the rest was
+  already past when it came back from a reload, or one the marker was dragged back
+  behind in Settings, is stamped as passed without sounding, so neither a reopen nor a
+  drag replays a burst of catch-up chimes. A preset passed while Sound alert is off is
+  stamped too, so switching sound back on mid-rest doesn't replay it either. The session
+  clock in the strip's corner reads off the same render pass as the rest digits (not its
+  own independent polling interval) specifically so the two numbers can't visibly drift
+  out of phase with each other.
   Changing the rest interval in Settings **retargets a rest already in progress**
   (`useTimer`'s `retarget()`) rather than only taking effect on the next one — the
   marker moves live, and elapsed time is preserved rather than restarting the clock.

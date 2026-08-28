@@ -50,6 +50,12 @@ import DeleteEntryConfirmSheet from './components/modals/DeleteEntryConfirmSheet
 
 const LONG_BREAK_DELOAD_KEY = 'strength5x5_long_break_deload_for_date';
 
+// The presets a rest is already past *without* the lifter having counted through them:
+// the marker moved under them (the Settings interval was retargeted mid-rest) or they
+// went by while the app was closed. Neither is a moment to chime for, so they're stamped
+// as already sounded rather than left for the effect below to fire as a burst.
+const presetsAlreadyPassed = (marker, raw) => new Set(REST_PRESETS.filter(p => p > marker && p <= raw));
+
 const App = () => {
   const { t } = useTranslation();
   const saved = useLoadSaved();
@@ -156,13 +162,17 @@ const App = () => {
   soundEnabledRef.current = soundEnabled;
 
   useEffect(() => {
-    if (!soundEnabledRef.current || (!timer.isActive && !timer.isExpired)) return;
+    if (!timer.isActive && !timer.isExpired) return;
     const marker = Math.min(timer.duration || 0, CUSTOM_REST_MAX);
     const raw = rawRestElapsedFromTimer({ isActive: timer.isActive, isExpired: timer.isExpired, duration: timer.duration, seconds: timer.seconds, elapsed: timer.elapsed });
     for (const preset of REST_PRESETS) {
       if (preset <= marker || raw < preset || presetsChimedRef.current.has(preset)) continue;
+      // Recorded whether or not it actually sounds. The checkpoint is passed either way,
+      // and skipping the record while muted means turning sound back on mid-rest (the
+      // timer keeps running while you're on the Options tab) replays every preset the
+      // rest has already gone by, all at once.
       presetsChimedRef.current.add(preset);
-      chimeRef.current.play();
+      if (soundEnabledRef.current) chimeRef.current.play();
     }
   }, [timer.isActive, timer.isExpired, timer.duration, timer.seconds, timer.elapsed]);
 
@@ -716,6 +726,15 @@ const App = () => {
   const handleSetPreferredRest = useCallback((next) => {
     setPreferredRest(next);
     if (restTracksPreferredRef.current && (timer.isActive || timer.isExpired)) {
+      // Dragging the interval moves the marker under a rest that's already running, so
+      // presets can end up behind it without a second of real time passing -- dragging
+      // 5:00 down to 0:30 at 4:00 elapsed puts both 1:30 and 3:00 behind the marker at
+      // once. Re-seeded from the elapsed time the retarget is about to preserve, so the
+      // drag itself is silent and only presets still ahead of it can sound.
+      presetsChimedRef.current = presetsAlreadyPassed(
+        Math.min(next, CUSTOM_REST_MAX),
+        rawRestElapsedFromTimer({ isActive: timer.isActive, isExpired: timer.isExpired, duration: timer.duration, seconds: timer.seconds, elapsed: timer.elapsed }),
+      );
       timer.retarget(next);
     }
   }, [timer, setPreferredRest]);
@@ -925,9 +944,9 @@ const App = () => {
               const overdue = Math.max(0, Math.floor((Date.now() - active.restTimerEndTime) / 1000));
               const resumedRaw = overdue > 0 ? resumedDuration + overdue : 0;
               // Same "no chime for a moment that already passed" rule as the marker itself
-              // (see useTimer's resume() below) -- seed with whatever presets the offline
+              // (see useTimer's resume()) -- seed with whatever presets the offline
               // overtime had already cleared so reopening the app doesn't replay them.
-              presetsChimedRef.current = new Set(REST_PRESETS.filter(p => p > resumedMarker && p <= resumedRaw));
+              presetsChimedRef.current = presetsAlreadyPassed(resumedMarker, resumedRaw);
               timer.resume(resumedDuration, active.restTimerEndTime);
               restTracksPreferredRef.current = active.restTracksPreferred ?? false;
             }
