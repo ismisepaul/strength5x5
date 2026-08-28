@@ -324,11 +324,18 @@ always on.
   the strip also floods to `accent-900` with a breathing accent wash and a
   1px accent bottom border, and digits grow to 52px; the track itself thickens to 5px for
   that stretch *and* for the whole overtime stretch past the marker. The 5:00 ceiling
-  gets the exact same flood/thick-bar/52px-digit package (`flashing = isWarning ||
-  atCeiling`) rather than a separate treatment of its own — the difference is that it has
-  no natural end the way the five-second window does, so it keeps breathing for as long
-  as rest keeps running past the ceiling: there should be no more rest once it's
-  showing. The wash is the
+  gets the same flood/thick-bar/52px-digit package rather than a separate treatment of
+  its own, but it splits into two states, because unlike the five-second window it has no
+  natural end: rest has no controls, so left alone the ceiling would keep breathing at
+  whoever racked the bar to talk to a training partner. The size and weight change
+  (`emphasis = isWarning || atCeiling`) holds for as long as the ceiling does; the wash's
+  own visibility (`alarm = isWarning || (atCeiling && !ceilingSettled)`) does not. Once
+  the ceiling has held for `REST_CEILING_SETTLE_SECONDS` (30s) the wash fades out over
+  2600ms, leaving the solid bar, accent digits and "Lift" kicker as the settled state,
+  which is still exactly what changed. The five-second warning keeps snapping on and off
+  with no transition; only the settling ceiling gets the fade, and the size change rides
+  `emphasis` rather than `alarm` so the fade never triggers a second reflow on top of the
+  one it is replacing. The wash is the
   app's only looping animation, so it is also the only one with a
   `prefers-reduced-motion` answer: the keyframes are redefined to hold a steady `.09`
   rather than the animation being dropped, since the flood still has to read. **The

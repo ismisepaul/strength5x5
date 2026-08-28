@@ -489,7 +489,10 @@ const App = () => {
     saveToDriveQuietly({
       weights: d.weights, program: normalizeProgram(d.program), history: d.history, nextType: d.nextType || currentWorkoutType,
       isDark: d.isDark ?? true, autoSave: d.autoSave ?? false,
-      preferredRest: normalizePreferredRest(d.preferredRest || preferredRest),
+      // ?? not ||, matching hydrateFromBackup: an imported 0 is normalized to the floor
+      // locally, so echoing the previous local value here would leave the Drive copy
+      // disagreeing with the state that was just restored.
+      preferredRest: normalizePreferredRest(d.preferredRest ?? preferredRest),
       soundEnabled: d.soundEnabled ?? soundEnabled,
       vibrationEnabled: d.vibrationEnabled ?? vibrationEnabled,
       restWarningEnabled: d.restWarningEnabled ?? restWarningEnabled,

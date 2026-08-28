@@ -47,6 +47,12 @@ describe('hydrateFromBackup', () => {
     const inRange = makeSetters();
     hydrateFromBackup({ weights: baseWeights, program: {}, history: [], preferredRest: 120 }, inRange);
     expect(inRange.setPreferredRest).toHaveBeenCalledWith(120);
+
+    // 0 is the one out-of-range value a truthiness guard would skip, leaving the
+    // previous interval in place instead of clamping like every other bad value.
+    const zero = makeSetters();
+    hydrateFromBackup({ weights: baseWeights, program: {}, history: [], preferredRest: 0 }, zero);
+    expect(zero.setPreferredRest).toHaveBeenCalledWith(30);
   });
 
   it('defaults isDark and autoSave to true/false when absent from the backup', () => {

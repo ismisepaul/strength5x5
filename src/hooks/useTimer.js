@@ -93,29 +93,43 @@ export function useTimer({ onExpire } = {}) {
 
   // Re-aims an in-flight rest at a new duration without resetting how much of it has
   // already elapsed -- e.g. the rest interval changes in Settings while a rest is
-  // running. Not memoized (it closes over this render's seconds/elapsed/duration
-  // directly) since it's only ever called from an event handler, never used as another
-  // hook's dependency. A no-op when nothing is currently counting; that case only
+  // running. Not memoized (it closes over this render's duration and phase directly)
+  // since it's only ever called from an event handler, never used as another hook's
+  // dependency. A no-op when nothing is currently counting; that case only
   // affects the *next* rest, which reads the new duration fresh when it starts.
   const retarget = (newDuration) => {
     if (!isActive && !isExpired) return;
-    const totalElapsed = isActive ? Math.max(0, duration - seconds) : duration + elapsed;
-    if (newDuration > totalElapsed) {
-      const nextSeconds = newDuration - totalElapsed;
-      endTimeRef.current = Date.now() + nextSeconds * 1000;
+    const now = Date.now();
+    // Elapsed time is read off the wall-clock refs, not off the integer seconds/elapsed
+    // display state, because this fires on every pointer move of the Settings drag --
+    // far faster than those integers tick. Deriving from them would keep recovering the
+    // same whole second while re-anchoring the countdown to `now`, so a drag held for a
+    // few seconds would silently give those seconds of rest back. One Date.now()
+    // snapshot per call keeps the real elapsed time intact however often it's called.
+    const elapsedMs = endTimeRef.current != null
+      ? Math.max(0, duration * 1000 - (endTimeRef.current - now))
+      : expiredAtRef.current != null
+        ? duration * 1000 + Math.max(0, now - expiredAtRef.current)
+        : (duration + elapsed) * 1000;
+    const targetMs = newDuration * 1000;
+    if (targetMs > elapsedMs) {
+      const remainingMs = targetMs - elapsedMs;
+      endTimeRef.current = now + remainingMs;
       expiredAtRef.current = null;
-      setSeconds(nextSeconds);
+      // Same ceil the countdown interval uses, so the digits don't jump by a second the
+      // moment the interval takes the value back over.
+      setSeconds(Math.ceil(remainingMs / 1000));
       setDuration(newDuration);
       setElapsed(0);
       setIsActive(true);
       setIsExpired(false);
     } else {
-      const nextElapsed = totalElapsed - newDuration;
-      expiredAtRef.current = Date.now() - nextElapsed * 1000;
+      const overMs = elapsedMs - targetMs;
+      expiredAtRef.current = now - overMs;
       endTimeRef.current = null;
       setSeconds(0);
       setDuration(newDuration);
-      setElapsed(nextElapsed);
+      setElapsed(Math.floor(overMs / 1000));
       setIsActive(false);
       setIsExpired(true);
     }

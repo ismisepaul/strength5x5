@@ -182,5 +182,49 @@ describe('useTimer', () => {
       expect(result.current.seconds).toBeLessThanOrEqual(20);
       expect(onExpire).not.toHaveBeenCalled();
     });
+
+    // Dragging the Settings interval calls this on every pointer move, which arrive far
+    // faster than seconds/elapsed tick. Deriving elapsed from those integers meant each
+    // call recovered the same whole second and re-anchored the countdown to now, so a
+    // drag held for a few seconds handed those seconds back to the lifter.
+    it('keeps the rest clock running across a burst of retargets inside one second', () => {
+      const { result } = renderHook(() => useTimer());
+      act(() => result.current.start(90));
+      act(() => vi.advanceTimersByTime(20000)); // 20s elapsed, 70s left
+
+      // Six retargets to the same value spread over 3s, none of them landing on a
+      // second boundary the display state would have noticed.
+      for (let i = 0; i < 6; i++) {
+        act(() => {
+          vi.advanceTimersByTime(500);
+          result.current.retarget(120);
+        });
+      }
+
+      // 23s of real time has passed against a 120s target, so ~97s should be left. The
+      // stalled version reported 100s here -- the whole drag given back.
+      expect(result.current.duration).toBe(120);
+      expect(result.current.seconds).toBeGreaterThanOrEqual(96);
+      expect(result.current.seconds).toBeLessThanOrEqual(97);
+    });
+
+    it('keeps overtime running across a burst of retargets after expiry', () => {
+      const { result } = renderHook(() => useTimer());
+      act(() => result.current.start(10));
+      act(() => vi.advanceTimersByTime(10000)); // expires
+      act(() => vi.advanceTimersByTime(2000)); // 2s of overtime
+
+      for (let i = 0; i < 6; i++) {
+        act(() => {
+          vi.advanceTimersByTime(500);
+          result.current.retarget(10);
+        });
+      }
+
+      // 15s total against an unchanged 10s target: 5s of overtime, not the 2s the
+      // integer-derived version kept re-deriving.
+      expect(result.current.isExpired).toBe(true);
+      expect(result.current.elapsed).toBe(5);
+    });
   });
 });

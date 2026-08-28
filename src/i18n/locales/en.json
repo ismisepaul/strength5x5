@@ -244,6 +244,7 @@
     "getReady": "Get ready",
     "lift": "Lift",
     "restTargetAria": "Rest target {{time}}",
+    "dismiss": "Dismiss",
     "workoutComplete": "Workout complete",
     "movementFinished": "Movement finished",
     "workout": "Workout"
